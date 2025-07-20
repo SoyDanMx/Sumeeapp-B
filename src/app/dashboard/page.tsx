@@ -8,17 +8,26 @@ import type { User } from '@supabase/supabase-js';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCrown, faSearch, faToolbox, faSpinner } from '@fortawesome/free-solid-svg-icons';
 import { ProfessionalCard } from '@/components/ProfessionalCard';
-import { StripeBuyButton } from '@/components/StripeBuyButton'; // 1. Importamos nuestro nuevo componente envoltorio
 import dynamic from 'next/dynamic';
 
-// Cargamos el componente del mapa de forma dinámica para evitar errores de SSR
 const MapDisplay = dynamic(() => import('@/components/MapDisplay'), {
   ssr: false,
   loading: () => <div className="flex items-center justify-center h-full bg-gray-200 animate-pulse"><p>Cargando mapa...</p></div>
 });
 
-// --- Componente CTA que ahora usa nuestro componente de React ---
 const MembershipCTA = () => {
+  useEffect(() => {
+    const script = document.createElement('script');
+    script.src = 'https://js.stripe.com/v3/buy-button.js';
+    script.async = true;
+    document.body.appendChild(script);
+    return () => {
+      if (document.body.contains(script)) {
+        document.body.removeChild(script);
+      }
+    };
+  }, []);
+
   return (
     <div className="text-center bg-gray-50 p-8 rounded-lg border-2 border-dashed">
       <FontAwesomeIcon icon={faCrown} className="text-5xl text-yellow-500 mb-4" />
@@ -26,16 +35,17 @@ const MembershipCTA = () => {
       <p className="mt-2 mb-6 text-gray-600 max-w-lg mx-auto">
         Conviértete en miembro Básico para poder buscar y contactar a nuestra red de técnicos certificados en tu zona.
       </p>
-      {/* 2. Usamos nuestro nuevo componente de React, pasándole las props */}
-      <StripeBuyButton
-        buyButtonId="buy_btn_1RmpzwE2shKTNR9M91kuSgKh"
-        publishableKey="pk_live_51P8c4AE2shKTNR9MVARQB4La2uYMMc2shlTCcpcg8EI6MqqPV1uN5uj6UbB5mpfReRKd4HL2OP1LoF17WXcYYeB000Ot1l847E"
-      />
+      {/* SOLUCIÓN DEFINITIVA: Ignoramos el error de TypeScript en la siguiente línea */}
+      {/* @ts-ignore */}
+      <stripe-buy-button
+        buy-button-id="buy_btn_1RmpzwE2shKTNR9M91kuSgKh"
+        publishable-key="pk_live_51P8c4AE2shKTNR9MVARQB4La2uYMMc2shlTCcpcg8EI6MqqPV1uN5uj6UbB5mpfReRKd4HL2OP1LoF17WXcYYeB000Ot1l847E"
+      >
+      </stripe-buy-button>
     </div>
   );
 };
 
-// --- Componente de Búsqueda (sin cambios) ---
 const ProfessionalSearch = () => {
   const [service, setService] = useState('');
   const [area, setArea] = useState('');
@@ -102,7 +112,6 @@ const ProfessionalSearch = () => {
   );
 };
 
-// --- Página Principal del Panel (sin cambios en la lógica principal) ---
 export default function DashboardPage() {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<any>(null);
