@@ -2,6 +2,13 @@
 'use client';
 
 import React, { useEffect } from 'react';
+
+// Extend the Window interface to include the fbq property
+declare global {
+  interface Window {
+    fbq?: (...args: any[]) => void;
+  }
+}
 import { usePathname } from 'next/navigation';
 import Script from 'next/script';
 
