@@ -1,21 +1,38 @@
 // src/app/professionals/page.tsx
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { PageLayout } from '@/components/PageLayout';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faShieldAlt, faComments, faCheckCircle, faCrown } from '@fortawesome/free-solid-svg-icons';
 
 export default function ProfessionalsPage() {
-  // Este useEffect carga el script de Stripe necesario para que el botón funcione.
+  // Usamos useRef para obtener una referencia a nuestro div contenedor
+  const stripeContainerRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     const script = document.createElement('script');
     script.src = 'https://js.stripe.com/v3/buy-button.js';
     script.async = true;
+    
+    // Esta función se ejecutará cuando el script de Stripe haya cargado
+    script.onload = () => {
+      if (stripeContainerRef.current) {
+        // Limpiamos el contenedor para evitar duplicados
+        stripeContainerRef.current.innerHTML = '';
+        // Creamos el botón de Stripe con JavaScript
+        const stripeBuyButton = document.createElement('stripe-buy-button');
+        stripeBuyButton.setAttribute('buy-button-id', 'buy_btn_1RmpzwE2shKTNR9M91kuSgKh');
+        stripeBuyButton.setAttribute('publishable-key', 'pk_live_51P8c4AE2shKTNR9MVARQB4La2uYMMc2shlTCcpcg8EI6MqqPV1uN5uj6UbB5mpfReRKd4HL2OP1LoF17WXcYYeB000Ot1l847E');
+        // Lo añadimos a nuestro div
+        stripeContainerRef.current.appendChild(stripeBuyButton);
+      }
+    };
+
     document.body.appendChild(script);
 
     return () => {
-      // Limpia el script cuando el componente se desmonta para evitar duplicados.
+      // Limpiamos el script cuando el componente se desmonta
       if (document.body.contains(script)) {
         document.body.removeChild(script);
       }
@@ -55,18 +72,13 @@ export default function ProfessionalsPage() {
           </div>
         </div>
 
-        {/* Sección del Call to Action (CTA) con el botón de Stripe */}
+        {/* Sección del Call to Action (CTA) */}
         <div className="max-w-2xl mx-auto bg-white p-8 rounded-xl shadow-lg text-center">
           <h2 className="text-3xl font-bold text-gray-800 mb-4">¿Listo para Empezar?</h2>
           <p className="text-gray-600 mb-6">Obtén tu membresía básica ahora y encuentra la solución perfecta para tu hogar.</p>
           
-          {/* SOLUCIÓN DEFINITIVA: Ignoramos el error de TypeScript en la siguiente línea */}
-          {/* @ts-ignore */}
-          <stripe-buy-button
-            buy-button-id="buy_btn_1RmpzwE2shKTNR9M91kuSgKh"
-            publishable-key="pk_live_51P8c4AE2shKTNR9MVARQB4La2uYMMc2shlTCcpcg8EI6MqqPV1uN5uj6UbB5mpfReRKd4HL2OP1LoF17WXcYYeB000Ot1l847E"
-          >
-          </stripe-buy-button>
+          {/* Contenedor seguro para el botón de Stripe */}
+          <div ref={stripeContainerRef}></div>
         </div>
       </div>
     </PageLayout>

@@ -1,7 +1,7 @@
 // src/app/dashboard/page.tsx
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
 import type { User } from '@supabase/supabase-js';
@@ -15,12 +15,30 @@ const MapDisplay = dynamic(() => import('@/components/MapDisplay'), {
   loading: () => <div className="flex items-center justify-center h-full bg-gray-200 animate-pulse"><p>Cargando mapa...</p></div>
 });
 
+// --- Componente CTA con la solución definitiva para el botón de Stripe ---
 const MembershipCTA = () => {
+  const stripeContainerRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     const script = document.createElement('script');
     script.src = 'https://js.stripe.com/v3/buy-button.js';
     script.async = true;
+
+    script.onload = () => {
+      if (stripeContainerRef.current) {
+        // Limpiamos el contenedor por si acaso
+        stripeContainerRef.current.innerHTML = '';
+        // Creamos el botón de Stripe con JavaScript
+        const stripeBuyButton = document.createElement('stripe-buy-button');
+        stripeBuyButton.setAttribute('buy-button-id', 'buy_btn_1RmpzwE2shKTNR9M91kuSgKh');
+        stripeBuyButton.setAttribute('publishable-key', 'pk_live_51P8c4AE2shKTNR9MVARQB4La2uYMMc2shlTCcpcg8EI6MqqPV1uN5uj6UbB5mpfReRKd4HL2OP1LoF17WXcYYeB000Ot1l847E');
+        // Lo añadimos a nuestro div
+        stripeContainerRef.current.appendChild(stripeBuyButton);
+      }
+    };
+
     document.body.appendChild(script);
+
     return () => {
       if (document.body.contains(script)) {
         document.body.removeChild(script);
@@ -35,17 +53,13 @@ const MembershipCTA = () => {
       <p className="mt-2 mb-6 text-gray-600 max-w-lg mx-auto">
         Conviértete en miembro Básico para poder buscar y contactar a nuestra red de técnicos certificados en tu zona.
       </p>
-      {/* SOLUCIÓN DEFINITIVA: Ignoramos el error de TypeScript en la siguiente línea */}
-      {/* @ts-ignore */}
-      <stripe-buy-button
-        buy-button-id="buy_btn_1RmpzwE2shKTNR9M91kuSgKh"
-        publishable-key="pk_live_51P8c4AE2shKTNR9MVARQB4La2uYMMc2shlTCcpcg8EI6MqqPV1uN5uj6UbB5mpfReRKd4HL2OP1LoF17WXcYYeB000Ot1l847E"
-      >
-      </stripe-buy-button>
+      {/* Este es nuestro contenedor seguro que TypeScript sí entiende */}
+      <div ref={stripeContainerRef}></div>
     </div>
   );
 };
 
+// --- Componente para la búsqueda de profesionales (FUNCIONAL) ---
 const ProfessionalSearch = () => {
   const [service, setService] = useState('');
   const [area, setArea] = useState('');
@@ -112,6 +126,7 @@ const ProfessionalSearch = () => {
   );
 };
 
+// --- Página Principal del Dashboard ---
 export default function DashboardPage() {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<any>(null);
