@@ -6,7 +6,6 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faStar, faArrowRight } from '@fortawesome/free-solid-svg-icons';
 import Image from 'next/image';
 
-// Definimos qué 'props' (propiedades) aceptará nuestro componente
 interface ServiceCardProps {
   name: string;
   rating: number;
@@ -17,13 +16,15 @@ export const ServiceCard: React.FC<ServiceCardProps> = ({ name, rating, image })
   return (
     <div className="bg-gray-50 rounded-xl overflow-hidden shadow-md hover:shadow-lg transition duration-300 cursor-pointer group">
       <div className="h-48 overflow-hidden relative">
+        {/* CORRECCIÓN: Usamos la sintaxis moderna de Next.js Image */}
         <Image
-  src={image}
-  alt={name}
-  layout="fill"
-  objectFit="cover"
-  className="transition duration-300 group-hover:scale-105"
-/>
+          src={image}
+          alt={name}
+          fill
+          className="transition duration-300 group-hover:scale-105 object-cover"
+          // Añadimos un fallback por si la imagen falla
+          onError={(e) => { e.currentTarget.src = `https://placehold.co/400x300/E2E8F0/4A5568?text=${name}`; }}
+        />
       </div>
       <div className="p-6">
         <div className="flex items-center justify-between mb-2">

@@ -1,52 +1,37 @@
-// src/app/registro/page.tsx
+// src/app/login/page.tsx
 'use client';
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { supabase } from '@/lib/supabaseClient';
 import Image from 'next/image';
+import { supabase } from '@/lib/supabaseClient';
 
-export default function RegistroPage() {
+export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [fullName, setFullName] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  const handleSignUp = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError(null);
-
-    if (password !== confirmPassword) {
-      setError('Las contraseñas no coinciden.');
-      return;
-    }
-    
     setLoading(true);
 
     try {
-      // Ahora, solo necesitamos crear la cuenta en Supabase Auth.
-      // El disparador se encargará de crear el perfil automáticamente.
-      const { error } = await supabase.auth.signUp({
-        email: email,
-        password: password,
-        options: {
-          data: {
-            full_name: fullName, // Pasamos el nombre para que el disparador lo pueda usar
-          },
-        },
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
       });
 
       if (error) throw error;
 
-      alert('¡Registro exitoso! Por favor, revisa tu correo para confirmar tu cuenta.');
-      router.push('/login');
+      // Si el login es exitoso, redirigir a una futura página de perfil o dashboard
+      router.push('/dashboard'); 
 
     } catch (error: any) {
-      setError(error.message || 'Ocurrió un error durante el registro.');
+      setError(error.message || 'No se pudo iniciar sesión. Revisa tus credenciales.');
     } finally {
       setLoading(false);
     }
@@ -58,30 +43,18 @@ export default function RegistroPage() {
         <div className="text-center mb-8">
           <Link href="/">
             <Image
-              src="/logo.png"
+              src="/logo.png" // CORRECCIÓN: Cambiado de .jpeg a .png para que coincida con tu archivo
               alt="Logo de Sumee"
               width={150}
               height={40}
               className="mx-auto mb-4"
             />
           </Link>
-          <h2 className="text-2xl font-bold text-gray-900">Crea tu cuenta en Sumee</h2>
-          <p className="text-gray-600 mt-2">Encuentra o proporciona los mejores servicios para el hogar.</p>
+          <h2 className="text-2xl font-bold text-gray-900">Bienvenido de Nuevo</h2>
+          <p className="text-gray-600 mt-2">Inicia sesión para continuar.</p>
         </div>
 
-        <form onSubmit={handleSignUp} className="space-y-6">
-          <div>
-            <label htmlFor="fullName" className="block text-sm font-medium text-gray-700">Nombre Completo</label>
-            <input
-              id="fullName"
-              name="fullName"
-              type="text"
-              required
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
-              className="text-gray-900 mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-4 focus:ring-blue-500 focus:ring-opacity-50 focus:border-blue-500"
-            />
-          </div>
+        <form onSubmit={handleLogin} className="space-y-6">
           <div>
             <label htmlFor="email" className="block text-sm font-medium text-gray-700">Correo Electrónico</label>
             <input
@@ -101,23 +74,10 @@ export default function RegistroPage() {
               id="password"
               name="password"
               type="password"
-              autoComplete="new-password"
+              autoComplete="current-password"
               required
-              minLength={6}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="text-gray-900 mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-4 focus:ring-blue-500 focus:ring-opacity-50 focus:border-blue-500"
-            />
-          </div>
-          <div>
-            <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">Confirmar Contraseña</label>
-            <input
-              id="confirmPassword"
-              name="confirmPassword"
-              type="password"
-              required
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
               className="text-gray-900 mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-4 focus:ring-blue-500 focus:ring-opacity-50 focus:border-blue-500"
             />
           </div>
@@ -130,15 +90,15 @@ export default function RegistroPage() {
               disabled={loading}
               className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-blue-400"
             >
-              {loading ? 'Registrando...' : 'Registrarme'}
+              {loading ? 'Iniciando...' : 'Iniciar Sesión'}
             </button>
           </div>
         </form>
 
         <p className="mt-6 text-center text-sm text-gray-600">
-          ¿Ya tienes una cuenta?{' '}
-          <Link href="/login" className="font-medium text-blue-600 hover:text-blue-500">
-            Inicia sesión
+          ¿No tienes una cuenta?{' '}
+          <Link href="/registro" className="font-medium text-blue-600 hover:text-blue-500">
+            Regístrate aquí
           </Link>
         </p>
       </div>

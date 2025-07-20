@@ -3,16 +3,17 @@
 
 import React from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faShieldAlt, faLock, faFileAlt, faStar, faMapMarkerAlt, faPhoneAlt, faEnvelope, faInfoCircle } from '@fortawesome/free-solid-svg-icons';
 import { faFacebookF, faLinkedinIn } from '@fortawesome/free-brands-svg-icons';
 import { NewsletterForm } from './NewsletterForm';
 import { FooterLinkColumn } from './FooterLinkColumn';
 
-// Datos para las columnas de enlaces
+// Datos para las columnas de enlaces con las URLs corregidas
 const quickLinks = [
   { href: "/about", icon: faInfoCircle, text: "Sobre Nosotros" },
-  { href: "/services", icon: faShieldAlt, text: "Servicios" },
+  { href: "/servicios", icon: faShieldAlt, text: "Servicios" }, // CORREGIDO
   { href: "/professionals", icon: faStar, text: "Profesionales" },
   { href: "/join-as-pro", icon: faStar, text: "Únete como Profesional" },
 ];
@@ -29,11 +30,9 @@ export const Footer = () => {
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
           
-          {/* Columna de Información */}
           <div className="space-y-6">
-            {/* Logo - Cambia esto por tu componente Image cuando tengas el archivo */}
-            <Link href="/" className="inline-block text-3xl font-bold text-white">
-              Sumee
+            <Link href="/">
+                <Image src="/logo.png" alt="SUMEE Logo" width={140} height={35} />
             </Link>
             <p className="text-gray-300 text-sm leading-relaxed">Conectamos usuarios con técnicos certificados para soluciones confiables en tu hogar.</p>
             <div className="space-y-3">
@@ -61,13 +60,14 @@ export const Footer = () => {
           </div>
 
           <FooterLinkColumn title="Enlaces Rápidos" links={quickLinks} />
-          <FooterLinkColumn title="Legal" links={legalLinks} />
+          <FooterLinkColumn title="Legal y Soporte" links={legalLinks} />
           <NewsletterForm />
 
         </div>
 
         <div className="border-t border-gray-800 mt-16 pt-8 text-center">
-          <p className="text-gray-400 text-sm">© {new Date().getFullYear()} Sumee. Todos los derechos reservados.</p>
+          <p className="text-gray-400 text-sm">© {new Date().getFullYear()} Sumee App. Todos los derechos reservados.</p>
+          <p className="text-gray-500 text-xs mt-2">Powered by NUO INTEGRACIONES</p>
         </div>
       </div>
     </footer>

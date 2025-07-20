@@ -4,6 +4,7 @@
 import React from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faUsers, faCalendarCheck, faStar, faHeadset } from '@fortawesome/free-solid-svg-icons';
+import Link from 'next/link'; // 1. Importamos el componente Link
 
 // Datos para los beneficios de los profesionales.
 const benefitsForPros = [
@@ -39,9 +40,15 @@ export const ProfessionalCTA = () => {
           <div className="lg:w-1/2 text-center lg:text-left">
             <h2 className="text-3xl font-bold text-white mb-4">¿Eres un profesional? Únete a nuestra red</h2>
             <p className="text-xl text-blue-100 mb-6">Conecta con miles de clientes en tu área y haz crecer tu negocio con Sumee.</p>
-            <button className="bg-white text-blue-600 hover:bg-blue-50 px-8 py-3 rounded-lg font-bold text-lg transition duration-200 shadow-lg">
+            
+            {/* 2. Reemplazamos el <button> por un <Link> con los mismos estilos */}
+            <Link 
+              href="/join-as-pro" 
+              className="bg-white text-blue-600 hover:bg-blue-50 px-8 py-3 rounded-lg font-bold text-lg transition duration-200 shadow-lg inline-block"
+            >
               Registrarme como profesional
-            </button>
+            </Link>
+
           </div>
           
           {/* Columna Derecha: Tarjeta de Beneficios */}
