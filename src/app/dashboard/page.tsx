@@ -10,7 +10,8 @@ import { faCrown, faSearch, faToolbox, faSpinner } from '@fortawesome/free-solid
 import { ProfessionalCard } from '@/components/ProfessionalCard';
 import dynamic from 'next/dynamic';
 
-// Añadimos la declaración de TypeScript para que entienda la etiqueta <stripe-buy-button>
+// --- INICIO DE LA CORRECCIÓN ---
+// 1. Añadimos esta declaración global para que TypeScript reconozca la etiqueta de Stripe.
 declare global {
   namespace JSX {
     interface IntrinsicElements {
@@ -21,22 +22,21 @@ declare global {
     }
   }
 }
+// --- FIN DE LA CORRECCIÓN ---
 
-// Cargamos el componente del mapa de forma dinámica para evitar errores de SSR
+// Cargamos el componente del mapa de forma dinámica
 const MapDisplay = dynamic(() => import('@/components/MapDisplay'), {
   ssr: false,
   loading: () => <div className="flex items-center justify-center h-full bg-gray-200 animate-pulse"><p>Cargando mapa...</p></div>
 });
 
-// --- Componente CTA con el botón de Stripe (CORREGIDO) ---
+// --- Componente CTA con el botón de Stripe ---
 const MembershipCTA = () => {
-  // CORRECCIÓN: Se reintroduce el useEffect para cargar el script de Stripe.
   useEffect(() => {
     const script = document.createElement('script');
     script.src = 'https://js.stripe.com/v3/buy-button.js';
     script.async = true;
     document.body.appendChild(script);
-
     return () => {
       if (document.body.contains(script)) {
         document.body.removeChild(script);
@@ -51,7 +51,6 @@ const MembershipCTA = () => {
       <p className="mt-2 mb-6 text-gray-600 max-w-lg mx-auto">
         Conviértete en miembro Básico para poder buscar y contactar a nuestra red de técnicos certificados en tu zona.
       </p>
-      {/* Botón de Stripe con el ID correcto */}
       <stripe-buy-button
         buy-button-id="buy_btn_1RmpzwE2shKTNR9M91kuSgKh"
         publishable-key="pk_live_51P8c4AE2shKTNR9MVARQB4La2uYMMc2shlTCcpcg8EI6MqqPV1uN5uj6UbB5mpfReRKd4HL2OP1LoF17WXcYYeB000Ot1l847E"
@@ -61,7 +60,7 @@ const MembershipCTA = () => {
   );
 };
 
-// --- Componente para la búsqueda de profesionales (FUNCIONAL) ---
+// --- Componente de Búsqueda ---
 const ProfessionalSearch = () => {
   const [service, setService] = useState('');
   const [area, setArea] = useState('');
@@ -82,13 +81,10 @@ const ProfessionalSearch = () => {
     setLoading(true);
     setSearched(true);
     setResults([]);
-
     let query = supabase.from('profiles').select('*').not('profession', 'is', null);
     if (service) query = query.ilike('profession', `%${service}%`);
     if (area) query = query.ilike('work_area', `%${area}%`);
-
     const { data, error } = await query;
-
     if (error) {
       console.error("Error en la búsqueda:", error);
     } else {
@@ -113,7 +109,6 @@ const ProfessionalSearch = () => {
         <div className="h-[400px] lg:h-full rounded-lg overflow-hidden shadow-md">
             <MapDisplay professionals={professionalsWithLocation} />
         </div>
-
         <div className="max-h-[600px] overflow-y-auto pr-2">
             {loading && <p className="text-center text-gray-600">Buscando profesionales...</p>}
             {!loading && searched && results.length === 0 && (
