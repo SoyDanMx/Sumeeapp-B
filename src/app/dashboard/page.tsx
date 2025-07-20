@@ -10,21 +10,7 @@ import { faCrown, faSearch, faToolbox, faSpinner } from '@fortawesome/free-solid
 import { ProfessionalCard } from '@/components/ProfessionalCard';
 import dynamic from 'next/dynamic';
 
-// --- INICIO DE LA CORRECCIÓN ---
-// 1. Añadimos esta declaración global para que TypeScript reconozca la etiqueta de Stripe.
-declare global {
-  namespace JSX {
-    interface IntrinsicElements {
-      'stripe-buy-button': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement> & {
-        'buy-button-id': string;
-        'publishable-key': string;
-      };
-    }
-  }
-}
-// --- FIN DE LA CORRECCIÓN ---
-
-// Cargamos el componente del mapa de forma dinámica
+// Cargamos el componente del mapa de forma dinámica para evitar errores de SSR
 const MapDisplay = dynamic(() => import('@/components/MapDisplay'), {
   ssr: false,
   loading: () => <div className="flex items-center justify-center h-full bg-gray-200 animate-pulse"><p>Cargando mapa...</p></div>
@@ -116,7 +102,7 @@ const ProfessionalSearch = () => {
             )}
             {!loading && results.length > 0 && (
             <div className="space-y-4">
-                {professionalsWithLocation.map(profile => (
+                {results.map(profile => (
                 <ProfessionalCard key={profile.id} profile={profile} />
                 ))}
             </div>
@@ -127,7 +113,7 @@ const ProfessionalSearch = () => {
   );
 };
 
-// --- Página Principal del Dashboard ---
+// --- Página Principal del Panel ---
 export default function DashboardPage() {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<any>(null);
@@ -144,7 +130,7 @@ export default function DashboardPage() {
       setUser(session.user);
       const { data: profileData, error } = await supabase.from('profiles').select('*').eq('user_id', session.user.id).single();
       if (error) {
-        console.error('Error fetching profile:', error);
+        console.error('Error al obtener el perfil:', error);
       } else {
         setProfile(profileData);
       }
@@ -175,7 +161,7 @@ export default function DashboardPage() {
       <main className="py-8">
         <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
           <div className="bg-white p-8 rounded-xl shadow-md">
-            <h2 className="text-xl font-semibold text-gray-800 mb-6">Bienvenido de nuevo, {profile?.full_name || user?.email}!</h2>
+            <h2 className="text-xl font-semibold text-gray-800 mb-6">¡Bienvenido de nuevo, {profile?.full_name || user?.email}!</h2>
             {isProfessional ? (
               <div className="text-center"><FontAwesomeIcon icon={faToolbox} className="text-5xl text-blue-500 mb-4" /><h3 className="text-2xl font-bold text-gray-800">Panel de Profesional</h3><p className="mt-2 text-gray-600">Aquí podrás gestionar tus servicios y ver nuevas solicitudes de clientes.</p></div>
             ) : (
