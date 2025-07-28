@@ -3,9 +3,16 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import "leaflet/dist/leaflet.css"; // 1. Importamos los estilos de Leaflet aquí
+
+// --- IMPORTS ADICIONALES NECESARIOS ---
+import { Header } from "../components/Header"; // Importa tu componente Header
+import { LocationProvider } from "../context/LocationContext"; // Importa el LocationProvider
+// --- FIN IMPORTS ADICIONALES ---
+
 import { WhatsAppButton } from "@/components/WhatsAppButton";
 import { GoogleAnalytics } from "@/components/analytics/GoogleAnalytics";
 import { MetaPixel } from "@/components/analytics/MetaPixel";
+
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -43,7 +50,17 @@ export default function RootLayout({
         <GoogleAnalytics />
         <MetaPixel />
         
-        {children}
+        {/*
+          ENVOLVEMOS EL HEADER Y EL CONTENIDO PRINCIPAL (children)
+          CON EL LOCATIONPROVIDER PARA QUE TODOS TENGAN ACCESO AL CONTEXTO DE UBICACIÓN.
+        */}
+        <LocationProvider>
+          <Header /> {/* El Header ahora forma parte del layout */}
+          <main className="pt-20"> {/* Añadimos padding-top para que el contenido no quede bajo el fixed header */}
+            {children} {/* Aquí se renderiza el contenido de cada página */}
+          </main>
+        </LocationProvider>
+        
         <WhatsAppButton />
       </body>
     </html>

@@ -1,85 +1,166 @@
 // src/app/professionals/page.tsx
 'use client';
 
-import React, { useEffect, useRef } from 'react';
-import { PageLayout } from '@/components/PageLayout';
+import React, { useState, useEffect } from 'react';
+import { useLocation } from '@/context/LocationContext'; // Importa el hook de ubicación
+import { ProfessionalCard } from '@/components/ProfessionalCard'; // Tu componente de tarjeta de profesional
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faShieldAlt, faComments, faCheckCircle, faCrown } from '@fortawesome/free-solid-svg-icons';
+import { faSpinner, faMapMarkerAlt, faSearch } from '@fortawesome/free-solid-svg-icons';
+import { ProfessionalProfile } from '../../types'; // Ajusta la ruta según la ubicación real del archivo types
+import { PageLayout } from '@/components/PageLayout'; // Asumo que usas PageLayout para el layout de la página
 
 export default function ProfessionalsPage() {
-  // Usamos useRef para obtener una referencia a nuestro div contenedor
-  const stripeContainerRef = useRef<HTMLDivElement>(null);
+  const { location: userSelectedLocation } = useLocation(); // Obtiene la ubicación del usuario del contexto
+  const [professionals, setProfessionals] = useState<ProfessionalProfile[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const script = document.createElement('script');
-    script.src = 'https://js.stripe.com/v3/buy-button.js';
-    script.async = true;
-    
-    // Esta función se ejecutará cuando el script de Stripe haya cargado
-    script.onload = () => {
-      if (stripeContainerRef.current) {
-        // Limpiamos el contenedor para evitar duplicados
-        stripeContainerRef.current.innerHTML = '';
-        // Creamos el botón de Stripe con JavaScript
-        const stripeBuyButton = document.createElement('stripe-buy-button');
-        stripeBuyButton.setAttribute('buy-button-id', 'buy_btn_1RmpzwE2shKTNR9M91kuSgKh');
-        stripeBuyButton.setAttribute('publishable-key', 'pk_live_51P8c4AE2shKTNR9MVARQB4La2uYMMc2shlTCcpcg8EI6MqqPV1uN5uj6UbB5mpfReRKd4HL2OP1LoF17WXcYYeB000Ot1l847E');
-        // Lo añadimos a nuestro div
-        stripeContainerRef.current.appendChild(stripeBuyButton);
+  // Estados para filtros y búsqueda
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedProfession, setSelectedProfession] = useState(''); // Estado para el filtro de profesión
+  const [searchRadius, setSearchRadius] = useState<number>(10000); // Radio por defecto: 10 km (10000 metros)
+
+  // Esta función se encarga de buscar profesionales
+  const fetchProfessionals = async () => {
+    setIsLoading(true);
+    setError(null);
+
+    // Solo buscar si tenemos una ubicación seleccionada
+    if (!userSelectedLocation) {
+      // Si no hay una ubicación seleccionada, muestra un mensaje y espera
+      setError('Por favor, selecciona tu ubicación en el encabezado para encontrar profesionales.');
+      setProfessionals([]); // Limpia profesionales si no hay ubicación
+      setIsLoading(false);
+      return;
+    }
+
+    // Construir la URL de la API con los parámetros de filtro
+    const params = new URLSearchParams();
+    params.append('lat', userSelectedLocation.lat.toString());
+    params.append('lon', userSelectedLocation.lon.toString());
+    params.append('radius', searchRadius.toString()); // Añadir el radio
+    if (selectedProfession) {
+      params.append('profession', selectedProfession);
+    }
+    if (searchQuery) {
+      params.append('query', searchQuery);
+    }
+
+    try {
+      const response = await fetch(`/api/professionals?${params.toString()}`);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Error al cargar profesionales.');
       }
-    };
+      const data = await response.json();
+      setProfessionals(data.professionals);
+    } catch (err: any) {
+      setError(err.message || 'Error desconocido al cargar profesionales.');
+      console.error('Fetch professionals error:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-    document.body.appendChild(script);
+  // Efecto para cargar profesionales cuando la ubicación cambia o los filtros cambian
+  useEffect(() => {
+    // Añadir un pequeño retraso (debounce) para las búsquedas de texto
+    const handler = setTimeout(() => {
+      fetchProfessionals();
+    }, 500); // Espera 500ms después de que el usuario deja de escribir/seleccionar
 
     return () => {
-      // Limpiamos el script cuando el componente se desmonta
-      if (document.body.contains(script)) {
-        document.body.removeChild(script);
-      }
+      clearTimeout(handler); // Limpia el timeout si el componente se desmonta o las dependencias cambian rápido
     };
-  }, []);
+  }, [userSelectedLocation, searchRadius, selectedProfession, searchQuery]); // Dependencias del efecto
+
+  // Ejemplo de profesiones para el filtro (ajusta según tus datos reales en Supabase)
+  const professionsList = [
+    'Plomero', 'Electricista', 'Carpintero', 'Pintor', 'Limpieza', 'CCTV y Alarmas', 'Redes WiFi', 'Aire Acondicionado'
+  ];
 
   return (
-    <PageLayout>
-      <div className="container mx-auto px-4 py-16">
-        {/* Sección Principal */}
-        <div className="max-w-4xl mx-auto text-center">
-          <FontAwesomeIcon icon={faCrown} className="text-5xl text-yellow-500 mb-4" />
-          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-            Accede a Nuestra Red Exclusiva de Profesionales Verificados
-          </h1>
-          <p className="text-lg text-gray-600 mb-12">
-            Tu membresía Sumee te da acceso directo a los mejores técnicos de tu zona. Olvídate de la incertidumbre y contrata con total confianza.
-          </p>
+    <PageLayout> {/* Envuelve la página con PageLayout si lo usas */}
+      <div className="container mx-auto px-4 py-8 mt-20"> {/* mt-20 para dejar espacio al header fijo */}
+        <h1 className="text-3xl font-bold text-center mb-8">Profesionales Cerca de Ti</h1>
+
+        {/* Barra de Filtros y Búsqueda */}
+        <div className="bg-white p-6 rounded-lg shadow-md mb-8">
+          <div className="flex flex-col md:flex-row gap-4 items-center">
+            <div className="flex-1 w-full relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <FontAwesomeIcon icon={faSearch} className="text-gray-400" />
+              </div>
+              <input
+                type="text"
+                className="w-full pl-10 pr-3 py-3 border border-gray-200 rounded-lg text-gray-900 focus:ring-2 focus:ring-blue-500"
+                placeholder="Buscar por nombre..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+            <div className="flex-1 w-full">
+              <select
+                className="w-full px-3 py-3 border border-gray-200 rounded-lg text-gray-900 focus:ring-2 focus:ring-blue-500"
+                value={selectedProfession}
+                onChange={(e) => setSelectedProfession(e.target.value)}
+              >
+                <option value="">Todas las profesiones</option>
+                {professionsList.map(prof => (
+                  <option key={prof} value={prof}>{prof}</option>
+                ))}
+              </select>
+            </div>
+            <div className="flex-1 w-full">
+              <select
+                className="w-full px-3 py-3 border border-gray-200 rounded-lg text-gray-900 focus:ring-2 focus:ring-blue-500"
+                value={searchRadius}
+                onChange={(e) => setSearchRadius(parseFloat(e.target.value))}
+              >
+                <option value={5000}>5 km</option>
+                <option value={10000}>10 km</option>
+                <option value={25000}>25 km</option>
+                <option value={50000}>50 km</option>
+                <option value={100000}>100 km</option>
+              </select>
+            </div>
+          </div>
+          {userSelectedLocation && (
+            <p className="text-sm text-gray-600 mt-4 flex items-center justify-center text-center">
+              <FontAwesomeIcon icon={faMapMarkerAlt} className="mr-2" />
+              Buscando profesionales cerca de: <span className="font-semibold ml-1">{userSelectedLocation.address.split(',')[0].trim()}</span>
+            </p>
+          )}
         </div>
 
-        {/* Sección de Beneficios */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto mb-16">
-          <div className="bg-white p-6 rounded-lg shadow-md text-center">
-            <FontAwesomeIcon icon={faShieldAlt} className="text-3xl text-blue-600 mb-4" />
-            <h3 className="text-xl font-semibold mb-2">Verificación de Confianza</h3>
-            <p className="text-gray-600">Cada profesional pasa por un riguroso proceso de validación de identidad y referencias.</p>
+        {isLoading && (
+          <div className="text-center py-10">
+            <FontAwesomeIcon icon={faSpinner} spin size="2x" className="text-blue-600 mb-4" />
+            <p className="text-gray-700">Cargando profesionales...</p>
           </div>
-          <div className="bg-white p-6 rounded-lg shadow-md text-center">
-            <FontAwesomeIcon icon={faComments} className="text-3xl text-blue-600 mb-4" />
-            <h3 className="text-xl font-semibold mb-2">Contacto Directo</h3>
-            <p className="text-gray-600">Comunícate directamente con los profesionales para explicar tus necesidades y acordar precios justos.</p>
-          </div>
-          <div className="bg-white p-6 rounded-lg shadow-md text-center">
-            <FontAwesomeIcon icon={faCheckCircle} className="text-3xl text-blue-600 mb-4" />
-            <h3 className="text-xl font-semibold mb-2">Garantía de Satisfacción</h3>
-            <p className="text-gray-600">Contamos con un sistema de reseñas y soporte para asegurar la calidad de cada trabajo.</p>
-          </div>
-        </div>
+        )}
 
-        {/* Sección del Call to Action (CTA) */}
-        <div className="max-w-2xl mx-auto bg-white p-8 rounded-xl shadow-lg text-center">
-          <h2 className="text-3xl font-bold text-gray-800 mb-4">¿Listo para Empezar?</h2>
-          <p className="text-gray-600 mb-6">Obtén tu membresía básica ahora y encuentra la solución perfecta para tu hogar.</p>
-          
-          {/* Contenedor seguro para el botón de Stripe */}
-          <div ref={stripeContainerRef}></div>
-        </div>
+        {error && (
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
+            <strong className="font-bold">Error:</strong>
+            <span className="block sm:inline ml-2">{error}</span>
+          </div>
+        )}
+
+        {!isLoading && !error && professionals.length === 0 && (
+          <div className="text-center py-10 text-gray-600">
+            <p className="text-xl font-semibold mb-2">¡No se encontraron profesionales!</p>
+            <p>Intenta ajustar tu ubicación o ampliar el radio de búsqueda.</p>
+          </div>
+        )}
+
+        {!isLoading && !error && professionals.length > 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {professionals.map((professional) => (
+              <ProfessionalCard key={professional.user_id} profile={professional} />
+            ))}
+          </div>
+        )}
       </div>
     </PageLayout>
   );
