@@ -10,11 +10,13 @@ import { faCrown, faSearch, faToolbox, faSpinner } from '@fortawesome/free-solid
 import { ProfessionalCard } from '@/components/ProfessionalCard';
 import dynamic from 'next/dynamic';
 
+// Cargamos el componente del mapa de forma dinámica para evitar errores de SSR
 const MapDisplay = dynamic(() => import('@/components/MapDisplay'), {
   ssr: false,
   loading: () => <div className="flex items-center justify-center h-full bg-gray-200 animate-pulse"><p>Cargando mapa...</p></div>
 });
 
+// --- Componente CTA con la solución definitiva para el botón de Stripe ---
 const MembershipCTA = () => {
   const stripeContainerRef = useRef<HTMLDivElement>(null);
 
@@ -54,6 +56,7 @@ const MembershipCTA = () => {
   );
 };
 
+// --- Componente para la búsqueda de profesionales (FUNCIONAL) ---
 const ProfessionalSearch = () => {
   const [service, setService] = useState('');
   const [area, setArea] = useState('');
@@ -120,6 +123,7 @@ const ProfessionalSearch = () => {
   );
 };
 
+// --- Página Principal del Panel ---
 export default function DashboardPage() {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<any>(null);
