@@ -10,7 +10,6 @@ import { faCrown, faSearch, faToolbox, faSpinner } from '@fortawesome/free-solid
 import { ProfessionalCard } from '@/components/ProfessionalCard';
 import dynamic from 'next/dynamic';
 
-// Cargamos el componente del mapa de forma dinámica para evitar errores de SSR
 const MapDisplay = dynamic(() => import('@/components/MapDisplay'), {
   ssr: false,
   loading: () => <div className="flex items-center justify-center h-full bg-gray-200 animate-pulse"><p>Cargando mapa...</p></div>
@@ -51,12 +50,13 @@ const MembershipCTA = () => {
       <p className="mt-2 mb-6 text-gray-600 max-w-lg mx-auto">
         Conviértete en miembro Básico para poder buscar y contactar a nuestra red de técnicos certificados en tu zona.
       </p>
+      {/* Este es nuestro contenedor seguro que TypeScript sí entiende */}
       <div ref={stripeContainerRef}></div>
     </div>
   );
 };
 
-// --- Componente para la búsqueda de profesionales (FUNCIONAL) ---
+// --- El resto del archivo se mantiene igual ---
 const ProfessionalSearch = () => {
   const [service, setService] = useState('');
   const [area, setArea] = useState('');
@@ -123,7 +123,6 @@ const ProfessionalSearch = () => {
   );
 };
 
-// --- Página Principal del Panel ---
 export default function DashboardPage() {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<any>(null);
