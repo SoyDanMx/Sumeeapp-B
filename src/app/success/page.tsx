@@ -1,13 +1,16 @@
 // src/app/success/page.tsx
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import { PageLayout } from '@/components/PageLayout'; // Asume que tienes este componente
+import React, { Suspense, useEffect, useState } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { PageLayout } from '@/components/PageLayout';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCheckCircle } from '@fortawesome/free-solid-svg-icons';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { faCheckCircle, faSpinner } from '@fortawesome/free-solid-svg-icons';
 
-export default function SuccessPage() {
+// Creamos un componente interno para leer los parámetros de la URL.
+// Esto nos permite envolverlo en <Suspense>.
+const SuccessContent = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const sessionId = searchParams.get('session_id');
@@ -15,13 +18,11 @@ export default function SuccessPage() {
 
   useEffect(() => {
     if (sessionId) {
-      // Aquí podrías hacer una llamada a tu API de backend para verificar el estado de la sesión
-      // de Stripe nuevamente (opcional, pero buena práctica para mayor seguridad).
-      // Por ahora, solo mostramos un mensaje genérico.
+      // En una app completa, aquí verificaríamos el sessionId con nuestro backend
+      // para confirmar el pago y actualizar la membresía del usuario.
       setMessage('¡Pago Completado! Tu membresía ya está activa. Redirigiendo...');
-      // Redirigir al dashboard o a la página de profesionales después de un breve delay
       const redirectTimer = setTimeout(() => {
-        router.push('/dashboard'); // O '/professionals'
+        router.push('/dashboard');
       }, 3000); // 3 segundos antes de redirigir
 
       return () => clearTimeout(redirectTimer);
@@ -31,12 +32,28 @@ export default function SuccessPage() {
   }, [sessionId, router]);
 
   return (
+    <div className="text-center">
+      <FontAwesomeIcon icon={faCheckCircle} className="text-6xl text-green-500 mb-6" />
+      <h1 className="text-3xl font-bold text-gray-900 mb-4">¡Gracias por tu compra!</h1>
+      <p className="text-lg text-gray-700">{message}</p>
+      <p className="text-md text-gray-500 mt-8">
+        Si no eres redirigido, <Link href="/dashboard" className="text-blue-600 hover:underline">haz clic aquí</Link>.
+      </p>
+    </div>
+  );
+};
+
+// Esta es la página principal que se exporta.
+export default function SuccessPage() {
+  return (
     <PageLayout>
-      <div className="container mx-auto px-4 py-20 text-center flex flex-col items-center justify-center min-h-[calc(100vh-200px)]">
-        <FontAwesomeIcon icon={faCheckCircle} className="text-green-500 text-6xl mb-6" />
-        <h1 className="text-4xl font-bold text-gray-900 mb-4">¡Gracias por tu compra!</h1>
-        <p className="text-lg text-gray-700 max-w-lg mx-auto mb-8">{message}</p>
-        <p className="text-md text-gray-500">Si no eres redirigido, <a href="/dashboard" className="text-blue-600 hover:underline">haz clic aquí</a> para ir a tu panel.</p>
+      <div className="container mx-auto px-4 py-20 flex items-center justify-center">
+        <div className="max-w-md w-full bg-white p-8 rounded-xl shadow-lg">
+          {/* Envolvemos el contenido en <Suspense> con un fallback de carga. */}
+          <Suspense fallback={<div className="text-center"><FontAwesomeIcon icon={faSpinner} spin size="2x" /> <p className="mt-4">Cargando...</p></div>}>
+            <SuccessContent />
+          </Suspense>
+        </div>
       </div>
     </PageLayout>
   );
