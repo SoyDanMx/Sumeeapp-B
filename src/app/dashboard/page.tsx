@@ -6,24 +6,36 @@ import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
 import type { User } from '@supabase/supabase-js';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCrown, faSearch, faToolbox, faSpinner } from '@fortawesome/free-solid-svg-icons';
+import { faCrown, faSearch, faSpinner } from '@fortawesome/free-solid-svg-icons';
 import { ProfessionalCard } from '@/components/ProfessionalCard';
 import dynamic from 'next/dynamic';
+import { ProfessionalDashboard } from '@/components/dashboard/ProfessionalDashboard';
+
+// Interfaz de TypeScript para un perfil
+interface Profile {
+  user_id: string;
+  full_name: string;
+  email: string;
+  profession: string | null;
+  membership_status: 'free' | 'basic';
+  status: 'active' | 'inactive';
+  bio: string | null;
+  avatar_url: string | null;
+  work_zones: string[] | null;
+  work_photos_urls: string[] | null;
+}
 
 const MapDisplay = dynamic(() => import('@/components/MapDisplay'), {
   ssr: false,
   loading: () => <div className="flex items-center justify-center h-full bg-gray-200 animate-pulse"><p>Cargando mapa...</p></div>
 });
 
-// --- Componente CTA con la solución definitiva para el botón de Stripe ---
 const MembershipCTA = () => {
   const stripeContainerRef = useRef<HTMLDivElement>(null);
-
   useEffect(() => {
     const script = document.createElement('script');
     script.src = 'https://js.stripe.com/v3/buy-button.js';
     script.async = true;
-
     script.onload = () => {
       if (stripeContainerRef.current) {
         stripeContainerRef.current.innerHTML = '';
@@ -33,9 +45,7 @@ const MembershipCTA = () => {
         stripeContainerRef.current.appendChild(stripeBuyButton);
       }
     };
-
     document.body.appendChild(script);
-
     return () => {
       if (document.body.contains(script)) {
         document.body.removeChild(script);
@@ -45,18 +55,16 @@ const MembershipCTA = () => {
 
   return (
     <div className="text-center bg-gray-50 p-8 rounded-lg border-2 border-dashed">
-      <FontAwesomeIcon icon={faCrown} className="text-5xl text-yellow-500 mb-4" />
-      <h3 className="text-2xl font-bold text-gray-800">Desbloquea tu Acceso a los Mejores Profesionales</h3>
-      <p className="mt-2 mb-6 text-gray-600 max-w-lg mx-auto">
-        Conviértete en miembro Básico para poder buscar y contactar a nuestra red de técnicos certificados en tu zona.
-      </p>
-      {/* Este es nuestro contenedor seguro que TypeScript sí entiende */}
-      <div ref={stripeContainerRef}></div>
+        <FontAwesomeIcon icon={faCrown} className="text-5xl text-yellow-500 mb-4" />
+        <h3 className="text-2xl font-bold text-gray-800">Desbloquea tu Acceso a los Mejores Profesionales</h3>
+        <p className="mt-2 mb-6 text-gray-600 max-w-lg mx-auto">
+            Conviértete en miembro Básico para poder buscar y contactar a nuestra red de técnicos certificados en tu zona.
+        </p>
+        <div ref={stripeContainerRef}></div>
     </div>
   );
 };
 
-// --- El resto del archivo se mantiene igual ---
 const ProfessionalSearch = () => {
   const [service, setService] = useState('');
   const [area, setArea] = useState('');
@@ -91,41 +99,41 @@ const ProfessionalSearch = () => {
 
   return (
     <div>
-      <h3 className="text-2xl font-bold text-gray-800 mb-4">Encuentra un Profesional en CDMX</h3>
-      <form onSubmit={handleSearch} className="flex flex-col md:flex-row gap-4 mb-8">
-        <input type="text" placeholder="¿Qué servicio necesitas?" value={service} onChange={(e) => setService(e.target.value)} className="flex-grow text-gray-900 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-4 focus:ring-blue-500 focus:ring-opacity-50" />
-        <input type="text" placeholder="¿En qué alcaldía?" value={area} onChange={(e) => setArea(e.target.value)} className="flex-grow text-gray-900 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-4 focus:ring-blue-500 focus:ring-opacity-50" />
-        <button type="submit" disabled={loading} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg flex items-center justify-center gap-2 disabled:bg-blue-400">
-          {loading ? <FontAwesomeIcon icon={faSpinner} spin /> : <FontAwesomeIcon icon={faSearch} />}
-          Encontrar Profesional
-        </button>
-      </form>
+        <h3 className="text-2xl font-bold text-gray-800 mb-4">Encuentra un Profesional en CDMX</h3>
+        <form onSubmit={handleSearch} className="flex flex-col md:flex-row gap-4 mb-8">
+            <input type="text" placeholder="¿Qué servicio necesitas?" value={service} onChange={(e) => setService(e.target.value)} className="flex-grow text-gray-900 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-4 focus:ring-blue-500 focus:ring-opacity-50" />
+            <input type="text" placeholder="¿En qué alcaldía?" value={area} onChange={(e) => setArea(e.target.value)} className="flex-grow text-gray-900 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-4 focus:ring-blue-500 focus:ring-opacity-50" />
+            <button type="submit" disabled={loading} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg flex items-center justify-center gap-2 disabled:bg-blue-400">
+            {loading ? <FontAwesomeIcon icon={faSpinner} spin /> : <FontAwesomeIcon icon={faSearch} />}
+            Encontrar Profesional
+            </button>
+        </form>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div className="h-[400px] lg:h-full rounded-lg overflow-hidden shadow-md">
-            <MapDisplay professionals={professionalsWithLocation} />
-        </div>
-        <div className="max-h-[600px] overflow-y-auto pr-2">
-            {loading && <p className="text-center text-gray-600">Buscando profesionales...</p>}
-            {!loading && searched && results.length === 0 && (
-            <p className="text-center text-gray-600 bg-gray-50 p-4 rounded-lg">No se encontraron resultados para tu búsqueda.</p>
-            )}
-            {!loading && results.length > 0 && (
-            <div className="space-y-4">
-                {results.map(profile => (
-                <ProfessionalCard key={profile.id} profile={profile} />
-                ))}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div className="h-[400px] lg:h-full rounded-lg overflow-hidden shadow-md">
+                <MapDisplay professionals={professionalsWithLocation} />
             </div>
-            )}
+            <div className="max-h-[600px] overflow-y-auto pr-2">
+                {loading && <p className="text-center text-gray-600">Buscando profesionales...</p>}
+                {!loading && searched && results.length === 0 && (
+                <p className="text-center text-gray-600 bg-gray-50 p-4 rounded-lg">No se encontraron resultados para tu búsqueda.</p>
+                )}
+                {!loading && results.length > 0 && (
+                <div className="space-y-4">
+                    {results.map(profile => (
+                    <ProfessionalCard key={profile.id} profile={profile} />
+                    ))}
+                </div>
+                )}
+            </div>
         </div>
-      </div>
     </div>
   );
 };
 
 export default function DashboardPage() {
   const [user, setUser] = useState<User | null>(null);
-  const [profile, setProfile] = useState<any>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
@@ -137,11 +145,18 @@ export default function DashboardPage() {
         return;
       }
       setUser(session.user);
-      const { data: profileData, error } = await supabase.from('profiles').select('*').eq('user_id', session.user.id).single();
+      const { data: profileData, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('user_id', session.user.id)
+        .single();
+      
       if (error) {
         console.error('Error al obtener el perfil:', error);
+        await supabase.auth.signOut();
+        router.push('/login');
       } else {
-        setProfile(profileData);
+        setProfile(profileData as Profile);
       }
       setLoading(false);
     };
@@ -153,11 +168,12 @@ export default function DashboardPage() {
     router.push('/');
   };
 
-  if (loading) {
+  if (loading || !profile || !user) {
     return <div className="min-h-screen flex items-center justify-center">Cargando tu panel...</div>;
   }
 
-  const isProfessional = profile && profile.profession;
+  // Lógica de diferenciación robusta
+  const isProfessional = !!profile.profession;
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -170,18 +186,20 @@ export default function DashboardPage() {
       <main className="py-8">
         <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
           <div className="bg-white p-8 rounded-xl shadow-md">
-            <h2 className="text-xl font-semibold text-gray-800 mb-6">¡Bienvenido de nuevo, {profile?.full_name || user?.email}!</h2>
+            <h2 className="text-xl font-semibold text-gray-800 mb-6">¡Bienvenido de nuevo, {profile.full_name}!</h2>
+            
             {isProfessional ? (
-              <div className="text-center"><FontAwesomeIcon icon={faToolbox} className="text-5xl text-blue-500 mb-4" /><h3 className="text-2xl font-bold text-gray-800">Panel de Profesional</h3><p className="mt-2 text-gray-600">Aquí podrás gestionar tus servicios y ver nuevas solicitudes de clientes.</p></div>
+              <ProfessionalDashboard profile={profile} user={user} />
             ) : (
               <>
-                {profile?.membership_status === 'basic' ? (
+                {profile.membership_status === 'basic' ? (
                   <ProfessionalSearch />
                 ) : (
                   <MembershipCTA />
                 )}
               </>
             )}
+
           </div>
         </div>
       </main>

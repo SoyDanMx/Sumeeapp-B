@@ -3,92 +3,60 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabaseClient';
 import { PageLayout } from '@/components/PageLayout';
-import { Step1_AccountInfo } from '@/components/pro-onboarding/Step1_AccountInfo';
-import { Step2_ProfileDetails } from '@/components/pro-onboarding/Step2_ProfileDetails';
-import { Step3_Portfolio } from '@/components/pro-onboarding/Step3_Portfolio';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faToolbox, faCheckCircle, faArrowRight, faExclamationCircle } from '@fortawesome/free-solid-svg-icons';
 import Image from 'next/image';
+import Link from 'next/link';
 
 export default function JoinAsProPage() {
-  const [step, setStep] = useState(1);
-  const [formData, setFormData] = useState<any>({});
-  const [profilePhoto, setProfilePhoto] = useState<File | null>(null);
-  const [workPhotos, setWorkPhotos] = useState<File[]>([]);
+  const [fullName, setFullName] = useState('');
+  const [profession, setProfession] = useState('');
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
+  const [userExists, setUserExists] = useState(false);
   const router = useRouter();
 
-  const nextStep = () => setStep(prev => prev + 1);
-  const prevStep = () => setStep(prev => prev - 1);
-
-  const handleSubmit = async () => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
     setLoading(true);
     setError(null);
+    setUserExists(false);
 
     try {
-      // 1. Crear la cuenta del usuario. El trigger creará el perfil básico.
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: formData.email,
-        password: formData.password,
-        options: {
-          data: {
-            full_name: formData.fullName,
-          },
+      const functionUrl = process.env.NEXT_PUBLIC_SUPABASE_URL + '/functions/v1/pro-signup';
+      
+      const response = await fetch(functionUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}` 
         },
+        body: JSON.stringify({ fullName, profession, email, phone, password }),
       });
 
-      if (authError) throw authError;
-      if (!authData.user) throw new Error('No se pudo crear el usuario.');
+      const result = await response.json();
 
-      const userId = authData.user.id;
-      let profilePhotoUrl = null;
-      const workPhotosUrls: string[] = [];
-
-      // 2. Subir la foto de perfil si existe
-      if (profilePhoto) {
-        const filePath = `${userId}/${Date.now()}_${profilePhoto.name}`;
-        const { error: uploadError } = await supabase.storage.from('avatars').upload(filePath, profilePhoto);
-        if (uploadError) throw uploadError;
-        
-        const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(filePath);
-        profilePhotoUrl = urlData.publicUrl;
-      }
-
-      // 3. Subir las fotos del portafolio si existen
-      if (workPhotos.length > 0) {
-        for (const photo of workPhotos) {
-            const filePath = `${userId}/work/${Date.now()}_${photo.name}`;
-            const { error: uploadError } = await supabase.storage.from('work-photos').upload(filePath, photo);
-            if (uploadError) throw uploadError;
-
-            const { data: urlData } = supabase.storage.from('work-photos').getPublicUrl(filePath);
-            workPhotosUrls.push(urlData.publicUrl);
+      if (!response.ok) {
+        if (response.status === 409) {
+          setUserExists(true);
+        } else {
+          throw new Error(result.error || 'Ocurrió un error desconocido durante el registro.');
         }
+      } else {
+        setSuccess(true);
+        // MEJORA: Redirigir automáticamente al login después de 3 segundos
+        setTimeout(() => {
+          router.push('/login');
+        }, 3000);
       }
 
-      // 4. CORRECCIÓN: Actualizamos el perfil existente en lugar de insertar uno nuevo.
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .update({
-          phone: formData.phone,
-          profession: formData.profession,
-          experience: formData.experience,
-          work_area: formData.workArea,
-          bio: formData.bio,
-          avatar_url: profilePhotoUrl,
-          work_photos_urls: workPhotosUrls,
-        })
-        .eq('user_id', userId); // Especificamos qué perfil actualizar
-
-      if (profileError) throw profileError;
-
-      // 5. ¡Éxito!
-      alert('¡Felicidades! Tu perfil ha sido creado. Revisa tu correo para confirmar tu cuenta.');
-      router.push('/login');
-
-    } catch (error: any) {
-      setError(`Ocurrió un error en el registro: ${error.message}`);
+    } catch (err: any) {
+      setError(err.message);
     } finally {
       setLoading(false);
     }
@@ -96,44 +64,82 @@ export default function JoinAsProPage() {
 
   return (
     <PageLayout>
-      <section className="relative w-full h-56 md:h-80">
-        <Image
-          src="/images/banners/join-as-pro-worker.jpg"
-          alt="Banner de registro para profesionales de Sumee"
-          fill
-          className="object-cover"
-          priority
-        />
-      </section>
-      <section className="bg-gray-100 py-12">
-        <div className="container mx-auto px-4 text-center">
-          <h1 className="text-4xl md:text-5xl font-bold text-gray-900">Únete a Nuestra Red de Profesionales</h1>
-          <p className="mt-4 text-lg md:text-xl max-w-2xl mx-auto text-gray-600">Conecta con miles de clientes en CDMX y haz crecer tu negocio.</p>
-        </div>
-      </section>
-      <div className="bg-gray-100 flex flex-col items-center justify-center pb-12 px-4">
-        <div className="w-full max-w-2xl mx-auto">
-          <div className="mb-8 px-2 sm:px-8">
-              <div className="flex items-center">
-                  <div className={`w-1/3 text-center ${step >= 1 ? 'text-blue-600' : 'text-gray-400'}`}><div className="rounded-full bg-white shadow-md w-12 h-12 flex items-center justify-center mx-auto mb-2 font-bold text-lg">1</div><p className="font-semibold text-sm sm:text-base">Cuenta</p></div>
-                  <div className={`flex-1 border-t-2 transition-all duration-500 ${step >= 2 ? 'border-blue-600' : 'border-gray-300'}`}></div>
-                  <div className={`w-1/3 text-center ${step >= 2 ? 'text-blue-600' : 'text-gray-400'}`}><div className="rounded-full bg-white shadow-md w-12 h-12 flex items-center justify-center mx-auto mb-2 font-bold text-lg">2</div><p className="font-semibold text-sm sm:text-base">Perfil</p></div>
-                  <div className={`flex-1 border-t-2 transition-all duration-500 ${step >= 3 ? 'border-blue-600' : 'border-gray-300'}`}></div>
-                  <div className={`w-1/3 text-center ${step >= 3 ? 'text-blue-600' : 'text-gray-400'}`}><div className="rounded-full bg-white shadow-md w-12 h-12 flex items-center justify-center mx-auto mb-2 font-bold text-lg">3</div><p className="font-semibold text-sm sm:text-base">Portafolio</p></div>
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
+        <div className="grid grid-cols-1 lg:grid-cols-2 max-w-4xl w-full bg-white rounded-2xl shadow-2xl overflow-hidden">
+          
+          <div className="p-8 md:p-12">
+            {success ? (
+              <div className="text-center flex flex-col justify-center h-full">
+                <FontAwesomeIcon icon={faCheckCircle} className="text-6xl text-green-500 mb-4" />
+                <h2 className="text-3xl font-bold text-gray-800">¡Registro casi completo!</h2>
+                <p className="mt-2 text-gray-600">Hemos enviado un enlace de confirmación a <strong>{email}</strong>. Por favor, revisa tu correo para activar tu cuenta.</p>
+                <p className="mt-4 text-sm text-gray-500">En unos segundos serás redirigido para iniciar sesión...</p>
               </div>
+            ) : userExists ? (
+              <div className="text-center flex flex-col justify-center h-full">
+                <FontAwesomeIcon icon={faExclamationCircle} className="text-6xl text-yellow-500 mb-4" />
+                <h2 className="text-3xl font-bold text-gray-800">¡Hola de nuevo!</h2>
+                <p className="mt-2 text-gray-600 mb-6">Este correo o teléfono ya está registrado. Por favor, inicia sesión para continuar.</p>
+                <Link href="/login" className="w-full flex justify-center items-center gap-2 py-3 px-4 border border-transparent rounded-lg shadow-sm text-white bg-blue-600 hover:bg-blue-700">
+                  Iniciar Sesión
+                  <FontAwesomeIcon icon={faArrowRight} />
+                </Link>
+              </div>
+            ) : (
+              <>
+                <h2 className="text-3xl font-bold text-gray-800">Conviértete en Profesional Sumee</h2>
+                <p className="mt-2 text-gray-600">Regístrate en 60 segundos y empieza a recibir clientes en CDMX.</p>
+                <form onSubmit={handleSubmit} className="mt-8 space-y-6">
+                  <div>
+                    <label htmlFor="fullName" className="block text-sm font-medium text-gray-700">Nombre Completo</label>
+                    <input type="text" id="fullName" value={fullName} onChange={(e) => setFullName(e.target.value)} required className="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm text-gray-900 focus:ring-blue-500 focus:border-blue-500" />
+                  </div>
+                  <div>
+                    <label htmlFor="profession" className="block text-sm font-medium text-gray-700">Tu Oficio Principal</label>
+                    <input type="text" id="profession" value={profession} onChange={(e) => setProfession(e.target.value)} required placeholder="Ej. Plomero, Electricista, Carpintero" className="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm text-gray-900 focus:ring-blue-500 focus:border-blue-500" />
+                  </div>
+                  <div>
+                    <label htmlFor="email" className="block text-sm font-medium text-gray-700">Correo Electrónico</label>
+                    <input type="email" id="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm text-gray-900 focus:ring-blue-500 focus:border-blue-500" />
+                  </div>
+                  <div>
+                    <label htmlFor="phone" className="block text-sm font-medium text-gray-700">Teléfono (WhatsApp)</label>
+                    <input type="tel" id="phone" value={phone} onChange={(e) => setPhone(e.target.value)} required className="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm text-gray-900 focus:ring-blue-500 focus:border-blue-500" />
+                  </div>
+                  <div>
+                    <label htmlFor="password" className="block text-sm font-medium text-gray-700">Crea tu Contraseña</label>
+                    <input type="password" id="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={8} className="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm text-gray-900 focus:ring-blue-500 focus:border-blue-500" />
+                  </div>
+                  {error && <p className="text-sm text-red-600">{error}</p>}
+                  <button type="submit" disabled={loading} className="w-full flex justify-center items-center gap-2 py-3 px-4 border border-transparent rounded-lg shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-blue-400">
+                    {loading ? 'Registrando...' : 'Crear mi Cuenta de Profesional'}
+                    {!loading && <FontAwesomeIcon icon={faArrowRight} />}
+                  </button>
+                </form>
+                <div className="mt-4 text-center">
+                  <Link href="/login" className="text-sm font-medium text-gray-600 hover:text-blue-600 transition">
+                    Ya tengo una cuenta de profesional
+                  </Link>
+                </div>
+              </>
+            )}
           </div>
-          <div className="bg-white p-8 rounded-xl shadow-lg">
-            {error && <p className="text-red-500 bg-red-100 p-3 rounded-md mb-6 text-center">{error}</p>}
-            {step === 1 && (
-                <form onSubmit={(e) => { e.preventDefault(); nextStep(); }}><Step1_AccountInfo formData={formData} setFormData={setFormData} /><button type="submit" className="mt-8 w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition">Siguiente</button></form>
-            )}
-            {step === 2 && (
-                <form onSubmit={(e) => { e.preventDefault(); nextStep(); }}><Step2_ProfileDetails formData={formData} setFormData={setFormData} /><div className="flex justify-between mt-8"><button type="button" onClick={prevStep} className="bg-gray-300 text-gray-800 py-3 px-6 rounded-lg font-semibold hover:bg-gray-400 transition">Anterior</button><button type="submit" className="bg-blue-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-blue-700 transition">Siguiente</button></div></form>
-            )}
-            {step === 3 && (
-                <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }}><Step3_Portfolio setProfilePhoto={setProfilePhoto} setWorkPhotos={setWorkPhotos} /><div className="flex justify-between mt-8"><button type="button" onClick={prevStep} disabled={loading} className="bg-gray-300 text-gray-800 py-3 px-6 rounded-lg font-semibold hover:bg-gray-400 transition disabled:bg-gray-200">Anterior</button><button type="submit" disabled={loading} className="bg-green-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-green-700 transition disabled:bg-green-400">{loading ? 'Finalizando...' : 'Finalizar Registro'}</button></div></form>
-            )}
+
+          <div className="hidden lg:block relative">
+            <Image
+              src="/images/banners/join-as-pro-worker.jpg"
+              alt="Profesional de Sumee trabajando"
+              fill
+              className="object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-blue-900 via-blue-900/70 to-transparent"></div>
+            <div className="absolute bottom-0 left-0 p-8 text-white">
+              <FontAwesomeIcon icon={faToolbox} className="text-4xl mb-4" />
+              <h3 className="text-2xl font-bold">Más Clientes. Menos Complicaciones.</h3>
+              <p className="mt-2">Únete a la plataforma de confianza en CDMX y dedica tu tiempo a lo que mejor sabes hacer.</p>
+            </div>
           </div>
+
         </div>
       </div>
     </PageLayout>
