@@ -1,4 +1,3 @@
-// src/app/professionals/page.tsx
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -6,12 +5,15 @@ import { useLocation } from '@/context/LocationContext'; // Importa el hook de u
 import { ProfessionalCard } from '@/components/ProfessionalCard'; // Tu componente de tarjeta de profesional
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSpinner, faMapMarkerAlt, faSearch } from '@fortawesome/free-solid-svg-icons';
-import { ProfessionalProfile } from '../../types'; // Ajusta la ruta según la ubicación real del archivo types
+import type { Profile } from '@/types'; // ✅ CORRECCIÓN: Usamos el tipo Profile y el alias de ruta.
 import { PageLayout } from '@/components/PageLayout'; // Asumo que usas PageLayout para el layout de la página
+
+// AVISO: Asumiendo que useLocation() devuelve un objeto con { location: { lat, lon, address } }
+// Se recomienda definir un tipo LocationContextType explícito para el contexto.
 
 export default function ProfessionalsPage() {
   const { location: userSelectedLocation } = useLocation(); // Obtiene la ubicación del usuario del contexto
-  const [professionals, setProfessionals] = useState<ProfessionalProfile[]>([]);
+  const [professionals, setProfessionals] = useState<Profile[]>([]); // ✅ CORRECCIÓN: Usamos el tipo Profile[]
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -26,8 +28,8 @@ export default function ProfessionalsPage() {
     setError(null);
 
     // Solo buscar si tenemos una ubicación seleccionada
-    if (!userSelectedLocation) {
-      // Si no hay una ubicación seleccionada, muestra un mensaje y espera
+    if (!userSelectedLocation || !userSelectedLocation.lat || !userSelectedLocation.lon) {
+      // Si no hay una ubicación válida, muestra un mensaje y espera
       setError('Por favor, selecciona tu ubicación en el encabezado para encontrar profesionales.');
       setProfessionals([]); // Limpia profesionales si no hay ubicación
       setIsLoading(false);
@@ -39,6 +41,7 @@ export default function ProfessionalsPage() {
     params.append('lat', userSelectedLocation.lat.toString());
     params.append('lon', userSelectedLocation.lon.toString());
     params.append('radius', searchRadius.toString()); // Añadir el radio
+    
     if (selectedProfession) {
       params.append('profession', selectedProfession);
     }
@@ -85,7 +88,7 @@ export default function ProfessionalsPage() {
         <h1 className="text-3xl font-bold text-center mb-8">Profesionales Cerca de Ti</h1>
 
         {/* Barra de Filtros y Búsqueda */}
-        <div className="bg-white p-6 rounded-lg shadow-md mb-8">
+        <div className="bg-white p-6 rounded-xl shadow-md mb-8">
           <div className="flex flex-col md:flex-row gap-4 items-center">
             <div className="flex-1 w-full relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -125,7 +128,8 @@ export default function ProfessionalsPage() {
               </select>
             </div>
           </div>
-          {userSelectedLocation && (
+          {/* Mostramos la ubicación si está disponible */}
+          {userSelectedLocation && userSelectedLocation.address && (
             <p className="text-sm text-gray-600 mt-4 flex items-center justify-center text-center">
               <FontAwesomeIcon icon={faMapMarkerAlt} className="mr-2" />
               Buscando profesionales cerca de: <span className="font-semibold ml-1">{userSelectedLocation.address.split(',')[0].trim()}</span>
