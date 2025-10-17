@@ -1,32 +1,56 @@
 // src/types/index.ts
 
-export interface ProfessionalProfile {
-    user_id: string;
+/**
+ * @file Centralized TypeScript definitions for the entire Sumee application.
+ * This file serves as the single source of truth for our data structures.
+ */
+
+/**
+ * Represents the core user profile structure in our database.
+ * This applies to both regular users and professionals.
+ * A professional is identified by having a non-null 'profession' field.
+ */
+export interface Profile {
+    id: string; // El ID único de la fila en la tabla de perfiles
+    user_id: string; // El UUID que viene de Supabase Auth
     full_name: string;
-    profession: string | string[]; // Puede ser string o array de strings
-    work_area: string;
-    avatar_url?: string;
-    rating?: number;
-    review_count?: number;
-    bio_short?: string;
-    // Añade aquí cualquier otro campo relevante de tu tabla de perfiles de Supabase
-    stripe_customer_id?: string; // Para el mapeo de Stripe Customer ID
-    membership_s?: string; // Para la membresía (free/premium)
-    // La columna 'location' en Supabase es tipo GEOGRAPHY, en TS la manejamos como coordenadas o no la incluimos si no se usa directamente en frontend.
-    // Si la incluyeras para algo, sería: location?: { type: 'Point', coordinates: [number, number] };
+    email: string;
+    profession: string | null; // Clave para diferenciar profesionales de clientes
+    membership_status: 'free' | 'basic'; // Tipo estricto para evitar errores
+    status: 'active' | 'inactive';
+    bio: string | null;
+    avatar_url: string | null;
+    work_zones: string[] | null; // Array para múltiples zonas, mucho más flexible
+    work_photos_urls: string[] | null;
+    stripe_customer_id?: string; // Opcional, para la integración con Stripe
+  
+    // Estructura para almacenar coordenadas geográficas, compatible con PostGIS y fácil de usar en mapas
+    location: {
+      lat: number;
+      lng: number;
+    } | null;
   }
   
-  // Puedes añadir más interfaces aquí según necesites para otros componentes
+  
+  /**
+   * Represents a single service offered, useful for landing pages or search categories.
+   */
   export interface Service {
+    id: string;
     name: string;
-    rating: number;
-    image: string;
-    description?: string; // Por si lo añades a los datos de servicios
+    description?: string;
+    image_url: string;
   }
   
-  // Definimos SelectedLocation aquí también para tenerlo centralizado
+  
+  /**
+   * Represents a location selected by a user on a map, often for searching.
+   */
   export interface SelectedLocation {
     lat: number;
-    lon: number;
+    lng: number; // Estandarizado a 'lng' para compatibilidad con librerías de mapas
     address: string;
   }
+  
+  // Puedes seguir añadiendo más tipos centralizados aquí a medida que tu aplicación crezca.
+  // Por ejemplo: Review, Project, Lead, etc.
