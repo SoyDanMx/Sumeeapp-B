@@ -1,135 +1,24 @@
-// src/app/dashboard/page.tsx
 'use client';
 
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
 import type { User } from '@supabase/supabase-js';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCrown, faSearch, faSpinner } from '@fortawesome/free-solid-svg-icons';
-import { ProfessionalCard } from '@/components/ProfessionalCard';
-import dynamic from 'next/dynamic';
+import type { Profile } from '@/types'; // <-- Tipo Profile que probablemente define profession: string | null
+
+// 2. IMPORTAMOS LOS COMPONENTES QUE HEMOS EXTRAÍDO
+import { MembershipCTA } from '@/components/dashboard/MembershipCTA';
+import { ProfessionalSearch } from '../../components/dashboard/ProfessionalSearch';
 import { ProfessionalDashboard } from '@/components/dashboard/ProfessionalDashboard';
 
-// Interfaz de TypeScript para un perfil
-interface Profile {
-  user_id: string;
-  full_name: string;
-  email: string;
-  profession: string | null;
-  membership_status: 'free' | 'basic';
-  status: 'active' | 'inactive';
-  bio: string | null;
-  avatar_url: string | null;
-  work_zones: string[] | null;
-  work_photos_urls: string[] | null;
-}
 
-const MapDisplay = dynamic(() => import('@/components/MapDisplay'), {
-  ssr: false,
-  loading: () => <div className="flex items-center justify-center h-full bg-gray-200 animate-pulse"><p>Cargando mapa...</p></div>
-});
-
-const MembershipCTA = () => {
-  const stripeContainerRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    const script = document.createElement('script');
-    script.src = 'https://js.stripe.com/v3/buy-button.js';
-    script.async = true;
-    script.onload = () => {
-      if (stripeContainerRef.current) {
-        stripeContainerRef.current.innerHTML = '';
-        const stripeBuyButton = document.createElement('stripe-buy-button');
-        stripeBuyButton.setAttribute('buy-button-id', 'buy_btn_1RmpzwE2shKTNR9M91kuSgKh');
-        stripeBuyButton.setAttribute('publishable-key', 'pk_live_51P8c4AE2shKTNR9MVARQB4La2uYMMc2shlTCcpcg8EI6MqqPV1uN5uj6UbB5mpfReRKd4HL2OP1LoF17WXcYYeB000Ot1l847E');
-        stripeContainerRef.current.appendChild(stripeBuyButton);
-      }
-    };
-    document.body.appendChild(script);
-    return () => {
-      if (document.body.contains(script)) {
-        document.body.removeChild(script);
-      }
-    };
-  }, []);
-
-  return (
-    <div className="text-center bg-gray-50 p-8 rounded-lg border-2 border-dashed">
-        <FontAwesomeIcon icon={faCrown} className="text-5xl text-yellow-500 mb-4" />
-        <h3 className="text-2xl font-bold text-gray-800">Desbloquea tu Acceso a los Mejores Profesionales</h3>
-        <p className="mt-2 mb-6 text-gray-600 max-w-lg mx-auto">
-            Conviértete en miembro Básico para poder buscar y contactar a nuestra red de técnicos certificados en tu zona.
-        </p>
-        <div ref={stripeContainerRef}></div>
-    </div>
-  );
+// ⚠️ CORRECCIÓN DE ERROR DE TIPADO:
+// Definimos un tipo auxiliar para cuando SABEMOS que el perfil tiene una profesión.
+// Esto elimina el error "Type 'null' is not assignable to type 'string'" al pasar las props.
+type GuaranteedProfessionalProfile = Omit<Profile, 'profession'> & {
+  profession: string;
 };
 
-const ProfessionalSearch = () => {
-  const [service, setService] = useState('');
-  const [area, setArea] = useState('');
-  const [results, setResults] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [searched, setSearched] = useState(false);
-
-  const professionalsWithLocation = useMemo(() => results.map((prof) => ({
-      ...prof,
-      location: {
-          lat: 19.4326 + (Math.random() - 0.5) * 0.1,
-          lng: -99.1332 + (Math.random() - 0.5) * 0.1,
-      }
-  })), [results]);
-
-  const handleSearch = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setLoading(true);
-    setSearched(true);
-    setResults([]);
-    let query = supabase.from('profiles').select('*').not('profession', 'is', null);
-    if (service) query = query.ilike('profession', `%${service}%`);
-    if (area) query = query.ilike('work_area', `%${area}%`);
-    const { data, error } = await query;
-    if (error) {
-      console.error("Error en la búsqueda:", error);
-    } else {
-      setResults(data || []);
-    }
-    setLoading(false);
-  };
-
-  return (
-    <div>
-        <h3 className="text-2xl font-bold text-gray-800 mb-4">Encuentra un Profesional en CDMX</h3>
-        <form onSubmit={handleSearch} className="flex flex-col md:flex-row gap-4 mb-8">
-            <input type="text" placeholder="¿Qué servicio necesitas?" value={service} onChange={(e) => setService(e.target.value)} className="flex-grow text-gray-900 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-4 focus:ring-blue-500 focus:ring-opacity-50" />
-            <input type="text" placeholder="¿En qué alcaldía?" value={area} onChange={(e) => setArea(e.target.value)} className="flex-grow text-gray-900 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-4 focus:ring-blue-500 focus:ring-opacity-50" />
-            <button type="submit" disabled={loading} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg flex items-center justify-center gap-2 disabled:bg-blue-400">
-            {loading ? <FontAwesomeIcon icon={faSpinner} spin /> : <FontAwesomeIcon icon={faSearch} />}
-            Encontrar Profesional
-            </button>
-        </form>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <div className="h-[400px] lg:h-full rounded-lg overflow-hidden shadow-md">
-                <MapDisplay professionals={professionalsWithLocation} />
-            </div>
-            <div className="max-h-[600px] overflow-y-auto pr-2">
-                {loading && <p className="text-center text-gray-600">Buscando profesionales...</p>}
-                {!loading && searched && results.length === 0 && (
-                <p className="text-center text-gray-600 bg-gray-50 p-4 rounded-lg">No se encontraron resultados para tu búsqueda.</p>
-                )}
-                {!loading && results.length > 0 && (
-                <div className="space-y-4">
-                    {results.map(profile => (
-                    <ProfessionalCard key={profile.id} profile={profile} />
-                    ))}
-                </div>
-                )}
-            </div>
-        </div>
-    </div>
-  );
-};
 
 export default function DashboardPage() {
   const [user, setUser] = useState<User | null>(null);
@@ -139,27 +28,35 @@ export default function DashboardPage() {
 
   useEffect(() => {
     const fetchSessionAndProfile = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
+      setLoading(true);
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      // Si no hay sesión o hubo un error al obtenerla, redirigir al login
+      if (!session || sessionError) {
         router.push('/login');
         return;
       }
+      
       setUser(session.user);
-      const { data: profileData, error } = await supabase
+      
+      const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('*')
         .eq('user_id', session.user.id)
         .single();
       
-      if (error) {
-        console.error('Error al obtener el perfil:', error);
+      // Si no se encuentra el perfil o hay un error, redirigir a login
+      if (profileError || !profileData) {
+        console.error('Error al obtener el perfil, cerrando sesión:', profileError?.message);
         await supabase.auth.signOut();
         router.push('/login');
-      } else {
-        setProfile(profileData as Profile);
+        return;
       }
+      
+      setProfile(profileData as Profile);
       setLoading(false);
     };
+    
     fetchSessionAndProfile();
   }, [router]);
 
@@ -168,29 +65,61 @@ export default function DashboardPage() {
     router.push('/');
   };
 
-  if (loading || !profile || !user) {
-    return <div className="min-h-screen flex items-center justify-center">Cargando tu panel...</div>;
+  // Estado de carga
+  if (loading) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50">
+        <p className="text-lg font-semibold text-gray-700">Cargando tu panel...</p>
+        <p className="text-gray-500 mt-2">Un momento, por favor.</p>
+      </div>
+    );
+  }
+  
+  // Estado para cuando la carga finaliza pero no hay datos
+  if (!profile || !user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-center p-4">
+        <div>
+          <p className="font-semibold text-red-600">Hubo un problema al cargar tus datos.</p>
+          <p className="text-gray-600 mt-2">Por favor, intenta <a href="/login" className="text-blue-600 hover:underline">iniciar sesión</a> de nuevo.</p>
+        </div>
+      </div>
+    );
   }
 
-  // Lógica de diferenciación robusta
+  // Lógica de diferenciación
+  // 'isProfessional' es true si la profesión NO es null, vacío o undefined.
   const isProfessional = !!profile.profession;
 
   return (
     <div className="min-h-screen bg-gray-100">
-      <header className="bg-white shadow-sm">
+      <header className="bg-white shadow-sm sticky top-0 z-10">
         <div className="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8 flex justify-between items-center">
           <h1 className="text-2xl font-bold text-gray-900">Mi Panel</h1>
-          <button onClick={handleLogout} className="bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-lg transition">Cerrar Sesión</button>
+          <button onClick={handleLogout} className="bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200">
+            Cerrar Sesión
+          </button>
         </div>
       </header>
+
       <main className="py-8">
         <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
-          <div className="bg-white p-8 rounded-xl shadow-md">
-            <h2 className="text-xl font-semibold text-gray-800 mb-6">¡Bienvenido de nuevo, {profile.full_name}!</h2>
+          <div className="bg-white p-6 md:p-8 rounded-xl shadow-md">
+            <h2 className="text-2xl font-semibold text-gray-800 mb-6">
+              ¡Bienvenido de nuevo, {profile.full_name}!
+            </h2>
             
+            {/* El renderizado condicional */}
             {isProfessional ? (
-              <ProfessionalDashboard profile={profile} user={user} />
+              // ⭐️ CORRECCIÓN APLICADA AQUÍ: 
+              // Usamos Type Assertion para decirle a TS: "Ya verificamos que 'profession' no es null, 
+              // por lo tanto, trata 'profile' como un 'GuaranteedProfessionalProfile'".
+              <ProfessionalDashboard 
+                profile={profile as GuaranteedProfessionalProfile} 
+                user={user} 
+              />
             ) : (
+              // Si es un cliente, decidimos si puede buscar o necesita pagar
               <>
                 {profile.membership_status === 'basic' ? (
                   <ProfessionalSearch />
