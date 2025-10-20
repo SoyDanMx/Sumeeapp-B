@@ -6,41 +6,40 @@
  */
 
 export interface Profesional {
-    // ... Tu interfaz Profesional completa y ya corregida ...
     id: string; 
     user_id: string;
     full_name: string | null;
     email: string | null;
+    profession: string | null; // Añadido para consistencia con ProfessionalDashboard
+    membership_status?: 'free' | 'basic'; // Opcional por si no todos lo tienen
+    status?: 'active' | 'inactive'; // Opcional por si no todos lo tienen
+    bio?: string | null; // Opcional
+    avatar_url?: string | null; // Opcional
+    work_zones?: string[] | null; // Opcional
+    work_photos_urls?: string[] | null; // Opcional
     whatsapp: string | null;
     numero_imss: string | null;
     descripcion_perfil: string | null;
     experiencia_uber: boolean;
     años_experiencia_uber: number | null;
     areas_servicio: string[] | null;
-    // ... etc ...
-  }
   
-  // --- INTERFAZ 'LEAD' FINAL, BASADA EN LA ESTRUCTURA EXACTA DE TU TABLA ---
+    // --- CAMPOS AÑADIDOS PARA SOLUCIONAR EL ÚLTIMO ERROR ---
+    ubicacion_lat: number | null;
+    ubicacion_lng: number | null;
+  }
   
   /**
    * Representa un Lead o solicitud de trabajo, coincidiendo 1:1 con la tabla `public.leads`.
    */
   export interface Lead {
-    id: string; // Corresponde a `uuid`
-    nombre_cliente: string | null; // Corresponde a `text`
-    whatsapp: string | null; // Corresponde a `text`
-    descripcion_proyecto: string | null; // Corresponde a `text`
-    
-    // `double precision` en PostgreSQL se representa como `number` en TypeScript.
+    id: string;
+    nombre_cliente: string | null;
+    whatsapp: string | null;
+    descripcion_proyecto: string | null;
     ubicacion_lat: number | null; 
     ubicacion_lng: number | null; 
-    
-    // `timestamp with time zone` se recibe como un string en formato ISO.
     fecha_creacion: string; 
-    
-    // `estado` es de tipo `text`, pero podemos hacerlo más seguro en el frontend.
     estado: 'nuevo' | 'contactado' | 'en_progreso' | 'completado' | 'cancelado' | string | null;
-    
-    // `profesional_asignado_id` es una clave foránea a la tabla de usuarios.
     profesional_asignado_id: string | null;
   }
