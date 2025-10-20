@@ -1,56 +1,43 @@
 // src/types/index.ts
 
 /**
- * @file Centralized TypeScript definitions for the entire Sumee application.
- * This file serves as the single source of truth for our data structures.
+ * Este es el tipo que debes usar en todo tu proyecto.
+ * Si en tu modal lo llamas 'Profesional', considera renombrarlo a 'Profile'
+ * para mantener la consistencia, o renombra esta interfaz a 'Profesional'.
+ * Lo importante es que haya UNA SOLA definición.
  */
-
-/**
- * Represents the core user profile structure in our database.
- * This applies to both regular users and professionals.
- * A professional is identified by having a non-null 'profession' field.
- */
-export interface Profile {
-    id: string; // El ID único de la fila en la tabla de perfiles
-    user_id: string; // El UUID que viene de Supabase Auth
+export interface Profile { // O 'Profesional' si prefieres ese nombre
+    id: string;
+    user_id: string;
     full_name: string;
     email: string;
-    profession: string | null; // Clave para diferenciar profesionales de clientes
-    membership_status: 'free' | 'basic'; // Tipo estricto para evitar errores
+    profession: string | null;
+    membership_status: 'free' | 'basic';
     status: 'active' | 'inactive';
     bio: string | null;
     avatar_url: string | null;
-    work_zones: string[] | null; // Array para múltiples zonas, mucho más flexible
+    work_zones: string[] | null;
     work_photos_urls: string[] | null;
-    stripe_customer_id?: string; // Opcional, para la integración con Stripe
-  
-    // Estructura para almacenar coordenadas geográficas, compatible con PostGIS y fácil de usar en mapas
+    stripe_customer_id?: string;
     location: {
       lat: number;
       lng: number;
     } | null;
+    
+    // --- CAMPOS REQUERIDOS POR EditProfileModal.tsx ---
+    
+    whatsapp: string | null;
+    numero_imss: string | null;
+    descripcion_perfil: string | null;
+    
+    // `experiencia_uber` es un booleano (true/false)
+    experiencia_uber: boolean;
+  
+    // `años_experiencia_uber` es un número
+    años_experiencia_uber: number | null;
+  
+    // `areas_servicio` es un array de strings
+    areas_servicio: string[] | null;
   }
   
-  
-  /**
-   * Represents a single service offered, useful for landing pages or search categories.
-   */
-  export interface Service {
-    id: string;
-    name: string;
-    description?: string;
-    image_url: string;
-  }
-  
-  
-  /**
-   * Represents a location selected by a user on a map, often for searching.
-   */
-  export interface SelectedLocation {
-    lat: number;
-    lng: number; // Estandarizado a 'lng' para compatibilidad con librerías de mapas
-    address: string;
-  }
-  
-  // Puedes seguir añadiendo más tipos centralizados aquí a medida que tu aplicación crezca.
-  // Por ejemplo: Review, Project, Lead, etc.
+  // ... (El resto de tus interfaces)
