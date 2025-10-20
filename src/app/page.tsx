@@ -6,7 +6,8 @@ import { ValueProposition } from '@/components/ValueProposition';
 import { TestimonialsSection } from '@/components/TestimonialsSection';
 import { ProfessionalCTA } from '@/components/ProfessionalCTA';
 import { AIHelper } from '@/components/AIHelper';
-import { HowItWorks } from '@/components/HowItWorks'; // 1. Re-importamos el componente HowItWorks
+import { HowItWorks } from '@/components/HowItWorks';
+import { BlogSection } from '@/components/BlogSection';
 import { Footer } from '@/components/Footer';
 
 export default function Home() {
@@ -19,6 +20,8 @@ export default function Home() {
         <ValueProposition />
         {/* 2. Mantenemos la sección original y añadimos el Asistente de IA debajo */}
         <HowItWorks />
+        {/* 🎯 Nueva sección de Blog justo después de "Cómo Funciona" */}
+        <BlogSection />
         <AIHelper />
         <TestimonialsSection />
         <ProfessionalCTA />
