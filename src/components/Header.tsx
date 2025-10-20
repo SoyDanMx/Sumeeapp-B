@@ -7,7 +7,7 @@ import Image from 'next/image';
 import { supabase } from '@/lib/supabaseClient';
 import type { User } from '@supabase/supabase-js';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faBars, faTimes, faMapMarkerAlt, faChevronDown } from '@fortawesome/free-solid-svg-icons';
+import { faBars, faTimes, faMapMarkerAlt, faChevronDown, faPen } from '@fortawesome/free-solid-svg-icons';
 
 import dynamic from 'next/dynamic';
 import { useLocation } from '@/context/LocationContext';
@@ -82,6 +82,10 @@ export const Header = () => {
             <Link href="/servicios" className="text-gray-700 hover:text-blue-600">Servicios</Link>
             <Link href="/#profesionales" className="text-gray-700 hover:text-blue-600">Profesionales</Link>
             <Link href="/#como-funciona" className="text-gray-700 hover:text-blue-600">Cómo Funciona</Link>
+            <Link href="/blog" className="text-gray-700 hover:text-blue-600 flex items-center">
+              <FontAwesomeIcon icon={faPen} className="mr-1 text-sm" />
+              Blog
+            </Link>
           </nav>
           
           <div className="flex items-center space-x-4">
@@ -116,6 +120,10 @@ export const Header = () => {
           <Link href="/servicios" onClick={closeAllModals} className="text-gray-800 text-lg font-semibold">Servicios</Link>
           <Link href="/#profesionales" onClick={closeAllModals} className="text-gray-800 text-lg font-semibold">Profesionales</Link>
           <Link href="/#como-funciona" onClick={closeAllModals} className="text-gray-800 text-lg font-semibold">Cómo Funciona</Link>
+          <Link href="/blog" onClick={closeAllModals} className="text-gray-800 text-lg font-semibold flex items-center">
+            <FontAwesomeIcon icon={faPen} className="mr-2" />
+            Blog
+          </Link>
           <hr/>
           {!loading && (
             <>

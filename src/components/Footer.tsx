@@ -5,7 +5,7 @@ import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faShieldAlt, faLock, faFileAlt, faStar, faMapMarkerAlt, faPhoneAlt, faEnvelope, faInfoCircle } from '@fortawesome/free-solid-svg-icons';
+import { faShieldAlt, faLock, faFileAlt, faStar, faMapMarkerAlt, faPhoneAlt, faEnvelope, faInfoCircle, faPen } from '@fortawesome/free-solid-svg-icons';
 import { faFacebookF, faLinkedinIn } from '@fortawesome/free-brands-svg-icons';
 import { NewsletterForm } from './NewsletterForm';
 import { FooterLinkColumn } from './FooterLinkColumn';
@@ -14,6 +14,7 @@ import { FooterLinkColumn } from './FooterLinkColumn';
 const quickLinks = [
   { href: "/about", icon: faInfoCircle, text: "Sobre Nosotros" },
   { href: "/servicios", icon: faShieldAlt, text: "Servicios" }, // CORREGIDO
+  { href: "/blog", icon: faPen, text: "Blog" },
   { href: "/professionals", icon: faStar, text: "Profesionales" },
   { href: "/join-as-pro", icon: faStar, text: "Únete como Profesional" },
 ];
