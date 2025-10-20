@@ -1,147 +1,206 @@
-// src/app/join-as-pro/page.tsx
 'use client';
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { PageLayout } from '@/components/PageLayout';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faToolbox, faCheckCircle, faArrowRight, faExclamationCircle } from '@fortawesome/free-solid-svg-icons';
-import Image from 'next/image';
-import Link from 'next/link';
+import { supabase } from '@/lib/supabase'; // Tu cliente Supabase configurado con .env
 
-export default function JoinAsProPage() {
-  const [fullName, setFullName] = useState('');
-  const [profession, setProfession] = useState('');
-  const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
-  const [password, setPassword] = useState('');
+export default function JoinAsPro() {
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
-  const [userExists, setUserExists] = useState(false);
+  const [error, setError] = useState('');
   const router = useRouter();
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const [formData, setFormData] = useState({
+    fullName: '',
+    profession: '',
+    phone: '',
+    email: '',
+    password: '',
+  });
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setError(null);
-    setUserExists(false);
+    setError('');
 
     try {
-      const functionUrl = process.env.NEXT_PUBLIC_SUPABASE_URL + '/functions/v1/pro-signup';
-      
-      const response = await fetch(functionUrl, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/pro-signup`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}` 
-        },
-        body: JSON.stringify({ fullName, profession, email, phone, password }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
       });
 
-      const result = await response.json();
+      const data = await response.json();
 
       if (!response.ok) {
+        console.error('Edge Function error:', data);
         if (response.status === 409) {
-          setUserExists(true);
-        } else {
-          throw new Error(result.error || 'Ocurrió un error desconocido durante el registro.');
+          // Duplicado: Reenvió de confirmación
+          alert(data.message || 'Correo ya registrado. Revisa tu inbox para el enlace de activación.');
+          router.push('/login'); // Redirige a login
+          return;
         }
-      } else {
-        setSuccess(true);
-        // MEJORA: Redirigir automáticamente al login después de 3 segundos
-        setTimeout(() => {
-          router.push('/login');
-        }, 3000);
+        throw new Error(data.error || 'Error de registro. Prueba con Google para mayor rapidez.');
       }
 
-    } catch (err: any) {
-      setError(err.message);
+      // Éxito: Usuario registrado, espera confirmación por correo
+      alert(data.message || '¡Registrado! Confirma tu correo para activar tu perfil profesional en Sumee App.');
+      router.push('/login'); // O a dashboard si confirmado
+    } catch (err) {
+      console.error('Frontend error:', err);
+      setError(err.message || 'Error interno. Contacta soporte.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleSignup = async () => {
+    setLoading(true);
+    setError('');
+
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: process.env.NODE_ENV === 'development' 
+            ? `${window.location.origin}/auth/callback` 
+            : 'https://sumeeapp.com/auth/callback', // Callback dinámico para dev/prod
+        },
+      });
+      if (error) {
+        setError(error.message);
+      }
+    } catch (err) {
+      setError(err.message || 'Error con Google. Intenta con email.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <PageLayout>
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
-        <div className="grid grid-cols-1 lg:grid-cols-2 max-w-4xl w-full bg-white rounded-2xl shadow-2xl overflow-hidden">
-          
-          <div className="p-8 md:p-12">
-            {success ? (
-              <div className="text-center flex flex-col justify-center h-full">
-                <FontAwesomeIcon icon={faCheckCircle} className="text-6xl text-green-500 mb-4" />
-                <h2 className="text-3xl font-bold text-gray-800">¡Registro casi completo!</h2>
-                <p className="mt-2 text-gray-600">Hemos enviado un enlace de confirmación a <strong>{email}</strong>. Por favor, revisa tu correo para activar tu cuenta.</p>
-                <p className="mt-4 text-sm text-gray-500">En unos segundos serás redirigido para iniciar sesión...</p>
-              </div>
-            ) : userExists ? (
-              <div className="text-center flex flex-col justify-center h-full">
-                <FontAwesomeIcon icon={faExclamationCircle} className="text-6xl text-yellow-500 mb-4" />
-                <h2 className="text-3xl font-bold text-gray-800">¡Hola de nuevo!</h2>
-                <p className="mt-2 text-gray-600 mb-6">Este correo o teléfono ya está registrado. Por favor, inicia sesión para continuar.</p>
-                <Link href="/login" className="w-full flex justify-center items-center gap-2 py-3 px-4 border border-transparent rounded-lg shadow-sm text-white bg-blue-600 hover:bg-blue-700">
-                  Iniciar Sesión
-                  <FontAwesomeIcon icon={faArrowRight} />
-                </Link>
-              </div>
-            ) : (
-              <>
-                <h2 className="text-3xl font-bold text-gray-800">Conviértete en Profesional Sumee</h2>
-                <p className="mt-2 text-gray-600">Regístrate en 60 segundos y empieza a recibir clientes en CDMX.</p>
-                <form onSubmit={handleSubmit} className="mt-8 space-y-6">
-                  <div>
-                    <label htmlFor="fullName" className="block text-sm font-medium text-gray-700">Nombre Completo</label>
-                    <input type="text" id="fullName" value={fullName} onChange={(e) => setFullName(e.target.value)} required className="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm text-gray-900 focus:ring-blue-500 focus:border-blue-500" />
-                  </div>
-                  <div>
-                    <label htmlFor="profession" className="block text-sm font-medium text-gray-700">Tu Oficio Principal</label>
-                    <input type="text" id="profession" value={profession} onChange={(e) => setProfession(e.target.value)} required placeholder="Ej. Plomero, Electricista, Carpintero" className="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm text-gray-900 focus:ring-blue-500 focus:border-blue-500" />
-                  </div>
-                  <div>
-                    <label htmlFor="email" className="block text-sm font-medium text-gray-700">Correo Electrónico</label>
-                    <input type="email" id="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm text-gray-900 focus:ring-blue-500 focus:border-blue-500" />
-                  </div>
-                  <div>
-                    <label htmlFor="phone" className="block text-sm font-medium text-gray-700">Teléfono (WhatsApp)</label>
-                    <input type="tel" id="phone" value={phone} onChange={(e) => setPhone(e.target.value)} required className="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm text-gray-900 focus:ring-blue-500 focus:border-blue-500" />
-                  </div>
-                  <div>
-                    <label htmlFor="password" className="block text-sm font-medium text-gray-700">Crea tu Contraseña</label>
-                    <input type="password" id="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={8} className="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm text-gray-900 focus:ring-blue-500 focus:border-blue-500" />
-                  </div>
-                  {error && <p className="text-sm text-red-600">{error}</p>}
-                  <button type="submit" disabled={loading} className="w-full flex justify-center items-center gap-2 py-3 px-4 border border-transparent rounded-lg shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-blue-400">
-                    {loading ? 'Registrando...' : 'Crear mi Cuenta de Profesional'}
-                    {!loading && <FontAwesomeIcon icon={faArrowRight} />}
-                  </button>
-                </form>
-                <div className="mt-4 text-center">
-                  <Link href="/login" className="text-sm font-medium text-gray-600 hover:text-blue-600 transition">
-                    Ya tengo una cuenta de profesional
-                  </Link>
-                </div>
-              </>
-            )}
-          </div>
+    <div className="join-as-pro min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md mx-auto bg-white rounded-lg shadow-md p-6">
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Regístrate como Profesional</h1>
+          <p className="text-gray-600">Únete a Sumee App y recibe trabajos verificados en CDMX y área metropolitana. ¡Soluciones rápidas y confiables!</p>
+        </div>
 
-          <div className="hidden lg:block relative">
-            <Image
-              src="/images/banners/join-as-pro-worker.jpg"
-              alt="Profesional de Sumee trabajando"
-              fill
-              className="object-cover"
+        {/* Google 1-Click (Sin Fricción) */}
+        <button
+          onClick={handleGoogleSignup}
+          disabled={loading}
+          className="w-full bg-white border border-gray-300 rounded-md px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 mb-4 flex items-center justify-center space-x-2"
+          aria-label="Regístrate con Google"
+        >
+          <img src="https://developers.google.com/identity/images/g-logo.png" alt="Google" className="h-5 w-5" />
+          <span>Regístrate con Google (1 Clic, Sin Contraseña)</span>
+        </button>
+
+        <div className="relative">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-gray-300" />
+          </div>
+          <div className="relative flex justify-center text-sm">
+            <span className="px-2 bg-white text-gray-500">O usa email</span>
+          </div>
+        </div>
+
+        {/* Formulario Email */}
+        <form onSubmit={handleSubmit} className="space-y-4 mt-6">
+          <div>
+            <label htmlFor="fullName" className="block text-sm font-medium text-gray-700 mb-1">Nombre Completo</label>
+            <input
+              type="text"
+              id="fullName"
+              placeholder="Ej: Juan Pérez"
+              value={formData.fullName}
+              onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+              required
+              minLength={2}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              aria-describedby="fullName-help"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-blue-900 via-blue-900/70 to-transparent"></div>
-            <div className="absolute bottom-0 left-0 p-8 text-white">
-              <FontAwesomeIcon icon={faToolbox} className="text-4xl mb-4" />
-              <h3 className="text-2xl font-bold">Más Clientes. Menos Complicaciones.</h3>
-              <p className="mt-2">Únete a la plataforma de confianza en CDMX y dedica tu tiempo a lo que mejor sabes hacer.</p>
-            </div>
+            <p id="fullName-help" className="mt-1 text-xs text-gray-500">Tu nombre completo para tu perfil profesional.</p>
           </div>
 
+          <div>
+            <label htmlFor="profession" className="block text-sm font-medium text-gray-700 mb-1">Profesión</label>
+            <input
+              type="text"
+              id="profession"
+              placeholder="Ej: Plomero, Electricista"
+              value={formData.profession}
+              onChange={(e) => setFormData({ ...formData, profession: e.target.value })}
+              required
+              minLength={2}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              aria-describedby="profession-help"
+            />
+            <p id="profession-help" className="mt-1 text-xs text-gray-500">Tu especialidad (e.g., A/C, CCTV).</p>
+          </div>
+
+          <div>
+            <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">Teléfono (+52)</label>
+            <input
+              type="tel"
+              id="phone"
+              placeholder="+521234567890"
+              value={formData.phone}
+              onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+              required
+              minLength={10}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              aria-describedby="phone-help"
+            />
+            <p id="phone-help" className="mt-1 text-xs text-gray-500">Para citas rápidas con usuarios.</p>
+          </div>
+
+          <div>
+            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+            <input
+              type="email"
+              id="email"
+              placeholder="tu-email@ejemplo.com"
+              value={formData.email}
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              required
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              aria-describedby="email-help"
+            />
+            <p id="email-help" className="mt-1 text-xs text-gray-500">Para notificaciones y confirmación.</p>
+          </div>
+
+          <div>
+            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">Contraseña (mín. 8 caracteres)</label>
+            <input
+              type="password"
+              id="password"
+              placeholder="Contraseña segura"
+              value={formData.password}
+              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+              required
+              minLength={8}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              aria-describedby="password-help"
+            />
+            <p id="password-help" className="mt-1 text-xs text-gray-500">Mínimo 8 caracteres para seguridad.</p>
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50"
+            aria-label="Registrarse como Profesional"
+          >
+            {loading ? 'Registrando...' : 'Registrarse como Profesional'}
+          </button>
+        </form>
+
+        {error && <p className="mt-4 text-center text-sm text-red-600">{error}</p>}
+
+        <div className="mt-6 text-center text-sm text-gray-600">
+          ¿Ya tienes cuenta? <a href="/login" className="font-medium text-blue-600 hover:text-blue-500">Inicia sesión</a>
         </div>
       </div>
-    </PageLayout>
+    </div>
   );
 }
