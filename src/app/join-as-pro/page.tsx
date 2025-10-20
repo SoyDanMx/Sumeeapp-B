@@ -1,3 +1,4 @@
+// src/app/join-as-pro/page.tsx
 'use client';
 
 import { useState } from 'react';
@@ -6,7 +7,8 @@ import { supabase } from '@/lib/supabase'; // Tu cliente Supabase configurado co
 
 export default function JoinAsPro() {
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  // MEJORA: Usar `null` para el estado inicial del error es más explícito.
+  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
   const [formData, setFormData] = useState({
@@ -20,9 +22,10 @@ export default function JoinAsPro() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setError('');
+    setError(null); // Limpiamos el error al iniciar un nuevo envío
 
     try {
+      // La lógica de llamada a la Edge Function es correcta y se mantiene.
       const response = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/pro-signup`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -34,20 +37,28 @@ export default function JoinAsPro() {
       if (!response.ok) {
         console.error('Edge Function error:', data);
         if (response.status === 409) {
-          // Duplicado: Reenvió de confirmación
           alert(data.message || 'Correo ya registrado. Revisa tu inbox para el enlace de activación.');
-          router.push('/login'); // Redirige a login
+          router.push('/login');
           return;
         }
         throw new Error(data.error || 'Error de registro. Prueba con Google para mayor rapidez.');
       }
 
-      // Éxito: Usuario registrado, espera confirmación por correo
       alert(data.message || '¡Registrado! Confirma tu correo para activar tu perfil profesional en Sumee App.');
-      router.push('/login'); // O a dashboard si confirmado
+      router.push('/login');
+    
+    // --- SECCIÓN CORREGIDA ---
     } catch (err) {
       console.error('Frontend error:', err);
-      setError(err.message || 'Error interno. Contacta soporte.');
+      
+      let errorMessage = 'Error interno. Por favor, contacta a soporte.';
+      // Implementamos el type guard para manejar 'err' de forma segura.
+      if (err instanceof Error) {
+        errorMessage = err.message;
+      }
+      setError(errorMessage);
+    // --- FIN DE LA SECCIÓN CORREGIDA ---
+
     } finally {
       setLoading(false);
     }
@@ -55,27 +66,41 @@ export default function JoinAsPro() {
 
   const handleGoogleSignup = async () => {
     setLoading(true);
-    setError('');
+    setError(null);
 
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
+      const { error: authError } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
+          // La lógica de redirección dinámica para dev/prod es excelente.
           redirectTo: process.env.NODE_ENV === 'development' 
             ? `${window.location.origin}/auth/callback` 
-            : 'https://sumeeapp.com/auth/callback', // Callback dinámico para dev/prod
+            : 'https://sumeeapp.com/auth/callback',
         },
       });
-      if (error) {
-        setError(error.message);
+      if (authError) {
+        // El objeto de error de Supabase sí es un `Error` estándar, así que podemos lanzarlo.
+        throw authError;
       }
+    
+    // --- SECCIÓN CORREGIDA ---
     } catch (err) {
-      setError(err.message || 'Error con Google. Intenta con email.');
+      console.error('Error con Google Signup:', err);
+
+      let errorMessage = 'Error con Google. Intenta registrarte con tu email.';
+      // Usamos el mismo patrón seguro aquí.
+      if (err instanceof Error) {
+        errorMessage = err.message;
+      }
+      setError(errorMessage);
+    // --- FIN DE LA SECCIÓN CORREGIDA ---
+
     } finally {
       setLoading(false);
     }
   };
 
+  // El JSX se mantiene igual, ya que está bien estructurado y es funcional.
   return (
     <div className="join-as-pro min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md mx-auto bg-white rounded-lg shadow-md p-6">
@@ -84,18 +109,17 @@ export default function JoinAsPro() {
           <p className="text-gray-600">Únete a Sumee App y recibe trabajos verificados en CDMX y área metropolitana. ¡Soluciones rápidas y confiables!</p>
         </div>
 
-        {/* Google 1-Click (Sin Fricción) */}
         <button
           onClick={handleGoogleSignup}
           disabled={loading}
-          className="w-full bg-white border border-gray-300 rounded-md px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 mb-4 flex items-center justify-center space-x-2"
+          className="w-full bg-white border border-gray-300 rounded-md px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 mb-4 flex items-center justify-center space-x-2 transition-colors"
           aria-label="Regístrate con Google"
         >
           <img src="https://developers.google.com/identity/images/g-logo.png" alt="Google" className="h-5 w-5" />
           <span>Regístrate con Google (1 Clic, Sin Contraseña)</span>
         </button>
 
-        <div className="relative">
+        <div className="relative my-6">
           <div className="absolute inset-0 flex items-center">
             <div className="w-full border-t border-gray-300" />
           </div>
@@ -104,8 +128,7 @@ export default function JoinAsPro() {
           </div>
         </div>
 
-        {/* Formulario Email */}
-        <form onSubmit={handleSubmit} className="space-y-4 mt-6">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label htmlFor="fullName" className="block text-sm font-medium text-gray-700 mb-1">Nombre Completo</label>
             <input
@@ -188,7 +211,7 @@ export default function JoinAsPro() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50"
+            className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 transition-colors"
             aria-label="Registrarse como Profesional"
           >
             {loading ? 'Registrando...' : 'Registrarse como Profesional'}
