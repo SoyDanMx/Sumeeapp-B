@@ -36,7 +36,7 @@ export default function ProfesionalDashboardPage() {
     const filteredLeads = leads?.filter(lead => {
         if (selectedOffice === 'Todos') return true;
         // Filtra por inclusión de la palabra clave del oficio en la descripción del proyecto
-        return lead.descripcion_proyecto.toLowerCase().includes(selectedOffice.toLowerCase());
+        return (lead.descripcion_proyecto?.toLowerCase() ?? '').includes(selectedOffice.toLowerCase());
     }) || [];
 
     // Lógica de Errores y Carga
