@@ -1,4 +1,4 @@
-// src/app/dashboard/page.tsx
+// RUTA DEL ARCHIVO: src/app/dashboard/page.tsx
 'use client'; 
 
 import { useState, useMemo } from 'react';
@@ -9,7 +9,7 @@ import ProfesionalHeader from '@/components/ProfesionalHeader';
 import EditProfileModal from '@/components/EditProfileModal'; 
 import { Profesional, Lead } from '@/types/supabase';
 
-// Carga dinámica del mapa (sin cambios, estaba perfecto)
+// Carga dinámica del mapa para optimizar el rendimiento y evitar errores de SSR
 const DynamicMapComponent = dynamic(
   () => import('@/components/MapComponent'), 
   { 
@@ -18,7 +18,7 @@ const DynamicMapComponent = dynamic(
   }
 );
 
-// MEJORA: Definir una ubicación por defecto para cuando el profesional no tenga una.
+// Definir una ubicación por defecto para cuando el profesional no tenga una.
 const DEFAULT_MAP_CENTER = { lat: 19.4326, lng: -99.1332 }; // Centro de CDMX
 
 export default function ProfesionalDashboardPage() {
@@ -27,7 +27,7 @@ export default function ProfesionalDashboardPage() {
     const [selectedOffice, setSelectedOffice] = useState<string>('Todos'); 
     const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null); 
     
-    // El manejo de carga y errores estaba bien.
+    // Manejo de los estados de carga y error de la aplicación
     if (isLoading) {
         return <div className="p-8 text-center bg-gray-50 min-h-screen flex items-center justify-center">Cargando datos del profesional...</div>; 
     }
@@ -36,12 +36,12 @@ export default function ProfesionalDashboardPage() {
         return <div className="p-8 text-red-600 font-semibold min-h-screen flex items-center justify-center text-center">Error al cargar el perfil. Asegúrate de que tu usuario tiene un perfil asociado o contacta a soporte.</div>;
     }
     
-    // MEJORA: Manejo más robusto para el caso en que el profesional no se encuentre.
-    // Esto evita el uso de `as Profesional` más adelante.
+    // Manejo robusto del caso en que el profesional no se encuentre en la base de datos
     if (!profesional) {
         return <div className="p-8 min-h-screen flex items-center justify-center">No se encontraron datos del profesional.</div>;
     }
     
+    // Función para ser llamada cuando el perfil se actualiza con éxito en el modal
     const handleProfileUpdateSuccess = () => {
         refetchData(); 
         setIsModalOpen(false); 
@@ -49,28 +49,25 @@ export default function ProfesionalDashboardPage() {
     
     const availableOffices = ['Todos', ...(profesional.areas_servicio || [])];
 
-    // --- CORRECCIÓN DEL ERROR DE BUILD ---
+    // Lógica de filtrado de leads con "null-safety" para evitar errores de compilación
     const filteredLeads = useMemo(() => {
-        // Si no hay leads, devolvemos un array vacío para evitar errores.
         if (!leads) return [];
 
         return leads.filter(lead => {
             if (selectedOffice === 'Todos') return true;
             
-            // Usamos encadenamiento opcional `?.` y coalescencia nula `?? ''`
-            // para manejar de forma segura el caso en que `descripcion_proyecto` sea null.
+            // Comprobación segura para evitar llamar a .toLowerCase() en un valor nulo
             return (lead.descripcion_proyecto?.toLowerCase() ?? '').includes(selectedOffice.toLowerCase());
         });
     }, [leads, selectedOffice]);
     
-    // MEJORA: Asignación de coordenadas más clara.
+    // Asignación de coordenadas con un valor por defecto
     const profesionalLat = profesional.ubicacion_lat ?? DEFAULT_MAP_CENTER.lat;
     const profesionalLng = profesional.ubicacion_lng ?? DEFAULT_MAP_CENTER.lng;
 
     return (
         <div className="flex flex-col h-screen bg-gray-50">
             
-            {/* Ahora TypeScript sabe que `profesional` no es null aquí, no se necesita `as Profesional` */}
             <ProfesionalHeader 
                 profesional={profesional} 
                 onEditClick={() => setIsModalOpen(true)}
@@ -137,4 +134,4 @@ export default function ProfesionalDashboardPage() {
             />
         </div>
     );
-}```
+}
