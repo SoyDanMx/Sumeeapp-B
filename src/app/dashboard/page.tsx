@@ -138,12 +138,3 @@ export default function ProfesionalDashboardPage() {
         </div>
     );
 }```
-
-### **Resumen de las Correcciones y Mejoras:**
-
-1.  **Error de Compilación Solucionado:** La línea `(lead.descripcion_proyecto?.toLowerCase() ?? '').includes(...)` ahora maneja de forma segura el caso en que la descripción sea `null`, eliminando el error de `build`.
-2.  **Eliminación de `as Profesional`:** Al comprobar `if (!profesional)` al principio, TypeScript ahora "sabe" que en el resto del componente, `profesional` no puede ser `null`. Esto elimina la necesidad de las afirmaciones de tipo `as Profesional`, haciendo el código más seguro y limpio.
-3.  **Ubicación por Defecto:** Se definió `DEFAULT_MAP_CENTER` para que el mapa tenga un centro lógico si el profesional aún no ha configurado su ubicación.
-4.  **Pequeños Ajustes de UI:** Mejoré ligeramente el estilo de los botones de filtro para una mejor respuesta visual.
-
-Con este código, tu dashboard no solo se desplegará sin errores, sino que también será más robusto y a prueba de fallos. ¡Puedes hacer el `push commit` con confianza
