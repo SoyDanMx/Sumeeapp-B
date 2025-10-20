@@ -22,32 +22,22 @@ const DynamicMapComponent = dynamic(
 const DEFAULT_MAP_CENTER = { lat: 19.4326, lng: -99.1332 }; // Centro de CDMX
 
 export default function ProfesionalDashboardPage() {
+    // --- TODOS LOS HOOKS VAN PRIMERO - ANTES DE CUALQUIER RETURN CONDICIONAL ---
     const { profesional, leads, isLoading, error, refetchData } = useProfesionalData(); 
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedOffice, setSelectedOffice] = useState<string>('Todos'); 
     const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null); 
-    
-    // Manejo de los estados de carga y error de la aplicación
-    if (isLoading) {
-        return <div className="p-8 text-center bg-gray-50 min-h-screen flex items-center justify-center">Cargando datos del profesional...</div>; 
-    }
 
-    if (error) {
-        return <div className="p-8 text-red-600 font-semibold min-h-screen flex items-center justify-center text-center">Error al cargar el perfil. Asegúrate de que tu usuario tiene un perfil asociado o contacta a soporte.</div>;
-    }
-    
-    // Manejo robusto del caso en que el profesional no se encuentre en la base de datos
-    if (!profesional) {
-        return <div className="p-8 min-h-screen flex items-center justify-center">No se encontraron datos del profesional.</div>;
-    }
-    
     // Función para ser llamada cuando el perfil se actualiza con éxito en el modal
     const handleProfileUpdateSuccess = () => {
         refetchData(); 
         setIsModalOpen(false); 
     };
     
-    const availableOffices = ['Todos', ...(profesional.areas_servicio || [])];
+    // Memoización del availableOffices - debe ir después de los hooks
+    const availableOffices = useMemo(() => {
+        return ['Todos', ...(profesional?.areas_servicio || [])];
+    }, [profesional?.areas_servicio]);
 
     // Lógica de filtrado de leads con "null-safety" para evitar errores de compilación
     const filteredLeads = useMemo(() => {
@@ -60,10 +50,25 @@ export default function ProfesionalDashboardPage() {
             return (lead.descripcion_proyecto?.toLowerCase() ?? '').includes(selectedOffice.toLowerCase());
         });
     }, [leads, selectedOffice]);
+
+    // Memoización de coordenadas del profesional
+    const profesionalCoords = useMemo(() => ({
+        lat: profesional?.ubicacion_lat ?? DEFAULT_MAP_CENTER.lat,
+        lng: profesional?.ubicacion_lng ?? DEFAULT_MAP_CENTER.lng
+    }), [profesional?.ubicacion_lat, profesional?.ubicacion_lng]);
     
-    // Asignación de coordenadas con un valor por defecto
-    const profesionalLat = profesional.ubicacion_lat ?? DEFAULT_MAP_CENTER.lat;
-    const profesionalLng = profesional.ubicacion_lng ?? DEFAULT_MAP_CENTER.lng;
+    // --- AHORA SÍ, RETURNS CONDICIONALES DESPUÉS DE TODOS LOS HOOKS ---
+    if (isLoading) {
+        return <div className="p-8 text-center bg-gray-50 min-h-screen flex items-center justify-center">Cargando datos del profesional...</div>; 
+    }
+
+    if (error) {
+        return <div className="p-8 text-red-600 font-semibold min-h-screen flex items-center justify-center text-center">Error al cargar el perfil. Asegúrate de que tu usuario tiene un perfil asociado o contacta a soporte.</div>;
+    }
+    
+    if (!profesional) {
+        return <div className="p-8 min-h-screen flex items-center justify-center">No se encontraron datos del profesional.</div>;
+    }
 
     return (
         <div className="flex flex-col h-screen bg-gray-50">
@@ -110,8 +115,8 @@ export default function ProfesionalDashboardPage() {
                                 <LeadCard 
                                     key={lead.id} 
                                     lead={lead} 
-                                    profesionalLat={profesionalLat} 
-                                    profesionalLng={profesionalLng}
+                                    profesionalLat={profesionalCoords.lat} 
+                                    profesionalLng={profesionalCoords.lng}
                                     isSelected={lead.id === selectedLeadId}
                                     onSelect={() => setSelectedLeadId(lead.id)}
                                 />
