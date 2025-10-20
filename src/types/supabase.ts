@@ -10,23 +10,24 @@ export interface Profesional {
     user_id: string;
     full_name: string | null;
     email: string | null;
-    profession: string | null; // Añadido para consistencia con ProfessionalDashboard
-    membership_status?: 'free' | 'basic'; // Opcional por si no todos lo tienen
-    status?: 'active' | 'inactive'; // Opcional por si no todos lo tienen
-    bio?: string | null; // Opcional
-    avatar_url?: string | null; // Opcional
-    work_zones?: string[] | null; // Opcional
-    work_photos_urls?: string[] | null; // Opcional
+    profession: string | null;
+    membership_status?: 'free' | 'basic';
+    status?: 'active' | 'inactive';
+    bio?: string | null;
+    avatar_url?: string | null;
+    work_zones?: string[] | null;
+    work_photos_urls?: string[] | null;
     whatsapp: string | null;
     numero_imss: string | null;
     descripcion_perfil: string | null;
     experiencia_uber: boolean;
     años_experiencia_uber: number | null;
     areas_servicio: string[] | null;
-  
-    // --- CAMPOS AÑADIDOS PARA SOLUCIONAR EL ÚLTIMO ERROR ---
     ubicacion_lat: number | null;
     ubicacion_lng: number | null;
+  
+    // --- CAMPO AÑADIDO PARA SOLUCIONAR EL ÚLTIMO ERROR ---
+    calificacion_promedio: number | null;
   }
   
   /**
