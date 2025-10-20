@@ -1,28 +1,44 @@
-import { useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabase';
+'use client';
 
-export function useUser() {
-  const [user, setUser] = useState(null);
+import { useEffect, useState } from 'react';
+import { supabase } from '@/lib/supabase/client';
+// 1. IMPORTAMOS nuestro nuevo tipo personalizado
+import { AppUser } from '@/types/supabase';
+
+// El hook ahora devuelve nuestro tipo AppUser
+export function useUser(): AppUser | null {
+  const [user, setUser] = useState<AppUser | null>(null);
 
   useEffect(() => {
-    const getUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
+    const fetchUserAndProfile = async () => {
+      // Obtenemos el usuario de la sesión de Supabase
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+
+      if (authUser) {
+        // Si hay un usuario autenticado, buscamos su perfil para obtener el rol
         const { data: profile } = await supabase
           .from('profiles')
-          .select('role')
-          .eq('user_id', user.id)
+          .select('role') // Solo necesitamos el rol
+          .eq('user_id', authUser.id)
           .single();
-        setUser({ ...user, role: profile?.role || 'client' });
+
+        // 2. CONSTRUIMOS el objeto AppUser correctamente
+        const appUser: AppUser = {
+          ...authUser,
+          role: profile?.role || 'client', // Asignamos el rol del perfil, o 'client' por defecto
+        };
+        
+        setUser(appUser);
       } else {
         setUser(null);
       }
     };
 
-    getUser();
+    fetchUserAndProfile();
 
+    // Escuchamos cambios en la autenticación para actualizar el estado
     const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
-      getUser();
+      fetchUserAndProfile();
     });
 
     return () => {
@@ -30,5 +46,5 @@ export function useUser() {
     };
   }, []);
 
-  return { user };
+  return user;
 }
