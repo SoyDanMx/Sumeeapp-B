@@ -1,6 +1,7 @@
+// RUTA DEL ARCHIVO: src/app/professional-dashboard/page.tsx
 'use client'; 
 
-import { useState, useCallback } from 'react';
+import { useState, useMemo } from 'react'; // Movimos useMemo aquí para claridad
 import dynamic from 'next/dynamic'; 
 import { useProfesionalData } from '@/hooks/useProfesionalData'; 
 import LeadCard from '@/components/LeadCard';
@@ -8,79 +9,77 @@ import ProfesionalHeader from '@/components/ProfesionalHeader';
 import EditProfileModal from '@/components/EditProfileModal'; 
 import { Profesional, Lead } from '@/types/supabase';
 
-// 1. Usa next/dynamic para deshabilitar el SSR para MapComponent
 const DynamicMapComponent = dynamic(
-  // La ruta de importación es correcta, pero la variable debía ser MapComponent
   () => import('@/components/MapComponent'), 
   { 
-    loading: () => <p className="text-center p-8">Cargando mapa...</p>,
+    loading: () => <div className="p-8 text-center text-gray-500">Cargando mapa...</div>,
     ssr: false 
   }
 );
 
+const DEFAULT_MAP_CENTER = { lat: 19.4326, lng: -99.1332 };
+
 export default function ProfesionalDashboardPage() {
+    // --- PASO 1: TODOS LOS HOOKS SE DECLARAN AQUÍ ARRIBA ---
     const { profesional, leads, isLoading, error, refetchData } = useProfesionalData(); 
     const [isModalOpen, setIsModalOpen] = useState(false);
-    
-    // Nuevo estado para el filtro de oficios
     const [selectedOffice, setSelectedOffice] = useState<string>('Todos'); 
-    
-    // NUEVO ESTADO: Para el lead seleccionado desde el mapa o la lista
     const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null); 
 
-
-    // Función para obtener la lista de oficios únicos más la opción 'Todos'
-    const availableOffices = ['Todos', ...(profesional?.areas_servicio || [])];
+    // --- PASO 2: TODA LA LÓGICA DE PREPARACIÓN DE DATOS VA AQUÍ ---
+    const availableOffices = useMemo(() => 
+        ['Todos', ...(profesional?.areas_servicio || [])],
+        [profesional?.areas_servicio]
+    );
     
-    // Lógica de Filtrado (Mejorada para no depender solo del 'servicio_requerido' explícito)
-    const filteredLeads = leads?.filter(lead => {
-        if (selectedOffice === 'Todos') return true;
-        // Filtra por inclusión de la palabra clave del oficio en la descripción del proyecto
-        return (lead.descripcion_proyecto?.toLowerCase() ?? '').includes(selectedOffice.toLowerCase());
-    }) || [];
+    const filteredLeads = useMemo(() => {
+        if (!leads) return [];
+        return leads.filter(lead => {
+            if (selectedOffice === 'Todos') return true;
+            return (lead.descripcion_proyecto?.toLowerCase() ?? '').includes(selectedOffice.toLowerCase());
+        });
+    }, [leads, selectedOffice]);
 
-    // Lógica de Errores y Carga
+    const profesionalLat = profesional?.ubicacion_lat ?? DEFAULT_MAP_CENTER.lat;
+    const profesionalLng = profesional?.ubicacion_lng ?? DEFAULT_MAP_CENTER.lng;
+
+    // --- PASO 3: LAS GUARDAS DE RETORNO CONDICIONAL VAN DESPUÉS ---
     if (isLoading) {
-        return <div className="p-8">Cargando datos del profesional...</div>; 
+        return <div className="p-8 text-center bg-gray-50 min-h-screen flex items-center justify-center">Cargando datos del profesional...</div>; 
     }
 
     if (error) {
-        console.error("Error al cargar perfil:", error);
-        return <div className="p-8 text-red-600">Error crítico al cargar el perfil. Por favor, asegúrate de que tu usuario tiene una fila en la tabla 'profiles' en Supabase.</div>;
+        return <div className="p-8 text-red-600 font-semibold min-h-screen flex items-center justify-center text-center">Error al cargar el perfil. Asegúrate de que tu usuario tiene un perfil asociado o contacta a soporte.</div>;
     }
     
     if (!profesional) {
-        return <div className="p-8">No se encontraron datos de profesional. Por favor, contacta a soporte.</div>;
+        return <div className="p-8 min-h-screen flex items-center justify-center">No se encontraron datos del profesional.</div>;
     }
     
-    // Función de éxito después de guardar en el modal
+    // --- PASO 4: LAS FUNCIONES HANDLER PUEDEN IR AQUÍ ---
     const handleProfileUpdateSuccess = () => {
-        refetchData(); // Vuelve a ejecutar la función de fetching de datos
-        setIsModalOpen(false); // Cierra el modal
+        refetchData(); 
+        setIsModalOpen(false); 
     };
-    
-    // Comprueba las coordenadas del profesional antes de pasarlas al LeadCard
-    const profesionalLat = profesional.ubicacion_lat ?? 0;
-    const profesionalLng = profesional.ubicacion_lng ?? 0;
 
-
+    // --- PASO 5: EL RETORNO FINAL DEL JSX ---
     return (
-        <div className="flex flex-col h-screen">
-            
+        <div className="flex flex-col h-screen bg-gray-50">
             <ProfesionalHeader 
-                profesional={profesional as Profesional} 
+                profesional={profesional} 
                 onEditClick={() => setIsModalOpen(true)}
             />
 
-            {/* BARRA DE FILTROS */}
-            <div className="p-4 bg-gray-100 border-b flex flex-wrap gap-2 items-center">
+            <div className="p-4 bg-white border-b flex flex-wrap gap-2 items-center shadow-sm">
                 <h3 className="font-medium mr-2 text-gray-700">Filtrar por Oficio:</h3>
                 {availableOffices.map(office => (
                     <button 
                         key={office} 
                         onClick={() => setSelectedOffice(office)}
-                        className={`px-3 py-1 text-sm rounded transition-colors 
-                           ${selectedOffice === office ? 'bg-indigo-600 text-white shadow-md' : 'bg-white border text-gray-700 hover:bg-indigo-100'}`}
+                        className={`px-3 py-1 text-sm rounded-full transition-all duration-200 
+                           ${selectedOffice === office 
+                                ? 'bg-indigo-600 text-white shadow-md transform scale-105' 
+                                : 'bg-gray-200 text-gray-700 hover:bg-indigo-100'}`}
                     >
                         {office}
                     </button>
@@ -88,19 +87,16 @@ export default function ProfesionalDashboardPage() {
             </div>
 
             <div className="flex flex-1 overflow-hidden">
-                {/* COLUMNA PRINCIPAL: MAPA (65%) */}
-                <div className="flex-1 min-h-[50vh]">
+                <div className="flex-1 min-w-0 h-full">
                     <DynamicMapComponent 
                         leads={filteredLeads} 
-                        profesional={profesional as Profesional} 
-                        // Pasa el estado de selección
-                        selectedLeadId={selectedLeadId} 
-                        onLeadClick={setSelectedLeadId} // Función para manejar el clic en el pin
+                        profesional={profesional} 
+                        selectedLeadId={selectedLeadId}
+                        onLeadClick={setSelectedLeadId}
                     />
                 </div>
                 
-                {/* BARRA LATERAL: LISTA DE LEADS (35%) */}
-                <aside className="w-[380px] overflow-y-auto bg-gray-50 p-4 border-l">
+                <aside className="w-full md:w-[380px] overflow-y-auto bg-white p-4 border-l">
                     <h2 className="text-xl font-bold mb-4 text-gray-800">Leads Asignados ({filteredLeads.length})</h2>
                     {filteredLeads.length > 0 ? (
                         <div className="space-y-4">
@@ -110,23 +106,21 @@ export default function ProfesionalDashboardPage() {
                                     lead={lead} 
                                     profesionalLat={profesionalLat} 
                                     profesionalLng={profesionalLng}
-                                    // Resalta la tarjeta si está seleccionada
                                     isSelected={lead.id === selectedLeadId}
                                     onSelect={() => setSelectedLeadId(lead.id)}
                                 />
                             ))}
                         </div>
                     ) : (
-                         <p className="text-gray-500 p-4 text-center border-dashed border-2 rounded">
-                            No hay leads de {selectedOffice !== 'Todos' ? selectedOffice : 'ningún oficio'} para mostrar.
+                         <p className="text-gray-500 p-4 text-center border-dashed border-2 rounded-lg bg-gray-50">
+                            No hay leads de {selectedOffice !== 'Todos' ? `"${selectedOffice}"` : 'ningún oficio'} para mostrar.
                         </p>
                     )}
                 </aside>
             </div>
 
-            {/* Modal de Edición */}
             <EditProfileModal
-                profesional={profesional as Profesional}
+                profesional={profesional}
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
                 onSuccess={handleProfileUpdateSuccess}

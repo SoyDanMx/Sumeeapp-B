@@ -5,6 +5,10 @@ import { User } from '@supabase/supabase-js';
 /**
  * @file Definiciones de tipos basadas en el esquema de la base de datos de Supabase.
  * ESTA ES LA ÚNICA FUENTE DE VERDAD PARA NUESTRAS ESTRUCTURAS DE DATOS.
+ * 
+ * NOTA: Este archivo contiene la interfaz 'Profesional' que debe ser usada
+ * en lugar de 'Profile' de src/types/index.ts para mantener consistencia
+ * con la base de datos de Supabase.
  */
 
 // --- TIPO PERSONALIZADO PARA EL USUARIO DE LA APLICACIÓN ---
@@ -12,8 +16,11 @@ import { User } from '@supabase/supabase-js';
  * Representa al usuario autenticado DENTRO de nuestra aplicación.
  * Combina el objeto User de Supabase con nuestro 'role' personalizado.
  */
+// Definir el tipo de role como constante para mantener consistencia
+export type UserRole = 'profesional' | 'client';
+
 export type AppUser = User & {
-  role: 'profesional' | 'client' | string | null;
+  role: UserRole | string | null;
 };
 
 
@@ -39,8 +46,8 @@ export interface Profesional {
   ubicacion_lat: number | null;
   ubicacion_lng: number | null;
   calificacion_promedio: number | null;
-  // Asegúrate de que el campo 'role' exista aquí también
-  role: string | null;
+  // Campo role sincronizado con AppUser para consistencia
+  role: UserRole | string | null;
 }
 
 // --- INTERFAZ PARA UN LEAD O PROSPECTO ---
