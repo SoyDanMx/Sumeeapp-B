@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback, useMemo } from 'react';
+import { useRouter } from 'next/navigation'; // FIX: Import faltante
 import dynamic from 'next/dynamic'; 
 import { useProfesionalData } from '@/hooks/useProfesionalData'; 
 import LeadCard from '@/components/LeadCard';
@@ -18,6 +19,7 @@ const DynamicMapComponent = dynamic(
 );
 
 export default function ProfesionalDashboardPage() {
+  const router = useRouter(); // FIX: Hook para router
   const { profesional, leads, isLoading, error, refetchData } = useProfesionalData(); 
   const [isModalOpen, setIsModalOpen] = useState(false);
   
@@ -62,11 +64,11 @@ export default function ProfesionalDashboardPage() {
   
   // Lógica para filtros (memoizado para performance)
   const availableOffices = useMemo(() => ['Todos', ...(profesional.areas_servicio || [])], [profesional.areas_servicio]);
-  const filteredLeads = useMemo(() => leads?.filter(lead => {
+  const filteredLeads = useMemo(() => (leads || []).filter(lead => {
     if (selectedOffice === 'Todos') return true;
     // Filtra por inclusión de la palabra clave del oficio en la descripción del proyecto
-    return lead.descripcion_proyecto.toLowerCase().includes(selectedOffice.toLowerCase());
-  }) || [], [leads, selectedOffice]);
+    return lead.descripcion_proyecto?.toLowerCase().includes(selectedOffice.toLowerCase());
+  }), [leads, selectedOffice]);
 
   // Coordenadas del profesional (necesarias para LeadCard y MapComponent)
   const profesionalLat = profesional.ubicacion_lat ?? 19.4326; // Default CDMX
@@ -92,8 +94,7 @@ export default function ProfesionalDashboardPage() {
           <button 
             key={office} 
             onClick={() => setSelectedOffice(office)}
-            className={`px-3 py-1 text-sm rounded transition-colors role="button"
-              ${selectedOffice === office ? 'bg-indigo-600 text-white shadow-md' : 'bg-white border text-gray-700 hover:bg-indigo-100'}`}
+            className={`px-3 py-1 text-sm rounded transition-colors ${selectedOffice === office ? 'bg-indigo-600 text-white shadow-md' : 'bg-white border text-gray-700 hover:bg-indigo-100'}`}
             aria-pressed={selectedOffice === office}
             aria-label={`Filtrar por ${office}`}
           >
