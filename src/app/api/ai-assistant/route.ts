@@ -11,6 +11,21 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
+interface ProfessionalRecommendation {
+  user_id: string;
+  full_name: string | null;
+  profession: string | null;
+  calificacion_promedio: number | null;
+  areas_servicio: string[] | null;
+  whatsapp: string | null;
+  numero_imss: string | null;
+  experiencia_uber: boolean;
+  años_experiencia_uber: number | null;
+  work_zones: string[] | null;
+  descripcion_perfil: string | null;
+  avatar_url: string | null;
+}
+
 interface AIResponse {
   service_category: string;
   technical_info: {
@@ -20,25 +35,20 @@ interface AIResponse {
     considerations: string[];
     kit_options?: string[];
   };
-  recommendations: Array<{
-    user_id: string;
-    full_name: string | null;
-    profession: string | null;
-    calificacion_promedio: number | null;
-    areas_servicio: string[] | null;
-    whatsapp: string | null;
-    numero_imss: string | null;
-    experiencia_uber: boolean;
-    años_experiencia_uber: number | null;
-    work_zones: string[] | null;
-    descripcion_perfil: string | null;
-    avatar_url: string | null;
-  }>;
+  recommendations: ProfessionalRecommendation[];
   estimated_price_range: string;
 }
 
+interface ServiceKnowledge {
+  category: string;
+  technologies: string[];
+  considerations: string[];
+  kit_options?: string[];
+  price_range: string;
+}
+
 // Base de conocimientos para diferentes servicios
-const serviceKnowledge = {
+const serviceKnowledge: Record<string, ServiceKnowledge> = {
   'cámaras de seguridad': {
     category: 'Seguridad Electrónica',
     technologies: ['Cámaras IP', 'Cámaras Analógicas', 'Sistemas Híbridos', 'DVR/NVR'],
@@ -118,61 +128,37 @@ function detectServiceCategory(query: string): string {
   return 'servicio general';
 }
 
-async function getTopProfessionals(serviceArea: string, limit: number = 5) {
+async function getTopProfessionals(serviceArea: string, limit: number = 5): Promise<ProfessionalRecommendation[]> {
   try {
-    // Primero intentamos obtener desde la tabla 'profesionales'
-    let { data: professionals, error } = await supabase
-      .from('profesionales')
-      .select(`
-        user_id,
-        full_name,
-        profession,
-        calificacion_promedio,
-        areas_servicio,
-        whatsapp,
-        numero_imss,
-        experiencia_uber,
-        años_experiencia_uber,
-        work_zones,
-        descripcion_perfil,
-        avatar_url
-      `)
-      .eq('activo', true)
-      .not('calificacion_promedio', 'is', null)
-      .order('calificacion_promedio', { ascending: false })
+    let professionals: ProfessionalRecommendation[] = [];
+
+    // Primero intentamos obtener desde la tabla 'profiles' (más confiable)
+    const { data: profilesData, error: profilesError } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('role', 'profesional')
       .limit(limit);
 
-    // Si no hay resultados, intentamos desde 'profiles'
-    if (!professionals || professionals.length === 0 || error) {
-      const { data: profilesData, error: profilesError } = await supabase
-        .from('profiles')
-        .select(`
-          user_id,
-          full_name,
-          profession,
-          areas_servicio,
-          whatsapp
-        `)
-        .eq('role', 'profesional')
-        .limit(limit);
-
-      if (!profilesError && profilesData) {
-        // Mapear datos de profiles a formato esperado
-        professionals = profilesData.map(profile => ({
-          ...profile,
-          calificacion_promedio: 4.5, // Valor por defecto si no hay rating
-          numero_imss: null,
-          experiencia_uber: false,
-          años_experiencia_uber: null,
-          work_zones: null,
-          descripcion_perfil: null,
-          avatar_url: null
-        }));
-      }
+    if (!profilesError && profilesData) {
+      // Mapear datos de profiles a formato esperado
+      professionals = profilesData.map(profile => ({
+        user_id: profile.user_id || '',
+        full_name: profile.full_name || null,
+        profession: profile.profession || null,
+        areas_servicio: profile.areas_servicio || null,
+        whatsapp: profile.whatsapp || null,
+        calificacion_promedio: typeof profile.calificacion_promedio === 'number' ? profile.calificacion_promedio : 4.5,
+        numero_imss: profile.numero_imss || null,
+        experiencia_uber: profile.experiencia_uber || false,
+        años_experiencia_uber: profile.años_experiencia_uber || null,
+        work_zones: profile.work_zones || null,
+        descripcion_perfil: profile.descripcion_perfil || null,
+        avatar_url: profile.avatar_url || null
+      }));
     }
 
     // Filtrar por área de servicio si es específica
-    if (serviceArea !== 'servicio general' && professionals) {
+    if (serviceArea !== 'servicio general') {
       professionals = professionals.filter(prof => 
         prof.areas_servicio && 
         prof.areas_servicio.some((area: string) => 
@@ -182,7 +168,12 @@ async function getTopProfessionals(serviceArea: string, limit: number = 5) {
       );
     }
 
-    return professionals || [];
+    // Ordenar por calificación y limitar resultados
+    professionals = professionals
+      .sort((a, b) => (b.calificacion_promedio || 0) - (a.calificacion_promedio || 0))
+      .slice(0, limit);
+
+    return professionals;
   } catch (error) {
     console.error('Error fetching professionals:', error);
     return [];
