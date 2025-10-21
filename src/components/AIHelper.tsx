@@ -3,8 +3,9 @@
 
 import React, { useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPaperPlane, faSpinner, faBrain, faCheckCircle, faLightbulb, faCog, faBox, faDollarSign } from '@fortawesome/free-solid-svg-icons';
+import { faPaperPlane, faSpinner, faBrain, faCheckCircle, faLightbulb, faCog, faBox, faDollarSign, faRobot } from '@fortawesome/free-solid-svg-icons';
 import { ProfessionalCard } from './ProfessionalCard';
+import { AIDiagnosisChatbot } from './AIDiagnosisChatbot';
 import Link from 'next/link';
 
 interface AIResponse {
@@ -38,6 +39,7 @@ export const AIHelper = () => {
   const [loading, setLoading] = useState(false);
   const [response, setResponse] = useState<AIResponse | null>(null);
   const [error, setError] = useState('');
+  const [isChatbotOpen, setIsChatbotOpen] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -81,7 +83,27 @@ export const AIHelper = () => {
           </p>
         </div>
 
-        <div className="max-w-2xl mx-auto bg-white p-6 rounded-xl shadow-lg">
+        {/* Botón principal para abrir el chatbot */}
+        <div className="max-w-2xl mx-auto bg-white p-8 rounded-xl shadow-lg text-center">
+          <div className="mb-6">
+            <FontAwesomeIcon icon={faRobot} className="text-4xl text-blue-600 mb-4" />
+            <h3 className="text-xl font-semibold text-gray-800 mb-2">Iniciar Diagnóstico AI</h3>
+            <p className="text-gray-600 mb-6">
+              Nuestro asistente inteligente analizará tu problema y te conectará con el técnico perfecto
+            </p>
+          </div>
+          
+          <button
+            onClick={() => setIsChatbotOpen(true)}
+            className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-8 py-4 rounded-lg font-semibold text-lg hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
+          >
+            <FontAwesomeIcon icon={faRobot} className="mr-2" />
+            Iniciar Diagnóstico AI
+          </button>
+        </div>
+
+        {/* Mantener la sección original como alternativa */}
+        <div className="max-w-2xl mx-auto bg-gray-50 p-6 rounded-xl shadow-sm mt-8">
           <form onSubmit={handleSubmit}>
             <div className="flex items-center border border-gray-300 rounded-lg p-2 focus-within:ring-2 focus-within:ring-blue-500">
               <input
@@ -277,6 +299,12 @@ export const AIHelper = () => {
           </div>
         </div>
       </div>
+      
+      {/* Modal del Chatbot de Diagnóstico */}
+      <AIDiagnosisChatbot 
+        isOpen={isChatbotOpen} 
+        onClose={() => setIsChatbotOpen(false)} 
+      />
     </section>
   );
 };

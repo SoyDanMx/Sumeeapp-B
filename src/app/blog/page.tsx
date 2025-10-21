@@ -19,7 +19,7 @@ export default function BlogPage() {
   const [selectedCategory, setSelectedCategory] = useState('Todos');
   const [sortBy, setSortBy] = useState('recent');
 
-  const categories = ['Todos', 'Mantenimiento', 'Consejos', 'Seguridad', 'Tecnología'];
+  const categories = ['Todos', 'Mantenimiento', 'Consejos', 'Seguridad', 'Tecnología', 'Plomería', 'Electricidad'];
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
