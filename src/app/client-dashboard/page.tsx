@@ -47,9 +47,26 @@ export default function ClientDashboardPage() {
 
         setUser(user);
         
-        // Verificar membresía del usuario (esto debería venir de la base de datos)
-        // Por ahora simulamos que tiene membresía premium si está logueado
-        setUserMembership(user ? 'premium' : 'free');
+        // Verificar membresía del usuario desde la base de datos
+        if (user) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('membership_status, role')
+            .eq('user_id', user.id)
+            .single();
+            
+          // Para usuarios de prueba, permitir acceso premium
+          const testEmails = ['cliente@sumeeapp.com', 'test@sumeeapp.com', 'demo@sumeeapp.com'];
+          const isTestUser = testEmails.includes(user.email || '');
+          
+          if (isTestUser || profile?.membership_status === 'premium') {
+            setUserMembership('premium');
+          } else {
+            setUserMembership(profile?.membership_status || 'free');
+          }
+        } else {
+          setUserMembership('free');
+        }
 
         if (user) {
           // Obtener profesionales verificados
