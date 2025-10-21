@@ -3,14 +3,19 @@
 
 import React from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faUserCheck, faShieldAlt, faThumbsUp } from '@fortawesome/free-solid-svg-icons';
+import { faUserCheck, faShieldAlt, faThumbsUp, faCheckCircle, faIdCard, faAward } from '@fortawesome/free-solid-svg-icons';
 
 // Datos para las tarjetas de beneficios. Así mantenemos el código JSX limpio.
 const benefits = [
   {
     icon: faUserCheck,
     title: "Profesionales Verificados",
-    description: "Todos nuestros profesionales pasan por un riguroso proceso de verificación de antecedentes y credenciales."
+    description: "Todos nuestros profesionales pasan por un riguroso proceso de verificación de antecedentes y credenciales.",
+    verificationBadges: [
+      { icon: faCheckCircle, text: "Verificación de Identidad" },
+      { icon: faShieldAlt, text: "Revisión de Antecedentes" },
+      { icon: faAward, text: "Mínimo 3 Años de Experiencia" }
+    ]
   },
   {
     icon: faShieldAlt,
@@ -20,7 +25,7 @@ const benefits = [
   {
     icon: faThumbsUp,
     title: "Garantía de Satisfacción",
-    description: "Si no estás satisfecho con el servicio, trabajaremos contigo para resolver cualquier problema que surja."
+    description: "Si el servicio falla en los primeros 30 días, lo reparamos sin costo adicional."
   }
 ];
 
@@ -42,7 +47,19 @@ export const ValueProposition = () => {
                 <FontAwesomeIcon icon={benefit.icon} className="text-2xl text-blue-600" />
               </div>
               <h3 className="text-xl font-semibold text-gray-900 mb-3">{benefit.title}</h3>
-              <p className="text-gray-600">{benefit.description}</p>
+              <p className="text-gray-600 mb-4">{benefit.description}</p>
+              
+              {/* Badges de verificación para Profesionales Verificados */}
+              {benefit.verificationBadges && (
+                <div className="mt-4 space-y-2">
+                  {benefit.verificationBadges.map((badge, badgeIndex) => (
+                    <div key={badgeIndex} className="flex items-center justify-center text-sm text-gray-600">
+                      <FontAwesomeIcon icon={badge.icon} className="text-green-500 mr-2 text-xs" />
+                      <span>{badge.text}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           ))}
         </div>

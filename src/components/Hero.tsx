@@ -1,31 +1,24 @@
 // src/components/Hero.tsx
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faSearch, faMapMarkerAlt, faSpinner, faChevronDown } from '@fortawesome/free-solid-svg-icons';
+import { faSearch, faMapMarkerAlt, faSpinner } from '@fortawesome/free-solid-svg-icons';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
 
 export const Hero = () => {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedLocation, setSelectedLocation] = useState('Coyoacán, CDMX');
-  const [selectedService, setSelectedService] = useState('');
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [postalCode, setPostalCode] = useState('');
+  const [isPostalCodeValid, setIsPostalCodeValid] = useState(false);
   const [isLoadingUser, setIsLoadingUser] = useState(true);
   const [user, setUser] = useState<any | null>(null);
   const router = useRouter();
-  const searchRef = useRef<HTMLDivElement>(null);
 
-  // Datos mockup para servicios y ubicaciones
-  const services = [
-    'Electricista', 'Plomero', 'HVAC', 'Pintor', 'Carpintero', 'CCTV'
-  ];
-  
-  const locations = [
-    'Coyoacán, CDMX', 'Roma Norte, CDMX', 'Polanco, CDMX', 
-    'Condesa, CDMX', 'Santa Fe, CDMX', 'Del Valle, CDMX'
-  ];
+  // Validación de código postal mexicano (5 dígitos)
+  const validatePostalCode = (code: string) => {
+    const postalCodeRegex = /^\d{5}$/;
+    return postalCodeRegex.test(code);
+  };
 
   useEffect(() => {
     const fetchUserAndMembership = async () => {
@@ -46,29 +39,21 @@ export const Hero = () => {
     };
   }, []);
 
-  // Cerrar dropdown al hacer click fuera
+  // Validar código postal cuando cambie
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
-        setIsDropdownOpen(false);
-      }
-    };
+    setIsPostalCodeValid(validatePostalCode(postalCode));
+  }, [postalCode]);
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  const handleSearchSubmit = async () => {
-    setIsLoadingUser(true);
-    
-    if (!searchQuery.trim()) {
-      alert('Por favor, describe el servicio que necesitas.');
-      setIsLoadingUser(false);
+  const handlePostalCodeSubmit = async () => {
+    if (!isPostalCodeValid) {
+      alert('Por favor, ingresa un código postal válido de 5 dígitos.');
       return;
     }
 
+    setIsLoadingUser(true);
+    
     if (!user) {
-      alert('Por favor, regístrate o inicia sesión para solicitar un servicio.');
+      alert('Por favor, regístrate o inicia sesión para buscar servicios.');
       router.push('/login?redirect=/professionals');
     } else {
       const userMembershipStatus = user.user_metadata?.membership_s || 'free';
@@ -77,21 +62,17 @@ export const Hero = () => {
         alert('Necesitas una membresía premium para acceder a los técnicos.');
         router.push('/membresia');
       } else {
-        router.push(`/professionals?query=${encodeURIComponent(searchQuery)}&location=${encodeURIComponent(selectedLocation)}`);
+        router.push(`/professionals?cp=${encodeURIComponent(postalCode)}`);
       }
     }
     setIsLoadingUser(false);
   };
 
-  const handleServiceSelect = (service: string) => {
-    setSelectedService(service);
-    setSearchQuery(service);
-    setIsDropdownOpen(false);
-  };
-
-  const handleLocationSelect = (location: string) => {
-    setSelectedLocation(location);
-    setIsDropdownOpen(false);
+  const handlePostalCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.replace(/\D/g, ''); // Solo números
+    if (value.length <= 5) {
+      setPostalCode(value);
+    }
   };
 
   return (
@@ -115,80 +96,50 @@ export const Hero = () => {
             Servicios 100% verificados con garantía de satisfacción.
           </p>
           
-          {/* Búsqueda Unificada */}
-          <div className="bg-white p-6 rounded-xl shadow-2xl" ref={searchRef}>
+          {/* Búsqueda por Código Postal */}
+          <div className="bg-white p-6 rounded-xl shadow-2xl">
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none z-10">
-                <FontAwesomeIcon icon={faSearch} className="text-gray-400 text-lg" />
+                <FontAwesomeIcon icon={faMapMarkerAlt} className="text-gray-400 text-lg" />
               </div>
               <input
-                id="input-main-search"
+                id="input-postal-code"
                 type="text"
-                className="w-full pl-12 pr-14 py-4 text-lg border border-gray-200 rounded-lg text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                placeholder="Busca un electricista, plomero o tu alcaldía..."
-                value={searchQuery}
-                onChange={(e) => {
-                  setSearchQuery(e.target.value);
-                  setIsDropdownOpen(true);
-                }}
-                onFocus={() => setIsDropdownOpen(true)}
+                inputMode="numeric"
+                maxLength={5}
+                className="w-full pl-12 pr-4 py-4 text-lg border border-gray-200 rounded-lg text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                placeholder="Ingresa tu Código Postal (CP) para buscar servicios en CDMX"
+                value={postalCode}
+                onChange={handlePostalCodeChange}
               />
-              <button
-                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-auto"
-              >
-                <FontAwesomeIcon icon={faChevronDown} className="text-gray-400" />
-              </button>
             </div>
 
-            {/* Dropdown Mockup */}
-            {isDropdownOpen && (
-              <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-80 overflow-y-auto">
-                <div className="p-4">
-                  <div className="mb-4">
-                    <h4 className="font-semibold text-gray-700 mb-2">Servicios Populares</h4>
-                    <div className="grid grid-cols-2 gap-2">
-                      {services.map((service, index) => (
-                        <button
-                          key={index}
-                          onClick={() => handleServiceSelect(service)}
-                          className="text-left px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 rounded transition-colors"
-                        >
-                          {service}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                  
-                  <div className="border-t pt-4">
-                    <h4 className="font-semibold text-gray-700 mb-2">Ubicaciones</h4>
-                    <div className="space-y-1">
-                      {locations.map((location, index) => (
-                        <button
-                          key={index}
-                          onClick={() => handleLocationSelect(location)}
-                          className="flex items-center w-full px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 rounded transition-colors"
-                        >
-                          <FontAwesomeIcon icon={faMapMarkerAlt} className="mr-2 text-gray-400" />
-                          {location}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </div>
+            {/* Validación visual */}
+            {postalCode.length > 0 && (
+              <div className="mt-2 text-sm">
+                {isPostalCodeValid ? (
+                  <span className="text-green-600 flex items-center">
+                    <FontAwesomeIcon icon={faSearch} className="mr-1" />
+                    CP válido - {postalCode}
+                  </span>
+                ) : (
+                  <span className="text-red-600">
+                    Ingresa 5 dígitos para continuar
+                  </span>
+                )}
               </div>
             )}
 
             {/* CTA Button */}
             <button 
-              onClick={handleSearchSubmit}
-              className="w-full mt-4 bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-lg font-semibold text-lg transition-all transform hover:scale-105 flex items-center justify-center"
-              disabled={isLoadingUser}
+              onClick={handlePostalCodeSubmit}
+              className="w-full mt-4 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-8 py-4 rounded-lg font-semibold text-lg transition-all transform hover:scale-105 flex items-center justify-center"
+              disabled={!isPostalCodeValid || isLoadingUser}
             >
               {isLoadingUser ? (
                 <FontAwesomeIcon icon={faSpinner} spin className="mr-2" />
               ) : (
-                'Solicitar Servicio'
+                'Encontrar mi técnico'
               )}
             </button>
           </div>

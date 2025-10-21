@@ -8,7 +8,7 @@ import { faWhatsapp } from '@fortawesome/free-brands-svg-icons';
 export const WhatsAppButton = () => {
   return (
     <a
-      href="https://wa.me/525636741156?text=Hola,%20necesito%20ayuda%20para%20contratar%20un%20servicio."
+      href="https://api.whatsapp.com/send/?phone=525636741156&text=Hola%20necesito%20soporte"
       target="_blank"
       rel="noopener noreferrer"
       className="fixed bottom-6 right-6 z-50 group"

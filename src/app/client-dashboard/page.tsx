@@ -35,8 +35,22 @@ export default function ClientDashboardPage() {
   const [userMembership, setUserMembership] = useState<string>('free');
   const [selectedService, setSelectedService] = useState<string>('Todos');
 
-  // Servicios disponibles para filtrar
-  const services = ['Todos', 'Plomería', 'Electricidad', 'HVAC', 'Pintura', 'Carpintería', 'Jardinería'];
+  // Servicios disponibles para filtrar - Lista completa
+  const services = [
+    'Todos',
+    'Electricistas',
+    'CCTV y Alarmas', 
+    'Redes WiFi',
+    'Plomeros',
+    'Pintores',
+    'Aire Acondicionado',
+    'Limpieza',
+    'Jardinería',
+    'Carpintería',
+    'Construcción',
+    'Tablaroca',
+    'Fumigación'
+  ];
 
   useEffect(() => {
     const fetchUserAndProfessionals = async () => {
@@ -134,13 +148,46 @@ export default function ClientDashboardPage() {
     fetchUserAndProfessionals();
   }, []);
 
+  // Función para normalizar nombres de servicios
+  const normalizeServiceName = (name: string) => {
+    const mappings: { [key: string]: string[] } = {
+      'Electricistas': ['electricista', 'electricidad'],
+      'CCTV y Alarmas': ['cctv', 'alarma', 'seguridad'],
+      'Redes WiFi': ['wifi', 'red', 'redes'],
+      'Plomeros': ['plomero', 'plomería'],
+      'Pintores': ['pintor', 'pintura'],
+      'Aire Acondicionado': ['aire', 'a.c.', 'hvac', 'clima'],
+      'Limpieza': ['limpieza', 'limpiador'],
+      'Jardinería': ['jardinería', 'jardín'],
+      'Carpintería': ['carpintería', 'carpintero'],
+      'Construcción': ['construcción', 'constructor'],
+      'Tablaroca': ['tablaroca', 'drywall'],
+      'Fumigación': ['fumigación', 'fumigador', 'plaga']
+    };
+    
+    return mappings[name] || [name.toLowerCase()];
+  };
+
   const filteredProfesionales = selectedService === 'Todos' 
     ? profesionales 
-    : profesionales.filter(p => 
-        p.areas_servicio?.some(area => 
-          area.toLowerCase().includes(selectedService.toLowerCase())
-        )
-      );
+    : profesionales.filter(p => {
+        const serviceKeywords = normalizeServiceName(selectedService);
+        
+        // Buscar en profession
+        const professionMatch = p.profession && 
+          serviceKeywords.some(keyword => 
+            p.profession!.toLowerCase().includes(keyword)
+          );
+        
+        // Buscar en areas_servicio
+        const areasMatch = p.areas_servicio?.some(area => 
+          serviceKeywords.some(keyword => 
+            area.toLowerCase().includes(keyword)
+          )
+        );
+        
+        return professionMatch || areasMatch;
+      });
 
   if (isLoading) {
     return (
@@ -269,20 +316,24 @@ export default function ClientDashboardPage() {
             </div>
           </div>
           <div className="p-6">
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-2 md:gap-3">
               {services.map(service => (
                 <button
                   key={service}
                   onClick={() => setSelectedService(service)}
-                  className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                  className={`px-3 py-2 md:px-4 rounded-full text-xs md:text-sm font-medium transition-all duration-200 ${
                     selectedService === service
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      ? 'bg-blue-600 text-white shadow-md transform scale-105'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200 hover:shadow-sm'
                   }`}
                 >
                   {service}
                 </button>
               ))}
+            </div>
+            <div className="mt-3 text-xs text-gray-500">
+              Mostrando {filteredProfesionales.length} profesional{filteredProfesionales.length !== 1 ? 'es' : ''} 
+              {selectedService !== 'Todos' && ` en ${selectedService}`}
             </div>
           </div>
         </div>

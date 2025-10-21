@@ -12,6 +12,8 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [resendingConfirmation, setResendingConfirmation] = useState(false);
+  const [isTestCredentials, setIsTestCredentials] = useState(false);
   const router = useRouter();
 
   const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -25,15 +27,80 @@ export default function LoginPage() {
         password,
       });
 
-      if (error) throw error;
+      if (error) {
+        // Manejar específicamente el error de email no confirmado
+        if (error.message.includes('Email not confirmed')) {
+          // Verificar si son credenciales de prueba
+          const testEmail = 'cliente@sumeeapp.com';
+          const testPassword = 'TestPassword123!';
+          
+          if (email === testEmail && password === testPassword && process.env.NODE_ENV === 'development') {
+            // Para credenciales de prueba, intentar una solución alternativa
+            setIsTestCredentials(true);
+            throw new Error('TEST_CREDENTIALS_NOT_CONFIRMED');
+          } else {
+            throw new Error('EMAIL_NOT_CONFIRMED');
+          }
+        }
+        throw error;
+      }
 
       // Si el login es exitoso, redirigir a una futura página de perfil o dashboard
       router.push('/dashboard'); 
 
     } catch (error: any) {
-      setError(error.message || 'No se pudo iniciar sesión. Revisa tus credenciales.');
+      if (error.message === 'EMAIL_NOT_CONFIRMED') {
+        setError('Tu correo electrónico no ha sido confirmado. Haz clic en "Reenviar confirmación" para recibir el enlace de activación.');
+      } else if (error.message === 'TEST_CREDENTIALS_NOT_CONFIRMED') {
+        setError('Las credenciales de prueba necesitan confirmación. Este es un problema común en desarrollo. Puedes: 1) Reenviar confirmación, 2) Verificar manualmente en Supabase, o 3) Usar la función de crear usuario de prueba.');
+      } else {
+        setError(error.message || 'No se pudo iniciar sesión. Revisa tus credenciales.');
+      }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleResendConfirmation = async () => {
+    if (!email) {
+      setError('Por favor, ingresa tu correo electrónico primero.');
+      return;
+    }
+
+    setResendingConfirmation(true);
+    setError(null);
+
+    try {
+      // Para credenciales de prueba en desarrollo, intentar confirmar directamente
+      if (process.env.NODE_ENV === 'development' && email === 'cliente@sumeeapp.com') {
+        const response = await fetch('/api/confirm-test-email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email }),
+        });
+
+        if (response.ok) {
+          alert('Email de prueba confirmado exitosamente. Ahora puedes hacer login.');
+          return;
+        }
+      }
+
+      // Método normal de reenvío
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: email,
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/callback`
+        }
+      });
+
+      if (error) throw error;
+
+      alert('Se ha enviado un nuevo enlace de confirmación a tu correo electrónico. Revisa tu bandeja de entrada.');
+    } catch (error: any) {
+      setError('Error al reenviar la confirmación: ' + (error.message || 'Error desconocido'));
+    } finally {
+      setResendingConfirmation(false);
     }
   };
 
@@ -82,7 +149,33 @@ export default function LoginPage() {
             />
           </div>
           
-          {error && <p className="text-red-500 text-sm text-center">{error}</p>}
+          {error && (
+            <div className="text-center">
+              <p className="text-red-500 text-sm mb-3">{error}</p>
+              {(error.includes('correo electrónico no ha sido confirmado') || error.includes('credenciales de prueba')) && (
+                <div className="space-y-2">
+                  <button
+                    type="button"
+                    onClick={handleResendConfirmation}
+                    disabled={resendingConfirmation}
+                    className="text-sm text-blue-600 hover:text-blue-700 underline disabled:text-gray-400 block mx-auto"
+                  >
+                    {resendingConfirmation ? 'Enviando...' : 'Reenviar confirmación'}
+                  </button>
+                  {error.includes('credenciales de prueba') && (
+                    <div>
+                      <Link 
+                        href="/test-credentials"
+                        className="text-sm text-green-600 hover:text-green-700 underline block mt-2"
+                      >
+                        Ir a página de credenciales de prueba
+                      </Link>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
 
           <div>
             <button
@@ -105,20 +198,33 @@ export default function LoginPage() {
         {/* Credenciales de prueba - solo en desarrollo */}
         {process.env.NODE_ENV === 'development' && (
           <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-            <p className="text-sm text-yellow-800 text-center mb-2">
+            <p className="text-sm text-yellow-800 text-center mb-3">
               <strong>🧪 Modo Desarrollo:</strong> Credenciales de prueba
             </p>
-            <div className="text-xs text-center space-y-1">
+            <div className="text-xs text-center space-y-1 mb-3">
               <div><strong>Email:</strong> cliente@sumeeapp.com</div>
               <div><strong>Password:</strong> TestPassword123!</div>
             </div>
-            <div className="text-center mt-2">
-              <Link 
-                href="/test-credentials" 
-                className="text-xs text-blue-600 hover:text-blue-500 underline"
+            <div className="text-center space-y-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setEmail('cliente@sumeeapp.com');
+                  setPassword('TestPassword123!');
+                  setError(null);
+                }}
+                className="text-xs bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded transition-colors"
               >
-                Ver página de credenciales completas
-              </Link>
+                Rellenar credenciales de prueba
+              </button>
+              <div>
+                <Link 
+                  href="/test-credentials" 
+                  className="text-xs text-blue-600 hover:text-blue-500 underline"
+                >
+                  Ver página de credenciales completas
+                </Link>
+              </div>
             </div>
           </div>
         )}
