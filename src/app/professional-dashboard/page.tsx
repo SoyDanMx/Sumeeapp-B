@@ -1,7 +1,7 @@
 // RUTA DEL ARCHIVO: src/app/professional-dashboard/page.tsx
 'use client'; 
 
-import { useState, useMemo } from 'react'; // Movimos useMemo aquí para claridad
+import { useState, useMemo, useCallback } from 'react';
 import dynamic from 'next/dynamic'; 
 import { useProfesionalData } from '@/hooks/useProfesionalData'; 
 import LeadCard from '@/components/LeadCard';
@@ -58,7 +58,13 @@ export default function ProfesionalDashboardPage() {
         };
     }, [profesional?.ubicacion_lat, profesional?.ubicacion_lng]);
 
-    // --- PASO 3: UX/UI PRINCIPLES - Loading & Error States ---
+    // --- PASO 3: FUNCIONES HANDLER - DEBEN IR ANTES DE LOS RETURNS CONDICIONALES ---
+    const handleProfileUpdateSuccess = useCallback(() => {
+        refetchData(); 
+        setIsModalOpen(false); 
+    }, [refetchData]);
+
+    // --- PASO 4: UX/UI PRINCIPLES - Loading & Error States ---
     if (isLoading) {
         return (
             <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 flex items-center justify-center">
@@ -114,12 +120,6 @@ export default function ProfesionalDashboardPage() {
             </div>
         );
     }
-    
-    // --- PASO 4: LAS FUNCIONES HANDLER PUEDEN IR AQUÍ ---
-    const handleProfileUpdateSuccess = () => {
-        refetchData(); 
-        setIsModalOpen(false); 
-    };
 
     // --- PASO 5: UX/UI PRINCIPLES - Main Layout & Navigation ---
     return (
