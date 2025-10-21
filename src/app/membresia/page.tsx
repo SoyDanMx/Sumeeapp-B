@@ -25,9 +25,16 @@ import { supabase } from '@/lib/supabaseClient';
 // Tu clave publicable de Stripe. ¡Debe ser 'pk_live_' o 'pk_test_'!
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
 
-// --- IMPORTANTE: Reemplaza con el ID de tu Precio de Stripe ---
-// Puedes obtener este ID de tu Dashboard de Stripe: Products -> Prices
-const STRIPE_PRICE_ID = 'price_1RnBgaE2shKTNR9MlLPyxmzS'; // <<< ¡¡¡REEMPLAZA ESTO CON EL ID DE TU PRECIO REAL!!!
+// --- Detectar modo de Stripe y usar el price ID correcto ---
+const isStripeLiveMode = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY?.startsWith('pk_live_');
+
+// IDs de precio - cambia estos por los tuyos según el modo
+const STRIPE_PRICE_IDS = {
+  test: 'price_1RnBgaE2shKTNR9MlLPyxmzS', // ID de test mode
+  live: 'price_XXXXXX' // ID de live mode - reemplaza con tu ID real
+};
+
+const STRIPE_PRICE_ID = isStripeLiveMode ? STRIPE_PRICE_IDS.live : STRIPE_PRICE_IDS.test;
 
 export default function MembresiaPage() {
   const [isLoadingCheckout, setIsLoadingCheckout] = useState(false);
@@ -69,7 +76,12 @@ export default function MembresiaPage() {
     setError(null);
 
     try {
-      console.log('🚀 Starting checkout process...', { priceId: STRIPE_PRICE_ID, userId: user.id });
+      console.log('🚀 Starting checkout process...', { 
+        priceId: STRIPE_PRICE_ID, 
+        userId: user.id,
+        stripeMode: isStripeLiveMode ? 'LIVE' : 'TEST',
+        publishableKey: process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY?.substring(0, 20) + '...'
+      });
       
       const response = await fetch('/api/stripe/create-checkout-session', {
         method: 'POST',
