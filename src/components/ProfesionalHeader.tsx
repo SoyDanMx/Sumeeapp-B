@@ -24,15 +24,33 @@ export default function ProfesionalHeader({ profesional, onEditClick }: Props) {
                     </div>
 
                     <div className="flex-1">
-                        {/* 1. Nombre Completo */}
-                        <h1 className="text-3xl font-extrabold text-gray-900">{profesional.full_name}</h1>
+                        {/* 1. Nombre Completo con Badge Verificado */}
+                        <div className="flex items-center space-x-3 mb-2">
+                            <h1 className="text-3xl font-extrabold text-gray-900">{profesional.full_name}</h1>
+                            {/* Badge Verificado - Trust Signal */}
+                            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 border border-green-200 shadow-sm">
+                                <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                </svg>
+                                Verificado
+                            </span>
+                        </div>
                         
-                        {/* 2. Calificación en estrellas (UX visual) */}
-                        <p className="text-yellow-500 my-1 flex items-center space-x-1">
-                            {/* Renderiza las estrellas basadas en el rating */}
-                            {'⭐'.repeat(starCount)} 
-                            <span className="text-gray-500 text-sm ml-2">({rating.toFixed(1)} / 5)</span>
-                        </p>
+                        {/* 2. Calificación en estrellas mejorada (UX visual) */}
+                        <div className="flex items-center space-x-2 my-2">
+                            <div className="flex items-center space-x-1">
+                                {/* Renderiza las estrellas basadas en el rating */}
+                                {Array.from({ length: 5 }, (_, i) => (
+                                    <span 
+                                        key={i} 
+                                        className={`text-lg ${i < starCount ? 'text-yellow-400' : 'text-gray-300'}`}
+                                    >
+                                        ⭐
+                                    </span>
+                                ))}
+                            </div>
+                            <span className="text-gray-600 text-sm font-medium">({rating.toFixed(1)} / 5.0)</span>
+                        </div>
                         
                         {/* 3. Experiencia Uber Pro (UX Badge) */}
                         {isUberPro && (

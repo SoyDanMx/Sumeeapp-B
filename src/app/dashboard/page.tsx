@@ -6,7 +6,8 @@ import dynamic from 'next/dynamic';
 import { useProfesionalData } from '@/hooks/useProfesionalData'; 
 import LeadCard from '@/components/LeadCard';
 import ProfesionalHeader from '@/components/ProfesionalHeader';
-import EditProfileModal from '@/components/EditProfileModal'; 
+import EditProfileModal from '@/components/EditProfileModal';
+import RevenueWidget from '@/components/RevenueWidget'; 
 import { Profesional, Lead } from '@/types/supabase';
 
 // Carga dinámica del mapa para optimizar el rendimiento y evitar errores de SSR
@@ -77,6 +78,11 @@ export default function ProfesionalDashboardPage() {
                 profesional={profesional} 
                 onEditClick={() => setIsModalOpen(true)}
             />
+
+            {/* Revenue Widget para Métricas MVP */}
+            <div className="px-4 py-2 bg-gray-50">
+                <RevenueWidget className="max-w-5xl mx-auto" />
+            </div>
 
             {/* BARRA DE FILTROS */}
             <div className="p-4 bg-white border-b flex flex-wrap gap-2 items-center shadow-sm">
