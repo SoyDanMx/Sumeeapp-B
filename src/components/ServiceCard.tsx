@@ -18,11 +18,19 @@ export const ServiceCard: React.FC<ServiceCardProps> = ({ name, rating, image, p
   // Función para generar CTA dinámico basado en el servicio
   const getCtaText = (serviceName: string) => {
     const service = serviceName.toLowerCase();
-    if (service.includes('electricista')) return 'Cotizar Electricista';
-    if (service.includes('plomero')) return 'Cotizar Plomero';
-    if (service.includes('pintor')) return 'Cotizar Pintor';
+    if (service.includes('electricista')) return 'Cotizar Ahora';
+    if (service.includes('plomero')) return 'Cotizar Ahora';
+    if (service.includes('pintor')) return 'Solicitar Pintor Hoy';
     if (service.includes('aire acondicionado')) return 'Cotizar HVAC';
-    return `Cotizar ${serviceName}`;
+    if (service.includes('cctv')) return 'Solicitar CCTV Hoy';
+    if (service.includes('wifi')) return 'Solicitar WiFi Hoy';
+    if (service.includes('limpieza')) return 'Solicitar Limpieza Hoy';
+    if (service.includes('jardinería')) return 'Solicitar Jardinería Hoy';
+    if (service.includes('carpintería')) return 'Solicitar Carpintería Hoy';
+    if (service.includes('construcción')) return 'Cotizar Construcción';
+    if (service.includes('tablaroca')) return 'Solicitar Tablaroca Hoy';
+    if (service.includes('fumigación')) return 'Solicitar Fumigación Hoy';
+    return `Cotizar Ahora`;
   };
 
   return (
@@ -41,15 +49,16 @@ export const ServiceCard: React.FC<ServiceCardProps> = ({ name, rating, image, p
           <h3 className="text-xl font-semibold text-gray-900">{name}</h3>
           <div className="flex items-center text-sm font-medium text-gray-700">
             <FontAwesomeIcon icon={faStar} className="text-yellow-400 mr-1" />
-            {rating}
-            {priceRange && (
-              <>
-                <span className="mx-2 text-gray-400">|</span>
-                <span className="text-gray-500 text-xs">{priceRange}</span>
-              </>
-            )}
+            <span>{rating}</span>
           </div>
         </div>
+        
+        {/* Rango de Precio Base Mockup */}
+        {priceRange && (
+          <div className="mb-3">
+            <span className="text-gray-500 text-sm">{priceRange}</span>
+          </div>
+        )}
         <p className="text-gray-600 mb-4">Profesionales verificados listos para ayudarte</p>
         
         <Link 
