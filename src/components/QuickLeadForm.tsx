@@ -11,7 +11,16 @@ import {
   faArrowRight,
   faCheck,
   faSpinner,
-  faExclamationTriangle
+  faExclamationTriangle,
+  faVideo,
+  faWifi,
+  faPaintBrush,
+  faBroom,
+  faSeedling,
+  faHammer,
+  faHardHat,
+  faCubes,
+  faBug
 } from '@fortawesome/free-solid-svg-icons';
 import { faWhatsapp } from '@fortawesome/free-brands-svg-icons';
 import { submitLead } from '@/lib/supabase/data';
@@ -23,25 +32,100 @@ interface QuickLeadFormProps {
 
 const SERVICES = [
   {
-    id: 'electricity',
-    name: 'Electricidad',
+    id: 'electricistas',
+    name: 'Electricistas',
     icon: faLightbulb,
     description: 'Instalaciones, reparaciones y mantenimiento eléctrico',
-    color: 'yellow'
+    color: 'yellow',
+    priceRange: 'Desde $350 MXN'
   },
   {
-    id: 'plumbing',
-    name: 'Plomería',
+    id: 'cctv-alarmas',
+    name: 'CCTV y Alarmas',
+    icon: faVideo,
+    description: 'Sistemas de seguridad y monitoreo',
+    color: 'red',
+    priceRange: 'Desde $800 MXN'
+  },
+  {
+    id: 'redes-wifi',
+    name: 'Redes WiFi',
+    icon: faWifi,
+    description: 'Instalación y configuración de redes',
+    color: 'blue',
+    priceRange: 'Desde $500 MXN'
+  },
+  {
+    id: 'plomeros',
+    name: 'Plomeros',
     icon: faWrench,
     description: 'Reparaciones, instalaciones y mantenimiento de plomería',
-    color: 'blue'
+    color: 'blue',
+    priceRange: 'Desde $400 MXN'
   },
   {
-    id: 'hvac',
-    name: 'HVAC',
+    id: 'pintores',
+    name: 'Pintores',
+    icon: faPaintBrush,
+    description: 'Pintura interior y exterior',
+    color: 'green',
+    priceRange: 'Desde $600 MXN'
+  },
+  {
+    id: 'aire-acondicionado',
+    name: 'Aire Acondicionado',
     icon: faThermometerHalf,
     description: 'Aire acondicionado, calefacción y ventilación',
-    color: 'red'
+    color: 'red',
+    priceRange: 'Desde $800 MXN'
+  },
+  {
+    id: 'limpieza',
+    name: 'Limpieza',
+    icon: faBroom,
+    description: 'Servicios de limpieza profesional',
+    color: 'green',
+    priceRange: 'Desde $300 MXN'
+  },
+  {
+    id: 'jardineria',
+    name: 'Jardinería',
+    icon: faSeedling,
+    description: 'Mantenimiento y diseño de jardines',
+    color: 'green',
+    priceRange: 'Desde $450 MXN'
+  },
+  {
+    id: 'carpinteria',
+    name: 'Carpintería',
+    icon: faHammer,
+    description: 'Trabajos en madera y muebles',
+    color: 'yellow',
+    priceRange: 'Desde $500 MXN'
+  },
+  {
+    id: 'construccion',
+    name: 'Construcción',
+    icon: faHardHat,
+    description: 'Obras y remodelaciones',
+    color: 'gray',
+    priceRange: 'Desde $800 MXN'
+  },
+  {
+    id: 'tablaroca',
+    name: 'Tablaroca',
+    icon: faCubes,
+    description: 'Instalación y acabados en tablaroca',
+    color: 'gray',
+    priceRange: 'Desde $400 MXN'
+  },
+  {
+    id: 'fumigacion',
+    name: 'Fumigación',
+    icon: faBug,
+    description: 'Control de plagas y fumigación',
+    color: 'yellow',
+    priceRange: 'Desde $350 MXN'
   }
 ];
 
@@ -118,9 +202,22 @@ export default function QuickLeadForm({ className = '', onLeadSubmit }: QuickLea
     const colors = {
       yellow: 'bg-yellow-100 text-yellow-800 border-yellow-200 hover:bg-yellow-200',
       blue: 'bg-blue-100 text-blue-800 border-blue-200 hover:bg-blue-200',
-      red: 'bg-red-100 text-red-800 border-red-200 hover:bg-red-200'
+      red: 'bg-red-100 text-red-800 border-red-200 hover:bg-red-200',
+      green: 'bg-green-100 text-green-800 border-green-200 hover:bg-green-200',
+      gray: 'bg-gray-100 text-gray-800 border-gray-200 hover:bg-gray-200'
     };
     return colors[color as keyof typeof colors] || colors.blue;
+  };
+
+  const getIconColorClasses = (color: string) => {
+    const colors = {
+      yellow: 'text-yellow-600',
+      blue: 'text-blue-600',
+      red: 'text-red-600',
+      green: 'text-green-600',
+      gray: 'text-gray-600'
+    };
+    return colors[color as keyof typeof colors] || 'text-gray-600';
   };
 
   if (isSubmitted) {
@@ -187,40 +284,69 @@ export default function QuickLeadForm({ className = '', onLeadSubmit }: QuickLea
           <div className="space-y-6">
             <div>
               <h3 className="text-xl font-bold text-gray-900 mb-4">¿Qué servicio necesitas?</h3>
-              <div className="grid gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-4">
                 {SERVICES.map((service) => (
                   <button
                     key={service.id}
                     onClick={() => handleServiceSelect(service.id)}
-                    className={`p-4 rounded-xl border-2 transition-all duration-200 text-left ${
+                    className={`p-4 rounded-xl border-2 transition-all duration-200 text-left group hover:shadow-lg ${
                       selectedService === service.id
-                        ? `${getColorClasses(service.color)} border-current shadow-lg transform scale-105`
-                        : 'border-gray-200 hover:border-gray-300 hover:shadow-md'
+                        ? `${getColorClasses(service.color)} border-current shadow-lg transform scale-[1.02]`
+                        : 'border-gray-200 hover:border-gray-300 hover:shadow-md bg-white'
                     }`}
                   >
-                    <div className="flex items-center space-x-4">
-                      <div className="w-12 h-12 rounded-lg bg-gray-100 flex items-center justify-center">
-                        <FontAwesomeIcon 
-                          icon={service.icon} 
-                          className={`text-xl ${
-                            selectedService === service.id 
-                              ? service.color === 'yellow' ? 'text-yellow-600' :
-                                service.color === 'blue' ? 'text-blue-600' : 'text-red-600'
-                              : 'text-gray-600'
-                          }`} 
-                        />
+                    <div className="flex flex-col space-y-3">
+                      <div className="flex items-center space-x-3">
+                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center transition-colors ${
+                          selectedService === service.id 
+                            ? 'bg-white/20' 
+                            : 'bg-gray-100 group-hover:bg-gray-200'
+                        }`}>
+                          <FontAwesomeIcon 
+                            icon={service.icon} 
+                            className={`text-lg ${
+                              selectedService === service.id 
+                                ? getIconColorClasses(service.color)
+                                : 'text-gray-600'
+                            }`} 
+                          />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-semibold text-gray-900 text-sm leading-tight">{service.name}</h4>
+                          <p className="text-xs text-gray-600 mt-1">{service.priceRange}</p>
+                        </div>
                       </div>
-                      <div className="flex-1">
-                        <h4 className="font-semibold text-gray-900">{service.name}</h4>
-                        <p className="text-sm text-gray-600">{service.description}</p>
-                      </div>
+                      <p className="text-xs text-gray-600 leading-relaxed">{service.description}</p>
                       {selectedService === service.id && (
-                        <FontAwesomeIcon icon={faCheck} className="text-lg" />
+                        <div className="flex items-center justify-center text-green-600">
+                          <FontAwesomeIcon icon={faCheck} className="text-sm mr-1" />
+                          <span className="text-xs font-medium">Seleccionado</span>
+                        </div>
                       )}
                     </div>
                   </button>
                 ))}
               </div>
+              
+              {/* Selected Service Summary */}
+              {selectedService && (
+                <div className="p-4 bg-indigo-50 border border-indigo-200 rounded-xl">
+                  <div className="flex items-center space-x-3">
+                    <FontAwesomeIcon 
+                      icon={getServiceInfo(selectedService)?.icon || faWrench} 
+                      className="text-indigo-600 text-lg" 
+                    />
+                    <div>
+                      <span className="font-medium text-indigo-900">
+                        {getServiceInfo(selectedService)?.name}
+                      </span>
+                      <span className="text-indigo-600 text-sm ml-2">
+                        - {getServiceInfo(selectedService)?.priceRange}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             <button
