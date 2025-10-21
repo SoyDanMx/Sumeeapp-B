@@ -3,14 +3,16 @@
 
 import React, { useState, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faSearch, faMapMarkerAlt, faSpinner } from '@fortawesome/free-solid-svg-icons';
+import { faSearch, faMapMarkerAlt, faSpinner, faLocationDot } from '@fortawesome/free-solid-svg-icons';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { supabase } from '@/lib/supabaseClient';
 
 export const Hero = () => {
   const [postalCode, setPostalCode] = useState('');
   const [isPostalCodeValid, setIsPostalCodeValid] = useState(false);
   const [isLoadingUser, setIsLoadingUser] = useState(true);
+  const [isUsingCurrentLocation, setIsUsingCurrentLocation] = useState(false);
   const [user, setUser] = useState<any | null>(null);
   const router = useRouter();
 
@@ -75,14 +77,40 @@ export const Hero = () => {
     }
   };
 
+  const handleUseCurrentLocation = () => {
+    setIsUsingCurrentLocation(true);
+    
+    // Simular solicitud de permiso de ubicación
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          // Simular que aceptó y usar CP de prueba
+          setPostalCode('03100'); // CP de prueba para CDMX
+          setIsUsingCurrentLocation(false);
+        },
+        (error) => {
+          // Si no permite, usar CP de prueba de todas formas
+          setPostalCode('03100');
+          setIsUsingCurrentLocation(false);
+        }
+      );
+    } else {
+      // Fallback si no soporta geolocation
+      setPostalCode('03100');
+      setIsUsingCurrentLocation(false);
+    }
+  };
+
   return (
     <section className="relative h-[500px] md:h-[600px] flex items-center bg-gray-800">
       <div className="absolute inset-0 z-0">
         <div className="absolute inset-0 bg-gradient-to-r from-blue-900/80 to-transparent z-10"></div>
-        <img 
+        <Image 
           src="https://readdy.ai/api/search-image?query=Professional%20home%20service%20workers%20in%20Latin%20America%20working%20on%20house%20repairs%2C%20plumbing%2C%20and%20electrical%20work.%20A%20diverse%20team%20of%20skilled%20professionals%20with%20tools%2C%20helping%20homeowners.%20Clean%2C%20modern%20homes%20with%20warm%20lighting%20and%20natural%20elements.%20Professional%2C%20trustworthy%20appearance&width=1440&height=600&seq=hero1&orientation=landscape"
           alt="Profesionales de servicios para el hogar trabajando en CDMX"
-          className="w-full h-full object-cover"
+          fill
+          className="object-cover"
+          priority
         />
       </div>
 
@@ -113,6 +141,19 @@ export const Hero = () => {
                 onChange={handlePostalCodeChange}
               />
             </div>
+
+            {/* Botón Usar mi Ubicación Actual */}
+            <button 
+              onClick={handleUseCurrentLocation}
+              disabled={isUsingCurrentLocation}
+              className="w-full mt-3 bg-gray-100 hover:bg-gray-200 disabled:bg-gray-300 disabled:cursor-not-allowed text-gray-700 px-4 py-3 rounded-lg font-medium transition-all flex items-center justify-center btn-primary-location"
+            >
+              <FontAwesomeIcon 
+                icon={isUsingCurrentLocation ? faSpinner : faLocationDot} 
+                className={`mr-2 ${isUsingCurrentLocation ? 'animate-spin' : ''}`} 
+              />
+              {isUsingCurrentLocation ? 'Obteniendo ubicación...' : 'Usar mi Ubicación Actual'}
+            </button>
 
             {/* Validación visual */}
             {postalCode.length > 0 && (

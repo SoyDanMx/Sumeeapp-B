@@ -3,7 +3,7 @@
 
 import React from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faUserCheck, faShieldAlt, faThumbsUp, faCheckCircle, faIdCard, faAward } from '@fortawesome/free-solid-svg-icons';
+import { faUserCheck, faShieldAlt, faThumbsUp, faCheckCircle, faIdCard, faAward, faCertificate } from '@fortawesome/free-solid-svg-icons';
 
 // Datos para las tarjetas de beneficios. Así mantenemos el código JSX limpio.
 const benefits = [
@@ -12,9 +12,11 @@ const benefits = [
     title: "Profesionales Verificados",
     description: "Todos nuestros profesionales pasan por un riguroso proceso de verificación de antecedentes y credenciales.",
     verificationBadges: [
-      { icon: faCheckCircle, text: "Verificación de Identidad" },
-      { icon: faShieldAlt, text: "Revisión de Antecedentes" },
-      { icon: faAward, text: "Mínimo 3 Años de Experiencia" }
+      { icon: faIdCard, text: "ID y Datos Legales Validados" },
+      { icon: faShieldAlt, text: "Verificación de Antecedentes No Penales" },
+      { icon: faCertificate, text: "Certificaciones Técnicas Validadas (CONOCER/DC3)" },
+      { icon: faAward, text: "Mínimo 2 Años de Experiencia Comprobada" },
+      { icon: faCheckCircle, text: "El Servicio está Cubierto por Garantía Sumee" }
     ]
   },
   {
@@ -51,11 +53,11 @@ export const ValueProposition = () => {
               
               {/* Badges de verificación para Profesionales Verificados */}
               {benefit.verificationBadges && (
-                <div className="mt-4 space-y-2">
+                <div className="mt-4 grid grid-cols-1 gap-3">
                   {benefit.verificationBadges.map((badge, badgeIndex) => (
-                    <div key={badgeIndex} className="flex items-center justify-center text-sm text-gray-600">
-                      <FontAwesomeIcon icon={badge.icon} className="text-green-500 mr-2 text-xs" />
-                      <span>{badge.text}</span>
+                    <div key={badgeIndex} className="flex items-center p-3 bg-green-50 rounded-lg border border-green-200">
+                      <FontAwesomeIcon icon={badge.icon} className="text-green-600 mr-3 text-sm flex-shrink-0" />
+                      <span className="text-sm font-medium text-gray-800 text-left">{badge.text}</span>
                     </div>
                   ))}
                 </div>

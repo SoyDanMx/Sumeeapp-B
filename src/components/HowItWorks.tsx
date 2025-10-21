@@ -5,31 +5,25 @@ import React from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSearch, faUserCheck, faCalendarAlt, faSmile } from '@fortawesome/free-solid-svg-icons';
 
-// Datos para los pasos del proceso.
+// Datos para los pasos del proceso - Simplificado a 3 pasos enfocados en confianza.
 const steps = [
   {
     step: 1,
     icon: faSearch,
-    title: "Busca tu servicio",
-    description: "Explora nuestra amplia gama de servicios o usa el buscador para encontrar exactamente lo que necesitas."
+    title: "Confirma",
+    description: "Servicio y Ubicación - Selecciona el servicio que necesitas y confirma tu ubicación para encontrar técnicos cercanos."
   },
   {
     step: 2,
     icon: faUserCheck,
-    title: "Compara profesionales",
-    description: "Revisa perfiles, calificaciones y reseñas de clientes anteriores para encontrar al profesional ideal para ti."
+    title: "Agenda",
+    description: "Con profesional verificado - Revisa perfiles, calificaciones y agenda directamente con el técnico de tu elección."
   },
   {
     step: 3,
     icon: faCalendarAlt,
-    title: "Contrata y agenda",
-    description: "Comunícate directamente, acuerda un precio y programa el servicio en la fecha y hora que más te convenga."
-  },
-  {
-    step: 4,
-    icon: faSmile,
-    title: "Disfruta y califica",
-    description: "Disfruta del Servicio y Califica bajo la Garantía de Satisfacción Sumee"
+    title: "Paga",
+    description: "Con Garantía Sumee - Disfruta del servicio con la tranquilidad de nuestra garantía de satisfacción completa."
   }
 ];
 
@@ -44,7 +38,7 @@ export const HowItWorks = () => {
         </div>
         
         {/* Grilla de Pasos */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-x-8 gap-y-12">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-x-8 gap-y-12">
           {steps.map((step, index) => (
             <div key={index} className="text-center relative">
               {/* Línea punteada de conexión (solo en escritorio) */}

@@ -93,13 +93,12 @@ export const Header = () => {
             <FontAwesomeIcon icon={faChevronDown} className="ml-2 text-sm" />
           </div>
 
-          <nav className="hidden md:flex items-center space-x-6">
-            <Link href="/join-as-pro" className="bg-blue-50 hover:bg-blue-100 text-blue-700 px-3 py-2 rounded-lg text-sm font-medium transition-colors">
+          {/* CTA Dual: Supply y Demanda */}
+          <nav className="hidden md:flex items-center space-x-4">
+            <Link href="/join-as-pro" className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors">
               Únete como Profesional
             </Link>
-          </nav>
-          
-          <div className="flex items-center space-x-4">
+            
             <div className="hidden md:block">
               {!loading && (
                 <>
@@ -208,6 +207,9 @@ export const Header = () => {
                 </>
               )}
             </div>
+          </nav>
+          
+          <div className="flex items-center space-x-4">
 
             <div className="md:hidden">
               <button onClick={() => setIsMenuOpen(!isMenuOpen)} aria-label="Abrir menú">
@@ -225,7 +227,7 @@ export const Header = () => {
           </button>
         </div>
         <nav className="flex flex-col p-5 space-y-4">
-          <Link href="/join-as-pro" onClick={closeAllModals} className="bg-blue-50 text-blue-700 px-4 py-2 rounded-lg text-sm font-medium text-center">
+          <Link href="/join-as-pro" onClick={closeAllModals} className="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium text-center">
             Únete como Profesional
           </Link>
           <hr/>

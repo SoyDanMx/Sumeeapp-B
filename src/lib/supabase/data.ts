@@ -28,8 +28,24 @@ export async function updateProfesionalProfile(userId: string, updates: Partial<
 
     // 2. Preparamos el objeto de actualización: combinamos los datos del formulario con las coordenadas (si se encontraron)
     // También incluimos el user_id para que upsert sepa a quién insertar/actualizar.
+    
+    // Primero, obtener el perfil actual para asegurar que full_name no sea null
+    const { data: currentProfile, error: profileError } = await supabase
+        .from('profiles')
+        .select('full_name')
+        .eq('user_id', userId)
+        .single();
+
+    // Si hay un perfil existente y updates.full_name es null/undefined, usar el valor existente
+    const fullName = updates.full_name || currentProfile?.full_name;
+    
+    if (!fullName) {
+        throw new Error('El campo full_name es requerido y no puede estar vacío.');
+    }
+
     const dataToUpdate = {
         user_id: userId, // ⬅️ Necesario para el upsert
+        full_name: fullName, // Asegurar que full_name siempre esté presente
         ...updates,
         ...(lat !== undefined && { ubicacion_lat: lat }), 
         ...(lng !== undefined && { ubicacion_lng: lng }), 

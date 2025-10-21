@@ -1,6 +1,7 @@
 // src/app/page.tsx
 import { Header } from '@/components/Header';
 import { Hero } from '@/components/Hero';
+import { PricingTransparencyBanner } from '@/components/PricingTransparencyBanner';
 import { ServicesSection } from '@/components/ServicesSection';
 import { ValueProposition } from '@/components/ValueProposition';
 import { TestimonialsSection } from '@/components/TestimonialsSection';
@@ -17,6 +18,9 @@ export default function Home() {
       <Header />
       <main className="flex-grow">
         <Hero />
+        
+        {/* Banner de Transparencia de Tarifas */}
+        <PricingTransparencyBanner />
         
         {/* 🚀 QuickLeadForm - Nuevo funnel de captación rápida */}
         <section className="py-16 bg-gray-50">

@@ -57,6 +57,7 @@ export default function EditProfileModal({ profesional, isOpen, onClose, onSucce
     if (!isOpen) return null;
 
     const [formData, setFormData] = useState<Partial<Profesional>>({
+        full_name: profesional.full_name, // Asegurar que full_name esté incluido
         whatsapp: profesional.whatsapp,
         numero_imss: profesional.numero_imss,
         descripcion_perfil: profesional.descripcion_perfil,
@@ -78,6 +79,7 @@ export default function EditProfileModal({ profesional, isOpen, onClose, onSucce
     useEffect(() => {
         if (isOpen) {
             setFormData({
+                full_name: profesional.full_name, // Asegurar que full_name esté incluido
                 whatsapp: profesional.whatsapp,
                 numero_imss: profesional.numero_imss,
                 descripcion_perfil: profesional.descripcion_perfil,
@@ -148,7 +150,12 @@ export default function EditProfileModal({ profesional, isOpen, onClose, onSucce
         }
 
         try {
-            await updateProfesionalProfile(userId, formData, locationAddress || undefined);
+            // Asegurar que full_name no sea null antes de enviar
+            const dataToSubmit = {
+                ...formData,
+                full_name: formData.full_name || profesional.full_name || 'Sin nombre'
+            };
+            await updateProfesionalProfile(userId, dataToSubmit, locationAddress || undefined);
             setStatusMessage('¡Perfil actualizado con éxito!');
             setIsSuccess(true);
             
