@@ -23,8 +23,8 @@ export const FooterLinkColumn: React.FC<FooterLinkColumnProps> = ({ title, links
       <h3 className="text-lg font-semibold text-white mb-4 tracking-wider uppercase">{title}</h3>
       
       <ul className="space-y-3">
-        {links.map((link) => (
-          <li key={link.href}>
+        {links.map((link, index) => (
+          <li key={`${link.text}-${link.href}-${index}`}>
             <Link href={link.href} className="flex items-center text-gray-300 hover:text-blue-400 transition-colors duration-200 group">
               <FontAwesomeIcon 
                 icon={link.icon} 
