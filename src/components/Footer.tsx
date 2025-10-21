@@ -5,7 +5,7 @@ import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faShieldAlt, faLock, faFileAlt, faStar, faMapMarkerAlt, faPhoneAlt, faEnvelope, faInfoCircle, faPen } from '@fortawesome/free-solid-svg-icons';
+import { faShieldAlt, faLock, faFileAlt, faStar, faMapMarkerAlt, faPhoneAlt, faEnvelope, faInfoCircle, faPen, faCrown } from '@fortawesome/free-solid-svg-icons';
 import { faFacebookF, faLinkedinIn } from '@fortawesome/free-brands-svg-icons';
 import { NewsletterForm } from './NewsletterForm';
 import { FooterLinkColumn } from './FooterLinkColumn';
@@ -13,7 +13,8 @@ import { FooterLinkColumn } from './FooterLinkColumn';
 // Datos para las columnas de enlaces con las URLs corregidas
 const quickLinks = [
   { href: "/about", icon: faInfoCircle, text: "Sobre Nosotros" },
-  { href: "/servicios", icon: faShieldAlt, text: "Servicios" }, // CORREGIDO
+  { href: "/servicios", icon: faShieldAlt, text: "Servicios" },
+  { href: "/membresia", icon: faCrown, text: "Membresía" },
   { href: "/blog", icon: faPen, text: "Blog" },
   { href: "/professionals", icon: faStar, text: "Profesionales" },
   { href: "/join-as-pro", icon: faStar, text: "Únete como Profesional" },

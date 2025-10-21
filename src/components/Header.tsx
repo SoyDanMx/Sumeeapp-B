@@ -7,7 +7,7 @@ import Image from 'next/image';
 import { supabase } from '@/lib/supabaseClient';
 import type { User } from '@supabase/supabase-js';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faBars, faTimes, faMapMarkerAlt, faChevronDown, faPen } from '@fortawesome/free-solid-svg-icons';
+import { faBars, faTimes, faMapMarkerAlt, faChevronDown, faPen, faCrown } from '@fortawesome/free-solid-svg-icons';
 
 import dynamic from 'next/dynamic';
 import { useLocation } from '@/context/LocationContext';
@@ -86,6 +86,10 @@ export const Header = () => {
               <FontAwesomeIcon icon={faPen} className="mr-1 text-sm" />
               Blog
             </Link>
+            <Link href="/membresia" className="text-gray-700 hover:text-yellow-600 flex items-center font-semibold">
+              <FontAwesomeIcon icon={faCrown} className="mr-1 text-sm text-yellow-500" />
+              Membresía
+            </Link>
           </nav>
           
           <div className="flex items-center space-x-4">
@@ -123,6 +127,10 @@ export const Header = () => {
           <Link href="/blog" onClick={closeAllModals} className="text-gray-800 text-lg font-semibold flex items-center">
             <FontAwesomeIcon icon={faPen} className="mr-2" />
             Blog
+          </Link>
+          <Link href="/membresia" onClick={closeAllModals} className="text-gray-800 text-lg font-semibold flex items-center">
+            <FontAwesomeIcon icon={faCrown} className="mr-2 text-yellow-500" />
+            Membresía
           </Link>
           <hr/>
           {!loading && (
