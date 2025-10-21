@@ -22,17 +22,19 @@ export default function RevenueWidget({ className = '' }: RevenueWidgetProps) {
     growthRate: '+24%'
   };
 
+  console.log('RevenueWidget rendered with className:', className);
+
   return (
-    <div className={`bg-white rounded-xl shadow-lg border border-gray-200 p-6 ${className}`}>
+    <div className={`bg-gradient-to-r from-indigo-500 to-blue-600 text-white rounded-xl shadow-xl border-4 border-yellow-400 p-8 ${className}`}>
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
-        <h3 className="text-xl font-bold text-gray-900 flex items-center">
-          <FontAwesomeIcon icon={faChartLine} className="text-indigo-600 mr-2" />
-          Métricas de Crecimiento MVP
+        <h3 className="text-2xl font-bold text-white flex items-center">
+          <FontAwesomeIcon icon={faChartLine} className="text-yellow-300 mr-3" />
+          📊 Métricas de Crecimiento MVP
         </h3>
-        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-          <FontAwesomeIcon icon={faArrowTrendUp} className="mr-1" />
-          En Crecimiento
+        <span className="inline-flex items-center px-3 py-2 rounded-full text-sm font-medium bg-yellow-400 text-yellow-900">
+          <FontAwesomeIcon icon={faArrowTrendUp} className="mr-2" />
+          🚀 En Crecimiento
         </span>
       </div>
 

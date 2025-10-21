@@ -80,8 +80,10 @@ export default function ProfesionalDashboardPage() {
             />
 
             {/* Revenue Widget para Métricas MVP */}
-            <div className="px-4 py-2 bg-gray-50">
-                <RevenueWidget className="max-w-5xl mx-auto" />
+            <div className="px-4 py-4 bg-blue-50 border-b border-blue-200">
+                <div className="max-w-7xl mx-auto">
+                    <RevenueWidget className="w-full" />
+                </div>
             </div>
 
             {/* BARRA DE FILTROS */}
