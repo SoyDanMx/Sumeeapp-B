@@ -7,11 +7,11 @@ import {
   faWrench, 
   faThermometerHalf, 
   faMapMarkerAlt, 
-  faWhatsapp, 
   faArrowRight,
   faCheck,
   faSpinner
 } from '@fortawesome/free-solid-svg-icons';
+import { faWhatsapp } from '@fortawesome/free-brands-svg-icons';
 
 interface QuickLeadFormProps {
   className?: string;

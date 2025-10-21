@@ -6,7 +6,7 @@ import {
   faDollarSign, 
   faUsers, 
   faChartLine,
-  faTrendingUp
+  faArrowTrendUp
 } from '@fortawesome/free-solid-svg-icons';
 
 interface RevenueWidgetProps {
@@ -31,7 +31,7 @@ export default function RevenueWidget({ className = '' }: RevenueWidgetProps) {
           Métricas de Crecimiento MVP
         </h3>
         <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-          <FontAwesomeIcon icon={faTrendingUp} className="mr-1" />
+          <FontAwesomeIcon icon={faArrowTrendUp} className="mr-1" />
           En Crecimiento
         </span>
       </div>
@@ -85,7 +85,7 @@ export default function RevenueWidget({ className = '' }: RevenueWidgetProps) {
       {/* Growth Indicator */}
       <div className="mt-6 pt-4 border-t border-gray-100">
         <div className="flex items-center justify-center text-sm text-gray-600">
-          <FontAwesomeIcon icon={faTrendingUp} className="text-green-500 mr-2" />
+          <FontAwesomeIcon icon={faArrowTrendUp} className="text-green-500 mr-2" />
           <span>Ritmo de crecimiento: <span className="font-semibold text-green-600">{metrics.growthRate}</span> este mes</span>
         </div>
       </div>
