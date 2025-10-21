@@ -19,7 +19,7 @@ import { Profesional } from '@/types/supabase';
 
 interface ProfessionalVerificationIDProps {
   profesional: Profesional;
-  realTimeLocation: {
+  realTimeLocation?: {
     lat: number;
     lng: number;
     lastUpdate: string;
