@@ -7,7 +7,8 @@ import { supabase } from '@/lib/supabaseClient';
 import { PageLayout } from '@/components/PageLayout';
 import Image from 'next/image';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faStar, faMapMarkerAlt, faToolbox, faSpinner, faEnvelope, faCheckCircle } from '@fortawesome/free-solid-svg-icons';
+import { faStar, faMapMarkerAlt, faToolbox, faSpinner, faEnvelope, faCheckCircle, faDollarSign } from '@fortawesome/free-solid-svg-icons';
+import { PriceTooltip } from '@/components/PriceTooltip';
 
 export default function ProfessionalProfilePage() {
   const params = useParams();
@@ -61,6 +62,16 @@ export default function ProfessionalProfilePage() {
 
   // Simulación de habilidades para el demo
   const skills = ['Reparación de Fugas', 'Instalación de Tuberías', 'Mantenimiento General', 'Destape de Drenajes'];
+  
+  // Función para generar precio estimado basado en el perfil
+  const getEstimatedPrice = () => {
+    const basePrice = 500;
+    const experienceMultiplier = profile.experience ? Math.min(profile.experience * 50, 300) : 0;
+    const minPrice = basePrice + experienceMultiplier;
+    const maxPrice = minPrice + 500;
+    
+    return `$${minPrice} - $${maxPrice}`;
+  };
 
   return (
     <PageLayout>
@@ -118,6 +129,17 @@ export default function ProfessionalProfilePage() {
                       <span className="text-gray-800 font-bold">4.8</span>
                       <span className="text-gray-500 text-sm">(15 reseñas)</span>
                     </div>
+                  </div>
+                  
+                  {/* Sección de Precio con Tooltip */}
+                  <div>
+                    <h4 className="font-semibold text-gray-600 mb-2">Tarifa por Servicio</h4>
+                    <PriceTooltip>
+                      <div className="flex items-center space-x-2 text-green-600 font-semibold">
+                        <FontAwesomeIcon icon={faDollarSign} className="text-sm" />
+                        <span>Desde {getEstimatedPrice()} MXN</span>
+                      </div>
+                    </PriceTooltip>
                   </div>
                 </div>
 

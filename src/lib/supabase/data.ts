@@ -2,7 +2,7 @@
 
 import { supabase } from '@/lib/supabase/client';
 import { geocodeAddress } from '@/lib/geocoding'; // Importamos la utilidad que acabamos de crear
-import { Profesional } from '@/types/supabase'; // Importamos el tipo Profesional
+import { Profesional, Lead } from '@/types/supabase'; // Importamos los tipos necesarios
 
 /**
  * Actualiza (o inserta si no existe, usando el user_id) la información del perfil del profesional.
@@ -45,5 +45,126 @@ export async function updateProfesionalProfile(userId: string, updates: Partial<
 
     if (error) {
         throw new Error(error.message);
+    }
+}
+
+/**
+ * Envía un nuevo lead desde el formulario del cliente.
+ * @param leadData Datos del lead incluyendo servicio, ubicación y WhatsApp
+ */
+export async function submitLead(leadData: {
+    servicio: string;
+    ubicacion: string;
+    whatsapp: string;
+    nombre_cliente?: string;
+}) {
+    try {
+        // Geocodificar la dirección proporcionada
+        let lat: number | null = null;
+        let lng: number | null = null;
+        
+        if (leadData.ubicacion) {
+            const coords = await geocodeAddress(leadData.ubicacion);
+            if (coords) {
+                lat = coords.lat;
+                lng = coords.lng;
+            }
+        }
+
+        // Preparar los datos del lead para insertar
+        const leadToInsert = {
+            nombre_cliente: leadData.nombre_cliente || null,
+            whatsapp: leadData.whatsapp,
+            descripcion_proyecto: `Servicio de ${leadData.servicio} solicitado. Ubicación: ${leadData.ubicacion}`,
+            ubicacion_lat: lat,
+            ubicacion_lng: lng,
+            fecha_creacion: new Date().toISOString(),
+            estado: 'Nuevo' as const,
+            profesional_asignado_id: null
+        };
+
+        // Insertar el lead en la base de datos
+        const { data, error } = await supabase
+            .from('leads')
+            .insert([leadToInsert])
+            .select()
+            .single();
+
+        if (error) {
+            throw new Error(`Error al crear el lead: ${error.message}`);
+        }
+
+        return {
+            success: true,
+            leadId: data.id,
+            lead: data
+        };
+    } catch (error) {
+        console.error('Error en submitLead:', error);
+        throw error;
+    }
+}
+
+/**
+ * Permite a un profesional aceptar un lead específico.
+ * @param leadId ID del lead a aceptar
+ * @param profesionalId ID del profesional que acepta el lead
+ */
+export async function acceptLead(leadId: string, profesionalId: string) {
+    try {
+        // Actualizar el lead con el profesional asignado y cambiar estado
+        const { data, error } = await supabase
+            .from('leads')
+            .update({
+                estado: 'Contactado',
+                profesional_asignado_id: profesionalId
+            })
+            .eq('id', leadId)
+            .select()
+            .single();
+
+        if (error) {
+            throw new Error(`Error al aceptar el lead: ${error.message}`);
+        }
+
+        return {
+            success: true,
+            lead: data
+        };
+    } catch (error) {
+        console.error('Error en acceptLead:', error);
+        throw error;
+    }
+}
+
+/**
+ * Obtiene un lead específico por su ID
+ * @param leadId ID del lead a obtener
+ */
+export async function getLeadById(leadId: string) {
+    try {
+        const { data, error } = await supabase
+            .from('leads')
+            .select(`
+                *,
+                profesional_asignado:profesional_asignado_id(
+                    full_name,
+                    profession,
+                    calificacion_promedio,
+                    whatsapp,
+                    avatar_url
+                )
+            `)
+            .eq('id', leadId)
+            .single();
+
+        if (error) {
+            throw new Error(`Error al obtener el lead: ${error.message}`);
+        }
+
+        return data;
+    } catch (error) {
+        console.error('Error en getLeadById:', error);
+        throw error;
     }
 }

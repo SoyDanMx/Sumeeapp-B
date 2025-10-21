@@ -127,6 +127,7 @@ export default function ProfesionalDashboardPage() {
                                     profesionalLng={profesionalCoords.lng}
                                     isSelected={lead.id === selectedLeadId}
                                     onSelect={() => setSelectedLeadId(lead.id)}
+                                    onLeadAccepted={refetchData}
                                 />
                             ))}
                         </div>

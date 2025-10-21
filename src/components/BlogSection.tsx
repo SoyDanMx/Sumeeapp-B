@@ -69,10 +69,36 @@ const blogPosts: BlogPost[] = [
     slug: 'actualizaciones-seguridad-hogar-2024',
     views: 2103,
     featured: true
+  },
+  {
+    id: '4',
+    title: 'Instalación de Bomba de Agua en CDMX: Solución al Suministro Irregular',
+    excerpt: 'Descubre cómo una bomba de agua puede solucionar los problemas de suministro irregular en la Ciudad de México y qué debes considerar antes de instalarla.',
+    author: 'Ing. Luis Rodríguez',
+    publishDate: '2024-01-20',
+    readTime: '7 min',
+    category: 'Plomería',
+    image: 'https://images.pexels.com/photos/259239/pexels-photo-259239.jpeg?auto=compress&cs=tinysrgb&w=400&h=250&fit=crop',
+    slug: 'instalacion-bomba-agua-cdmx',
+    views: 1567,
+    featured: true
+  },
+  {
+    id: '5',
+    title: 'Instalaciones Eléctricas Fuera de Norma: Peligros Mortales que Debes Conocer',
+    excerpt: 'Conoce los riesgos mortales de las instalaciones eléctricas improvisadas y por qué es crucial contratar electricistas certificados para proteger tu hogar.',
+    author: 'Ing. Ana Herrera',
+    publishDate: '2024-01-22',
+    readTime: '8 min',
+    category: 'Electricidad',
+    image: 'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=400&h=250&fit=crop',
+    slug: 'instalaciones-electricas-riesgos-cdmx',
+    views: 1823,
+    featured: false
   }
 ];
 
-const categories = ['Todos', 'Mantenimiento', 'Consejos', 'Seguridad', 'Tecnología'];
+const categories = ['Todos', 'Mantenimiento', 'Consejos', 'Seguridad', 'Tecnología', 'Plomería', 'Electricidad'];
 
 interface BlogSectionProps {
   showAllPosts?: boolean;

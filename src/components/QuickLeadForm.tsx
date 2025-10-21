@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
   faLightbulb, 
@@ -9,9 +10,11 @@ import {
   faMapMarkerAlt, 
   faArrowRight,
   faCheck,
-  faSpinner
+  faSpinner,
+  faExclamationTriangle
 } from '@fortawesome/free-solid-svg-icons';
 import { faWhatsapp } from '@fortawesome/free-brands-svg-icons';
+import { submitLead } from '@/lib/supabase/data';
 
 interface QuickLeadFormProps {
   className?: string;
@@ -43,14 +46,18 @@ const SERVICES = [
 ];
 
 export default function QuickLeadForm({ className = '', onLeadSubmit }: QuickLeadFormProps) {
+  const router = useRouter();
   const [currentStep, setCurrentStep] = useState(1);
   const [selectedService, setSelectedService] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [error, setError] = useState<string>('');
+  const [submittedLeadId, setSubmittedLeadId] = useState<string>('');
   const [formData, setFormData] = useState({
     service: '',
     location: '',
-    whatsapp: ''
+    whatsapp: '',
+    nombreCliente: ''
   });
 
   const handleServiceSelect = (serviceId: string) => {
@@ -71,29 +78,33 @@ export default function QuickLeadForm({ className = '', onLeadSubmit }: QuickLea
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
+    setError('');
 
     try {
-      // Simulamos el envío del lead a Supabase
-      console.log('Enviando lead a Supabase:', {
-        service: formData.service,
-        location: formData.location,
+      // Llamamos a la función submitLead de Supabase
+      const result = await submitLead({
+        servicio: formData.service,
+        ubicacion: formData.location,
         whatsapp: formData.whatsapp,
-        timestamp: new Date().toISOString()
+        nombre_cliente: formData.nombreCliente || undefined
       });
 
-      // Aquí iría la llamada real a Supabase
-      // await supabase.from('leads').insert([leadData]);
+      if (result.success) {
+        setSubmittedLeadId(result.leadId);
+        
+        if (onLeadSubmit) {
+          onLeadSubmit({
+            ...formData,
+            leadId: result.leadId
+          });
+        }
 
-      // Simulamos delay de red
-      await new Promise(resolve => setTimeout(resolve, 1500));
-
-      if (onLeadSubmit) {
-        onLeadSubmit(formData);
+        // Redirigir a la página de estado del lead
+        router.push(`/status/${result.leadId}`);
       }
-
-      setIsSubmitted(true);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error enviando lead:', error);
+      setError(error.message || 'Error al enviar la solicitud. Por favor, inténtalo de nuevo.');
     } finally {
       setIsSubmitting(false);
     }
@@ -128,7 +139,9 @@ export default function QuickLeadForm({ className = '', onLeadSubmit }: QuickLea
             setIsSubmitted(false);
             setCurrentStep(1);
             setSelectedService('');
-            setFormData({ service: '', location: '', whatsapp: '' });
+            setFormData({ service: '', location: '', whatsapp: '', nombreCliente: '' });
+            setError('');
+            setSubmittedLeadId('');
           }}
           className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-lg font-medium transition-colors"
         >
@@ -243,6 +256,20 @@ export default function QuickLeadForm({ className = '', onLeadSubmit }: QuickLea
             </div>
 
             <div>
+              <label htmlFor="nombreCliente" className="block text-sm font-medium text-gray-700 mb-2">
+                Nombre (opcional)
+              </label>
+              <input
+                type="text"
+                id="nombreCliente"
+                value={formData.nombreCliente}
+                onChange={(e) => handleInputChange('nombreCliente', e.target.value)}
+                placeholder="Tu nombre"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+              />
+            </div>
+
+            <div>
               <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-2">
                 <FontAwesomeIcon icon={faMapMarkerAlt} className="mr-2 text-gray-500" />
                 Ubicación o Código Postal
@@ -277,6 +304,14 @@ export default function QuickLeadForm({ className = '', onLeadSubmit }: QuickLea
               </p>
             </div>
 
+            {/* Error Message */}
+            {error && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-center space-x-2">
+                <FontAwesomeIcon icon={faExclamationTriangle} className="text-red-500 flex-shrink-0" />
+                <p className="text-red-700 text-sm">{error}</p>
+              </div>
+            )}
+
             <button
               type="submit"
               disabled={isSubmitting || !formData.location || !formData.whatsapp}
@@ -290,7 +325,7 @@ export default function QuickLeadForm({ className = '', onLeadSubmit }: QuickLea
               ) : (
                 <>
                   <FontAwesomeIcon icon={faWhatsapp} />
-                  <span>Enviar por WhatsApp</span>
+                  <span>Enviar Solicitud</span>
                 </>
               )}
             </button>
