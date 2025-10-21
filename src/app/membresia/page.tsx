@@ -1,7 +1,7 @@
 // src/app/membresia/page.tsx
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { PageLayout } from '@/components/PageLayout';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
@@ -25,22 +25,28 @@ import { supabase } from '@/lib/supabaseClient';
 // Tu clave publicable de Stripe. ¡Debe ser 'pk_live_' o 'pk_test_'!
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
 
-// --- Detectar modo de Stripe y usar el price ID correcto ---
+// --- Configuración de Stripe ---
 const isStripeLiveMode = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY?.startsWith('pk_live_');
 
-// IDs de precio - cambia estos por los tuyos según el modo
+// IDs de precio - usando el ID del botón que ya funciona
 const STRIPE_PRICE_IDS = {
   test: 'price_1RnBgaE2shKTNR9MlLPyxmzS', // ID de test mode
-  live: 'price_XXXXXX' // ID de live mode - reemplaza con tu ID real
+  live: 'buy_btn_1RmpzwE2shKTNR9M91kuSgKh' // Usando el buy button ID que sabemos que funciona
 };
 
 const STRIPE_PRICE_ID = isStripeLiveMode ? STRIPE_PRICE_IDS.live : STRIPE_PRICE_IDS.test;
+
+// Configuración del botón de Stripe directo (fallback)
+const STRIPE_BUY_BUTTON_ID = 'buy_btn_1RmpzwE2shKTNR9M91kuSgKh';
+const STRIPE_PUBLISHABLE_KEY = 'pk_live_51P8c4AE2shKTNR9MVARQB4La2uYMMc2shlTCcpcg8EI6MqqPV1uN5uj6UbB5mpfReRKd4HL2OP1LoF17WXcYYeB000Ot1l847E';
 
 export default function MembresiaPage() {
   const [isLoadingCheckout, setIsLoadingCheckout] = useState(false);
   const [user, setUser] = useState<any | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [useDirectButton, setUseDirectButton] = useState(false);
+  const stripeButtonRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -64,6 +70,41 @@ export default function MembresiaPage() {
 
     return () => subscription.unsubscribe();
   }, []);
+
+  // Cargar el botón de Stripe directo cuando sea necesario
+  useEffect(() => {
+    if (useDirectButton && stripeButtonRef.current) {
+      // Limpiar contenido anterior
+      stripeButtonRef.current.innerHTML = '';
+      
+      // Crear y cargar el script del botón de Stripe
+      const script = document.createElement('script');
+      script.src = 'https://js.stripe.com/v3/buy-button.js';
+      script.async = true;
+      
+      // Crear el elemento del botón de Stripe
+      const buyButton = document.createElement('stripe-buy-button');
+      buyButton.setAttribute('buy-button-id', STRIPE_BUY_BUTTON_ID);
+      buyButton.setAttribute('publishable-key', STRIPE_PUBLISHABLE_KEY);
+      
+      // Agregar el botón al contenedor cuando el script se cargue
+      script.onload = () => {
+        if (stripeButtonRef.current) {
+          stripeButtonRef.current.appendChild(buyButton);
+          setError(null); // Limpiar error cuando se carga el botón
+        }
+      };
+      
+      document.head.appendChild(script);
+      
+      return () => {
+        // Limpiar el script al desmontar
+        if (script.parentNode) {
+          script.parentNode.removeChild(script);
+        }
+      };
+    }
+  }, [useDirectButton]);
 
   // Función para manejar el clic en el botón de compra
   const handleCheckout = async () => {
@@ -151,6 +192,16 @@ export default function MembresiaPage() {
 
     } catch (error: any) {
       console.error('Error en el proceso de checkout:', error);
+      
+      // Si es un error de configuración de Stripe, activar el botón directo
+      if (error.message?.includes('Stripe configuration error') || 
+          error.message?.includes('config.authenticator')) {
+        console.log('🔄 Switching to direct Stripe button due to configuration error');
+        setUseDirectButton(true);
+        setError('Configurando método de pago alternativo...');
+        return;
+      }
+      
       setError(error.message || 'Error al iniciar el pago. Inténtalo de nuevo.');
     } finally {
       setIsLoadingCheckout(false);
@@ -317,29 +368,41 @@ export default function MembresiaPage() {
 
               {/* CTA Button */}
               <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-                <button 
-                  onClick={handleCheckout}
-                  disabled={isLoadingCheckout || !isAuthenticated}
-                  className={`px-12 py-4 rounded-xl text-lg font-bold transition-all duration-200 shadow-lg transform hover:scale-105 flex items-center space-x-3 ${
-                    !isAuthenticated 
-                      ? 'bg-gray-400 text-gray-200 cursor-not-allowed' 
-                      : isLoadingCheckout
-                        ? 'bg-blue-400 text-white cursor-wait'
-                        : 'bg-white text-indigo-600 hover:bg-blue-50 hover:shadow-xl'
-                  }`}
-                >
-                  {isLoadingCheckout ? (
-                    <>
-                      <FontAwesomeIcon icon={faSpinner} spin className="text-xl" />
-                      <span>Procesando...</span>
-                    </>
-                  ) : (
-                    <>
-                      <FontAwesomeIcon icon={faCrown} className="text-xl" />
-                      <span>Comprar Membresía Premium</span>
-                    </>
-                  )}
-                </button>
+                {!useDirectButton ? (
+                  <button 
+                    onClick={handleCheckout}
+                    disabled={isLoadingCheckout || !isAuthenticated}
+                    className={`px-12 py-4 rounded-xl text-lg font-bold transition-all duration-200 shadow-lg transform hover:scale-105 flex items-center space-x-3 ${
+                      !isAuthenticated 
+                        ? 'bg-gray-400 text-gray-200 cursor-not-allowed' 
+                        : isLoadingCheckout
+                          ? 'bg-blue-400 text-white cursor-wait'
+                          : 'bg-white text-indigo-600 hover:bg-blue-50 hover:shadow-xl'
+                    }`}
+                  >
+                    {isLoadingCheckout ? (
+                      <>
+                        <FontAwesomeIcon icon={faSpinner} spin className="text-xl" />
+                        <span>Procesando...</span>
+                      </>
+                    ) : (
+                      <>
+                        <FontAwesomeIcon icon={faCrown} className="text-xl" />
+                        <span>Comprar Membresía Premium</span>
+                      </>
+                    )}
+                  </button>
+                ) : (
+                  <div className="flex flex-col items-center space-y-4">
+                    <div ref={stripeButtonRef} className="stripe-button-container"></div>
+                    <button 
+                      onClick={() => setUseDirectButton(false)}
+                      className="px-4 py-2 text-sm text-blue-200 hover:text-white border border-blue-300 hover:border-white rounded-lg transition-colors duration-200"
+                    >
+                      Usar método alternativo
+                    </button>
+                  </div>
+                )}
                 
                 {!isAuthenticated && (
                   <a 
