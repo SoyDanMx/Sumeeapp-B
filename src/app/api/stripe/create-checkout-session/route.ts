@@ -2,11 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { createClient } from '@supabase/supabase-js';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-06-30.basil',
-  typescript: true,
-});
-
 export async function POST(request: NextRequest) {
   console.log('🔧 Stripe API Route called');
   
@@ -20,11 +15,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Configurar Supabase Admin dentro de la función para evitar problemas de build
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
+    // Inicializar Stripe dentro de la función para evitar problemas de build
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+      apiVersion: '2025-06-30.basil',
+      typescript: true,
+    });
+
+    // Verificar variables de entorno de Supabase antes de inicializar
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    
+    let supabase = null;
+    if (supabaseUrl && supabaseServiceKey) {
+      // Configurar Supabase Admin dentro de la función para evitar problemas de build
+      supabase = createClient(supabaseUrl, supabaseServiceKey);
+    } else {
+      console.warn('⚠️ Supabase environment variables not found, skipping user validation');
+    }
 
     const { priceId, userId } = await request.json();
     console.log('📝 Request data:', { priceId, userId });
@@ -39,17 +46,21 @@ export async function POST(request: NextRequest) {
 
     // Verificar que el usuario existe en Supabase (opcional para desarrollo)
     let userEmail = '';
-    try {
-      const { data: user, error: userError } = await supabase.auth.admin.getUserById(userId);
-      
-      if (userError) {
-        console.warn('⚠️ User validation skipped:', userError.message);
-      } else {
-        userEmail = user?.user?.email || '';
-        console.log('✅ User validated:', userEmail);
+    if (supabase) {
+      try {
+        const { data: user, error: userError } = await supabase.auth.admin.getUserById(userId);
+        
+        if (userError) {
+          console.warn('⚠️ User validation skipped:', userError.message);
+        } else {
+          userEmail = user?.user?.email || '';
+          console.log('✅ User validated:', userEmail);
+        }
+      } catch (userError) {
+        console.warn('⚠️ Could not validate user, proceeding anyway');
       }
-    } catch (userError) {
-      console.warn('⚠️ Could not validate user, proceeding anyway');
+    } else {
+      console.log('⚠️ Supabase not available, skipping user validation');
     }
 
     // Crear la sesión de checkout de Stripe
