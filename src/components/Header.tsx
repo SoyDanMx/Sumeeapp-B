@@ -94,17 +94,6 @@ export const Header = () => {
           </div>
 
           <nav className="hidden md:flex items-center space-x-6">
-            <Link href="/servicios" className="text-gray-700 hover:text-blue-600">Servicios</Link>
-            <Link href="/#profesionales" className="text-gray-700 hover:text-blue-600">Profesionales</Link>
-            <Link href="/#como-funciona" className="text-gray-700 hover:text-blue-600">Cómo Funciona</Link>
-            <Link href="/blog" className="text-gray-700 hover:text-blue-600 flex items-center">
-              <FontAwesomeIcon icon={faPen} className="mr-1 text-sm" />
-              Blog
-            </Link>
-            <Link href="/membresia" className="text-gray-700 hover:text-yellow-600 flex items-center font-semibold">
-              <FontAwesomeIcon icon={faCrown} className="mr-1 text-sm text-yellow-500" />
-              Membresía
-            </Link>
             <Link href="/join-as-pro" className="bg-blue-50 hover:bg-blue-100 text-blue-700 px-3 py-2 rounded-lg text-sm font-medium transition-colors">
               Únete como Profesional
             </Link>
@@ -236,17 +225,6 @@ export const Header = () => {
           </button>
         </div>
         <nav className="flex flex-col p-5 space-y-4">
-          <Link href="/servicios" onClick={closeAllModals} className="text-gray-800 text-lg font-semibold">Servicios</Link>
-          <Link href="/#profesionales" onClick={closeAllModals} className="text-gray-800 text-lg font-semibold">Profesionales</Link>
-          <Link href="/#como-funciona" onClick={closeAllModals} className="text-gray-800 text-lg font-semibold">Cómo Funciona</Link>
-          <Link href="/blog" onClick={closeAllModals} className="text-gray-800 text-lg font-semibold flex items-center">
-            <FontAwesomeIcon icon={faPen} className="mr-2" />
-            Blog
-          </Link>
-          <Link href="/membresia" onClick={closeAllModals} className="text-gray-800 text-lg font-semibold flex items-center">
-            <FontAwesomeIcon icon={faCrown} className="mr-2 text-yellow-500" />
-            Membresía
-          </Link>
           <Link href="/join-as-pro" onClick={closeAllModals} className="bg-blue-50 text-blue-700 px-4 py-2 rounded-lg text-sm font-medium text-center">
             Únete como Profesional
           </Link>

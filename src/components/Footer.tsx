@@ -15,6 +15,7 @@ export const Footer = () => {
   const quickLinks = useMemo(() => [
     { href: "/about", icon: faInfoCircle, text: "Sobre Nosotros" },
     { href: "/servicios", icon: faShieldAlt, text: "Servicios" },
+    { href: "/#como-funciona", icon: faStar, text: "Cómo Funciona" },
     { href: "/membresia", icon: faCrown, text: "Membresía" },
     { href: "/blog", icon: faPen, text: "Blog" },
     { href: "/professionals", icon: faStar, text: "Profesionales" },

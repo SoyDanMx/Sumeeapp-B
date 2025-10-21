@@ -5,42 +5,50 @@ import { useLocation } from '@/context/LocationContext'; // Importa el hook de u
 import { ProfessionalCard } from '@/components/ProfessionalCard'; // Tu componente de tarjeta de profesional
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSpinner, faMapMarkerAlt, faSearch } from '@fortawesome/free-solid-svg-icons';
-import type { Profile } from '@/types'; // ✅ CORRECCIÓN: Usamos el tipo Profile y el alias de ruta.
+import type { Profesional } from '@/types/supabase'; // Usar el tipo Profesional como fuente única de verdad
 import { PageLayout } from '@/components/PageLayout'; // Asumo que usas PageLayout para el layout de la página
 
 // AVISO: Asumiendo que useLocation() devuelve un objeto con { location: { lat, lon, address } }
 // Se recomienda definir un tipo LocationContextType explícito para el contexto.
 
 export default function ProfessionalsPage() {
-  const { location: userSelectedLocation } = useLocation(); // Obtiene la ubicación del usuario del contexto
-  const [professionals, setProfessionals] = useState<Profile[]>([]); // ✅ CORRECCIÓN: Usamos el tipo Profile[]
+  const { location: userSelectedLocation } = useLocation();
+  const [professionals, setProfessionals] = useState<Profesional[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showNoLocationMessage, setShowNoLocationMessage] = useState(false);
 
   // Estados para filtros y búsqueda
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedProfession, setSelectedProfession] = useState(''); // Estado para el filtro de profesión
-  const [searchRadius, setSearchRadius] = useState<number>(10000); // Radio por defecto: 10 km (10000 metros)
+  const [selectedProfession, setSelectedProfession] = useState('');
+  const [searchRadius, setSearchRadius] = useState<number>(10000);
+
+  // Ubicación por defecto (Ciudad de México)
+  const DEFAULT_LOCATION = {
+    lat: 19.4326,
+    lon: -99.1332,
+    address: 'Ciudad de México, CDMX, México'
+  };
 
   // Esta función se encarga de buscar profesionales
   const fetchProfessionals = async () => {
     setIsLoading(true);
     setError(null);
+    setShowNoLocationMessage(false);
 
-    // Solo buscar si tenemos una ubicación seleccionada
-    if (!userSelectedLocation || !userSelectedLocation.lat || !userSelectedLocation.lon) {
-      // Si no hay una ubicación válida, muestra un mensaje y espera
-      setError('Por favor, selecciona tu ubicación en el encabezado para encontrar profesionales.');
-      setProfessionals([]); // Limpia profesionales si no hay ubicación
-      setIsLoading(false);
-      return;
+    // Usar ubicación del usuario o la ubicación por defecto
+    const locationToUse = userSelectedLocation || DEFAULT_LOCATION;
+    
+    // Determinar si estamos usando ubicación por defecto
+    if (!userSelectedLocation) {
+      setShowNoLocationMessage(true);
     }
 
     // Construir la URL de la API con los parámetros de filtro
     const params = new URLSearchParams();
-    params.append('lat', userSelectedLocation.lat.toString());
-    params.append('lon', userSelectedLocation.lon.toString());
-    params.append('radius', searchRadius.toString()); // Añadir el radio
+    params.append('lat', locationToUse.lat.toString());
+    params.append('lon', locationToUse.lon.toString());
+    params.append('radius', searchRadius.toString());
     
     if (selectedProfession) {
       params.append('profession', selectedProfession);
@@ -56,30 +64,76 @@ export default function ProfessionalsPage() {
         throw new Error(errorData.message || 'Error al cargar profesionales.');
       }
       const data = await response.json();
-      setProfessionals(data.professionals);
+      setProfessionals(data.professionals || []);
     } catch (err: any) {
-      setError(err.message || 'Error desconocido al cargar profesionales.');
       console.error('Fetch professionals error:', err);
+      // Si falla la API, intentar con Supabase directo
+      await fetchProfessionalsDirectly(locationToUse);
     } finally {
       setIsLoading(false);
     }
   };
 
+  // Función de respaldo para obtener profesionales directamente desde Supabase
+  const fetchProfessionalsDirectly = async (location: typeof DEFAULT_LOCATION) => {
+    try {
+      // Importar supabase client dinámicamente
+      const { createClient } = await import('@supabase/supabase-js');
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+      const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+      const supabase = createClient(supabaseUrl, supabaseKey);
+
+      let query = supabase
+        .from('profiles')
+        .select('*')
+        .not('profession', 'is', null)
+        .not('profession', 'eq', '');
+
+      if (selectedProfession) {
+        query = query.eq('profession', selectedProfession);
+      }
+
+      if (searchQuery) {
+        query = query.ilike('full_name', `%${searchQuery}%`);
+      }
+
+      const { data, error } = await query.limit(20);
+
+      if (error) {
+        throw error;
+      }
+
+      setProfessionals(data || []);
+      setError(null);
+    } catch (err: any) {
+      setError('Error al cargar profesionales. Intenta recargar la página.');
+      console.error('Direct fetch error:', err);
+    }
+  };
+
   // Efecto para cargar profesionales cuando la ubicación cambia o los filtros cambian
   useEffect(() => {
-    // Añadir un pequeño retraso (debounce) para las búsquedas de texto
-    const handler = setTimeout(() => {
+    // Cargar inmediatamente en el primer render, luego con debounce para cambios de filtros
+    if (searchQuery === '' && selectedProfession === '') {
+      // Primera carga
       fetchProfessionals();
-    }, 500); // Espera 500ms después de que el usuario deja de escribir/seleccionar
+    } else {
+      // Debounce para búsquedas de texto
+      const handler = setTimeout(() => {
+        fetchProfessionals();
+      }, 500);
 
-    return () => {
-      clearTimeout(handler); // Limpia el timeout si el componente se desmonta o las dependencias cambian rápido
-    };
+      return () => {
+        clearTimeout(handler);
+      };
+    }
   }, [userSelectedLocation, searchRadius, selectedProfession, searchQuery]); // Dependencias del efecto
 
-  // Ejemplo de profesiones para el filtro (ajusta según tus datos reales en Supabase)
+  // Lista de profesiones disponibles
   const professionsList = [
-    'Plomero', 'Electricista', 'Carpintero', 'Pintor', 'Limpieza', 'CCTV y Alarmas', 'Redes WiFi', 'Aire Acondicionado'
+    'Plomero', 'Electricista', 'Carpintero', 'Pintor', 'Limpieza', 
+    'CCTV y Alarmas', 'Redes WiFi', 'Aire Acondicionado', 'Jardinería', 
+    'Tablaroca', 'Fumigación', 'Construcción'
   ];
 
   return (
@@ -128,13 +182,29 @@ export default function ProfessionalsPage() {
               </select>
             </div>
           </div>
-          {/* Mostramos la ubicación si está disponible */}
-          {userSelectedLocation && userSelectedLocation.address && (
-            <p className="text-sm text-gray-600 mt-4 flex items-center justify-center text-center">
-              <FontAwesomeIcon icon={faMapMarkerAlt} className="mr-2" />
-              Buscando profesionales cerca de: <span className="font-semibold ml-1">{userSelectedLocation.address.split(',')[0].trim()}</span>
-            </p>
-          )}
+          
+          {/* Información de ubicación */}
+          <div className="mt-4 text-center">
+            {showNoLocationMessage ? (
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                <p className="text-sm text-yellow-800 flex items-center justify-center">
+                  <FontAwesomeIcon icon={faMapMarkerAlt} className="mr-2" />
+                  Mostrando profesionales de <span className="font-semibold ml-1">Ciudad de México</span> por defecto.
+                  <span className="ml-2 text-blue-600 underline cursor-pointer" onClick={() => {
+                    // Abrir el modal de selección de ubicación - esto requeriría acceso al context del header
+                    alert('Por favor, selecciona tu ubicación desde el header para una búsqueda más precisa.');
+                  }}>
+                    Seleccionar tu ubicación
+                  </span>
+                </p>
+              </div>
+            ) : userSelectedLocation && userSelectedLocation.address ? (
+              <p className="text-sm text-gray-600 flex items-center justify-center">
+                <FontAwesomeIcon icon={faMapMarkerAlt} className="mr-2" />
+                Buscando profesionales cerca de: <span className="font-semibold ml-1">{userSelectedLocation.address.split(',')[0].trim()}</span>
+              </p>
+            ) : null}
+          </div>
         </div>
 
         {isLoading && (
@@ -148,6 +218,12 @@ export default function ProfessionalsPage() {
           <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
             <strong className="font-bold">Error:</strong>
             <span className="block sm:inline ml-2">{error}</span>
+            <button 
+              onClick={fetchProfessionals}
+              className="block sm:inline ml-2 text-red-600 underline hover:text-red-800"
+            >
+              Intentar de nuevo
+            </button>
           </div>
         )}
 
@@ -159,10 +235,27 @@ export default function ProfessionalsPage() {
         )}
 
         {!isLoading && !error && professionals.length > 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {professionals.map((professional) => (
-              <ProfessionalCard key={professional.user_id} profile={professional} />
-            ))}
+          <div>
+            <div className="mb-6 text-center">
+              <p className="text-gray-600">
+                Se encontraron <span className="font-semibold text-blue-600">{professionals.length}</span> profesional{professionals.length !== 1 ? 'es' : ''}
+                {selectedProfession && ` en ${selectedProfession}`}
+              </p>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {professionals.map((professional) => (
+                <ProfessionalCard key={professional.user_id} profile={professional} />
+              ))}
+            </div>
+            
+            {professionals.length >= 20 && (
+              <div className="text-center mt-8 p-4 bg-gray-50 rounded-lg">
+                <p className="text-gray-600">
+                  Mostrando los primeros 20 resultados. Usa los filtros para refinar tu búsqueda.
+                </p>
+              </div>
+            )}
           </div>
         )}
       </div>

@@ -15,7 +15,20 @@ import {
   faSpinner,
   faExclamationTriangle,
   faEdit,
-  faRocket
+  faRocket,
+  faPlus,
+  faLightbulb,
+  faVideo,
+  faWifi,
+  faWrench,
+  faPaintBrush,
+  faThermometerHalf,
+  faBroom,
+  faSeedling,
+  faHammer,
+  faHardHat,
+  faCubes,
+  faBug
 } from '@fortawesome/free-solid-svg-icons';
 
 interface EditProfileModalProps {
@@ -26,18 +39,18 @@ interface EditProfileModalProps {
 }
 
 const OFICIOS_OPTIONS = [
-    { id: 'electricista', name: 'Electricista', icon: '⚡' },
-    { id: 'plomero', name: 'Plomero', icon: '🔧' },
-    { id: 'hvac', name: 'HVAC (Clima)', icon: '❄️' },
-    { id: 'albañil', name: 'Albañil', icon: '🧱' },
-    { id: 'pintor', name: 'Pintor', icon: '🎨' },
-    { id: 'carpintero', name: 'Carpintero', icon: '🪵' },
-    { id: 'jardinero', name: 'Jardinero', icon: '🌿' },
-    { id: 'herrero', name: 'Herrero', icon: '🔨' },
-    { id: 'cerrajero', name: 'Cerrajero', icon: '🔑' },
-    { id: 'tecnico', name: 'Técnico General', icon: '🛠️' },
-    { id: 'limpieza', name: 'Limpieza', icon: '✨' },
-    { id: 'mecanico', name: 'Mecánico', icon: '🔧' }
+    { id: 'electricistas', name: 'Electricistas', icon: faLightbulb, emoji: '⚡' },
+    { id: 'cctv-alarmas', name: 'CCTV y Alarmas', icon: faVideo, emoji: '📹' },
+    { id: 'redes-wifi', name: 'Redes WiFi', icon: faWifi, emoji: '📶' },
+    { id: 'plomeros', name: 'Plomeros', icon: faWrench, emoji: '🔧' },
+    { id: 'pintores', name: 'Pintores', icon: faPaintBrush, emoji: '🎨' },
+    { id: 'aire-acondicionado', name: 'Aire Acondicionado', icon: faThermometerHalf, emoji: '❄️' },
+    { id: 'limpieza', name: 'Limpieza', icon: faBroom, emoji: '✨' },
+    { id: 'jardineria', name: 'Jardinería', icon: faSeedling, emoji: '🌿' },
+    { id: 'carpinteria', name: 'Carpintería', icon: faHammer, emoji: '🪵' },
+    { id: 'construccion', name: 'Construcción', icon: faHardHat, emoji: '🏗️' },
+    { id: 'tablaroca', name: 'Tablaroca', icon: faCubes, emoji: '🧱' },
+    { id: 'fumigacion', name: 'Fumigación', icon: faBug, emoji: '🐛' }
 ];
 
 export default function EditProfileModal({ profesional, isOpen, onClose, onSuccess }: EditProfileModalProps) {
@@ -56,6 +69,7 @@ export default function EditProfileModal({ profesional, isOpen, onClose, onSucce
     const [statusMessage, setStatusMessage] = useState('');
     const [currentStep, setCurrentStep] = useState(1);
     const [isSuccess, setIsSuccess] = useState(false);
+    const [customService, setCustomService] = useState('');
 
     const userId = profesional.user_id;
     const totalSteps = 4;
@@ -72,6 +86,7 @@ export default function EditProfileModal({ profesional, isOpen, onClose, onSucce
                 areas_servicio: profesional.areas_servicio || [],
             });
             setLocationAddress('');
+            setCustomService('');
             setLoading(false);
             setStatusMessage('');
             setCurrentStep(1);
@@ -102,6 +117,23 @@ export default function EditProfileModal({ profesional, isOpen, onClose, onSucce
     const isOfficeSelected = (officeName: string) => {
         return formData.areas_servicio?.includes(officeName) || false;
     };
+
+    const addCustomService = () => {
+        if (customService.trim() && !formData.areas_servicio?.includes(customService.trim())) {
+            setFormData(prev => ({
+                ...prev,
+                areas_servicio: [...(prev.areas_servicio || []), customService.trim()]
+            }));
+            setCustomService('');
+        }
+    };
+
+    const removeService = (serviceName: string) => {
+        setFormData(prev => ({
+            ...prev,
+            areas_servicio: prev.areas_servicio?.filter(a => a !== serviceName) || []
+        }));
+    };
     
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
@@ -122,7 +154,7 @@ export default function EditProfileModal({ profesional, isOpen, onClose, onSucce
             
             // Delay before closing to show success message
             setTimeout(() => {
-                onSuccess();
+            onSuccess(); 
             }, 1500);
         } catch (error: any) {
             console.error('Error al actualizar el perfil:', error);
@@ -219,30 +251,30 @@ export default function EditProfileModal({ profesional, isOpen, onClose, onSucce
                                             <FontAwesomeIcon icon={faPhone} className="mr-2 text-indigo-500" />
                                             Número WhatsApp *
                                         </label>
-                                        <input
-                                            type="tel"
-                                            name="whatsapp"
-                                            value={formData.whatsapp ?? ''}
-                                            onChange={handleChange}
+                                <input
+                                    type="tel"
+                                    name="whatsapp"
+                                    value={formData.whatsapp ?? ''}
+                                    onChange={handleChange}
                                             placeholder="Ej: +52 55 1234 5678"
                                             className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200"
                                             required
-                                        />
+                                />
                                         <p className="text-xs text-gray-500">Los leads te llegarán por este número</p>
-                                    </div>
+                            </div>
                                     <div className="space-y-2">
                                         <label className="flex items-center text-sm font-semibold text-gray-700">
                                             <FontAwesomeIcon icon={faCertificate} className="mr-2 text-indigo-500" />
                                             Número IMSS (Opcional)
                                         </label>
-                                        <input
-                                            type="text"
-                                            name="numero_imss"
-                                            value={formData.numero_imss ?? ''}
-                                            onChange={handleChange}
+                                <input
+                                    type="text"
+                                    name="numero_imss"
+                                    value={formData.numero_imss ?? ''}
+                                    onChange={handleChange}
                                             placeholder="Ej: 12345678901"
                                             className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200"
-                                        />
+                                />
                                         <p className="text-xs text-gray-500">Para mayor credibilidad</p>
                                     </div>
                                 </div>
@@ -258,16 +290,16 @@ export default function EditProfileModal({ profesional, isOpen, onClose, onSucce
                                     </div>
                                     <h3 className="text-xl font-bold text-gray-900 mb-2">Tu Historia Profesional</h3>
                                     <p className="text-gray-600">Destaca tu experiencia y confianza</p>
-                                </div>
+                        </div>
                                 
                                 <div className="space-y-4">
                                     <label className="block text-sm font-semibold text-gray-700 mb-2">
                                         Descripción Profesional *
                                     </label>
-                                    <textarea
-                                        name="descripcion_perfil"
-                                        value={formData.descripcion_perfil ?? ''}
-                                        onChange={handleChange}
+                            <textarea
+                                name="descripcion_perfil"
+                                value={formData.descripcion_perfil ?? ''}
+                                onChange={handleChange}
                                         rows={6}
                                         placeholder="Ej: Soy electricista certificado con 10 años de experiencia. Especialista en instalaciones residenciales y comerciales. Trabajos garantizados y materiales de calidad. Atiendo toda la CDMX y área metropolitana."
                                         className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200 resize-none"
@@ -289,38 +321,91 @@ export default function EditProfileModal({ profesional, isOpen, onClose, onSucce
                                         <FontAwesomeIcon icon={faBriefcase} className="text-2xl text-indigo-600" />
                                     </div>
                                     <h3 className="text-xl font-bold text-gray-900 mb-2">Tus Especialidades</h3>
-                                    <p className="text-gray-600">Selecciona todos los servicios que ofreces</p>
+                                    <p className="text-gray-600">Selecciona todos los servicios que ofreces (puedes elegir múltiples)</p>
                                 </div>
                                 
-                                <div className="space-y-4">
-                                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                                        {OFICIOS_OPTIONS.map(office => (
+                                <div className="space-y-6">
+                                    {/* Servicios predefinidos */}
+                                    <div>
+                                        <h4 className="text-lg font-semibold text-gray-800 mb-4">Servicios Disponibles</h4>
+                                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                                            {OFICIOS_OPTIONS.map(office => (
+                                                <button
+                                                    key={office.id}
+                                                    type="button"
+                                                    onClick={() => handleOfficesChange(office.name)}
+                                                    className={`p-4 rounded-xl border-2 transition-all duration-200 flex flex-col items-center space-y-2 group ${
+                                                        isOfficeSelected(office.name)
+                                                            ? 'border-indigo-500 bg-indigo-50 text-indigo-700 shadow-lg transform scale-105'
+                                                            : 'border-gray-200 hover:border-indigo-300 hover:bg-gray-50'
+                                                    }`}
+                                                >
+                                                    <FontAwesomeIcon icon={office.icon} className="text-2xl" />
+                                                    <span className="text-sm font-medium text-center">{office.name}</span>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {/* Campo para servicio personalizado */}
+                                    <div className="bg-gray-50 rounded-xl p-4">
+                                        <h4 className="text-lg font-semibold text-gray-800 mb-3 flex items-center">
+                                            <FontAwesomeIcon icon={faPlus} className="mr-2 text-indigo-500" />
+                                            Agregar Servicio Personalizado
+                                        </h4>
+                                        <p className="text-sm text-gray-600 mb-4">
+                                            ¿No encuentras tu especialidad? Agrega un servicio personalizado que no esté en la lista.
+                                        </p>
+                                        <div className="flex gap-2">
+                                            <input
+                                                type="text"
+                                                value={customService}
+                                                onChange={(e) => setCustomService(e.target.value)}
+                                                placeholder="Ej: Instalación de Persianas, Soldadura, etc."
+                                                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                                onKeyPress={(e) => {
+                                                    if (e.key === 'Enter') {
+                                                        e.preventDefault();
+                                                        addCustomService();
+                                                    }
+                                                }}
+                                            />
                                             <button
-                                                key={office.id}
                                                 type="button"
-                                                onClick={() => handleOfficesChange(office.name)}
-                                                className={`p-4 rounded-xl border-2 transition-all duration-200 flex flex-col items-center space-y-2 ${
-                                                    isOfficeSelected(office.name)
-                                                        ? 'border-indigo-500 bg-indigo-50 text-indigo-700 shadow-lg transform scale-105'
-                                                        : 'border-gray-200 hover:border-indigo-300 hover:bg-gray-50'
-                                                }`}
+                                                onClick={addCustomService}
+                                                disabled={!customService.trim()}
+                                                className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
                                             >
-                                                <span className="text-2xl">{office.icon}</span>
-                                                <span className="text-sm font-medium text-center">{office.name}</span>
+                                                <FontAwesomeIcon icon={faPlus} />
                                             </button>
-                                        ))}
+                                        </div>
                                     </div>
                                     
+                                    {/* Servicios seleccionados */}
                                     {formData.areas_servicio && formData.areas_servicio.length > 0 && (
                                         <div className="bg-green-50 border border-green-200 rounded-xl p-4">
-                                            <div className="flex items-center space-x-2 text-green-700 mb-2">
-                                                <FontAwesomeIcon icon={faCheck} />
-                                                <span className="font-semibold">Especialidades seleccionadas ({formData.areas_servicio.length})</span>
+                                            <div className="flex items-center justify-between mb-3">
+                                                <div className="flex items-center space-x-2 text-green-700">
+                                                    <FontAwesomeIcon icon={faCheck} />
+                                                    <span className="font-semibold">
+                                                        Especialidades seleccionadas ({formData.areas_servicio.length})
+                                                    </span>
+                                                </div>
                                             </div>
                                             <div className="flex flex-wrap gap-2">
                                                 {formData.areas_servicio.map((area, index) => (
-                                                    <span key={index} className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm">
-                                                        {area}
+                                                    <span 
+                                                        key={index} 
+                                                        className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm flex items-center space-x-2"
+                                                    >
+                                                        <span>{area}</span>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => removeService(area)}
+                                                            className="ml-1 text-green-600 hover:text-green-800 transition-colors"
+                                                        >
+                                                            <FontAwesomeIcon icon={faTimes} className="text-xs" />
+                                                        </button>
                                                     </span>
                                                 ))}
                                             </div>
@@ -345,7 +430,7 @@ export default function EditProfileModal({ profesional, isOpen, onClose, onSucce
                                     <label className="block text-sm font-semibold text-gray-700 mb-2">
                                         Dirección de Servicio
                                     </label>
-                                    <input
+                            <input
                                         type="text"
                                         value={locationAddress}
                                         onChange={(e) => setLocationAddress(e.target.value)}
@@ -361,7 +446,7 @@ export default function EditProfileModal({ profesional, isOpen, onClose, onSucce
                                             </div>
                                         </div>
                                     </div>
-                                </div>
+                        </div>
                             </div>
                         )}
 
@@ -397,12 +482,12 @@ export default function EditProfileModal({ profesional, isOpen, onClose, onSucce
                                             <FontAwesomeIcon icon={faCheck} />
                                         )}
                                         <span className="text-sm font-medium">{statusMessage}</span>
-                                    </div>
+                        </div>
                                 )}
 
                                 {currentStep < totalSteps ? (
-                                    <button
-                                        type="button"
+                            <button
+                                type="button"
                                         onClick={nextStep}
                                         disabled={
                                             (currentStep === 1 && !formData.whatsapp) ||
@@ -413,11 +498,11 @@ export default function EditProfileModal({ profesional, isOpen, onClose, onSucce
                                     >
                                         <span>Siguiente</span>
                                         <FontAwesomeIcon icon={faRocket} className="text-sm" />
-                                    </button>
+                            </button>
                                 ) : (
-                                    <button
-                                        type="submit"
-                                        disabled={loading || !formData.areas_servicio || formData.areas_servicio.length === 0}
+                            <button
+                                type="submit"
+                                disabled={loading || !formData.areas_servicio || formData.areas_servicio.length === 0}
                                         className="px-8 py-3 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors duration-200 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center space-x-2"
                                     >
                                         {loading ? (
@@ -431,12 +516,12 @@ export default function EditProfileModal({ profesional, isOpen, onClose, onSucce
                                                 <span>Completar Perfil</span>
                                             </>
                                         )}
-                                    </button>
+                            </button>
                                 )}
                             </div>
                         </div>
                     </form>
-                </div>
+                    </div>
             </div>
         </div>
     );
