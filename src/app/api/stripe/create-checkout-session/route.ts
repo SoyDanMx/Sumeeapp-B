@@ -86,12 +86,27 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error: any) {
-    console.error('Error creating Stripe checkout session:', error);
+    console.error('❌ Error creating Stripe checkout session:', error);
+    
+    // Manejar errores específicos de Stripe
+    if (error.type === 'StripeInvalidRequestError') {
+      if (error.code === 'resource_missing') {
+        return NextResponse.json(
+          { 
+            error: 'Configuración de pago incorrecta',
+            message: 'El precio seleccionado no está disponible. Por favor, contacta al soporte.',
+            details: 'Price ID not found or incompatible with current Stripe mode'
+          },
+          { status: 400 }
+        );
+      }
+    }
     
     return NextResponse.json(
       { 
         error: 'Error interno del servidor',
-        message: error.message || 'Error desconocido'
+        message: error.message || 'Error desconocido',
+        type: error.type || 'unknown'
       },
       { status: 500 }
     );
