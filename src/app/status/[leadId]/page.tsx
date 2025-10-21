@@ -11,10 +11,9 @@ import {
   faPhone, 
   faMapMarkerAlt,
   faSpinner,
-  faExclamationTriangle,
-  faWhatsapp
+  faExclamationTriangle
 } from '@fortawesome/free-solid-svg-icons';
-import { faWhatsapp as faWhatsappBrand } from '@fortawesome/free-brands-svg-icons';
+import { faWhatsapp } from '@fortawesome/free-brands-svg-icons';
 import { getLeadById } from '@/lib/supabase/data';
 import { Lead } from '@/types/supabase';
 
@@ -254,7 +253,7 @@ export default function ClientStatusPage() {
                     rel="noopener noreferrer"
                     className="inline-flex items-center mt-3 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
                   >
-                    <FontAwesomeIcon icon={faWhatsappBrand} className="mr-2" />
+                    <FontAwesomeIcon icon={faWhatsapp} className="mr-2" />
                     Contactar por WhatsApp
                   </a>
                 )}
