@@ -105,6 +105,9 @@ export const Header = () => {
               <FontAwesomeIcon icon={faCrown} className="mr-1 text-sm text-yellow-500" />
               Membresía
             </Link>
+            <Link href="/join-as-pro" className="bg-blue-50 hover:bg-blue-100 text-blue-700 px-3 py-2 rounded-lg text-sm font-medium transition-colors">
+              Únete como Profesional
+            </Link>
           </nav>
           
           <div className="flex items-center space-x-4">
@@ -243,6 +246,9 @@ export const Header = () => {
           <Link href="/membresia" onClick={closeAllModals} className="text-gray-800 text-lg font-semibold flex items-center">
             <FontAwesomeIcon icon={faCrown} className="mr-2 text-yellow-500" />
             Membresía
+          </Link>
+          <Link href="/join-as-pro" onClick={closeAllModals} className="bg-blue-50 text-blue-700 px-4 py-2 rounded-lg text-sm font-medium text-center">
+            Únete como Profesional
           </Link>
           <hr/>
           {!loading && (

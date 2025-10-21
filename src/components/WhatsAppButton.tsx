@@ -8,10 +8,10 @@ import { faWhatsapp } from '@fortawesome/free-brands-svg-icons';
 export const WhatsAppButton = () => {
   return (
     <a
-      href="https://wa.me/525636741156?text=¡Hola!%20Quiero%20más%20información%20sobre%20Sumee%20App."
+      href="https://wa.me/525636741156?text=Hola,%20necesito%20ayuda%20para%20contratar%20un%20servicio."
       target="_blank"
       rel="noopener noreferrer"
-      className="fixed bottom-6 right-6 z-50 group" // Usamos 'group' para el efecto hover del tooltip
+      className="fixed bottom-6 right-6 z-50 group"
       aria-label="Contactar por WhatsApp"
     >
       {/* Tooltip que aparece en hover en escritorio */}
