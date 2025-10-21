@@ -96,7 +96,9 @@ export function useProfesionalData(): UseProfesionalDataReturn {
           }, 
           (payload) => {
             console.log('Realtime change detected:', payload);
-            refetchData();
+            if (currentUserId) {
+              fetchData(currentUserId);
+            }
           }
         )
         .subscribe();
@@ -107,7 +109,7 @@ export function useProfesionalData(): UseProfesionalDataReturn {
         supabase.removeChannel(leadsChannel);
       }
     };
-  }, [currentUserId, fetchData, refetchData]);
+  }, [currentUserId, fetchData]);
 
   // Retornamos un objeto con una estructura clara y bien tipada.
   return { profesional, leads, isLoading, error, refetchData };
