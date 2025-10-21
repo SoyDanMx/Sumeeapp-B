@@ -69,6 +69,8 @@ export default function MembresiaPage() {
     setError(null);
 
     try {
+      console.log('🚀 Starting checkout process...', { priceId: STRIPE_PRICE_ID, userId: user.id });
+      
       const response = await fetch('/api/stripe/create-checkout-session', {
         method: 'POST',
         headers: {
@@ -80,17 +82,35 @@ export default function MembresiaPage() {
         }),
       });
 
+      console.log('📡 Response status:', response.status, response.statusText);
+
       // Verificar si la respuesta es JSON válido
       let responseData;
       const contentType = response.headers.get('content-type');
       
+      console.log('📄 Content-Type:', contentType);
+      
       if (!contentType || !contentType.includes('application/json')) {
         const textResponse = await response.text();
-        console.error('Non-JSON response:', textResponse);
-        throw new Error('Error del servidor. Inténtalo de nuevo.');
+        console.error('❌ Non-JSON response received:', textResponse.substring(0, 500));
+        
+        // Verificar si es un error 404
+        if (response.status === 404) {
+          throw new Error('La API de pago no está disponible. Por favor, contacta al soporte.');
+        }
+        
+        throw new Error(`Error del servidor (${response.status}). Inténtalo de nuevo.`);
       }
 
-      responseData = await response.json();
+      try {
+        responseData = await response.json();
+        console.log('✅ JSON response parsed:', responseData);
+      } catch (parseError) {
+        console.error('❌ JSON parse error:', parseError);
+        const textResponse = await response.text();
+        console.error('Raw response:', textResponse.substring(0, 500));
+        throw new Error('Error al procesar la respuesta del servidor.');
+      }
 
       if (!response.ok) {
         throw new Error(responseData.error || responseData.message || 'Error al crear la sesión de checkout.');
