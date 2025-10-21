@@ -1,12 +1,12 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, Suspense } from 'react';
 import { PageLayout } from '@/components/PageLayout';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCheckCircle, faCrown, faSpinner } from '@fortawesome/free-solid-svg-icons';
 import { useSearchParams } from 'next/navigation';
 
-export default function MembresiaSuccessPage() {
+function MembresiaSuccessContent() {
   const [isLoading, setIsLoading] = useState(true);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const searchParams = useSearchParams();
@@ -122,5 +122,25 @@ export default function MembresiaSuccessPage() {
         </div>
       </div>
     </PageLayout>
+  );
+}
+
+export default function MembresiaSuccessPage() {
+  return (
+    <Suspense fallback={
+      <PageLayout>
+        <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 flex items-center justify-center">
+          <div className="text-center space-y-6">
+            <div className="w-20 h-20 border-4 border-green-200 border-t-green-600 rounded-full animate-spin mx-auto"></div>
+            <div>
+              <h2 className="text-2xl font-bold text-gray-800 mb-2">Cargando...</h2>
+              <p className="text-gray-600">Preparando tu página de éxito...</p>
+            </div>
+          </div>
+        </div>
+      </PageLayout>
+    }>
+      <MembresiaSuccessContent />
+    </Suspense>
   );
 }

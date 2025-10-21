@@ -7,12 +7,6 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   typescript: true,
 });
 
-// Configurar Supabase Admin para validar el usuario
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
-
 export async function POST(request: NextRequest) {
   console.log('🔧 Stripe API Route called');
   
@@ -25,6 +19,12 @@ export async function POST(request: NextRequest) {
         { status: 500 }
       );
     }
+
+    // Configurar Supabase Admin dentro de la función para evitar problemas de build
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
 
     const { priceId, userId } = await request.json();
     console.log('📝 Request data:', { priceId, userId });
