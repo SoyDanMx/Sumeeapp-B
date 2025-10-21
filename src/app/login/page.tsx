@@ -101,6 +101,27 @@ export default function LoginPage() {
             Regístrate aquí
           </Link>
         </p>
+        
+        {/* Credenciales de prueba - solo en desarrollo */}
+        {process.env.NODE_ENV === 'development' && (
+          <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <p className="text-sm text-yellow-800 text-center mb-2">
+              <strong>🧪 Modo Desarrollo:</strong> Credenciales de prueba
+            </p>
+            <div className="text-xs text-center space-y-1">
+              <div><strong>Email:</strong> cliente@sumeeapp.com</div>
+              <div><strong>Password:</strong> TestPassword123!</div>
+            </div>
+            <div className="text-center mt-2">
+              <Link 
+                href="/test-credentials" 
+                className="text-xs text-blue-600 hover:text-blue-500 underline"
+              >
+                Ver página de credenciales completas
+              </Link>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
