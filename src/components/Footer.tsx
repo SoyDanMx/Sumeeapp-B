@@ -1,7 +1,7 @@
 // src/components/Footer.tsx
 'use client';
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -10,23 +10,23 @@ import { faFacebookF, faLinkedinIn } from '@fortawesome/free-brands-svg-icons';
 import { NewsletterForm } from './NewsletterForm';
 import { FooterLinkColumn } from './FooterLinkColumn';
 
-// Datos para las columnas de enlaces con las URLs corregidas
-const quickLinks = [
-  { href: "/about", icon: faInfoCircle, text: "Sobre Nosotros" },
-  { href: "/servicios", icon: faShieldAlt, text: "Servicios" },
-  { href: "/membresia", icon: faCrown, text: "Membresía" },
-  { href: "/blog", icon: faPen, text: "Blog" },
-  { href: "/professionals", icon: faStar, text: "Profesionales" },
-  { href: "/join-as-pro", icon: faStar, text: "Únete como Profesional" },
-];
-
-const legalLinks = [
-  { href: "/terms", icon: faFileAlt, text: "Términos de Servicio" },
-  { href: "/privacy", icon: faLock, text: "Política de Privacidad" },
-  { href: "/contact", icon: faEnvelope, text: "Contáctanos" },
-];
-
 export const Footer = () => {
+  // Usar useMemo para asegurar consistencia entre servidor y cliente
+  const quickLinks = useMemo(() => [
+    { href: "/about", icon: faInfoCircle, text: "Sobre Nosotros" },
+    { href: "/servicios", icon: faShieldAlt, text: "Servicios" },
+    { href: "/membresia", icon: faCrown, text: "Membresía" },
+    { href: "/blog", icon: faPen, text: "Blog" },
+    { href: "/professionals", icon: faStar, text: "Profesionales" },
+    { href: "/join-as-pro", icon: faStar, text: "Únete como Profesional" },
+  ], []);
+
+  const legalLinks = useMemo(() => [
+    { href: "/terminos", icon: faFileAlt, text: "Términos de Servicio" },
+    { href: "/privacidad", icon: faLock, text: "Política de Privacidad" },
+    { href: "/contact", icon: faEnvelope, text: "Contáctanos" },
+  ], []);
+
   return (
     <footer className="bg-gray-900 text-white pt-16 pb-8">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -68,7 +68,7 @@ export const Footer = () => {
         </div>
 
         <div className="border-t border-gray-800 mt-16 pt-8 text-center">
-          <p className="text-gray-400 text-sm">© {new Date().getFullYear()} Sumee App. Todos los derechos reservados.</p>
+          <p className="text-gray-400 text-sm">© 2025 Sumee App. Todos los derechos reservados.</p>
           <p className="text-gray-500 text-xs mt-2">Powered by NUO INTEGRACIONES</p>
         </div>
       </div>
