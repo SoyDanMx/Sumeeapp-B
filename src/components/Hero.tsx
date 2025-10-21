@@ -14,6 +14,7 @@ export const Hero = () => {
   const [isLoadingUser, setIsLoadingUser] = useState(true);
   const [isUsingCurrentLocation, setIsUsingCurrentLocation] = useState(false);
   const [user, setUser] = useState<any | null>(null);
+  const [imageError, setImageError] = useState(false);
   const router = useRouter();
 
   // Validación de código postal mexicano (5 dígitos)
@@ -106,11 +107,15 @@ export const Hero = () => {
       <div className="absolute inset-0 z-0">
         <div className="absolute inset-0 bg-gradient-to-r from-blue-900/80 to-transparent z-10"></div>
         <Image 
-          src="https://readdy.ai/api/search-image?query=Professional%20home%20service%20workers%20in%20Latin%20America%20working%20on%20house%20repairs%2C%20plumbing%2C%20and%20electrical%20work.%20A%20diverse%20team%20of%20skilled%20professionals%20with%20tools%2C%20helping%20homeowners.%20Clean%2C%20modern%20homes%20with%20warm%20lighting%20and%20natural%20elements.%20Professional%2C%20trustworthy%20appearance&width=1440&height=600&seq=hero1&orientation=landscape"
+          src={imageError ? 
+            "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80" : 
+            "https://images.unsplash.com/photo-1504307651254-35680f356dfd?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80"
+          }
           alt="Profesionales de servicios para el hogar trabajando en CDMX"
           fill
           className="object-cover"
           priority
+          onError={() => setImageError(true)}
         />
       </div>
 
