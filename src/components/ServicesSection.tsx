@@ -23,6 +23,7 @@ export const ServicesSection = () => {
               name={service.name}
               rating={service.rating}
               image={service.image}
+              priceRange={service.priceRange}
             />
           ))}
         </div>

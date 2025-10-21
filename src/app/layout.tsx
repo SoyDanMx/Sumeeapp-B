@@ -16,21 +16,21 @@ import { MetaPixel } from "@/components/analytics/MetaPixel";
 
 const inter = Inter({ subsets: ["latin"] });
 
-// Metadata hiper-enfocada en CDMX
+// Metadata optimizada para SEO y conversión
 export const metadata: Metadata = {
   metadataBase: new URL('https://www.sumeeapp.com'),
   
   title: {
-    default: "Sumee App | Profesionales a Domicilio en CDMX",
+    default: "Plomeros, Electricistas y Más Verificados en CDMX | Sumee App",
     template: `%s | Sumee App CDMX`,
   },
-  description: "Encuentra plomeros, electricistas, carpinteros y más servicios para el hogar en CDMX. Conectamos con los mejores técnicos y profesionales verificados en tu alcaldía.",
+  description: "Encuentra técnicos profesionales de confianza para tu hogar en Ciudad de México. Servicios 100% verificados con garantía de satisfacción. ¡Cotiza fácil y rápido!",
   
-  keywords: ["servicios para el hogar CDMX", "plomeros en CDMX", "electricistas urgentes CDMX", "reparaciones a domicilio CDMX", "mantenimiento del hogar Ciudad de México", "técnicos a domicilio", "Sumee App"],
+  keywords: ["plomeros CDMX", "electricistas CDMX", "servicios para el hogar CDMX", "técnicos verificados CDMX", "reparaciones a domicilio", "mantenimiento del hogar Ciudad de México", "Sumee App", "servicios profesionales CDMX"],
   
   openGraph: {
-    title: "Sumee App | Profesionales de Confianza para tu Hogar en CDMX",
-    description: "La forma más fácil y segura de encontrar técnicos calificados para cualquier necesidad de tu hogar en la Ciudad de México.",
+    title: "Plomeros, Electricistas y Más Verificados en CDMX | Sumee App",
+    description: "Encuentra técnicos profesionales de confianza para tu hogar en Ciudad de México. Servicios 100% verificados con garantía de satisfacción. ¡Cotiza fácil y rápido!",
     url: 'https://www.sumeeapp.com',
     siteName: 'Sumee App',
     images: [{ url: '/og-image.png', width: 1200, height: 630 }],

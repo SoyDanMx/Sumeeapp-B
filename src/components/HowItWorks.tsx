@@ -29,7 +29,7 @@ const steps = [
     step: 4,
     icon: faSmile,
     title: "Disfruta y califica",
-    description: "Recibe un servicio de calidad y al finalizar, comparte tu experiencia para ayudar a otros usuarios."
+    description: "Disfruta del Servicio y Califica bajo la Garantía de Satisfacción Sumee"
   }
 ];
 
