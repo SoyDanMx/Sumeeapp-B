@@ -68,8 +68,6 @@ export function useProfesionalData(): UseProfesionalDataReturn {
   }, [currentUserId, fetchData]);
 
   useEffect(() => {
-    let leadsChannel: ReturnType<typeof supabase.channel> | null = null;
-    
     const initialize = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
@@ -81,8 +79,12 @@ export function useProfesionalData(): UseProfesionalDataReturn {
       }
     };
     initialize();
+  }, []); // Solo ejecutar una vez al montar
 
-    // El listener de Realtime se activa una vez que tenemos el ID del usuario
+  // Separar el efecto de Realtime en otro useEffect
+  useEffect(() => {
+    let leadsChannel: ReturnType<typeof supabase.channel> | null = null;
+    
     if (currentUserId) {
       leadsChannel = supabase
         .channel(`leads_changes_for_${currentUserId}`)
@@ -94,10 +96,36 @@ export function useProfesionalData(): UseProfesionalDataReturn {
             table: 'leads',
             filter: `profesional_asignado_id=eq.${currentUserId}` 
           }, 
-          (payload) => {
-            console.log('Realtime change detected:', payload);
-            if (currentUserId) {
-              fetchData(currentUserId);
+          async () => {
+            console.log('Realtime change detected, refetching data');
+            // Refetch data directamente sin usar fetchData callback
+            setIsLoading(true);
+            setError(null);
+            
+            try {
+              const [profesionalResult, leadsResult] = await Promise.all([
+                supabase
+                  .from('profiles')
+                  .select('*')
+                  .eq('user_id', currentUserId)
+                  .single(),
+                supabase
+                  .from('leads')
+                  .select('*')
+                  .eq('profesional_asignado_id', currentUserId)
+                  .order('fecha_creacion', { ascending: false })
+              ]);
+
+              if (profesionalResult.error) throw profesionalResult.error;
+              if (leadsResult.error) throw leadsResult.error;
+
+              setProfesional(profesionalResult.data as Profesional);
+              setLeads(leadsResult.data as Lead[]);
+            } catch (err: any) {
+              console.error("Error refetching professional data:", err);
+              setError(err);
+            } finally {
+              setIsLoading(false);
             }
           }
         )
@@ -109,7 +137,7 @@ export function useProfesionalData(): UseProfesionalDataReturn {
         supabase.removeChannel(leadsChannel);
       }
     };
-  }, [currentUserId, fetchData]);
+  }, [currentUserId]); // Solo depende de currentUserId
 
   // Retornamos un objeto con una estructura clara y bien tipada.
   return { profesional, leads, isLoading, error, refetchData };

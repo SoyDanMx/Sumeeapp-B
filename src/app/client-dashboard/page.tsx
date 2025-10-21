@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
-import { supabase } from '@/lib/supabaseClient';
+import { supabase } from '@/lib/supabase/client';
 import { Profesional } from '@/types/supabase';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
@@ -49,41 +49,83 @@ export default function ClientDashboardPage() {
         
         // Verificar membresía del usuario desde la base de datos
         if (user) {
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('membership_status, role')
-            .eq('user_id', user.id)
-            .single();
+          try {
+            // Para usuarios de prueba, permitir acceso premium automáticamente
+            const testEmails = ['cliente@sumeeapp.com', 'test@sumeeapp.com', 'demo@sumeeapp.com'];
+            const isTestUser = testEmails.includes(user.email || '');
             
-          // Para usuarios de prueba, permitir acceso premium
-          const testEmails = ['cliente@sumeeapp.com', 'test@sumeeapp.com', 'demo@sumeeapp.com'];
-          const isTestUser = testEmails.includes(user.email || '');
-          
-          if (isTestUser || profile?.membership_status === 'premium') {
-            setUserMembership('premium');
-          } else {
-            setUserMembership(profile?.membership_status || 'free');
+            if (isTestUser) {
+              setUserMembership('premium');
+            } else {
+              // Intentar obtener el perfil desde la base de datos
+              const { data: profile, error: profileError } = await supabase
+                .from('profiles')
+                .select('membership_status, role')
+                .eq('user_id', user.id)
+                .single();
+                
+              if (profileError) {
+                console.warn('Profile not found or error:', profileError.message);
+                setUserMembership('free');
+              } else {
+                setUserMembership(profile?.membership_status === 'premium' ? 'premium' : 'free');
+              }
+            }
+          } catch (profileErr: any) {
+            // Si hay error al obtener el perfil, usar configuración por defecto
+            console.warn('Error getting profile:', profileErr?.message || profileErr);
+            setUserMembership('free');
           }
         } else {
           setUserMembership('free');
         }
 
         if (user) {
-          // Obtener profesionales verificados
-          const { data: profesionalesData, error: profesionalesError } = await supabase
-            .from('profesionales')
-            .select('*')
-            .eq('activo', true)
-            .not('ubicacion_lat', 'is', null)
-            .not('ubicacion_lng', 'is', null);
+          try {
+            // Obtener profesionales verificados - intentar primero desde 'profesionales' y luego desde 'profiles'
+            let profesionalesData = null;
+            let profesionalesError = null;
 
-          if (profesionalesError) throw profesionalesError;
-          
-          setProfesionales(profesionalesData || []);
+            // Intentar desde tabla 'profesionales' primero
+            const profesionalesResult = await supabase
+              .from('profesionales')
+              .select('*')
+              .eq('activo', true)
+              .not('ubicacion_lat', 'is', null)
+              .not('ubicacion_lng', 'is', null);
+
+            if (profesionalesResult.error) {
+              console.warn('Error loading from profesionales table, trying profiles:', profesionalesResult.error.message);
+              
+              // Fallback a tabla 'profiles' si 'profesionales' falla
+              const profilesResult = await supabase
+                .from('profiles')
+                .select('*')
+                .eq('role', 'profesional')
+                .not('ubicacion_lat', 'is', null)
+                .not('ubicacion_lng', 'is', null);
+
+              if (profilesResult.error) {
+                console.warn('Error loading from profiles table too:', profilesResult.error.message);
+                setProfesionales([]);
+              } else {
+                setProfesionales(profilesResult.data || []);
+              }
+            } else {
+              setProfesionales(profesionalesResult.data || []);
+            }
+          } catch (profErr: any) {
+            console.warn('Error in professionals query:', profErr?.message || profErr);
+            setProfesionales([]);
+          }
         }
-      } catch (err) {
-        console.error('Error:', err);
-        setError('Error al cargar los datos');
+      } catch (err: any) {
+        console.error('Main error in fetchUserAndProfessionals:', {
+          message: err?.message || 'Unknown error',
+          error: err,
+          stack: err?.stack
+        });
+        setError(err?.message || 'Error al cargar los datos del dashboard');
       } finally {
         setIsLoading(false);
       }
