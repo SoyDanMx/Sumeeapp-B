@@ -44,6 +44,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Mapear buy button ID a price ID si es necesario
+    let actualPriceId = priceId;
+    if (priceId.includes('buy_btn_')) {
+      // Extraer el price ID del buy button ID (remover 'buy_btn_' y usar el resto como price ID)
+      // Esto asume que el buy button ID sigue el formato: buy_btn_ + price_id
+      actualPriceId = priceId.replace('buy_btn_', 'price_');
+      console.log('🔄 Mapped buy button ID to price ID:', { priceId, actualPriceId });
+    }
+
     // Verificar que el usuario existe en Supabase (opcional para desarrollo)
     let userEmail = '';
     if (supabase) {
@@ -72,7 +81,7 @@ export async function POST(request: NextRequest) {
       payment_method_types: ['card'],
       line_items: [
         {
-          price: priceId,
+          price: actualPriceId,
           quantity: 1,
         },
       ],
