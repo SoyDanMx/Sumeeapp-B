@@ -189,7 +189,7 @@ export default function ClientStatusPage() {
         </div>
 
         {/* Professional Assignment */}
-        {lead.profesional_asignado && (
+        {lead.profesional_asignado_id && (
           <div className="bg-white rounded-xl shadow-sm border p-6 mb-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
               <FontAwesomeIcon icon={faUser} className="mr-3 text-blue-500" />
