@@ -242,7 +242,7 @@ export default function DebugPKCESimplePage() {
                     {Object.keys(pkceInfo.urlParams).length > 0 ? (
                       <>
                         {Object.entries(pkceInfo.urlParams).map(([key, value]) => (
-                          <p key={key}><strong>{key}:</strong> {typeof value === 'object' && value !== null ? JSON.stringify(value) : (value || 'No presente')}</p>
+                          <p key={key}><strong>{key}:</strong> {value ? (typeof value === 'object' ? JSON.stringify(value) : String(value)) : 'No presente'}</p>
                         ))}
                       </>
                     ) : (
