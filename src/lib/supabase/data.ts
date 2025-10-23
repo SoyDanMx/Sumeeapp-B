@@ -162,19 +162,25 @@ export async function acceptLead(leadId: string, profesionalId: string) {
     // 💡 IMPORTANTE: Debes tener una política de RLS que permita hacer UPDATE
     // a los leads donde el estado sea 'Nuevo' para que esta función funcione.
     
-    const { error } = await supabase
+    const { data, error } = await supabase
         .from('leads')
         .update({
             estado: 'Contactado', // Cambia el estado
             profesional_asignado_id: profesionalId // Asigna al profesional
         })
         .eq('id', leadId)
-        .select();
+        .select()
+        .single();
 
     if (error) {
         console.error('Error al aceptar el lead:', error);
         throw new Error(`No se pudo aceptar el lead: ${error.message}`);
     }
+
+    return {
+        success: true,
+        lead: data
+    };
 }
 
 /**
@@ -205,6 +211,38 @@ export async function getLeadById(leadId: string) {
         return data;
     } catch (error) {
         console.error('Error en getLeadById:', error);
+        throw error;
+    }
+}
+
+/**
+ * Obtiene todos los leads de un cliente específico
+ * @param clientId ID del cliente (user_id)
+ */
+export async function getClientLeads(clientId: string) {
+    try {
+        const { data, error } = await supabase
+            .from('leads')
+            .select(`
+                *,
+                profesional_asignado:profesional_asignado_id(
+                    full_name,
+                    profession,
+                    calificacion_promedio,
+                    whatsapp,
+                    avatar_url
+                )
+            `)
+            .eq('cliente_id', clientId)
+            .order('fecha_creacion', { ascending: false });
+
+        if (error) {
+            throw new Error(`Error al obtener los leads del cliente: ${error.message}`);
+        }
+
+        return data || [];
+    } catch (error) {
+        console.error('Error en getClientLeads:', error);
         throw error;
     }
 }
