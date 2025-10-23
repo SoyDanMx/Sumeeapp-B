@@ -1,7 +1,7 @@
 'use client';
 import React, { useState, FormEvent, useEffect } from 'react';
 import { Profesional } from '@/types/supabase';
-import { updateProfesionalProfile } from '@/lib/supabase/data';
+import { updateProfesionalProfile, checkUserPermissions } from '@/lib/supabase/data';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
   faTimes, 
@@ -150,11 +150,17 @@ export default function EditProfileModal({ profesional, isOpen, onClose, onSucce
         }
 
         try {
+            // Verificar permisos antes de intentar actualizar
+            setStatusMessage('Verificando permisos...');
+            await checkUserPermissions(userId);
+            
             // Asegurar que full_name no sea null antes de enviar
             const dataToSubmit = {
                 ...formData,
                 full_name: formData.full_name || profesional.full_name || 'Sin nombre'
             };
+            
+            setStatusMessage('Guardando información...');
             await updateProfesionalProfile(userId, dataToSubmit, locationAddress || undefined);
             setStatusMessage('¡Perfil actualizado con éxito!');
             setIsSuccess(true);
@@ -165,7 +171,12 @@ export default function EditProfileModal({ profesional, isOpen, onClose, onSucce
             }, 1500);
         } catch (error: any) {
             console.error('Error al actualizar el perfil:', error);
-            setStatusMessage(`Error al guardar: ${error.message || 'Error desconocido'}. Revisa la consola.`);
+            // Mensaje más específico para errores de permisos
+            if (error.message.includes('permisos') || error.message.includes('RLS')) {
+                setStatusMessage(`Error de permisos: ${error.message}. Contacta al administrador.`);
+            } else {
+                setStatusMessage(`Error al guardar: ${error.message || 'Error desconocido'}. Revisa la consola.`);
+            }
         } finally {
             setLoading(false);
         }

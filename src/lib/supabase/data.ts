@@ -4,6 +4,48 @@ import { supabase } from '@/lib/supabase/client';
 import { geocodeAddress } from '@/lib/geocoding'; // Importamos la utilidad que acabamos de crear
 import { Profesional, Lead } from '@/types/supabase'; // Importamos los tipos necesarios
 
+// =========================================================================
+// 🚨 INSTRUCCIÓN CRÍTICA DE BACKEND (RLS) 🚨
+// Si la actualización falla con un error 403, debes ejecutar la siguiente política
+// en el SQL Editor de Supabase para permitir que los usuarios editen su perfil:
+//
+// CREATE POLICY "Los usuarios pueden actualizar su propio perfil."
+// ON public.profiles
+// FOR UPDATE
+// TO authenticated
+// USING (auth.uid() = user_id);
+//
+// También asegúrate de tener la política SELECT:
+// CREATE POLICY "Los usuarios pueden leer su propio perfil."
+// ON public.profiles
+// FOR SELECT
+// TO authenticated
+// USING (auth.uid() = user_id);
+// =========================================================================
+
+/**
+ * Verifica si el usuario tiene permisos básicos de lectura en su propia fila de perfil.
+ * Esto ayuda a diagnosticar problemas de Row Level Security (RLS).
+ * @param userId El UUID del usuario actual.
+ * @returns true si la lectura es exitosa, lanza un error si hay fallo de RLS.
+ */
+export async function checkUserPermissions(userId: string): Promise<boolean> {
+    const { error } = await supabase
+        .from('profiles')
+        .select('user_id')
+        .eq('user_id', userId)
+        .limit(1)
+        .maybeSingle();
+
+    if (error) {
+        console.error("Error de diagnóstico RLS/Permisos:", error);
+        throw new Error(`Error de permisos (Código: ${error.code}). Asegura la política SELECT/RLS.`);
+    }
+
+    // Si no hay error, asumimos que el usuario puede leer su perfil.
+    return true;
+}
+
 /**
  * Actualiza (o inserta si no existe, usando el user_id) la información del perfil del profesional.
  * @param userId El ID del usuario a actualizar.
@@ -60,7 +102,12 @@ export async function updateProfesionalProfile(userId: string, updates: Partial<
         .upsert(dataToUpdate, { onConflict: 'user_id' }); 
 
     if (error) {
-        throw new Error(error.message);
+        console.error('Error de Supabase al actualizar/insertar perfil:', error);
+        // Devuelve un error más claro al frontend
+        if (error.code === '42501' || error.code === 'PGRST301') {
+            throw new Error("Error de permisos (RLS). Asegura la Política de UPDATE en Supabase.");
+        }
+        throw new Error(`Falló la actualización del perfil: ${error.message}`);
     }
 }
 
@@ -140,6 +187,11 @@ export async function acceptLead(leadId: string, profesionalId: string) {
             .single();
 
         if (error) {
+            console.error('Error al aceptar el lead:', error);
+            // Manejo específico de errores RLS
+            if (error.code === '42501' || error.code === 'PGRST301') {
+                throw new Error("Error de permisos (RLS). Asegura la política de UPDATE en la tabla leads.");
+            }
             throw new Error(`Error al aceptar el lead: ${error.message}`);
         }
 
