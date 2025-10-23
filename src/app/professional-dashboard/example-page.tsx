@@ -19,11 +19,16 @@ export default function ProfessionalDashboardPage() {
 
   // Guarda de error: Si hay un error, lo mostramos.
   if (error) {
+    // Extraer el mensaje del error, ya sea string o PostgrestError
+    const errorMessage = typeof error === 'string' 
+      ? error 
+      : error.message || 'Ocurrió un error desconocido.';
+
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-red-600 mb-4">Error al Cargar Datos</h1>
-          <p className="text-gray-600 mb-4">{error}</p>
+          <p className="text-gray-600 mb-4">{errorMessage}</p>
           <button
             onClick={refetchData}
             className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
