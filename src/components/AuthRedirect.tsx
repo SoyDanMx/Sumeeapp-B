@@ -9,12 +9,18 @@ interface AuthRedirectProps {
 }
 
 export default function AuthRedirect({ children }: AuthRedirectProps) {
-  const user = useUser();
+  const { user, isLoading } = useUser();
   const router = useRouter();
 
   useEffect(() => {
+    // No hacer nada mientras la sesión se está cargando
+    if (isLoading) {
+      return;
+    }
+
+    // Si hay un usuario logueado
     if (user) {
-      // Redirigir basado en el rol del usuario
+      // Ahora 'user' es el objeto AppUser, que sí tiene la propiedad 'role'
       const userRole = user.role || 'client';
       
       if (userRole === 'profesional') {
@@ -25,10 +31,10 @@ export default function AuthRedirect({ children }: AuthRedirectProps) {
         router.push('/dashboard/client');
       }
     }
-  }, [user, router]);
+  }, [user, isLoading, router]);
 
   // Mientras se determina el rol, mostrar loading
-  if (user) {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
