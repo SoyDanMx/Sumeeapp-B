@@ -198,7 +198,7 @@ export default function ClientStatusPage() {
             
             <div className="flex items-start space-x-4">
               <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center overflow-hidden">
-                {lead.profesional_asignado.avatar_url ? (
+                {lead.profesional_asignado?.avatar_url ? (
                   <img 
                     src={lead.profesional_asignado.avatar_url} 
                     alt="Avatar"
@@ -211,13 +211,13 @@ export default function ClientStatusPage() {
               
               <div className="flex-1">
                 <h4 className="font-semibold text-gray-900 text-lg">
-                  {lead.profesional_asignado.full_name || 'Técnico Verificado'}
+                  {lead.profesional_asignado?.full_name || 'Técnico Verificado'}
                 </h4>
                 <p className="text-blue-600 font-medium">
-                  {lead.profesional_asignado.profession || 'Profesional'}
+                  {lead.profesional_asignado?.profession || 'Profesional'}
                 </p>
                 
-                {lead.profesional_asignado.calificacion_promedio && (
+                {lead.profesional_asignado?.calificacion_promedio && (
                   <div className="flex items-center space-x-2 mt-2">
                     <div className="flex items-center">
                       {Array.from({ length: 5 }, (_, i) => (
