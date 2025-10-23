@@ -14,7 +14,7 @@ import {
   faCrown,
   faListAlt
 } from '@fortawesome/free-solid-svg-icons';
-import { useUser } from '@/hooks/useUser';
+import { useUserRole } from '@/hooks/useUserRole';
 import { supabase } from '@/lib/supabase/client';
 
 interface UserPanelMenuProps {
@@ -24,6 +24,7 @@ interface UserPanelMenuProps {
 
 export default function UserPanelMenu({ user, onClose }: UserPanelMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const { role: userRole, loading: roleLoading } = useUserRole();
 
   const handleSignOut = async () => {
     try {
@@ -40,7 +41,6 @@ export default function UserPanelMenu({ user, onClose }: UserPanelMenuProps) {
   };
 
   // Determinar el rol del usuario
-  const userRole = user?.role || 'client';
   const isProfessional = userRole === 'profesional';
 
   return (

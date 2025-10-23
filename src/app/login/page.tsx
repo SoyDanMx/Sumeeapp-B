@@ -1,11 +1,13 @@
 // src/app/login/page.tsx
 'use client';
 
-import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { supabase } from '@/lib/supabaseClient';
+import { supabase } from '@/lib/supabase/client';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faExclamationTriangle, faInfoCircle, faCheckCircle } from '@fortawesome/free-solid-svg-icons';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -14,7 +16,45 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [resendingConfirmation, setResendingConfirmation] = useState(false);
   const [isTestCredentials, setIsTestCredentials] = useState(false);
+  const [callbackError, setCallbackError] = useState<string | null>(null);
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // Manejar errores de callback de autenticación
+  useEffect(() => {
+    const errorParam = searchParams.get('error');
+    const detailsParam = searchParams.get('details');
+    
+    if (errorParam) {
+      let errorMessage = '';
+      
+      switch (errorParam) {
+        case 'auth_callback_error':
+          errorMessage = 'Error en la confirmación del email. Por favor, intenta registrarte de nuevo.';
+          break;
+        case 'profile_creation_error':
+          errorMessage = 'Error al crear tu perfil. Por favor, contacta a soporte.';
+          break;
+        case 'profile_check_error':
+          errorMessage = 'Error al verificar tu perfil. Por favor, intenta de nuevo.';
+          break;
+        case 'unexpected_error':
+          errorMessage = 'Error inesperado durante el registro. Por favor, intenta de nuevo.';
+          break;
+        case 'no_code_provided':
+          errorMessage = 'Enlace de confirmación inválido. Por favor, solicita un nuevo email de confirmación.';
+          break;
+        default:
+          errorMessage = 'Error durante el proceso de registro. Por favor, intenta de nuevo.';
+      }
+      
+      if (detailsParam) {
+        errorMessage += ` (Detalles: ${decodeURIComponent(detailsParam)})`;
+      }
+      
+      setCallbackError(errorMessage);
+    }
+  }, [searchParams]);
 
   const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -122,6 +162,27 @@ export default function LoginPage() {
         </div>
 
         <form onSubmit={handleLogin} className="space-y-6">
+          {/* Error de callback de autenticación */}
+          {callbackError && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+              <div className="flex items-start">
+                <FontAwesomeIcon icon={faExclamationTriangle} className="text-red-500 mt-0.5 mr-3 flex-shrink-0" />
+                <div>
+                  <h3 className="text-sm font-medium text-red-800">Error de Confirmación</h3>
+                  <p className="text-sm text-red-700 mt-1">{callbackError}</p>
+                  <div className="mt-3">
+                    <Link 
+                      href="/join-as-pro" 
+                      className="text-sm text-blue-600 hover:text-blue-700 underline"
+                    >
+                      Intentar registro nuevamente
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           <div>
             <label htmlFor="email" className="block text-sm font-medium text-gray-700">Correo Electrónico</label>
             <input

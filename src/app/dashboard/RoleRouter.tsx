@@ -14,6 +14,9 @@ export default function RoleRouter() {
     if (!loading && !error) {
       // Redirección basada en el rol del usuario
       if (role === 'profesional') {
+        // Redirigir al dashboard profesional (ruta principal)
+        // Las rutas /dashboard/profesionales y /dashboard/professionals 
+        // redirigen automáticamente a /professional-dashboard
         router.push('/professional-dashboard');
       } else {
         router.push('/dashboard/client');

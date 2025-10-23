@@ -1,291 +1,494 @@
-// src/app/join-as-pro/page.tsx
 'use client';
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/lib/supabase/client-new';
+import { getEmailConfirmationUrl } from '@/lib/utils';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { 
+  faUser, 
+  faEnvelope, 
+  faLock, 
+  faPhone, 
+  faMapMarkerAlt, 
+  faBriefcase,
+  faCheckCircle,
+  faSpinner,
+  faExclamationTriangle,
+  faEye,
+  faEyeSlash
+} from '@fortawesome/free-solid-svg-icons';
+import { ProfesionalRegistrationData, ValidationErrors } from '@/types/supabase';
 
-interface ValidationErrors {
-  fullName?: string;
-  email?: string;
-}
+const PROFESSIONS = [
+  'Electricista',
+  'Plomero',
+  'Carpintero',
+  'Pintor',
+  'Albañil',
+  'Técnico en Refrigeración',
+  'Técnico en Aire Acondicionado',
+  'Soldador',
+  'Herrero',
+  'Técnico en Seguridad',
+  'Instalador de Pisos',
+  'Técnico en Gas',
+  'Otro'
+];
+
+const WORK_ZONES = [
+  'Álvaro Obregón',
+  'Azcapotzalco',
+  'Benito Juárez',
+  'Coyoacán',
+  'Cuajimalpa',
+  'Cuauhtémoc',
+  'Gustavo A. Madero',
+  'Iztacalco',
+  'Iztapalapa',
+  'La Magdalena Contreras',
+  'Miguel Hidalgo',
+  'Milpa Alta',
+  'Tláhuac',
+  'Tlalpan',
+  'Venustiano Carranza',
+  'Xochimilco'
+];
 
 export default function JoinAsPro() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
-  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
 
-  // TAREA 1: Solo captura nombre y email en el Paso 1
-  const [formData, setFormData] = useState({
+  // Estado del formulario con todos los campos necesarios
+  const [formData, setFormData] = useState<ProfesionalRegistrationData>({
     fullName: '',
+    profession: '',
+    phone: '',
     email: '',
+    password: '',
+    bio: '',
+    workZones: []
   });
 
-  // TAREA 1: Validaciones de frontend
-  const validateFullName = (name: string): string | undefined => {
-    if (!name.trim()) return 'El nombre completo es requerido';
-    if (name.trim().length < 4) return 'El nombre debe tener al menos 4 caracteres';
-    return undefined;
-  };
-
-  const validateEmail = (email: string): string | undefined => {
-    if (!email.trim()) return 'El correo electrónico es requerido';
-    const emailRegex = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
-    if (!emailRegex.test(email)) return 'Por favor ingresa un correo electrónico válido';
-    return undefined;
-  };
-
-  // Validación en tiempo real
-  const handleFieldChange = (field: 'fullName' | 'email', value: string) => {
+  // Función genérica para actualizar el estado del formulario
+  const handleChange = (field: keyof ProfesionalRegistrationData, value: string | string[]) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     
-    // Limpiar error cuando el usuario empiece a escribir
-    if (validationErrors[field]) {
+    // Limpiar errores de validación cuando el usuario empiece a escribir
+    if (validationErrors[field as keyof ValidationErrors]) {
       setValidationErrors(prev => ({ ...prev, [field]: undefined }));
     }
   };
 
-  const handleFieldBlur = (field: 'fullName' | 'email') => {
-    const value = formData[field];
-    let error: string | undefined;
+  // Validación del formulario
+  const validateForm = (): boolean => {
+    const errors: ValidationErrors = {};
     
-    if (field === 'fullName') {
-      error = validateFullName(value);
-    } else if (field === 'email') {
-      error = validateEmail(value);
+    if (!formData.fullName.trim()) {
+      errors.fullName = 'El nombre completo es requerido';
+    } else if (formData.fullName.trim().length < 4) {
+      errors.fullName = 'El nombre debe tener al menos 4 caracteres';
     }
     
-    if (error) {
-      setValidationErrors(prev => ({ ...prev, [field]: error }));
+    if (!formData.profession.trim()) {
+      errors.profession = 'Selecciona tu profesión';
     }
+    
+    if (!formData.phone.trim()) {
+      errors.phone = 'El teléfono es requerido';
+    } else if (!/^[0-9+\-\s()]{10,15}$/.test(formData.phone.replace(/\s/g, ''))) {
+      errors.phone = 'Ingresa un número de teléfono válido';
+    }
+    
+    if (!formData.email.trim()) {
+      errors.email = 'El correo electrónico es requerido';
+    } else if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(formData.email)) {
+      errors.email = 'Por favor ingresa un correo electrónico válido';
+    }
+    
+    if (!formData.password.trim()) {
+      errors.password = 'La contraseña es requerida';
+    } else if (formData.password.length < 6) {
+      errors.password = 'La contraseña debe tener al menos 6 caracteres';
+    } else if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(formData.password)) {
+      errors.password = 'La contraseña debe contener al menos una mayúscula, una minúscula y un número';
+    }
+    
+    setValidationErrors(errors);
+    return Object.keys(errors).length === 0;
   };
 
-  // TAREA 1: Verificar si el formulario es válido
-  const isFormValid = () => {
-    return (
-      validateFullName(formData.fullName) === undefined &&
-      validateEmail(formData.email) === undefined &&
-      termsAccepted
-    );
-  };
-
-  // TAREA 3: Función mockup para captura de lead
-  const handleCaptureLead = async () => {
+  // Función principal de envío del formulario
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Prevenir el comportamiento por defecto del formulario
+    if (!validateForm()) return;
+    
+    // Establecer el estado de carga (loading) a true
     setLoading(true);
     setError(null);
     setSuccess(null);
 
     try {
-      // Mockup de API call - simular delay
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Añadir console.log para depuración en el navegador
+      console.log("🚀 INICIANDO REGISTRO PROFESIONAL...");
+      console.log("📋 Datos del formulario:", {
+        fullName: formData.fullName,
+        profession: formData.profession,
+        phone: formData.phone,
+        email: formData.email,
+        registration_type: 'profesional',
+        workZones: formData.workZones,
+        bio: formData.bio
+      });
       
-      // Simular respuesta exitosa
-      const mockResponse = {
-        success: true,
-        message: '¡Genial! Revisa tu correo electrónico para continuar.'
+      // Construir dinámicamente la URL redirectTo usando window.location.origin
+      const emailRedirectTo = getEmailConfirmationUrl();
+      console.log('🔗 URL de redirección:', emailRedirectTo);
+      
+      // Preparar datos para enviar a Supabase (simplificado para el trigger)
+      const userMetadata = {
+        full_name: formData.fullName?.trim() || 'Nuevo Usuario',
+        profession: formData.profession
       };
-
-      if (mockResponse.success) {
-        setSuccess(mockResponse.message);
-        // Opcional: redireccionar después de 3 segundos
-        setTimeout(() => {
-          // router.push('/join-as-pro/step-2'); // Cuando implementes el paso 2
-        }, 3000);
-      }
-    } catch (err) {
-      setError('Hubo un problema al procesar tu registro. Por favor, inténtalo de nuevo.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // TAREA 3: Nueva función de submit que usa handleCaptureLead
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    // Validar antes de enviar
-    const nameError = validateFullName(formData.fullName);
-    const emailError = validateEmail(formData.email);
-    
-    if (nameError || emailError) {
-      setValidationErrors({
-        fullName: nameError,
-        email: emailError
-      });
-      return;
-    }
-    
-    if (!termsAccepted) {
-      setError('Debes aceptar los términos y condiciones para continuar.');
-      return;
-    }
-    
-    await handleCaptureLead();
-  };
-
-  const handleGoogleSignup = async () => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      const { error: authError } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
+      
+      console.log('📤 Enviando metadatos a Supabase:', userMetadata);
+      
+      // Realizar la llamada a supabase.auth.signUp()
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: formData.email,
+        password: formData.password,
         options: {
-          // La lógica de redirección dinámica para dev/prod es excelente.
-          redirectTo: process.env.NODE_ENV === 'development' 
-            ? `${window.location.origin}/auth/callback` 
-            : 'https://sumeeapp.com/auth/callback',
-        },
+          emailRedirectTo,
+          data: userMetadata
+        }
       });
+
+      console.log('📥 Respuesta completa de Supabase:', { 
+        authData, 
+        authError,
+        user: authData?.user,
+        session: authData?.session
+      });
+
+      // Manejar los casos de éxito y error de la llamada signUp
       if (authError) {
-        // El objeto de error de Supabase sí es un `Error` estándar, así que podemos lanzarlo.
-        throw authError;
+        console.error('❌ Error de autenticación:', authError);
+        console.error('❌ Detalles del error:', {
+          message: authError.message,
+          status: authError.status,
+          statusText: authError.statusText
+        });
+        
+        // Proporcionar mensajes de error más específicos
+        let errorMessage = 'Error al crear usuario: ';
+        if (authError.message.includes('Database error')) {
+          errorMessage += 'Error en la base de datos. Verifica que el trigger esté configurado correctamente.';
+        } else if (authError.message.includes('User already registered')) {
+          errorMessage += 'Este correo electrónico ya está registrado.';
+        } else if (authError.message.includes('Invalid email')) {
+          errorMessage += 'El correo electrónico no es válido.';
+        } else {
+          errorMessage += authError.message;
+        }
+        
+        throw new Error(errorMessage);
       }
-    
-    // --- SECCIÓN CORREGIDA ---
-    } catch (err) {
-      console.error('Error con Google Signup:', err);
 
-      let errorMessage = 'Error con Google. Intenta registrarte con tu email.';
-      // Usamos el mismo patrón seguro aquí.
-      if (err instanceof Error) {
-        errorMessage = err.message;
+      if (authData.user) {
+        console.log('✅ Usuario creado exitosamente:', {
+          id: authData.user.id,
+          email: authData.user.email,
+          email_confirmed: authData.user.email_confirmed_at,
+          created_at: authData.user.created_at
+        });
+        
+        // El trigger se encarga automáticamente de crear el perfil
+        console.log('🔧 El trigger creará el perfil automáticamente con los metadatos enviados');
+        
+        setSuccess('¡Excelente! Revisa tu correo electrónico para confirmar tu cuenta y acceder a tu dashboard profesional.');
+        
+        // Redirigir después de 3 segundos
+        setTimeout(() => {
+          router.push('/dashboard');
+        }, 3000);
+      } else {
+        console.warn('⚠️ No se recibió información del usuario creado');
+        setError('El usuario se creó pero no se recibió confirmación. Por favor, verifica tu correo electrónico.');
       }
-      setError(errorMessage);
-    // --- FIN DE LA SECCIÓN CORREGIDA ---
-
+    } catch (err: any) {
+      console.error('❌ Error en registro profesional:', err);
+      console.error('❌ Stack trace:', err.stack);
+      
+      // En caso de error, mostrarlo al usuario
+      setError(err.message || 'Hubo un problema al procesar tu registro. Por favor, inténtalo de nuevo.');
     } finally {
+      // Al finalizar, establecer el estado de carga (loading) a false
       setLoading(false);
     }
   };
 
-  // El JSX se mantiene igual, ya que está bien estructurado y es funcional.
+
+  const toggleWorkZone = (zone: string) => {
+    setFormData(prev => ({
+      ...prev,
+      workZones: prev.workZones?.includes(zone)
+        ? prev.workZones.filter(z => z !== zone)
+        : [...(prev.workZones || []), zone]
+    }));
+  };
+
   return (
-    <div className="join-as-pro min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md mx-auto bg-white rounded-lg shadow-md p-6">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-12">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Regístrate como Profesional</h1>
-          <p className="text-gray-600">Únete a Sumee App y recibe trabajos verificados en CDMX y área metropolitana. ¡Soluciones rápidas y confiables!</p>
+          <h1 className="text-4xl font-bold text-gray-900 mb-4">
+            Únete como Profesional
+          </h1>
+          <p className="text-xl text-gray-600">
+            Conecta con clientes y haz crecer tu negocio
+          </p>
         </div>
 
-        <button
-          onClick={handleGoogleSignup}
-          disabled={loading}
-          className="w-full bg-white border border-gray-300 rounded-md px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 mb-4 flex items-center justify-center space-x-2 transition-colors"
-          aria-label="Regístrate con Google"
-        >
-          <img src="https://developers.google.com/identity/images/g-logo.png" alt="Google" className="h-5 w-5" />
-          <span>Regístrate con Google (1 Clic, Sin Contraseña)</span>
-        </button>
+        {/* Formulario */}
+        <div className="bg-white rounded-2xl shadow-xl p-8">
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Nombre Completo */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <FontAwesomeIcon icon={faUser} className="mr-2 text-blue-600" />
+                Nombre Completo
+              </label>
+              <input
+                type="text"
+                value={formData.fullName}
+                onChange={(e) => handleChange('fullName', e.target.value)}
+                placeholder="Ej: Juan Pérez"
+                className={`w-full px-4 py-3 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
+                  validationErrors.fullName ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : 'border-gray-300'
+                }`}
+              />
+              {validationErrors.fullName && (
+                <p className="mt-1 text-sm text-red-600 flex items-center">
+                  <FontAwesomeIcon icon={faExclamationTriangle} className="mr-1" />
+                  {validationErrors.fullName}
+                </p>
+              )}
+            </div>
 
-        <div className="relative my-6">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-gray-300" />
-          </div>
-          <div className="relative flex justify-center text-sm">
-            <span className="px-2 bg-white text-gray-500">O usa email</span>
-          </div>
-        </div>
+            {/* Profesión */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <FontAwesomeIcon icon={faBriefcase} className="mr-2 text-blue-600" />
+                Profesión
+              </label>
+              <select
+                value={formData.profession}
+                onChange={(e) => handleChange('profession', e.target.value)}
+                className={`w-full px-4 py-3 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
+                  validationErrors.profession ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : 'border-gray-300'
+                }`}
+              >
+                <option value="">Selecciona tu profesión</option>
+                {PROFESSIONS.map(prof => (
+                  <option key={prof} value={prof}>{prof}</option>
+                ))}
+              </select>
+              {validationErrors.profession && (
+                <p className="mt-1 text-sm text-red-600 flex items-center">
+                  <FontAwesomeIcon icon={faExclamationTriangle} className="mr-1" />
+                  {validationErrors.profession}
+                </p>
+              )}
+            </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {/* TAREA 1: Solo Nombre Completo y Email */}
-          <div>
-            <label htmlFor="fullName" className="block text-sm font-medium text-gray-700 mb-1">
-              Nombre Completo
-            </label>
-            <input
-              type="text"
-              id="fullName"
-              placeholder="Ej: Juan Pérez"
-              value={formData.fullName}
-              onChange={(e) => handleFieldChange('fullName', e.target.value)}
-              onBlur={() => handleFieldBlur('fullName')}
-              className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                validationErrors.fullName ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : 'border-gray-300'
-              }`}
-              aria-describedby="fullName-help fullName-error"
-            />
-            <p id="fullName-help" className="mt-1 text-xs text-gray-500">
-              Tu nombre completo para tu perfil profesional.
-            </p>
-            {validationErrors.fullName && (
-              <p id="fullName-error" className="mt-1 text-xs text-red-600">
-                {validationErrors.fullName}
+            {/* Teléfono */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <FontAwesomeIcon icon={faPhone} className="mr-2 text-green-600" />
+                Teléfono/WhatsApp
+              </label>
+              <input
+                type="tel"
+                value={formData.phone}
+                onChange={(e) => handleChange('phone', e.target.value)}
+                placeholder="+52 55 1234 5678"
+                className={`w-full px-4 py-3 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors ${
+                  validationErrors.phone ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : 'border-gray-300'
+                }`}
+              />
+              {validationErrors.phone && (
+                <p className="mt-1 text-sm text-red-600 flex items-center">
+                  <FontAwesomeIcon icon={faExclamationTriangle} className="mr-1" />
+                  {validationErrors.phone}
+                </p>
+              )}
+            </div>
+
+            {/* Email */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <FontAwesomeIcon icon={faEnvelope} className="mr-2 text-blue-600" />
+                Correo Electrónico
+              </label>
+              <input
+                type="email"
+                value={formData.email}
+                onChange={(e) => handleChange('email', e.target.value)}
+                placeholder="tu-email@ejemplo.com"
+                className={`w-full px-4 py-3 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
+                  validationErrors.email ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : 'border-gray-300'
+                }`}
+              />
+              {validationErrors.email && (
+                <p className="mt-1 text-sm text-red-600 flex items-center">
+                  <FontAwesomeIcon icon={faExclamationTriangle} className="mr-1" />
+                  {validationErrors.email}
+                </p>
+              )}
+            </div>
+
+            {/* Contraseña */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <FontAwesomeIcon icon={faLock} className="mr-2 text-blue-600" />
+                Contraseña
+              </label>
+              <div className="relative">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  value={formData.password}
+                  onChange={(e) => handleChange('password', e.target.value)}
+                  placeholder="Mínimo 6 caracteres"
+                  className={`w-full px-4 py-3 pr-12 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
+                    validationErrors.password ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : 'border-gray-300'
+                  }`}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                >
+                  <FontAwesomeIcon icon={showPassword ? faEyeSlash : faEye} />
+                </button>
+              </div>
+              <p className="mt-1 text-xs text-gray-500">
+                Debe contener al menos una mayúscula, una minúscula y un número
               </p>
-            )}
-          </div>
+              {validationErrors.password && (
+                <p className="mt-1 text-sm text-red-600 flex items-center">
+                  <FontAwesomeIcon icon={faExclamationTriangle} className="mr-1" />
+                  {validationErrors.password}
+                </p>
+              )}
+            </div>
 
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-              Correo Electrónico
-            </label>
-            <input
-              type="email"
-              id="email"
-              placeholder="tu-email@ejemplo.com"
-              value={formData.email}
-              onChange={(e) => handleFieldChange('email', e.target.value)}
-              onBlur={() => handleFieldBlur('email')}
-              className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                validationErrors.email ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : 'border-gray-300'
-              }`}
-              aria-describedby="email-help email-error"
-            />
-            <p id="email-help" className="mt-1 text-xs text-gray-500">
-              Para notificaciones y confirmación.
+            {/* Zonas de Trabajo */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-3">
+                <FontAwesomeIcon icon={faMapMarkerAlt} className="mr-2 text-green-600" />
+                Zonas de Trabajo (Opcional)
+              </label>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                {WORK_ZONES.map(zone => (
+                  <button
+                    key={zone}
+                    type="button"
+                    onClick={() => toggleWorkZone(zone)}
+                    className={`p-3 rounded-lg border text-sm font-medium transition-all duration-200 ${
+                      formData.workZones?.includes(zone)
+                        ? 'bg-blue-50 border-blue-300 text-blue-700 shadow-sm'
+                        : 'bg-white border-gray-300 text-gray-700 hover:border-blue-300 hover:bg-blue-50'
+                    }`}
+                  >
+                    {zone}
+                  </button>
+                ))}
+              </div>
+              {formData.workZones && formData.workZones.length > 0 && (
+                <p className="mt-2 text-sm text-green-600">
+                  <FontAwesomeIcon icon={faCheckCircle} className="mr-1" />
+                  {formData.workZones.length} zona{formData.workZones.length > 1 ? 's' : ''} seleccionada{formData.workZones.length > 1 ? 's' : ''}
+                </p>
+              )}
+            </div>
+
+            {/* Biografía */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <FontAwesomeIcon icon={faUser} className="mr-2 text-blue-600" />
+                Breve Biografía (Opcional)
+              </label>
+              <textarea
+                value={formData.bio || ''}
+                onChange={(e) => handleChange('bio', e.target.value)}
+                placeholder="Cuéntanos sobre tu experiencia y especialidades..."
+                rows={4}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors resize-none"
+              />
+              <p className="mt-1 text-xs text-gray-500">
+                Esto aparecerá en tu perfil profesional
             </p>
-            {validationErrors.email && (
-              <p id="email-error" className="mt-1 text-xs text-red-600">
-                {validationErrors.email}
-              </p>
-            )}
+          </div>
+          
+            {/* Botón de envío */}
+            <button
+              type="submit"
+              disabled={loading}
+              className={`w-full py-3 px-6 rounded-lg font-medium transition-all duration-200 flex items-center justify-center space-x-2 ${
+                loading
+                  ? 'bg-gray-400 text-white cursor-not-allowed'
+                  : 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700 shadow-lg hover:shadow-xl'
+              }`}
+            >
+              {loading ? (
+                <>
+                  <FontAwesomeIcon icon={faSpinner} spin />
+                  <span>Procesando...</span>
+                </>
+              ) : (
+                <>
+                  <FontAwesomeIcon icon={faCheckCircle} />
+                  <span>Registrarse como Profesional</span>
+                </>
+              )}
+            </button>
+          </form>
+
+          {/* Mensajes de error y éxito */}
+          {error && (
+            <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+              <div className="flex items-center">
+                <FontAwesomeIcon icon={faExclamationTriangle} className="text-red-600 mr-2" />
+                <p className="text-red-800 font-medium">{error}</p>
+              </div>
+            </div>
+          )}
+
+          {success && (
+            <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+              <div className="flex items-center">
+                <FontAwesomeIcon icon={faCheckCircle} className="text-green-600 mr-2" />
+                <p className="text-green-800 font-medium">{success}</p>
+              </div>
+            </div>
+          )}
           </div>
 
-          {/* TAREA 2: Checkbox de Términos y Condiciones */}
-          <div className="flex items-start space-x-3">
-            <input
-              type="checkbox"
-              id="terms"
-              checked={termsAccepted}
-              onChange={(e) => setTermsAccepted(e.target.checked)}
-              className="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-            />
-            <label htmlFor="terms" className="text-sm text-gray-700">
-              Acepto los{' '}
-              <a href="/terminos" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-500 underline">
-                Términos de Servicio
-              </a>{' '}
-              y la{' '}
-              <a href="/privacidad" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-500 underline">
-                Política de Privacidad
-              </a>{' '}
-              de Sumee App.
-            </label>
-          </div>
-
-          {/* TAREA 1 y 3: Botón con validación condicional y nuevo texto */}
-          <button
-            type="submit"
-            disabled={loading || !isFormValid()}
-            className={`w-full py-3 px-4 rounded-md font-semibold focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors ${
-              isFormValid() && !loading
-                ? 'bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500'
-                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-            }`}
-            aria-label="Comenzar mi Crecimiento"
-          >
-            {loading ? 'Procesando...' : 'Comenzar mi Crecimiento'}
-          </button>
-        </form>
-
-        {error && <p className="mt-4 text-center text-sm text-red-600">{error}</p>}
-        {success && <p className="mt-4 text-center text-sm text-green-600">{success}</p>}
-
-        <div className="mt-6 text-center text-sm text-gray-600">
-          ¿Ya tienes cuenta? <a href="/login" className="font-medium text-blue-600 hover:text-blue-500">Inicia sesión</a>
+        {/* Footer */}
+        <div className="text-center mt-8">
+          <p className="text-gray-600">
+            ¿Ya tienes cuenta?{' '}
+            <a href="/login" className="text-blue-600 hover:text-blue-700 font-medium">
+              Inicia sesión aquí
+            </a>
+          </p>
         </div>
       </div>
     </div>

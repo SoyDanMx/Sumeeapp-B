@@ -32,22 +32,52 @@ export function useUserRole() {
         }
 
         // Obtener perfil del usuario para determinar el rol
+        console.log('🔍 useUserRole: Fetching profile for user:', user.id);
         const { data: profile, error: profileError } = await supabase
           .from('profiles')
-          .select('role')
+          .select('role, full_name, email, created_at')
           .eq('user_id', user.id)
           .single();
+        
+        console.log('🔍 useUserRole: Profile query result:', { 
+          profile, 
+          profileError,
+          userEmail: user.email,
+          userMetadata: user.user_metadata
+        });
 
         if (profileError) {
-          console.error('Error getting profile:', profileError);
+          console.error('Error getting profile:', {
+            message: profileError.message,
+            code: profileError.code,
+            details: profileError.details,
+            hint: profileError.hint
+          });
+          
+          // Si el error es "no rows found", el perfil debería haber sido creado en el callback
+          // Si no existe, es un error del sistema
+          if (profileError.code === 'PGRST116') {
+            console.error('No profile found - this should not happen after auth callback');
+            setError('Perfil de usuario no encontrado. Por favor, contacta a soporte.');
+          } else {
+            setError('Error al cargar el perfil del usuario');
+          }
+          
           setRole('client'); // Default to client if no profile
         } else {
           // Validar que el rol sea válido
           const userRole = profile?.role as UserRole;
+          console.log('🔍 useUserRole: Profile role found:', userRole);
+          console.log('🔍 useUserRole: Full profile data:', profile);
+          
           if (userRole === 'profesional' || userRole === 'client') {
+            console.log('✅ useUserRole: Setting role to:', userRole);
             setRole(userRole);
+            setError(null); // Clear any previous errors
           } else {
+            console.log('❌ useUserRole: Invalid role, defaulting to client:', userRole);
             setRole('client'); // Default to client if invalid role
+            setError(`Rol inválido detectado: ${userRole}. Contacta a soporte.`);
           }
         }
       } catch (error) {

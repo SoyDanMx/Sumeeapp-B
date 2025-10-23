@@ -7,6 +7,7 @@ import "leaflet/dist/leaflet.css"; // 1. Importamos los estilos de Leaflet aquí
 // --- IMPORTS ADICIONALES NECESARIOS ---
 import { Header } from "../components/Header"; // Importa tu componente Header
 import { LocationProvider } from "../context/LocationContext"; // Importa el LocationProvider
+import { AuthProvider } from "../components/AuthProvider"; // Importa el AuthProvider
 // --- FIN IMPORTS ADICIONALES ---
 
 import { WhatsAppButton } from "@/components/WhatsAppButton";
@@ -55,10 +56,12 @@ export default function RootLayout({
           CON EL LOCATIONPROVIDER PARA QUE TODOS TENGAN ACCESO AL CONTEXTO DE UBICACIÓN.
         */}
         <LocationProvider>
-          <Header /> {/* El Header ahora forma parte del layout */}
-          <main className="pt-20"> {/* Añadimos padding-top para que el contenido no quede bajo el fixed header */}
-            {children} {/* Aquí se renderiza el contenido de cada página */}
-          </main>
+          <AuthProvider>
+            <Header /> {/* El Header ahora forma parte del layout */}
+            <main className="pt-20"> {/* Añadimos padding-top para que el contenido no quede bajo el fixed header */}
+              {children} {/* Aquí se renderiza el contenido de cada página */}
+            </main>
+          </AuthProvider>
         </LocationProvider>
         
         <WhatsAppButton />
