@@ -182,7 +182,7 @@ export default function JoinAsPro() {
         console.error('❌ Detalles del error:', {
           message: authError.message,
           status: authError.status,
-          statusText: authError.statusText
+          name: authError.name
         });
         
         // Proporcionar mensajes de error más específicos
