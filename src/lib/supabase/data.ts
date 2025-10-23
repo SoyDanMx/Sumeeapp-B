@@ -6,8 +6,8 @@ import { Profesional, Lead } from '@/types/supabase'; // Importamos los tipos ne
 
 // =========================================================================
 // 🚨 INSTRUCCIÓN CRÍTICA DE BACKEND (RLS) 🚨
-// Si la actualización falla con un error 403, debes ejecutar la siguiente política
-// en el SQL Editor de Supabase para permitir que los usuarios editen su perfil:
+// Si la actualización falla con un error 42501 (Permiso denegado), debes ejecutar
+// la siguiente política en el SQL Editor de Supabase (si no existe ya):
 //
 // CREATE POLICY "Los usuarios pueden actualizar su propio perfil."
 // ON public.profiles
@@ -15,12 +15,7 @@ import { Profesional, Lead } from '@/types/supabase'; // Importamos los tipos ne
 // TO authenticated
 // USING (auth.uid() = user_id);
 //
-// También asegúrate de tener la política SELECT:
-// CREATE POLICY "Los usuarios pueden leer su propio perfil."
-// ON public.profiles
-// FOR SELECT
-// TO authenticated
-// USING (auth.uid() = user_id);
+// NOTA: Si recibes el error 'policy already exists', ignora el comando.
 // =========================================================================
 
 /**
@@ -47,69 +42,59 @@ export async function checkUserPermissions(userId: string): Promise<boolean> {
 }
 
 /**
- * Actualiza (o inserta si no existe, usando el user_id) la información del perfil del profesional.
- * @param userId El ID del usuario a actualizar.
- * @param updates Los datos del formulario (WhatsApp, IMSS, Biografía, Experiencia).
- * @param address La dirección de texto opcional para geocodificar.
+ * Actualiza o inserta el perfil completo del profesional, incluyendo la geocodificación
+ * de la dirección base. Utiliza el método upsert para ser más robusto.
+ * @param userId El UUID del usuario actual (obtenido de la sesión).
+ * @param updates Los campos del formulario a actualizar.
+ * @param locationAddress La dirección de texto opcional para geocodificar.
+ * @throws Lanza un error si la geocodificación o la actualización fallan.
  */
-export async function updateProfesionalProfile(userId: string, updates: Partial<Profesional>, address?: string) {
+export async function updateProfesionalProfile(
+    userId: string, 
+    updates: Partial<Profesional>, 
+    address?: string
+) {
     let lat: number | undefined;
     let lng: number | undefined;
     
-    // 1. Si el usuario proporcionó una dirección, la convertimos a coordenadas (lat/lng)
+    // 1. Geocodificación (solo si se proporciona una dirección)
     if (address) {
         const coords = await geocodeAddress(address);
         if (coords) {
             lat = coords.lat;
             lng = coords.lng;
         } else {
-            // Si Nominatim no encuentra la dirección
             throw new Error("No se pudo obtener las coordenadas de la dirección proporcionada. Intenta ser más específico.");
         }
     }
 
-    // 2. Preparamos el objeto de actualización: combinamos los datos del formulario con las coordenadas (si se encontraron)
-    // También incluimos el user_id para que upsert sepa a quién insertar/actualizar.
-    
-    // Primero, obtener el perfil actual para asegurar que full_name no sea null
-    const { data: currentProfile, error: profileError } = await supabase
-        .from('profiles')
-        .select('full_name')
-        .eq('user_id', userId)
-        .single();
-
-    // Si hay un perfil existente y updates.full_name es null/undefined, usar el valor existente
-    const fullName = updates.full_name || currentProfile?.full_name;
-    
-    if (!fullName) {
-        throw new Error('El campo full_name es requerido y no puede estar vacío.');
-    }
-
+    // 2. Preparar los datos para el upsert (Actualizar/Insertar)
     const dataToUpdate = {
-        user_id: userId, // ⬅️ Necesario para el upsert
-        full_name: fullName, // Asegurar que full_name siempre esté presente
         ...updates,
-        ...(lat !== undefined && { ubicacion_lat: lat }), 
-        ...(lng !== undefined && { ubicacion_lng: lng }), 
+        user_id: userId, // CRÍTICO: El user_id es necesario para el upsert
+        ...(lat !== undefined && { ubicacion_lat: lat }),
+        ...(lng !== undefined && { ubicacion_lng: lng }),
     };
 
-    // 3. Llamada final a Supabase. Usamos .upsert() para evitar el error de clave duplicada
-    // si esta función se llama al inicio de la sesión.
+    // 3. Llamada a Supabase usando UPSERT
     const { error } = await supabase
         .from('profiles')
-        // 🚨 CAMBIO CLAVE: De .update() a .upsert() 
-        // Indica a Supabase que use 'user_id' como la columna de conflicto (la clave única)
-        .upsert(dataToUpdate, { onConflict: 'user_id' }); 
+        // El upsert intentará insertar; si user_id ya existe, lo actualizará
+        .upsert([dataToUpdate], { onConflict: 'user_id' });
 
     if (error) {
         console.error('Error de Supabase al actualizar/insertar perfil:', error);
         // Devuelve un error más claro al frontend
-        if (error.code === '42501' || error.code === 'PGRST301') {
+        if (error.code === '42501') {
             throw new Error("Error de permisos (RLS). Asegura la Política de UPDATE en Supabase.");
         }
         throw new Error(`Falló la actualización del perfil: ${error.message}`);
     }
 }
+
+// =========================================================================
+// LÓGICA DE GESTIÓN DE LEADS (Conexión Cliente-Profesional)
+// =========================================================================
 
 /**
  * Envía un nuevo lead desde el formulario del cliente.
@@ -169,39 +154,26 @@ export async function submitLead(leadData: {
 }
 
 /**
- * Permite a un profesional aceptar un lead específico.
- * @param leadId ID del lead a aceptar
- * @param profesionalId ID del profesional que acepta el lead
+ * Función para que el Profesional acepte un lead y lo asigne a sí mismo.
+ * @param leadId ID del lead a aceptar.
+ * @param profesionalId ID del profesional que acepta el lead (auth.uid()).
  */
 export async function acceptLead(leadId: string, profesionalId: string) {
-    try {
-        // Actualizar el lead con el profesional asignado y cambiar estado
-        const { data, error } = await supabase
-            .from('leads')
-            .update({
-                estado: 'Contactado',
-                profesional_asignado_id: profesionalId
-            })
-            .eq('id', leadId)
-            .select()
-            .single();
+    // 💡 IMPORTANTE: Debes tener una política de RLS que permita hacer UPDATE
+    // a los leads donde el estado sea 'Nuevo' para que esta función funcione.
+    
+    const { error } = await supabase
+        .from('leads')
+        .update({
+            estado: 'Contactado', // Cambia el estado
+            profesional_asignado_id: profesionalId // Asigna al profesional
+        })
+        .eq('id', leadId)
+        .select();
 
-        if (error) {
-            console.error('Error al aceptar el lead:', error);
-            // Manejo específico de errores RLS
-            if (error.code === '42501' || error.code === 'PGRST301') {
-                throw new Error("Error de permisos (RLS). Asegura la política de UPDATE en la tabla leads.");
-            }
-            throw new Error(`Error al aceptar el lead: ${error.message}`);
-        }
-
-        return {
-            success: true,
-            lead: data
-        };
-    } catch (error) {
-        console.error('Error en acceptLead:', error);
-        throw error;
+    if (error) {
+        console.error('Error al aceptar el lead:', error);
+        throw new Error(`No se pudo aceptar el lead: ${error.message}`);
     }
 }
 
