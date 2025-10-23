@@ -7,8 +7,9 @@ import Image from 'next/image';
 import { supabase } from '@/lib/supabaseClient';
 import type { User } from '@supabase/supabase-js';
 import { useUser } from '@/hooks/useUser';
+import UserPanelMenu from './UserPanelMenu';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faBars, faTimes, faMapMarkerAlt, faChevronDown, faPen, faCrown, faUser, faSignOutAlt, faChartBar, faCog, faBell, faQuestionCircle } from '@fortawesome/free-solid-svg-icons';
+import { faBars, faTimes, faMapMarkerAlt, faChevronDown } from '@fortawesome/free-solid-svg-icons';
 
 import dynamic from 'next/dynamic';
 import { useLocation } from '@/context/LocationContext';
@@ -23,7 +24,6 @@ export const Header = () => {
   const [loading, setLoading] = useState(true);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
-  const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
 
   const { location, setLocation } = useLocation();
   const user = useUser();
@@ -33,30 +33,15 @@ export const Header = () => {
   }, [user]);
 
   // Cerrar dropdown al hacer click fuera
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (isProfileDropdownOpen) {
-        const target = event.target as HTMLElement;
-        if (!target.closest('.profile-dropdown')) {
-          setIsProfileDropdownOpen(false);
-        }
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [isProfileDropdownOpen]);
 
   const closeAllModals = () => {
     setIsMenuOpen(false);
     setIsLocationModalOpen(false);
-    setIsProfileDropdownOpen(false);
   };
 
   const handleLogout = async () => {
     try {
       await supabase.auth.signOut();
-      setIsProfileDropdownOpen(false);
       // Redirigir a la página principal
       window.location.href = '/';
     } catch (error) {
@@ -103,104 +88,7 @@ export const Header = () => {
               {!loading && (
                 <>
                   {user ? (
-                    <div className="relative profile-dropdown">
-                      <button 
-                        onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
-                        className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-lg font-medium transition flex items-center space-x-2"
-                      >
-                        <FontAwesomeIcon icon={faUser} />
-                        <span>Mi Panel</span>
-                        <FontAwesomeIcon icon={faChevronDown} className="text-xs" />
-                      </button>
-                      
-                      {/* Dropdown Menu */}
-                      {isProfileDropdownOpen && (
-                        <div className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
-                          <div className="px-4 py-3 border-b border-gray-100">
-                            <p className="text-sm font-medium text-gray-900">{user?.email}</p>
-                            <p className="text-xs text-gray-500">
-                              {user?.role === 'profesional' ? 'Panel de Profesional' : 'Panel de Cliente'}
-                            </p>
-                          </div>
-                          
-                          <div className="py-1">
-                            {user?.role === 'profesional' ? (
-                              <>
-                                <Link 
-                                  href="/professional-dashboard" 
-                                  onClick={closeAllModals}
-                                  className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                                >
-                                  <FontAwesomeIcon icon={faChartBar} className="mr-3 text-gray-400" />
-                                  Dashboard Profesional
-                                </Link>
-                                <Link 
-                                  href="/dashboard" 
-                                  onClick={closeAllModals}
-                                  className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                                >
-                                  <FontAwesomeIcon icon={faUser} className="mr-3 text-gray-400" />
-                                  Mis Leads
-                                </Link>
-                              </>
-                            ) : (
-                              <>
-                                <Link 
-                                  href="/client-dashboard" 
-                                  onClick={closeAllModals}
-                                  className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                                >
-                                  <FontAwesomeIcon icon={faChartBar} className="mr-3 text-gray-400" />
-                                  Dashboard Cliente
-                                </Link>
-                                <Link 
-                                  href="/client-dashboard?tab=favorites" 
-                                  onClick={closeAllModals}
-                                  className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                                >
-                                  <FontAwesomeIcon icon={faUser} className="mr-3 text-gray-400" />
-                                  Favoritos
-                                </Link>
-                              </>
-                            )}
-                            <Link 
-                              href="/dashboard?tab=leads" 
-                              onClick={closeAllModals}
-                              className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                            >
-                              <FontAwesomeIcon icon={faBell} className="mr-3 text-gray-400" />
-                              Notificaciones
-                            </Link>
-                            <Link 
-                              href="/dashboard?tab=settings" 
-                              onClick={closeAllModals}
-                              className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                            >
-                              <FontAwesomeIcon icon={faCog} className="mr-3 text-gray-400" />
-                              Configuración
-                            </Link>
-                            <Link 
-                              href="/help" 
-                              onClick={closeAllModals}
-                              className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                            >
-                              <FontAwesomeIcon icon={faQuestionCircle} className="mr-3 text-gray-400" />
-                              Soporte
-                            </Link>
-                          </div>
-                          
-                          <div className="border-t border-gray-100 py-1">
-                            <button 
-                              onClick={handleLogout}
-                              className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50"
-                            >
-                              <FontAwesomeIcon icon={faSignOutAlt} className="mr-3" />
-                              Cerrar Sesión
-                            </button>
-                          </div>
-                        </div>
-                      )}
-                    </div>
+                    <UserPanelMenu user={user} onClose={closeAllModals} />
                   ) : (
                     <Link href="/login" className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition">Iniciar Sesión</Link>
                   )}
