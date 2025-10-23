@@ -224,7 +224,7 @@ export default function ClientStatusPage() {
                         <FontAwesomeIcon 
                           key={i}
                           icon={faStar} 
-                          className={`${i < Math.floor(lead.profesional_asignado!.calificacion_promedio || 0) 
+                          className={`${i < Math.floor(lead.profiles?.calificacion_promedio || 0) 
                             ? 'text-yellow-400' 
                             : 'text-gray-300'
                           }`}
@@ -232,14 +232,14 @@ export default function ClientStatusPage() {
                       ))}
                     </div>
                     <span className="text-sm text-gray-600">
-                      ({lead.profesional_asignado.calificacion_promedio?.toFixed(1)} / 5.0)
+                      ({lead.profiles?.calificacion_promedio?.toFixed(1)} / 5.0)
                     </span>
                   </div>
                 )}
 
-                {lead.profesional_asignado.whatsapp && (
+                {lead.profiles?.whatsapp && (
                   <a
-                    href={`https://wa.me/${lead.profesional_asignado.whatsapp.replace(/[^\d]/g, '')}?text=Hola, te contacté por el servicio a través de Sumee App.`}
+                    href={`https://wa.me/${lead.profiles?.whatsapp?.replace(/[^\d]/g, '')}?text=Hola, te contacté por el servicio a través de Sumee App.`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center mt-3 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
