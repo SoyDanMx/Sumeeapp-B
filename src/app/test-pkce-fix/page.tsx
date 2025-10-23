@@ -311,7 +311,7 @@ export default function TestPKCEFixPage() {
                   <div className="text-sm text-orange-700 space-y-1">
                     {Object.keys(pkceInfo.urlParams).length > 0 ? (
                       Object.entries(pkceInfo.urlParams).map(([key, value]) => (
-                        <p key={key}><strong>{key}:</strong> {value || 'No presente'}</p>
+                        <p key={key}><strong>{key}:</strong> {value ? (typeof value === 'object' ? JSON.stringify(value) : String(value)) : 'No presente'}</p>
                       ))
                     ) : (
                       <p>No hay parámetros en la URL</p>
