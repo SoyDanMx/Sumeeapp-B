@@ -64,4 +64,12 @@ export interface Lead {
   fecha_creacion: string; 
   estado: 'nuevo' | 'contactado' | 'en_progreso' | 'completado' | 'cancelado' | string | null;
   profesional_asignado_id: string | null;
+  // Relación con el profesional asignado (cuando se incluye en la consulta)
+  profesional_asignado?: {
+    full_name: string;
+    profession: string;
+    calificacion_promedio: number;
+    whatsapp: string;
+    avatar_url: string;
+  } | null;
 }

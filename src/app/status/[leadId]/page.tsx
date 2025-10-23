@@ -17,21 +17,12 @@ import { faWhatsapp } from '@fortawesome/free-brands-svg-icons';
 import { getLeadById } from '@/lib/supabase/data';
 import { Lead } from '@/types/supabase';
 
-interface LeadWithProfessional extends Lead {
-  profesional_asignado?: {
-    full_name: string | null;
-    profession: string | null;
-    calificacion_promedio: number | null;
-    whatsapp: string | null;
-    avatar_url: string | null;
-  };
-}
 
 export default function ClientStatusPage() {
   const params = useParams();
   const leadId = params.leadId as string;
   
-  const [lead, setLead] = useState<LeadWithProfessional | null>(null);
+  const [lead, setLead] = useState<Lead | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>('');
 
