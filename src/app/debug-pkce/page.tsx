@@ -97,7 +97,7 @@ export default function DebugPKCEPage() {
         currentUrl,
         urlParams: urlParamsData,
         dashboardConfig,
-        recommendations: []
+        recommendations: [] as string[]
       };
 
       // 8. Generar recomendaciones
