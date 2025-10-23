@@ -38,7 +38,7 @@ export default function ClientDashboardPage() {
         setUser(user);
         
         if (user) {
-          // Obtener leads del usuario
+          // Obtener leads del usuario (usando cliente_id en lugar de user_id)
           try {
             const userLeads = await getClientLeads(user.id);
             setLeads(userLeads);
@@ -228,7 +228,10 @@ export default function ClientDashboardPage() {
                   {lead.estado === 'contactado' && lead.profesional_asignado_id && (
                     <div className="text-sm text-gray-600">
                       <FontAwesomeIcon icon={faCheckCircle} className="mr-1 text-green-500" />
-                      Profesional asignado
+                      {lead.profesional_asignado ? 
+                        `Asignado a ${lead.profesional_asignado.full_name}` : 
+                        'Profesional asignado'
+                      }
                     </div>
                   )}
                 </div>

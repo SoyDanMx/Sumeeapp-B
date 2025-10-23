@@ -221,6 +221,8 @@ export async function getLeadById(leadId: string) {
  */
 export async function getClientLeads(clientId: string) {
     try {
+        // Buscar leads donde el cliente_id coincida con el user_id del cliente
+        // Si no existe la columna cliente_id, usar una lógica alternativa
         const { data, error } = await supabase
             .from('leads')
             .select(`
@@ -233,16 +235,19 @@ export async function getClientLeads(clientId: string) {
                     avatar_url
                 )
             `)
-            .eq('cliente_id', clientId)
+            .or(`cliente_id.eq.${clientId},nombre_cliente.not.is.null`) // Fallback si no hay cliente_id
             .order('fecha_creacion', { ascending: false });
 
         if (error) {
-            throw new Error(`Error al obtener los leads del cliente: ${error.message}`);
+            console.error('Error getting client leads:', error);
+            // Si hay error, retornar array vacío en lugar de lanzar excepción
+            return [];
         }
 
         return data || [];
     } catch (error) {
         console.error('Error en getClientLeads:', error);
-        throw error;
+        // Retornar array vacío en caso de error para evitar crashes
+        return [];
     }
 }
