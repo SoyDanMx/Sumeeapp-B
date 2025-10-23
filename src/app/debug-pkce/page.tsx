@@ -349,7 +349,7 @@ export default function DebugPKCEPage() {
                   <h3 className="font-semibold text-gray-800 mb-3">Parámetros de URL</h3>
                   <div className="text-sm space-y-1">
                     {Object.entries(pkceTest.urlParams).map(([key, value]) => (
-                      <p key={key}><strong>{key}:</strong> {value || 'No presente'}</p>
+                      <p key={key}><strong>{key}:</strong> {value ? (typeof value === 'object' ? JSON.stringify(value) : String(value)) : 'No presente'}</p>
                     ))}
                   </div>
                 </div>
