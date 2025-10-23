@@ -58,7 +58,7 @@ export default function ExampleDashboardPage() {
           <p><strong>Email:</strong> {user.email}</p>
           <p><strong>Rol:</strong> {user.role}</p>
           <p><strong>ID:</strong> {user.id}</p>
-          <p><strong>Última actualización:</strong> {new Date(user.updated_at).toLocaleString()}</p>
+          <p><strong>Última actualización:</strong> {user.updated_at ? new Date(user.updated_at).toLocaleString() : 'No disponible'}</p>
         </div>
       </div>
     </div>
