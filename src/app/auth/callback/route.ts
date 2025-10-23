@@ -17,14 +17,14 @@ export async function GET(request: NextRequest) {
 
   if (code) {
     // 2. CREAMOS una instancia del cliente de servidor.
-    const supabase = createSupabaseServerClient();
+    const supabase = await createSupabaseServerClient();
     
     try {
       console.log('🔄 EXCHANGING CODE FOR SESSION...');
       
       // 3. INTERCAMBIAMOS el código por una sesión. Esto establece la cookie.
       const { data: { session }, error } = await supabase.auth.exchangeCodeForSession(code);
-
+      
       if (error) {
         console.error('❌ ERROR EXCHANGING CODE FOR SESSION:', error);
         console.error('- Error message:', error.message);

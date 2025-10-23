@@ -8,8 +8,8 @@ type SupabaseEnv = {
   NEXT_PUBLIC_SUPABASE_ANON_KEY: string;
 };
 
-export function createSupabaseServerClient() {
-  const cookieStore = cookies();
+export async function createSupabaseServerClient() {
+  const cookieStore = await cookies();
   const supabaseEnv: SupabaseEnv = {
     NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL!,
     NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
