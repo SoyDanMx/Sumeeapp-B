@@ -120,7 +120,7 @@ export default function DebugProfessionalRegistrationPage() {
       if (error) {
         setError('Error corrigiendo rol: ' + error.message);
       } else {
-        setDebugInfo(prev => ({
+        setDebugInfo((prev: any) => ({
           ...prev,
           profile: data[0],
           currentRole: 'profesional',
