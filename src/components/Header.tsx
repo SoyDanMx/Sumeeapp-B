@@ -6,7 +6,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { supabase } from '@/lib/supabaseClient';
 import type { User } from '@supabase/supabase-js';
-import { useUser } from '@/hooks/useUser';
+import { useAuth } from './AuthProvider';
 import UserPanelMenu from './UserPanelMenu';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faBars, faTimes, faMapMarkerAlt, faChevronDown } from '@fortawesome/free-solid-svg-icons';
@@ -26,11 +26,11 @@ export const Header = () => {
   const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
 
   const { location, setLocation } = useLocation();
-  const user = useUser();
+  const { user, loading: userLoading } = useAuth();
 
   useEffect(() => {
-    setLoading(!user && user === undefined);
-  }, [user]);
+    setLoading(userLoading);
+  }, [userLoading]);
 
   // Cerrar dropdown al hacer click fuera
 

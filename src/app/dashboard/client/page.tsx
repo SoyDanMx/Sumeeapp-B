@@ -2,9 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { supabase } from '@/lib/supabase/client';
 import { getClientLeads } from '@/lib/supabase/data';
 import { Lead } from '@/types/supabase';
+import { useAuth } from '@/components/AuthProvider';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
   faUser, 
@@ -18,53 +18,37 @@ import {
 import { faWhatsapp } from '@fortawesome/free-brands-svg-icons';
 
 export default function ClientDashboardPage() {
-  const [user, setUser] = useState<any>(null);
+  const { user, loading: userLoading } = useAuth();
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchUserAndLeads = async () => {
-      try {
-        // Obtener usuario actual
-        const { data: { user }, error: userError } = await supabase.auth.getUser();
-        if (userError) {
-          console.error('Error getting user:', userError);
-          setError('Error al cargar los datos del usuario');
-          setLoading(false);
-          return;
-        }
+    const fetchLeads = async () => {
+      if (userLoading) return; // Esperar a que se cargue el usuario
+      
+      if (!user) {
+        setError('Usuario no autenticado');
+        setLoading(false);
+        return;
+      }
 
-        setUser(user);
-        
-        if (user) {
-          // Obtener leads del usuario (usando cliente_id en lugar de user_id)
-          try {
-            const userLeads = await getClientLeads(user.id);
-            setLeads(userLeads);
-          } catch (leadError) {
-            console.error('Error fetching client leads:', leadError);
-            // Si no hay leads o hay error, mostrar lista vacía
-            setLeads([]);
-          }
-        } else {
-          setLeads([]);
-        }
-      } catch (error: any) {
-        console.error('Error fetching user data:', error);
-        setError('Error al cargar los datos del usuario');
+      try {
+        setLoading(true);
+        const userLeads = await getClientLeads(user.id);
+        setLeads(userLeads);
+        setError(null);
+      } catch (leadError) {
+        console.error('Error fetching client leads:', leadError);
+        setLeads([]);
+        setError('Error al cargar los leads');
       } finally {
         setLoading(false);
       }
     };
 
-    // Solo ejecutar en el cliente
-    if (typeof window !== 'undefined') {
-      fetchUserAndLeads();
-    } else {
-      setLoading(false);
-    }
-  }, []);
+    fetchLeads();
+  }, [user, userLoading]);
 
   const getStatusBadge = (estado: string | null) => {
     switch (estado?.toLowerCase()) {
@@ -115,7 +99,7 @@ export default function ClientDashboardPage() {
     });
   };
 
-  if (loading) {
+  if (userLoading || loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">

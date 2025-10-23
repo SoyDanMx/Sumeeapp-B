@@ -5,6 +5,15 @@ import { geocodeAddress } from '@/lib/geocoding'; // Importamos la utilidad que 
 import { Profesional, Lead } from '@/types/supabase'; // Importamos los tipos necesarios
 
 // =========================================================================
+// 🚨 NUEVA ESTRUCTURA DE BASE DE DATOS 🚨
+// =========================================================================
+// La nueva estructura separa claramente:
+// - profiles: Usuarios base (clientes y profesionales)
+// - profesionales: Datos específicos de profesionales
+// - leads: Solicitudes de servicios
+// =========================================================================
+
+// =========================================================================
 // 🚨 INSTRUCCIÓN CRÍTICA DE BACKEND (RLS) 🚨
 // Si la actualización falla con un error 42501 (Permiso denegado), debes ejecutar
 // la siguiente política en el SQL Editor de Supabase (si no existe ya):
@@ -220,34 +229,135 @@ export async function getLeadById(leadId: string) {
  * @param clientId ID del cliente (user_id)
  */
 export async function getClientLeads(clientId: string) {
-    try {
-        // Buscar leads donde el cliente_id coincida con el user_id del cliente
-        // Si no existe la columna cliente_id, usar una lógica alternativa
-        const { data, error } = await supabase
-            .from('leads')
-            .select(`
-                *,
-                profesional_asignado:profesional_asignado_id(
-                    full_name,
-                    profession,
-                    calificacion_promedio,
-                    whatsapp,
-                    avatar_url
-                )
-            `)
-            .or(`cliente_id.eq.${clientId},nombre_cliente.not.is.null`) // Fallback si no hay cliente_id
-            .order('fecha_creacion', { ascending: false });
+  try {
+    // Buscar leads donde el cliente_id coincida con el user_id del cliente
+    // Si no existe la columna cliente_id, usar una lógica alternativa
+    const { data, error } = await supabase
+      .from('leads')
+      .select(`
+        *,
+        profesional_asignado:profesional_asignado_id(
+          full_name,
+          profession,
+          calificacion_promedio,
+          whatsapp,
+          avatar_url
+        )
+      `)
+      .or(`cliente_id.eq.${clientId},nombre_cliente.not.is.null`) // Fallback si no hay cliente_id
+      .order('fecha_creacion', { ascending: false });
 
-        if (error) {
-            console.error('Error getting client leads:', error);
-            // Si hay error, retornar array vacío en lugar de lanzar excepción
-            return [];
-        }
-
-        return data || [];
-    } catch (error) {
-        console.error('Error en getClientLeads:', error);
-        // Retornar array vacío en caso de error para evitar crashes
-        return [];
+    if (error) {
+      console.error('Error getting client leads:', error);
+      // Si hay error, retornar array vacío en lugar de lanzar excepción
+      return [];
     }
+
+    return data || [];
+  } catch (error) {
+    console.error('Error en getClientLeads:', error);
+    // Retornar array vacío en caso de error para evitar crashes
+    return [];
+  }
+}
+
+// =========================================================================
+// NUEVAS FUNCIONES PARA LA ESTRUCTURA REDISEÑADA
+// =========================================================================
+
+/**
+ * Obtiene todos los profesionales con sus datos completos
+ * Usa la vista profesionales_completos que combina profiles + profesionales
+ */
+export async function getProfesionalesCompletos() {
+  try {
+    const { data, error } = await supabase
+      .from('profesionales_completos')
+      .select('*')
+      .order('profile_created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error getting complete professionals:', error);
+      throw new Error(`Error al obtener profesionales: ${error.message}`);
+    }
+
+    return data || [];
+  } catch (error) {
+    console.error('Error en getProfesionalesCompletos:', error);
+    throw error;
+  }
+}
+
+/**
+ * Obtiene un profesional específico con datos completos
+ * @param userId ID del usuario profesional
+ */
+export async function getProfesionalCompleto(userId: string) {
+  try {
+    const { data, error } = await supabase
+      .from('profesionales_completos')
+      .select('*')
+      .eq('user_id', userId)
+      .single();
+
+    if (error) {
+      console.error('Error getting complete professional:', error);
+      throw new Error(`Error al obtener profesional: ${error.message}`);
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Error en getProfesionalCompleto:', error);
+    throw error;
+  }
+}
+
+/**
+ * Actualiza los datos específicos de un profesional
+ * @param userId ID del usuario profesional
+ * @param updates Datos a actualizar
+ */
+export async function updateProfesionalData(userId: string, updates: any) {
+  try {
+    const { error } = await supabase
+      .from('profesionales')
+      .update({
+        ...updates,
+        updated_at: new Date().toISOString()
+      })
+      .eq('user_id', userId);
+
+    if (error) {
+      console.error('Error updating professional data:', error);
+      throw new Error(`Error al actualizar datos del profesional: ${error.message}`);
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error('Error en updateProfesionalData:', error);
+    throw error;
+  }
+}
+
+/**
+ * Obtiene leads con información completa de cliente y profesional
+ * Usa la vista leads_completos
+ */
+export async function getLeadsCompletos() {
+  try {
+    const { data, error } = await supabase
+      .from('leads_completos')
+      .select('*')
+      .order('fecha_creacion', { ascending: false });
+
+    if (error) {
+      console.error('Error getting complete leads:', error);
+      throw new Error(`Error al obtener leads: ${error.message}`);
+    }
+
+    return data || [];
+  } catch (error) {
+    console.error('Error en getLeadsCompletos:', error);
+    throw error;
+  }
 }

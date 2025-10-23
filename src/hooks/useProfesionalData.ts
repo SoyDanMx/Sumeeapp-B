@@ -1,144 +1,94 @@
-// src/hooks/useProfesionalData.ts
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { supabase } from '@/lib/supabase/client';
-// 1. IMPORTAMOS los tipos centralizados. Ya no definimos nada localmente.
+// Usamos el cliente del NAVEGADOR
+import { supabase } from '@/lib/supabase/client-new';
 import { Profesional, Lead } from '@/types/supabase';
-import { PostgrestError } from '@supabase/supabase-js'; // Tipo oficial para errores de Supabase
+import { PostgrestError } from '@supabase/supabase-js';
 
-// 2. DEFINIMOS el tipo del valor de retorno del hook de forma más limpia.
-// Esto describe lo que el hook devuelve, sin necesidad de una interfaz interna.
 type UseProfesionalDataReturn = {
   profesional: Profesional | null;
-  leads: Lead[]; // Inicializamos como array vacío en lugar de null para evitar comprobaciones.
+  leads: Lead[];
   isLoading: boolean;
   error: PostgrestError | string | null;
   refetchData: () => void;
 };
 
-// El hook ahora se declara que devuelve el tipo que acabamos de definir.
 export function useProfesionalData(): UseProfesionalDataReturn {
   const [profesional, setProfesional] = useState<Profesional | null>(null);
   const [leads, setLeads] = useState<Lead[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true); // Empezamos cargando por defecto
   const [error, setError] = useState<PostgrestError | string | null>(null);
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
 
-  const fetchData = useCallback(async (userId: string) => {
+  const fetchData = useCallback(async (currentUserId: string) => {
+    // Si no hay ID, no hacemos nada.
+    if (!currentUserId) {
+      setIsLoading(false);
+      return;
+    }
+
     setIsLoading(true);
     setError(null);
     
     try {
-      // Usamos Promise.all para ejecutar ambas consultas en paralelo, es más eficiente.
       const [profesionalResult, leadsResult] = await Promise.all([
         supabase
-          .from('profiles') // Asumiendo que tu tabla de profesionales es 'profiles'
-          .select('*') // Seleccionamos todo para que coincida con la interfaz completa
-          .eq('user_id', userId)
+          .from('profiles')
+          .select('*')
+          .eq('user_id', currentUserId)
           .single(),
         supabase
           .from('leads')
           .select('*')
-          .eq('profesional_asignado_id', userId)
+          .eq('profesional_asignado_id', currentUserId)
           .order('fecha_creacion', { ascending: false })
       ]);
 
       if (profesionalResult.error) throw profesionalResult.error;
       if (leadsResult.error) throw leadsResult.error;
 
-      // Actualizamos los estados con los datos obtenidos
       setProfesional(profesionalResult.data as Profesional);
       setLeads(leadsResult.data as Lead[]);
 
     } catch (err: any) {
       console.error("Error fetching professional data:", err);
-      setError(err);
+      setError(err.message || 'Error al obtener los datos.');
+      setProfesional(null); // Limpiamos el perfil si hay error
     } finally {
       setIsLoading(false);
     }
   }, []);
 
   const refetchData = useCallback(() => {
-    if (currentUserId) {
-      fetchData(currentUserId);
-    } else {
-      console.warn("refetchData called without a current user.");
+    if (userId) {
+      fetchData(userId);
     }
-  }, [currentUserId, fetchData]);
+  }, [userId, fetchData]);
 
   useEffect(() => {
-    const initialize = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        setCurrentUserId(user.id);
-        fetchData(user.id);
+    // --- LA LÓGICA CLAVE ESTÁ AQUÍ ---
+    // Usamos onAuthStateChange para reaccionar a los cambios de sesión.
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+      const currentUserId = session?.user?.id ?? null;
+      setUserId(currentUserId);
+
+      if (currentUserId) {
+        // Solo obtenemos los datos si hay un ID de usuario.
+        fetchData(currentUserId);
       } else {
+        // Si no hay sesión (logout), limpiamos los datos y paramos la carga.
+        setProfesional(null);
+        setLeads([]);
         setIsLoading(false);
-        setError('User not authenticated');
       }
-    };
-    initialize();
-  }, []); // Solo ejecutar una vez al montar
+    });
 
-  // Separar el efecto de Realtime en otro useEffect
-  useEffect(() => {
-    let leadsChannel: ReturnType<typeof supabase.channel> | null = null;
-    
-    if (currentUserId) {
-      leadsChannel = supabase
-        .channel(`leads_changes_for_${currentUserId}`)
-        .on(
-          'postgres_changes',
-          { 
-            event: '*', 
-            schema: 'public', 
-            table: 'leads',
-            filter: `profesional_asignado_id=eq.${currentUserId}` 
-          }, 
-          async () => {
-            console.log('Realtime change detected, refetching data');
-            // Refetch data directamente sin usar fetchData callback
-            setIsLoading(true);
-            setError(null);
-            
-            try {
-              const [profesionalResult, leadsResult] = await Promise.all([
-                supabase
-                  .from('profiles')
-                  .select('*')
-                  .eq('user_id', currentUserId)
-                  .single(),
-                supabase
-                  .from('leads')
-                  .select('*')
-                  .eq('profesional_asignado_id', currentUserId)
-                  .order('fecha_creacion', { ascending: false })
-              ]);
-
-              if (profesionalResult.error) throw profesionalResult.error;
-              if (leadsResult.error) throw leadsResult.error;
-
-              setProfesional(profesionalResult.data as Profesional);
-              setLeads(leadsResult.data as Lead[]);
-            } catch (err: any) {
-              console.error("Error refetching professional data:", err);
-              setError(err);
-            } finally {
-              setIsLoading(false);
-            }
-          }
-        )
-        .subscribe();
-    }
-      
+    // Limpiamos el listener al desmontar el componente.
     return () => {
-      if (leadsChannel) {
-        supabase.removeChannel(leadsChannel);
-      }
+      authListener.subscription.unsubscribe();
     };
-  }, [currentUserId]); // Solo depende de currentUserId
+  }, [fetchData]);
 
-  // Retornamos un objeto con una estructura clara y bien tipada.
   return { profesional, leads, isLoading, error, refetchData };
 }

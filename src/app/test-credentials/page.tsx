@@ -1,218 +1,262 @@
 'use client';
 
 import React, { useState } from 'react';
-import { supabase } from '@/lib/supabaseClient';
+import { supabase } from '@/lib/supabase/client';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faUser, faKey, faCrown, faCheckCircle, faExclamationTriangle } from '@fortawesome/free-solid-svg-icons';
+import { faUser, faKey, faCopy, faCheckCircle, faSpinner } from '@fortawesome/free-solid-svg-icons';
 
 export default function TestCredentialsPage() {
-  const [isCreating, setIsCreating] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [error, setError] = useState<string>('');
 
-  const createTestClient = async () => {
-    setIsCreating(true);
-    setMessage(null);
-    setError(null);
+  const testCredentials = {
+    professional: {
+      email: 'profesional@sumeeapp.com',
+      password: 'TestProfesional123!',
+      name: 'Juan Pérez - Profesional'
+    },
+    client: {
+      email: 'cliente@sumeeapp.com', 
+      password: 'TestCliente123!',
+      name: 'María García - Cliente'
+    }
+  };
+
+  const createTestUser = async (userType: 'professional' | 'client') => {
+    setLoading(true);
+    setError('');
+    setSuccess(false);
 
     try {
-      const testEmail = 'cliente@sumeeapp.com';
-      const testPassword = 'TestPassword123!';
-      const testName = 'Cliente Demo Premium';
-
-      // Intentar crear usuario
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: testEmail,
-        password: testPassword,
+      const credentials = testCredentials[userType];
+      
+      // Intentar crear el usuario
+      const { data, error: signUpError } = await supabase.auth.signUp({
+        email: credentials.email,
+        password: credentials.password,
         options: {
           data: {
-            full_name: testName,
+            full_name: credentials.name,
+            registration_type: userType === 'professional' ? 'profesional' : 'client'
           }
         }
       });
 
-      if (authError && authError.message.includes('already registered')) {
-        setMessage('✅ Usuario de prueba ya existe. Puedes usar estas credenciales:');
-      } else if (authError) {
-        throw authError;
-      } else {
-        setMessage('✅ Usuario de prueba creado exitosamente!');
-      }
-
-      // Intentar crear/actualizar perfil con membresía premium
-      if (authData?.user) {
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .upsert({
-            user_id: authData.user.id,
-            full_name: testName,
-            email: testEmail,
-            role: 'client',
-            membership_status: 'premium',
-            phone: '+525512345678',
-            profession: null,
-            work_area: 'CDMX'
+      if (signUpError) {
+        // Si el usuario ya existe, intentar hacer login
+        if (signUpError.message.includes('already registered')) {
+          const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+            email: credentials.email,
+            password: credentials.password
           });
 
-        if (profileError) {
-          console.warn('Error updating profile:', profileError);
-        }
-      }
+          if (signInError) {
+            throw signInError;
+          }
 
+          setSuccess(true);
+          // Redirigir al dashboard correspondiente
+          setTimeout(() => {
+            if (userType === 'professional') {
+              window.location.href = '/professional-dashboard';
+            } else {
+              window.location.href = '/dashboard/client';
+            }
+          }, 2000);
+        } else {
+          throw signUpError;
+        }
+      } else {
+        setSuccess(true);
+        // Redirigir al dashboard correspondiente
+        setTimeout(() => {
+          if (userType === 'professional') {
+            window.location.href = '/professional-dashboard';
+          } else {
+            window.location.href = '/dashboard/client';
+          }
+        }, 2000);
+      }
     } catch (err: any) {
+      console.error('Error creating test user:', err);
       setError(err.message || 'Error al crear usuario de prueba');
     } finally {
-      setIsCreating(false);
+      setLoading(false);
     }
   };
 
-  const testCredentials = {
-    email: 'cliente@sumeeapp.com',
-    password: 'TestPassword123!',
-    name: 'Cliente Demo Premium'
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12">
-      <div className="max-w-4xl mx-auto px-4">
+    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-4xl mx-auto">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-4">
-            🧪 Credenciales de Prueba
+            Credenciales de Prueba
           </h1>
-          <p className="text-gray-600">
-            Usuario cliente con membresía premium para probar funcionalidades
+          <p className="text-lg text-gray-600">
+            Usa estas credenciales para probar el sistema como profesional o cliente
           </p>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-8">
-          {/* Credenciales */}
-          <div className="bg-white rounded-xl shadow-lg p-8">
-            <div className="flex items-center mb-6">
-              <FontAwesomeIcon icon={faUser} className="text-2xl text-blue-600 mr-3" />
-              <h2 className="text-xl font-bold text-gray-900">Credenciales de Cliente Premium</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          {/* Credenciales de Profesional */}
+          <div className="bg-white rounded-lg shadow-lg p-6">
+            <div className="flex items-center mb-4">
+              <FontAwesomeIcon icon={faUser} className="text-blue-600 text-2xl mr-3" />
+              <h2 className="text-2xl font-bold text-gray-900">Profesional</h2>
             </div>
-
+            
             <div className="space-y-4">
-              <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                <div className="flex items-center mb-2">
-                  <FontAwesomeIcon icon={faKey} className="text-blue-600 mr-2" />
-                  <span className="font-semibold text-blue-800">Email:</span>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Email:
+                </label>
+                <div className="flex items-center space-x-2">
+                  <code className="bg-gray-100 px-3 py-2 rounded text-sm flex-1">
+                    {testCredentials.professional.email}
+                  </code>
+                  <button
+                    onClick={() => copyToClipboard(testCredentials.professional.email)}
+                    className="bg-gray-200 hover:bg-gray-300 px-3 py-2 rounded text-sm"
+                  >
+                    <FontAwesomeIcon icon={faCopy} />
+                  </button>
                 </div>
-                <code className="text-blue-900 font-mono text-lg">{testCredentials.email}</code>
               </div>
 
-              <div className="bg-green-50 p-4 rounded-lg border border-green-200">
-                <div className="flex items-center mb-2">
-                  <FontAwesomeIcon icon={faKey} className="text-green-600 mr-2" />
-                  <span className="font-semibold text-green-800">Contraseña:</span>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Contraseña:
+                </label>
+                <div className="flex items-center space-x-2">
+                  <code className="bg-gray-100 px-3 py-2 rounded text-sm flex-1">
+                    {testCredentials.professional.password}
+                  </code>
+                  <button
+                    onClick={() => copyToClipboard(testCredentials.professional.password)}
+                    className="bg-gray-200 hover:bg-gray-300 px-3 py-2 rounded text-sm"
+                  >
+                    <FontAwesomeIcon icon={faCopy} />
+                  </button>
                 </div>
-                <code className="text-green-900 font-mono text-lg">{testCredentials.password}</code>
               </div>
 
-              <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
-                <div className="flex items-center mb-2">
-                  <FontAwesomeIcon icon={faCrown} className="text-purple-600 mr-2" />
-                  <span className="font-semibold text-purple-800">Membresía:</span>
-                </div>
-                <span className="text-purple-900 font-semibold">Premium (Pagada)</span>
-              </div>
-            </div>
-
-            <div className="mt-6 pt-6 border-t border-gray-200">
-              <a
-                href="/login"
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition-colors flex items-center justify-center"
+              <button
+                onClick={() => createTestUser('professional')}
+                disabled={loading}
+                className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
               >
-                <FontAwesomeIcon icon={faUser} className="mr-2" />
-                Ir a Login
-              </a>
+                {loading ? (
+                  <FontAwesomeIcon icon={faSpinner} spin />
+                ) : (
+                  <FontAwesomeIcon icon={faUser} />
+                )}
+                <span>
+                  {loading ? 'Creando...' : 'Ingresar como Profesional'}
+                </span>
+              </button>
             </div>
           </div>
 
-          {/* Acciones */}
-          <div className="bg-white rounded-xl shadow-lg p-8">
-            <div className="flex items-center mb-6">
-              <FontAwesomeIcon icon={faCheckCircle} className="text-2xl text-green-600 mr-3" />
-              <h2 className="text-xl font-bold text-gray-900">Preparar Usuario de Prueba</h2>
+          {/* Credenciales de Cliente */}
+          <div className="bg-white rounded-lg shadow-lg p-6">
+            <div className="flex items-center mb-4">
+              <FontAwesomeIcon icon={faUser} className="text-green-600 text-2xl mr-3" />
+              <h2 className="text-2xl font-bold text-gray-900">Cliente</h2>
             </div>
-
-            <div className="space-y-4 mb-6">
-              <p className="text-gray-600">
-                Haz clic en el botón para crear o verificar que el usuario de prueba existe en la base de datos.
-              </p>
-              
-              {message && (
-                <div className="bg-green-50 p-4 rounded-lg border border-green-200">
-                  <div className="flex items-center">
-                    <FontAwesomeIcon icon={faCheckCircle} className="text-green-600 mr-2" />
-                    <span className="text-green-800">{message}</span>
-                  </div>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Email:
+                </label>
+                <div className="flex items-center space-x-2">
+                  <code className="bg-gray-100 px-3 py-2 rounded text-sm flex-1">
+                    {testCredentials.client.email}
+                  </code>
+                  <button
+                    onClick={() => copyToClipboard(testCredentials.client.email)}
+                    className="bg-gray-200 hover:bg-gray-300 px-3 py-2 rounded text-sm"
+                  >
+                    <FontAwesomeIcon icon={faCopy} />
+                  </button>
                 </div>
-              )}
+              </div>
 
-              {error && (
-                <div className="bg-red-50 p-4 rounded-lg border border-red-200">
-                  <div className="flex items-center">
-                    <FontAwesomeIcon icon={faExclamationTriangle} className="text-red-600 mr-2" />
-                    <span className="text-red-800">{error}</span>
-                  </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Contraseña:
+                </label>
+                <div className="flex items-center space-x-2">
+                  <code className="bg-gray-100 px-3 py-2 rounded text-sm flex-1">
+                    {testCredentials.client.password}
+                  </code>
+                  <button
+                    onClick={() => copyToClipboard(testCredentials.client.password)}
+                    className="bg-gray-200 hover:bg-gray-300 px-3 py-2 rounded text-sm"
+                  >
+                    <FontAwesomeIcon icon={faCopy} />
+                  </button>
                 </div>
-              )}
+              </div>
 
               <button
-                onClick={createTestClient}
-                disabled={isCreating}
-                className="w-full bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white font-bold py-3 px-6 rounded-lg transition-colors"
+                onClick={() => createTestUser('client')}
+                disabled={loading}
+                className="w-full bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
               >
-                {isCreating ? 'Creando...' : 'Crear/Verificar Usuario de Prueba'}
+                {loading ? (
+                  <FontAwesomeIcon icon={faSpinner} spin />
+                ) : (
+                  <FontAwesomeIcon icon={faUser} />
+                )}
+                <span>
+                  {loading ? 'Creando...' : 'Ingresar como Cliente'}
+                </span>
               </button>
-            </div>
-
-            <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
-              <h3 className="font-semibold text-yellow-800 mb-2">Pasos para probar:</h3>
-              <ol className="text-sm text-yellow-700 space-y-1">
-                <li>1. Haz clic en "Crear/Verificar Usuario"</li>
-                <li>2. Ve a /login e inicia sesión</li>
-                <li>3. Ve a "Mi Panel" → "Dashboard Cliente"</li>
-                <li>4. Explora el mapa y haz click en los marcadores</li>
-              </ol>
             </div>
           </div>
         </div>
 
-        {/* Funcionalidades que puedes probar */}
-        <div className="mt-8 bg-white rounded-xl shadow-lg p-8">
-          <h3 className="text-xl font-bold text-gray-900 mb-4">🎯 Funcionalidades del Cliente Premium:</h3>
-          <div className="grid md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <div className="flex items-center">
-                <FontAwesomeIcon icon={faCheckCircle} className="text-green-500 mr-2" />
-                <span>Dashboard exclusivo para clientes pagadores</span>
-              </div>
-              <div className="flex items-center">
-                <FontAwesomeIcon icon={faCheckCircle} className="text-green-500 mr-2" />
-                <span>Mapa con profesionales verificados</span>
-              </div>
-              <div className="flex items-center">
-                <FontAwesomeIcon icon={faCheckCircle} className="text-green-500 mr-2" />
-                <span>Filtrado por tipo de servicio</span>
-              </div>
-            </div>
-            <div className="space-y-2">
-              <div className="flex items-center">
-                <FontAwesomeIcon icon={faCheckCircle} className="text-green-500 mr-2" />
-                <span>Marcadores personalizados con foto y oficio</span>
-              </div>
-              <div className="flex items-center">
-                <FontAwesomeIcon icon={faCheckCircle} className="text-green-500 mr-2" />
-                <span>Tarjeta de verificación ID al hacer click</span>
-              </div>
-              <div className="flex items-center">
-                <FontAwesomeIcon icon={faCheckCircle} className="text-green-500 mr-2" />
-                <span>Información completa del profesional</span>
-              </div>
+        {/* Mensajes de Estado */}
+        {success && (
+          <div className="mt-6 bg-green-50 border border-green-200 rounded-lg p-4">
+            <div className="flex items-center">
+              <FontAwesomeIcon icon={faCheckCircle} className="text-green-600 text-xl mr-3" />
+              <p className="text-green-800 font-medium">
+                ¡Usuario creado exitosamente! Redirigiendo al dashboard...
+              </p>
             </div>
           </div>
+        )}
+
+        {error && (
+          <div className="mt-6 bg-red-50 border border-red-200 rounded-lg p-4">
+            <div className="flex items-center">
+              <FontAwesomeIcon icon={faKey} className="text-red-600 text-xl mr-3" />
+              <p className="text-red-800 font-medium">
+                Error: {error}
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Información adicional */}
+        <div className="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-6">
+          <h3 className="text-lg font-semibold text-blue-900 mb-3">
+            Información Importante:
+          </h3>
+          <ul className="text-blue-800 space-y-2">
+            <li>• Estas credenciales son solo para pruebas en desarrollo</li>
+            <li>• Los usuarios se crean automáticamente si no existen</li>
+            <li>• El sistema detectará automáticamente el tipo de usuario</li>
+            <li>• Los profesionales van al dashboard profesional</li>
+            <li>• Los clientes van al dashboard de cliente</li>
+          </ul>
         </div>
       </div>
     </div>

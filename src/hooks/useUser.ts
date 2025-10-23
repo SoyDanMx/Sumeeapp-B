@@ -1,50 +1,62 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabase/client';
-// 1. IMPORTAMOS nuestro nuevo tipo personalizado
-import { AppUser } from '@/types/supabase';
+// 1. Usamos el cliente del NAVEGADOR, que es el correcto para un hook de cliente.
+import { supabase } from '@/lib/supabase/client-new';
+import { AppUser } from '@/types/supabase'; // Nuestro tipo de usuario personalizado
+import { User } from '@supabase/supabase-js';
 
-// El hook ahora devuelve nuestro tipo AppUser
-export function useUser(): AppUser | null {
+// El hook ahora devuelve el usuario y un estado de carga.
+export function useUser(): { user: AppUser | null; isLoading: boolean } {
   const [user, setUser] = useState<AppUser | null>(null);
+  const [isLoading, setIsLoading] = useState(true); // Empezamos asumiendo que estamos cargando
 
   useEffect(() => {
-    const fetchUserAndProfile = async () => {
-      // Obtenemos el usuario de la sesión de Supabase
-      const { data: { user: authUser } } = await supabase.auth.getUser();
-
-      if (authUser) {
-        // Si hay un usuario autenticado, buscamos su perfil para obtener el rol
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('role') // Solo necesitamos el rol
-          .eq('user_id', authUser.id)
-          .single();
-
-        // 2. CONSTRUIMOS el objeto AppUser correctamente
-        const appUser: AppUser = {
-          ...authUser,
-          role: profile?.role || 'client', // Asignamos el rol del perfil, o 'client' por defecto
-        };
-        
-        setUser(appUser);
-      } else {
-        setUser(null);
+    // Definimos una función asíncrona para obtener el perfil y construir nuestro AppUser
+    const fetchUserWithProfile = async (authUser: User | null): Promise<AppUser | null> => {
+      if (!authUser) {
+        return null;
       }
+
+      // Obtenemos el perfil para sacar el 'role'
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('user_id', authUser.id)
+        .single();
+      
+      // Construimos y devolvemos el objeto AppUser completo
+      return {
+        ...authUser,
+        role: profile?.role || 'client',
+      };
     };
 
-    fetchUserAndProfile();
-
-    // Escuchamos cambios en la autenticación para actualizar el estado
-    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
-      fetchUserAndProfile();
+    // --- LA LÓGICA CLAVE ESTÁ AQUÍ ---
+    // 1. Obtenemos la sesión inicial para saber si el usuario ya está logueado al cargar la página.
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      const appUser = await fetchUserWithProfile(session?.user ?? null);
+      setUser(appUser);
+      setIsLoading(false); // La carga inicial ha terminado
     });
 
+    // 2. Establecemos un listener que se ejecuta CADA VEZ que el estado de auth cambia.
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('Auth event:', event); // Útil para depurar
+      const appUser = await fetchUserWithProfile(session?.user ?? null);
+      setUser(appUser);
+      
+      // Si la carga inicial no ha terminado, la terminamos aquí.
+      if (isLoading) {
+        setIsLoading(false);
+      }
+    });
+
+    // Limpiamos el listener cuando el componente que usa el hook se desmonta.
     return () => {
       authListener.subscription.unsubscribe();
     };
-  }, []);
+  }, [isLoading]); // El array de dependencias puede estar vacío o incluir isLoading
 
-  return user;
+  return { user, isLoading };
 }
