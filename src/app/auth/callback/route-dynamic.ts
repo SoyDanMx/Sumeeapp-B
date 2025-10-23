@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(`${origin}/login?error=no_code_provided`);
   }
 
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   
   // Crear cliente de servidor con configuración PKCE optimizada
   const supabase = createServerClient(
