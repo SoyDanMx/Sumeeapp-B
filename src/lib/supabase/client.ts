@@ -26,8 +26,6 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     storageKey: 'sb-auth-token',
     // Configuración de debug para desarrollo
     debug: process.env.NODE_ENV === 'development',
-    // SOLUCIÓN CLAVE: Redirección dinámica que se adapta al entorno
-    redirectTo: getRedirectUrl('/auth/callback'),
     // Configuraciones adicionales para PKCE
     ...(typeof window !== 'undefined' && {
       // Forzar regeneración de code_verifier si es necesario
