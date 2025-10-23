@@ -79,6 +79,8 @@ export interface Lead {
   fecha_creacion: string;
   estado: LeadEstado;
   profesional_asignado_id?: string | null;
+  // Propiedad para datos del profesional asignado (obtenida via JOIN)
+  profiles?: Partial<Profile> | null;
 }
 
 // =========================================================================
