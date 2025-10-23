@@ -6,6 +6,13 @@ import { getUrlDebugInfo } from '@/lib/utils';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faDatabase, faExclamationTriangle, faCheckCircle, faSpinner, faBug, faShield } from '@fortawesome/free-solid-svg-icons';
 
+// Función de ayuda para generar la URL de confirmación de email
+function getEmailConfirmationUrl(): string {
+  // window.location.origin devuelve "http://localhost:3010" en desarrollo
+  // y "https://sumeeapp.com" en producción.
+  return `${window.location.origin}/auth/callback`;
+}
+
 export default function DebugPKCEPage() {
   const [debugInfo, setDebugInfo] = useState<any>(null);
   const [pkceTest, setPkceTest] = useState<any>(null);
