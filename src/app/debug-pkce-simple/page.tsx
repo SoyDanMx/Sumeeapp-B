@@ -240,9 +240,11 @@ export default function DebugPKCESimplePage() {
                   <h3 className="font-semibold text-orange-800 mb-2">Parámetros URL</h3>
                   <div className="text-sm text-orange-700 space-y-1">
                     {Object.keys(pkceInfo.urlParams).length > 0 ? (
-                      Object.entries(pkceInfo.urlParams).map(([key, value]) => (
-                        <p key={key}><strong>{key}:</strong> {value || 'No presente'}</p>
-                      ))
+                      <>
+                        {Object.entries(pkceInfo.urlParams).map(([key, value]) => (
+                          <p key={key}><strong>{key}:</strong> {value || 'No presente'}</p>
+                        ))}
+                      </>
                     ) : (
                       <p>No hay parámetros en la URL</p>
                     )}
