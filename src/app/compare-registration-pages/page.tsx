@@ -3,7 +3,8 @@
 import React from 'react';
 import Link from 'next/link';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faArrowRight, faCheck, faTimes, faUser, faEnvelope, faPhone, faLock, faGoogle } from '@fortawesome/free-solid-svg-icons';
+import { faArrowRight, faCheck, faTimes, faUser, faEnvelope, faPhone, faLock } from '@fortawesome/free-solid-svg-icons';
+import { faGoogle } from '@fortawesome/free-brands-svg-icons';
 
 export default function CompareRegistrationPages() {
   const features = [
