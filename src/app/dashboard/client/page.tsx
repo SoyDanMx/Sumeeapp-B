@@ -212,8 +212,8 @@ export default function ClientDashboardPage() {
                   {lead.estado === 'contactado' && lead.profesional_asignado_id && (
                     <div className="text-sm text-gray-600">
                       <FontAwesomeIcon icon={faCheckCircle} className="mr-1 text-green-500" />
-                      {lead.profesional_asignado ? 
-                        `Asignado a ${lead.profesional_asignado.full_name}` : 
+                      {lead.profesional_asignado_id ? 
+                        `Asignado a profesional ID: ${lead.profesional_asignado_id}` : 
                         'Profesional asignado'
                       }
                     </div>
