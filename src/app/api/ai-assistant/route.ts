@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { detectTechnicalCategory, generateTechnicalResponse, TECHNICAL_PROMPTS } from '@/lib/ai/technical-prompts';
 
 // Crear cliente de Supabase para el API route
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -34,6 +35,14 @@ interface AIResponse {
     technologies: string[];
     considerations: string[];
     kit_options?: string[];
+  };
+  technical_diagnosis: {
+    diagnosis: string;
+    questions: string[];
+    solutions: string[];
+    warnings: string[];
+    costEstimate: string;
+    professionalType: string;
   };
   recommendations: ProfessionalRecommendation[];
   estimated_price_range: string;
@@ -191,31 +200,44 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Detectar el tipo de servicio
+    console.log('🔍 Procesando consulta técnica:', query);
+
+    // Detectar categoría técnica avanzada
+    const technicalCategory = detectTechnicalCategory(query);
+    console.log('📋 Categoría técnica detectada:', technicalCategory);
+
+    // Generar diagnóstico técnico
+    const technicalDiagnosis = generateTechnicalResponse(technicalCategory, query);
+    console.log('🔧 Diagnóstico técnico generado:', technicalDiagnosis);
+
+    // Detectar servicio tradicional (para compatibilidad)
     const detectedService = detectServiceCategory(query);
     const knowledge = serviceKnowledge[detectedService as keyof typeof serviceKnowledge];
     
     // Obtener profesionales recomendados
     const professionals = await getTopProfessionals(detectedService, 5);
+    console.log('👥 Profesionales encontrados:', professionals.length);
 
-    // Construir respuesta
+    // Construir respuesta mejorada
     const response: AIResponse = {
-      service_category: knowledge?.category || 'Servicio General',
+      service_category: technicalDiagnosis.professionalType || knowledge?.category || 'Servicio General',
       technical_info: {
-        title: `Información sobre ${knowledge?.category || 'el servicio solicitado'}`,
-        description: `Para ${detectedService}, es importante considerar varios aspectos técnicos y tecnológicos que te ayudarán a tomar la mejor decisión.`,
-        technologies: knowledge?.technologies || ['Consulte con nuestro especialista'],
-        considerations: knowledge?.considerations || ['Análisis personalizado requerido'],
+        title: `Diagnóstico Técnico: ${technicalDiagnosis.professionalType}`,
+        description: technicalDiagnosis.diagnosis,
+        technologies: knowledge?.technologies || ['Análisis técnico especializado'],
+        considerations: technicalDiagnosis.questions,
         kit_options: knowledge?.kit_options || []
       },
+      technical_diagnosis: technicalDiagnosis,
       recommendations: professionals,
-      estimated_price_range: knowledge?.price_range || 'Consulte precio con el técnico'
+      estimated_price_range: technicalDiagnosis.costEstimate || knowledge?.price_range || 'Consulte precio con el técnico'
     };
 
+    console.log('✅ Respuesta técnica generada exitosamente');
     return NextResponse.json(response);
 
   } catch (error) {
-    console.error('Error in AI Assistant API:', error);
+    console.error('❌ Error in AI Assistant API:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

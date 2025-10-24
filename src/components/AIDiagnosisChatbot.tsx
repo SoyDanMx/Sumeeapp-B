@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faTimes, faPaperPlane, faSpinner, faRobot, faCheckCircle, faDollarSign, faArrowRight } from '@fortawesome/free-solid-svg-icons';
+import { faTimes, faPaperPlane, faSpinner, faRobot, faCheckCircle, faDollarSign, faArrowRight, faExclamationTriangle, faWrench, faQuestionCircle, faShieldAlt } from '@fortawesome/free-solid-svg-icons';
 
 interface AIResponse {
   service_id: string;
@@ -10,6 +10,14 @@ interface AIResponse {
   diagnosis_summary: string;
   cost_estimate_range: string;
   next_step_cta: string;
+  technical_diagnosis?: {
+    diagnosis: string;
+    questions: string[];
+    solutions: string[];
+    warnings: string[];
+    costEstimate: string;
+    professionalType: string;
+  };
 }
 
 interface AIDiagnosisChatbotProps {
@@ -23,43 +31,39 @@ export const AIDiagnosisChatbot: React.FC<AIDiagnosisChatbotProps> = ({ isOpen, 
   const [response, setResponse] = useState<AIResponse | null>(null);
   const [error, setError] = useState('');
 
-  // Función mockup para simular la respuesta AI
-  const mockAIApiCall = async (description: string): Promise<AIResponse> => {
-    // Simular delay de red
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    // Simulación de lógica AI básica
-    const lowerDescription = description.toLowerCase();
-    
-    if (lowerDescription.includes('agua') || lowerDescription.includes('grifo') || lowerDescription.includes('fuga') || lowerDescription.includes('plomer')) {
+  // Función mejorada para llamar al API real
+  const callAIAssistant = async (description: string): Promise<AIResponse> => {
+    try {
+      const response = await fetch('/api/ai-assistant', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ query: description }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Error en la respuesta del servidor');
+      }
+
+      const data = await response.json();
+      
+      // Convertir respuesta del API a formato del chatbot
       return {
-        service_id: "PLUMBER_001",
-        service_name: "Servicio de Plomería - Fuga de Grifo",
-        diagnosis_summary: "Diagnóstico Preliminar: Fuga de baja presión en empaque de grifo de lavabo. Requiere cambio de empaques o cartucho completo.",
-        cost_estimate_range: "$500 MXN - $950 MXN (Solo mano de obra y materiales básicos)",
-        next_step_cta: "Ver Plomeros Verificados para este Servicio"
+        service_id: data.service_category.replace(/\s+/g, '_').toUpperCase() + '_001',
+        service_name: data.technical_info.title,
+        diagnosis_summary: data.technical_diagnosis.diagnosis,
+        cost_estimate_range: data.technical_diagnosis.costEstimate,
+        next_step_cta: `Ver ${data.technical_diagnosis.professionalType}s Verificados`,
+        technical_diagnosis: data.technical_diagnosis
       };
-    } else if (lowerDescription.includes('luz') || lowerDescription.includes('electric') || lowerDescription.includes('cortocircuito')) {
-      return {
-        service_id: "ELECTRIC_001",
-        service_name: "Servicio de Electricidad - Problemas de Iluminación",
-        diagnosis_summary: "Diagnóstico Preliminar: Problema en conexión eléctrica o componente defectuoso. Requiere inspección técnica especializada.",
-        cost_estimate_range: "$800 MXN - $1,500 MXN (Incluye diagnóstico y reparación básica)",
-        next_step_cta: "Ver Electricistas Verificados para este Servicio"
-      };
-    } else if (lowerDescription.includes('clima') || lowerDescription.includes('aire') || lowerDescription.includes('minisplit')) {
-      return {
-        service_id: "HVAC_001",
-        service_name: "Servicio de HVAC - Mantenimiento de Aire Acondicionado",
-        diagnosis_summary: "Diagnóstico Preliminar: Mantenimiento preventivo o reparación de sistema de climatización. Verificación de componentes esenciales.",
-        cost_estimate_range: "$1,200 MXN - $2,800 MXN (Mantenimiento completo incluido)",
-        next_step_cta: "Ver Técnicos HVAC Verificados para este Servicio"
-      };
-    } else {
+    } catch (error) {
+      console.error('Error calling AI assistant:', error);
+      // Fallback a respuesta básica si falla el API
       return {
         service_id: "GENERAL_001",
         service_name: "Servicio General de Mantenimiento",
-        diagnosis_summary: "Diagnóstico Preliminar: Requiere evaluación técnica presencial para determinar el alcance exacto del problema y solución más adecuada.",
+        diagnosis_summary: "Requiere evaluación técnica presencial para determinar el alcance exacto del problema y solución más adecuada.",
         cost_estimate_range: "$300 MXN - $1,000 MXN (Consulta inicial y evaluación)",
         next_step_cta: "Ver Técnicos Verificados para este Servicio"
       };
@@ -75,7 +79,7 @@ export const AIDiagnosisChatbot: React.FC<AIDiagnosisChatbotProps> = ({ isOpen, 
     setError('');
 
     try {
-      const aiResponse = await mockAIApiCall(userInput);
+      const aiResponse = await callAIAssistant(userInput);
       setResponse(aiResponse);
     } catch (err) {
       setError('Error al procesar tu consulta. Por favor, inténtalo de nuevo.');
@@ -202,6 +206,74 @@ export const AIDiagnosisChatbot: React.FC<AIDiagnosisChatbotProps> = ({ isOpen, 
                   </div>
                 </div>
               </div>
+
+              {/* Información Técnica Detallada */}
+              {response.technical_diagnosis && (
+                <div className="space-y-4">
+                  {/* Preguntas de Diagnóstico */}
+                  {response.technical_diagnosis.questions.length > 0 && (
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                      <div className="flex items-center space-x-2 mb-3">
+                        <FontAwesomeIcon icon={faQuestionCircle} className="text-blue-600" />
+                        <span className="font-semibold text-blue-800">Preguntas de Diagnóstico:</span>
+                      </div>
+                      <ul className="space-y-2">
+                        {response.technical_diagnosis.questions.map((question, index) => (
+                          <li key={index} className="text-blue-700 text-sm flex items-start space-x-2">
+                            <span className="text-blue-500 mt-1">•</span>
+                            <span>{question}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* Soluciones Técnicas */}
+                  {response.technical_diagnosis.solutions.length > 0 && (
+                    <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-4">
+                      <div className="flex items-center space-x-2 mb-3">
+                        <FontAwesomeIcon icon={faWrench} className="text-indigo-600" />
+                        <span className="font-semibold text-indigo-800">Soluciones Técnicas:</span>
+                      </div>
+                      <ul className="space-y-2">
+                        {response.technical_diagnosis.solutions.map((solution, index) => (
+                          <li key={index} className="text-indigo-700 text-sm flex items-start space-x-2">
+                            <span className="text-indigo-500 mt-1">•</span>
+                            <span>{solution}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* Advertencias de Seguridad */}
+                  {response.technical_diagnosis.warnings.length > 0 && (
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                      <div className="flex items-center space-x-2 mb-3">
+                        <FontAwesomeIcon icon={faExclamationTriangle} className="text-red-600" />
+                        <span className="font-semibold text-red-800">⚠️ Advertencias de Seguridad:</span>
+                      </div>
+                      <ul className="space-y-2">
+                        {response.technical_diagnosis.warnings.map((warning, index) => (
+                          <li key={index} className="text-red-700 text-sm flex items-start space-x-2">
+                            <span className="text-red-500 mt-1">•</span>
+                            <span className="font-medium">{warning}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* Tipo de Profesional Requerido */}
+                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                    <div className="flex items-center space-x-2 mb-2">
+                      <FontAwesomeIcon icon={faShieldAlt} className="text-gray-600" />
+                      <span className="font-semibold text-gray-800">Profesional Recomendado:</span>
+                    </div>
+                    <p className="text-gray-700 text-sm">{response.technical_diagnosis.professionalType}</p>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
