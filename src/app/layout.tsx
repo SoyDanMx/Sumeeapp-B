@@ -13,6 +13,8 @@ import { AuthProvider } from "../components/AuthProvider"; // Importa el AuthPro
 import { WhatsAppButton } from "@/components/WhatsAppButton";
 import { GoogleAnalytics } from "@/components/analytics/GoogleAnalytics";
 import { MetaPixel } from "@/components/analytics/MetaPixel";
+import StructuredData from "@/components/SEO/StructuredData";
+import { SkipLinks } from "@/components/UX/AccessibilityHelpers";
 
 
 const inter = Inter({ subsets: ["latin"] });
@@ -51,6 +53,14 @@ export default function RootLayout({
         <GoogleAnalytics />
         <MetaPixel />
         
+        {/* Structured Data para SEO */}
+        <StructuredData type="Organization" data={{}} />
+        <StructuredData type="LocalBusiness" data={{}} />
+        <StructuredData type="WebSite" data={{}} />
+        
+        {/* Skip Links para accesibilidad */}
+        <SkipLinks />
+        
         {/*
           ENVOLVEMOS EL HEADER Y EL CONTENIDO PRINCIPAL (children)
           CON EL LOCATIONPROVIDER PARA QUE TODOS TENGAN ACCESO AL CONTEXTO DE UBICACIÓN.
@@ -58,7 +68,7 @@ export default function RootLayout({
         <LocationProvider>
           <AuthProvider>
             <Header /> {/* El Header ahora forma parte del layout */}
-            <main className="pt-20"> {/* Añadimos padding-top para que el contenido no quede bajo el fixed header */}
+            <main id="main-content" className="pt-20"> {/* Añadimos padding-top para que el contenido no quede bajo el fixed header */}
               {children} {/* Aquí se renderiza el contenido de cada página */}
             </main>
           </AuthProvider>
