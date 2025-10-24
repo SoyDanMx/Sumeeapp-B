@@ -3,7 +3,8 @@
 import React from 'react';
 import { Profesional } from '@/types/supabase';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCheck, faTimes, faWhatsapp, faUser, faCamera, faEdit, faPhone } from '@fortawesome/free-solid-svg-icons';
+import { faCheck, faTimes, faUser, faCamera, faEdit, faPhone } from '@fortawesome/free-solid-svg-icons';
+import { faWhatsapp } from '@fortawesome/free-brands-svg-icons';
 
 interface ProfileChecklistProps {
   profesional: Profesional;
