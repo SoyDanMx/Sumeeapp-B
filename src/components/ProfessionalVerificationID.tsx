@@ -244,20 +244,18 @@ export default function ProfessionalVerificationID({
               </div>
             )}
 
-            {/* Estado de membresía */}
-            {profesional.membership_status && (
-              <div className="flex items-start space-x-4 p-4 bg-purple-50 rounded-xl border border-purple-200">
-                <div className="w-10 h-10 bg-purple-500 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <FontAwesomeIcon icon={faShieldAlt} className="text-white text-sm" />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-sm font-medium text-gray-700 mb-1">Membresía</p>
-                  <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${getMembershipBadge(profesional.membership_status).color}`}>
-                    {getMembershipBadge(profesional.membership_status).text}
-                  </span>
-                </div>
+            {/* Estado de verificación profesional */}
+            <div className="flex items-start space-x-4 p-4 bg-blue-50 rounded-xl border border-blue-200">
+              <div className="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                <FontAwesomeIcon icon={faShieldAlt} className="text-white text-sm" />
               </div>
-            )}
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-gray-700 mb-1">Estado Profesional</p>
+                <span className="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800">
+                  ✓ Profesional Verificado
+                </span>
+              </div>
+            </div>
           </div>
         </section>
 
