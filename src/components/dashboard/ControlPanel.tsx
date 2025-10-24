@@ -178,7 +178,7 @@ export default function ControlPanel({
               leads={leads}
               profesional={profesional}
               selectedLeadId={selectedLeadId}
-              onLeadClick={onLeadClick}
+              onLeadClick={onLeadClick || (() => {})}
             />
           </div>
         )}
