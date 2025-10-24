@@ -15,6 +15,10 @@ import { GoogleAnalytics } from "@/components/analytics/GoogleAnalytics";
 import { MetaPixel } from "@/components/analytics/MetaPixel";
 import StructuredData from "@/components/SEO/StructuredData";
 import { SkipLinks } from "@/components/UX/AccessibilityHelpers";
+import CriticalCSS from "@/components/Performance/CriticalCSS";
+import ResourceHints from "@/components/Performance/ResourceHints";
+import ServiceWorker from "@/components/Performance/ServiceWorker";
+import PerformanceMonitor from "@/components/Performance/PerformanceMonitor";
 
 
 const inter = Inter({ subsets: ["latin"] });
@@ -49,6 +53,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es">
+      <head>
+        {/* Resource Hints para performance */}
+        <ResourceHints />
+        
+        {/* Critical CSS inline */}
+        <CriticalCSS />
+      </head>
       <body className={inter.className}>
         <GoogleAnalytics />
         <MetaPixel />
@@ -60,6 +71,12 @@ export default function RootLayout({
         
         {/* Skip Links para accesibilidad */}
         <SkipLinks />
+        
+        {/* Service Worker para PWA */}
+        <ServiceWorker />
+        
+        {/* Performance Monitor para Web Vitals */}
+        <PerformanceMonitor />
         
         {/*
           ENVOLVEMOS EL HEADER Y EL CONTENIDO PRINCIPAL (children)
