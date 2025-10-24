@@ -40,7 +40,7 @@ export default function ProfileChecklist({ profesional, onEditClick }: ProfileCh
       id: 'biography',
       label: 'Biografía profesional',
       icon: faUser,
-      isCompleted: isFieldComplete(profesional.biografia),
+      isCompleted: isFieldComplete(profesional.bio) || isFieldComplete(profesional.descripcion_perfil),
       description: 'Cuéntanos sobre tu experiencia',
       actionText: 'Escribir biografía'
     },
@@ -56,7 +56,7 @@ export default function ProfileChecklist({ profesional, onEditClick }: ProfileCh
       id: 'photos',
       label: 'Fotos del portafolio',
       icon: faCamera,
-      isCompleted: profesional.fotos_portafolio && profesional.fotos_portafolio.length > 0,
+      isCompleted: isFieldComplete(profesional.work_photos_urls),
       description: 'Muestra tu trabajo con fotos',
       actionText: 'Subir fotos'
     },
@@ -64,7 +64,7 @@ export default function ProfileChecklist({ profesional, onEditClick }: ProfileCh
       id: 'phone',
       label: 'Teléfono de contacto',
       icon: faPhone,
-      isCompleted: isFieldComplete(profesional.telefono),
+      isCompleted: isFieldComplete(profesional.phone),
       description: 'Teléfono alternativo de contacto',
       actionText: 'Agregar teléfono'
     }
