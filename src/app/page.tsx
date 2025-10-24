@@ -11,6 +11,7 @@ import { HowItWorks } from '@/components/HowItWorks';
 import { BlogSection } from '@/components/BlogSection';
 import { Footer } from '@/components/Footer';
 import QuickLeadForm from '@/components/QuickLeadForm';
+import PopularServices from '@/components/landing/PopularServices';
 
 export default function Home() {
   return (
@@ -39,6 +40,9 @@ export default function Home() {
             </div>
           </div>
         </section>
+        
+        {/* 🎯 NUEVA SECCIÓN: Servicios Populares - Insight de Aora MX */}
+        <PopularServices />
         
         <ServicesSection />
         <ValueProposition />
