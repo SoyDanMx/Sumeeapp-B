@@ -89,15 +89,19 @@ export const Hero = () => {
     
     try {
       console.log('🚀 Iniciando geolocalización precisa...');
+      console.log('🔧 API Key configurada:', !!process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY);
       
       // Usar la nueva función de geolocalización inversa precisa
       const result = await getCurrentPostalCode();
+      
+      console.log('📍 Resultado de geolocalización:', result);
       
       if (result.postalCode) {
         setPostalCode(result.postalCode);
         setLocationResult(result);
         setShowLocationDetails(true);
         console.log('✅ Código postal obtenido:', result.postalCode);
+        console.log('🎯 Confianza:', result.confidence);
       } else {
         setLocationError('No pudimos determinar tu código postal. Por favor, ingrésalo manualmente.');
         console.warn('⚠️ No se pudo obtener código postal');
@@ -114,6 +118,21 @@ export const Hero = () => {
           errorMessage = 'Tiempo de espera agotado. Verifica tu conexión a internet e intenta de nuevo.';
         } else if (error.message.includes('API')) {
           errorMessage = 'Error del servicio de ubicación. Por favor, ingresa tu código postal manualmente.';
+        } else if (error.message.includes('not configured')) {
+          errorMessage = 'Servicio de ubicación no configurado. Usando ubicación aproximada...';
+          // Intentar con fallback
+          try {
+            const fallbackResult = await getCurrentPostalCode();
+            if (fallbackResult.postalCode) {
+              setPostalCode(fallbackResult.postalCode);
+              setLocationResult(fallbackResult);
+              setShowLocationDetails(true);
+              console.log('✅ Fallback exitoso:', fallbackResult.postalCode);
+              return;
+            }
+          } catch (fallbackError) {
+            console.error('❌ Fallback también falló:', fallbackError);
+          }
         } else {
           errorMessage += error.message;
         }

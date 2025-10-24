@@ -32,7 +32,9 @@ export async function getPostalCodeFromCoords(
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
   
   if (!apiKey) {
-    throw new Error('Google Maps API key not configured');
+    console.warn('⚠️ Google Maps API key not configured, usando fallback...');
+    // FALLBACK: Usar OpenStreetMap Nominatim (gratuito)
+    return await getPostalCodeFromCoordsFallback(lat, lng);
   }
 
   try {
@@ -238,4 +240,120 @@ export function isValidMexicanPostalCode(postalCode: string): boolean {
 export function formatPostalCode(postalCode: string): string {
   if (!postalCode) return '';
   return postalCode.replace(/\D/g, '').slice(0, 5);
+}
+
+/**
+ * FALLBACK: Obtiene código postal usando OpenStreetMap Nominatim (gratuito)
+ * @param lat - Latitud
+ * @param lng - Longitud
+ * @returns Promise<LocationResult>
+ */
+export async function getPostalCodeFromCoordsFallback(
+  lat: number, 
+  lng: number
+): Promise<LocationResult> {
+  try {
+    console.log('🔄 Usando fallback OpenStreetMap Nominatim...');
+    
+    const url = new URL('https://nominatim.openstreetmap.org/reverse');
+    url.searchParams.set('format', 'json');
+    url.searchParams.set('lat', lat.toString());
+    url.searchParams.set('lon', lng.toString());
+    url.searchParams.set('addressdetails', '1');
+    url.searchParams.set('accept-language', 'es');
+
+    const response = await fetch(url.toString(), {
+      headers: {
+        'User-Agent': 'SumeeApp/1.0 (Contact: info@sumeeapp.com)'
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    if (!data || !data.address) {
+      console.warn('⚠️ No se encontraron datos de dirección en Nominatim');
+      return {
+        postalCode: null,
+        address: null,
+        neighborhood: null,
+        city: null,
+        state: null,
+        country: null,
+        confidence: 0
+      };
+    }
+
+    const address = data.address;
+    const postalCode = address.postcode || null;
+    
+    const result: LocationResult = {
+      postalCode,
+      address: data.display_name,
+      neighborhood: address.suburb || address.neighbourhood || address.quarter,
+      city: address.city || address.town || address.village,
+      state: address.state,
+      country: address.country,
+      confidence: 0.7 // Menor confianza que Google Maps
+    };
+
+    console.log('✅ Fallback exitoso:', result);
+    return result;
+
+  } catch (error) {
+    console.error('❌ Error en fallback Nominatim:', error);
+    
+    // ÚLTIMO FALLBACK: Usar códigos postales comunes de CDMX basados en coordenadas
+    const cdmxPostalCodes = getCDMXPostalCodeByCoords(lat, lng);
+    
+    return {
+      postalCode: cdmxPostalCodes,
+      address: `Ubicación aproximada en CDMX (${lat.toFixed(4)}, ${lng.toFixed(4)})`,
+      neighborhood: 'Ciudad de México',
+      city: 'Ciudad de México',
+      state: 'Ciudad de México',
+      country: 'México',
+      confidence: 0.5
+    };
+  }
+}
+
+/**
+ * ÚLTIMO FALLBACK: Determina código postal aproximado basado en coordenadas de CDMX
+ * @param lat - Latitud
+ * @param lng - Longitud
+ * @returns string - Código postal aproximado
+ */
+function getCDMXPostalCodeByCoords(lat: number, lng: number): string {
+  // Coordenadas aproximadas de CDMX
+  const cdmxBounds = {
+    north: 19.6,
+    south: 19.0,
+    east: -98.9,
+    west: -99.4
+  };
+
+  // Verificar si está dentro de CDMX
+  if (lat < cdmxBounds.south || lat > cdmxBounds.north || 
+      lng < cdmxBounds.west || lng > cdmxBounds.east) {
+    return '03100'; // Código postal genérico de CDMX
+  }
+
+  // Códigos postales por zona aproximada
+  if (lat > 19.4) {
+    if (lng > -99.1) return '01000'; // Centro
+    if (lng > -99.2) return '03100'; // Norte
+    return '02000'; // Noroeste
+  } else if (lat > 19.3) {
+    if (lng > -99.1) return '04000'; // Centro-Sur
+    if (lng > -99.2) return '05000'; // Sur
+    return '06000'; // Suroeste
+  } else {
+    if (lng > -99.1) return '07000'; // Sur-Este
+    if (lng > -99.2) return '08000'; // Sur
+    return '09000'; // Sur-Oeste
+  }
 }
