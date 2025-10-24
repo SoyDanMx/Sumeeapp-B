@@ -3,10 +3,11 @@
 
 import React, { useState, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faSearch, faMapMarkerAlt, faSpinner, faLocationDot } from '@fortawesome/free-solid-svg-icons';
+import { faSearch, faMapMarkerAlt, faSpinner, faLocationDot, faCheckCircle, faExclamationTriangle, faTimes } from '@fortawesome/free-solid-svg-icons';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { supabase } from '@/lib/supabaseClient';
+import { getCurrentPostalCode, isValidMexicanPostalCode, formatPostalCode, type LocationResult, type GeolocationError } from '@/lib/location';
 
 export const Hero = () => {
   const [postalCode, setPostalCode] = useState('');
@@ -15,12 +16,14 @@ export const Hero = () => {
   const [isUsingCurrentLocation, setIsUsingCurrentLocation] = useState(false);
   const [user, setUser] = useState<any | null>(null);
   const [imageError, setImageError] = useState(false);
+  const [locationResult, setLocationResult] = useState<LocationResult | null>(null);
+  const [locationError, setLocationError] = useState<string | null>(null);
+  const [showLocationDetails, setShowLocationDetails] = useState(false);
   const router = useRouter();
 
-  // Validación de código postal mexicano (5 dígitos)
+  // Validación de código postal mexicano usando la función de location.ts
   const validatePostalCode = (code: string) => {
-    const postalCodeRegex = /^\d{5}$/;
-    return postalCodeRegex.test(code);
+    return isValidMexicanPostalCode(code);
   };
 
   useEffect(() => {
@@ -72,32 +75,52 @@ export const Hero = () => {
   };
 
   const handlePostalCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value.replace(/\D/g, ''); // Solo números
-    if (value.length <= 5) {
-      setPostalCode(value);
-    }
+    const value = formatPostalCode(e.target.value);
+    setPostalCode(value);
+    // Limpiar errores de ubicación cuando el usuario escribe manualmente
+    setLocationError(null);
+    setLocationResult(null);
   };
 
-  const handleUseCurrentLocation = () => {
+  const handleUseCurrentLocation = async () => {
     setIsUsingCurrentLocation(true);
+    setLocationError(null);
+    setLocationResult(null);
     
-    // Simular solicitud de permiso de ubicación
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          // Simular que aceptó y usar CP de prueba
-          setPostalCode('03100'); // CP de prueba para CDMX
-          setIsUsingCurrentLocation(false);
-        },
-        (error) => {
-          // Si no permite, usar CP de prueba de todas formas
-          setPostalCode('03100');
-          setIsUsingCurrentLocation(false);
+    try {
+      console.log('🚀 Iniciando geolocalización precisa...');
+      
+      // Usar la nueva función de geolocalización inversa precisa
+      const result = await getCurrentPostalCode();
+      
+      if (result.postalCode) {
+        setPostalCode(result.postalCode);
+        setLocationResult(result);
+        setShowLocationDetails(true);
+        console.log('✅ Código postal obtenido:', result.postalCode);
+      } else {
+        setLocationError('No pudimos determinar tu código postal. Por favor, ingrésalo manualmente.');
+        console.warn('⚠️ No se pudo obtener código postal');
+      }
+    } catch (error) {
+      console.error('❌ Error en geolocalización:', error);
+      
+      let errorMessage = 'Error al obtener tu ubicación. ';
+      
+      if (error instanceof Error) {
+        if (error.message.includes('Permiso')) {
+          errorMessage = 'Necesitamos permiso para acceder a tu ubicación. Por favor, permite el acceso y vuelve a intentar.';
+        } else if (error.message.includes('timeout')) {
+          errorMessage = 'Tiempo de espera agotado. Verifica tu conexión a internet e intenta de nuevo.';
+        } else if (error.message.includes('API')) {
+          errorMessage = 'Error del servicio de ubicación. Por favor, ingresa tu código postal manualmente.';
+        } else {
+          errorMessage += error.message;
         }
-      );
-    } else {
-      // Fallback si no soporta geolocation
-      setPostalCode('03100');
+      }
+      
+      setLocationError(errorMessage);
+    } finally {
       setIsUsingCurrentLocation(false);
     }
   };
@@ -157,8 +180,61 @@ export const Hero = () => {
                 icon={isUsingCurrentLocation ? faSpinner : faLocationDot} 
                 className={`mr-2 ${isUsingCurrentLocation ? 'animate-spin' : ''}`} 
               />
-              {isUsingCurrentLocation ? 'Obteniendo ubicación...' : 'Usar mi Ubicación Actual'}
+              {isUsingCurrentLocation ? 'Detectando ubicación...' : 'Usar mi Ubicación Actual'}
             </button>
+
+            {/* Detalles de Ubicación Detectada */}
+            {locationResult && showLocationDetails && (
+              <div className="mt-3 p-4 bg-green-50 border border-green-200 rounded-lg">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-start space-x-3">
+                    <FontAwesomeIcon icon={faCheckCircle} className="text-green-600 mt-0.5" />
+                    <div>
+                      <p className="text-sm font-medium text-green-800">
+                        Ubicación detectada correctamente
+                      </p>
+                      <p className="text-xs text-green-600 mt-1">
+                        {locationResult.neighborhood && `${locationResult.neighborhood}, `}
+                        {locationResult.city && `${locationResult.city}, `}
+                        {locationResult.state}
+                      </p>
+                      <p className="text-xs text-gray-600 mt-1">
+                        Código postal: {locationResult.postalCode}
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setShowLocationDetails(false)}
+                    className="text-green-600 hover:text-green-800"
+                  >
+                    <FontAwesomeIcon icon={faTimes} className="text-sm" />
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Error de Ubicación */}
+            {locationError && (
+              <div className="mt-3 p-4 bg-red-50 border border-red-200 rounded-lg">
+                <div className="flex items-start space-x-3">
+                  <FontAwesomeIcon icon={faExclamationTriangle} className="text-red-600 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-medium text-red-800">
+                      Error al detectar ubicación
+                    </p>
+                    <p className="text-xs text-red-600 mt-1">
+                      {locationError}
+                    </p>
+                    <button
+                      onClick={() => setLocationError(null)}
+                      className="text-xs text-red-600 hover:text-red-800 underline mt-1"
+                    >
+                      Cerrar
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Validación visual */}
             {postalCode.length > 0 && (
