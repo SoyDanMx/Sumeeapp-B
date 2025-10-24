@@ -42,7 +42,7 @@ export default function ControlPanel({
     totalLeads: leads.length,
     completedLeads: leads.filter(lead => lead.estado === 'completado').length,
     activeLeads: leads.filter(lead => lead.estado === 'contactado' || lead.estado === 'en_progreso').length,
-    newLeads: leads.filter(lead => lead.estado === 'nuevo' || lead.estado === 'pendiente').length
+    newLeads: leads.filter(lead => lead.estado === 'nuevo').length
   };
 
   // Determinar el estado de disponibilidad basado en el status
