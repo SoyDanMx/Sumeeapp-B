@@ -30,7 +30,7 @@ export default function WorkFeed({
   // Filtrar leads por estado
   const filteredLeads = useMemo(() => {
     if (activeTab === 'nuevos') {
-      return leads.filter(lead => lead.estado === 'nuevo' || lead.estado === 'pendiente');
+      return leads.filter(lead => lead.estado === 'nuevo');
     } else {
       return leads.filter(lead => lead.estado === 'contactado' || lead.estado === 'en_progreso');
     }
@@ -126,9 +126,9 @@ export default function WorkFeed({
             <div className="flex items-center justify-center space-x-2">
               <FontAwesomeIcon icon={faBriefcase} className="text-sm" />
               <span>Nuevos Leads</span>
-              {leads.filter(lead => lead.estado === 'nuevo' || lead.estado === 'pendiente').length > 0 && (
+              {leads.filter(lead => lead.estado === 'nuevo').length > 0 && (
                 <span className="bg-blue-100 text-blue-600 text-xs px-2 py-1 rounded-full">
-                  {leads.filter(lead => lead.estado === 'nuevo' || lead.estado === 'pendiente').length}
+                  {leads.filter(lead => lead.estado === 'nuevo').length}
                 </span>
               )}
             </div>
