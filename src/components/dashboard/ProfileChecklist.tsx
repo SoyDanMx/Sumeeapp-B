@@ -48,7 +48,7 @@ export default function ProfileChecklist({ profesional, onEditClick }: ProfileCh
       id: 'specialties',
       label: 'Especialidades definidas',
       icon: faEdit,
-      isCompleted: profesional.areas_servicio && profesional.areas_servicio.length > 0 && profesional.areas_servicio[0] !== 'Sin definir',
+      isCompleted: Boolean(profesional.areas_servicio && profesional.areas_servicio.length > 0 && profesional.areas_servicio[0] !== 'Sin definir'),
       description: 'Define tus áreas de especialidad',
       actionText: 'Definir especialidades'
     },
