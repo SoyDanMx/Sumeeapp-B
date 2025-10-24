@@ -127,14 +127,6 @@ export default function UserPanelMenu({ user, onClose }: UserPanelMenuProps) {
 
           {/* Opciones generales */}
           <div className="py-1 border-t border-gray-100">
-            <Link 
-              href="/help" 
-              onClick={closeMenu}
-              className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-            >
-              <FontAwesomeIcon icon={faQuestionCircle} className="mr-3 text-gray-400" />
-              Ayuda
-            </Link>
             <button
               onClick={handleSignOut}
               className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
