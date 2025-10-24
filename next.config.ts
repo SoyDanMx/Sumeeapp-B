@@ -95,6 +95,14 @@ const nextConfig = {
   // Experimental features para performance
   experimental: {
     optimizePackageImports: ['@fortawesome/react-fontawesome', '@fortawesome/free-solid-svg-icons'],
+    turbo: {
+      rules: {
+        '*.svg': {
+          loaders: ['@svgr/webpack'],
+          as: '*.js',
+        },
+      },
+    },
   },
 
   // Webpack optimizations
