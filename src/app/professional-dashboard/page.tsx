@@ -97,8 +97,8 @@ export default function ProfesionalDashboardPage() {
                 <div className="flex-1 min-w-0 p-6">
                     <WorkFeed
                         leads={leads}
-                        profesionalLat={profesional.ubicacion_lat}
-                        profesionalLng={profesional.ubicacion_lng}
+                        profesionalLat={profesional.ubicacion_lat ?? undefined}
+                        profesionalLng={profesional.ubicacion_lng ?? undefined}
                         onLeadClick={handleLeadClick}
                         onLeadAccepted={refetchData}
                         selectedLeadId={selectedLeadId}
