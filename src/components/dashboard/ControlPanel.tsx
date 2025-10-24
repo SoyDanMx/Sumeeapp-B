@@ -177,7 +177,7 @@ export default function ControlPanel({
             <DynamicMapComponent
               leads={leads}
               profesional={profesional}
-              selectedLeadId={selectedLeadId}
+              selectedLeadId={selectedLeadId ?? null}
               onLeadClick={onLeadClick || (() => {})}
             />
           </div>
