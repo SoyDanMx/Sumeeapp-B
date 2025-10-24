@@ -8,7 +8,6 @@ import LeadCard from '@/components/LeadCard';
 import ProfesionalHeader from '@/components/ProfesionalHeader';
 import EditProfileModal from '@/components/EditProfileModal'; 
 import ProfessionalVerificationID from '@/components/ProfessionalVerificationID';
-import RevenueWidget from '@/components/RevenueWidget';
 import { Profesional, Lead } from '@/types/supabase';
 
 const DynamicMapComponent = dynamic(
@@ -130,12 +129,6 @@ export default function ProfesionalDashboardPage() {
                 onEditClick={() => setIsModalOpen(true)}
             />
 
-            {/* Revenue Widget para Métricas MVP */}
-            <div className="px-4 py-4 bg-blue-50 border-b border-blue-200">
-                <div className="max-w-7xl mx-auto">
-                    <RevenueWidget className="w-full" />
-                </div>
-            </div>
 
             {/* 🎯 UX/UI PRINCIPLE: Clear Navigation & Filtering */}
             <nav className="px-6 py-4 bg-white/80 backdrop-blur-sm border-b border-gray-200 shadow-sm">
