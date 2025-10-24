@@ -45,8 +45,8 @@ export default function ControlPanel({
     newLeads: leads.filter(lead => lead.estado === 'nuevo' || lead.estado === 'pendiente').length
   };
 
-  // Determinar el estado de disponibilidad
-  const isAvailable = profesional.disponibilidad === true;
+  // Determinar el estado de disponibilidad basado en el status
+  const isAvailable = profesional.status === 'active';
   const availabilityColor = isAvailable ? 'text-green-600' : 'text-red-600';
   const availabilityBg = isAvailable ? 'bg-green-100' : 'bg-red-100';
 
