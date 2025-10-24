@@ -7,6 +7,7 @@ import ProfesionalHeader from '@/components/ProfesionalHeader';
 import EditProfileModal from '@/components/EditProfileModal'; 
 import WorkFeed from '@/components/dashboard/WorkFeed';
 import ControlPanel from '@/components/dashboard/ControlPanel';
+import ProfessionalTabs from '@/components/dashboard/ProfessionalTabs';
 import { Profesional, Lead } from '@/types/supabase';
 
 export default function ProfesionalDashboardPage() {
@@ -105,15 +106,12 @@ export default function ProfesionalDashboardPage() {
                     />
                 </div>
                 
-                {/* Columna Derecha: ControlPanel (Barra Lateral) */}
+                {/* Columna Derecha: Pestañas Profesionales (Barra Lateral) */}
                 <div className="w-96 bg-white/95 backdrop-blur-sm shadow-xl border-l border-gray-200 overflow-y-auto">
                     <div className="p-6">
-                        <ControlPanel
+                        <ProfessionalTabs
                             profesional={profesional}
-                            leads={leads}
-                            onEditClick={() => setIsModalOpen(true)}
-                            onLeadClick={handleLeadClick}
-                            selectedLeadId={selectedLeadId}
+                            onClose={() => setIsModalOpen(false)}
                         />
                     </div>
                 </div>
