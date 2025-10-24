@@ -163,8 +163,8 @@ export default function WorkFeed({
               <LeadCard
                 key={lead.id}
                 lead={lead}
-                profesionalLat={profesionalLat}
-                profesionalLng={profesionalLng}
+                profesionalLat={profesionalLat ?? 19.4326}
+                profesionalLng={profesionalLng ?? -99.1332}
                 isSelected={lead.id === selectedLeadId}
                 onSelect={() => onLeadClick?.(lead.id)}
                 onLeadAccepted={onLeadAccepted}
