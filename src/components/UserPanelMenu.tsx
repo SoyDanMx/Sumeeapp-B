@@ -12,7 +12,8 @@ import {
   faBell,
   faQuestionCircle,
   faCrown,
-  faListAlt
+  faListAlt,
+  faUsers
 } from '@fortawesome/free-solid-svg-icons';
 import { useUserRole } from '@/hooks/useUserRole';
 import { supabase } from '@/lib/supabase/client';
@@ -87,12 +88,20 @@ export default function UserPanelMenu({ user, onClose }: UserPanelMenuProps) {
                   Mis Leads
                 </Link>
                 <Link 
-                  href="/membresia" 
+                  href="/professionals" 
                   onClick={closeMenu}
                   className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                 >
-                  <FontAwesomeIcon icon={faCrown} className="mr-3 text-gray-400" />
-                  Membresía
+                  <FontAwesomeIcon icon={faUsers} className="mr-3 text-gray-400" />
+                  Red de Profesionales
+                </Link>
+                <Link 
+                  href="/help" 
+                  onClick={closeMenu}
+                  className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                >
+                  <FontAwesomeIcon icon={faQuestionCircle} className="mr-3 text-gray-400" />
+                  Centro de Ayuda
                 </Link>
               </>
             ) : (

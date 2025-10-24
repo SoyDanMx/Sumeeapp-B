@@ -1,10 +1,12 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Profesional } from '@/types/supabase';
+import { Profesional, Lead } from '@/types/supabase';
 import ProfileChecklist from './ProfileChecklist';
+import ProfessionalStats from './ProfessionalStats';
+import ProfessionalTools from './ProfessionalTools';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faUser, faMapMarkerAlt, faStar, faEdit, faCheckCircle } from '@fortawesome/free-solid-svg-icons';
+import { faUser, faMapMarkerAlt, faStar, faEdit, faCheckCircle, faChartLine, faWrench } from '@fortawesome/free-solid-svg-icons';
 import dynamic from 'next/dynamic';
 
 // Importar el mapa dinámicamente
@@ -22,7 +24,7 @@ const DynamicMapComponent = dynamic(
 
 interface ControlPanelProps {
   profesional: Profesional;
-  leads: any[];
+  leads: Lead[];
   onEditClick: () => void;
   onLeadClick?: (leadId: string) => void;
   selectedLeadId?: string | null;
@@ -36,6 +38,7 @@ export default function ControlPanel({
   selectedLeadId 
 }: ControlPanelProps) {
   const [showMap, setShowMap] = useState(true);
+  const [activeTab, setActiveTab] = useState<'profile' | 'stats' | 'tools'>('profile');
 
   // Calcular estadísticas básicas
   const stats = {
@@ -52,8 +55,50 @@ export default function ControlPanel({
 
   return (
     <div className="space-y-6">
-      {/* Resumen del Perfil */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+      {/* Tab Navigation */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-2">
+        <div className="flex space-x-1">
+          <button
+            onClick={() => setActiveTab('profile')}
+            className={`flex-1 py-2 px-4 text-sm font-medium rounded-lg transition-colors ${
+              activeTab === 'profile'
+                ? 'bg-indigo-600 text-white'
+                : 'text-gray-600 hover:bg-gray-100'
+            }`}
+          >
+            <FontAwesomeIcon icon={faUser} className="mr-2" />
+            Perfil
+          </button>
+          <button
+            onClick={() => setActiveTab('stats')}
+            className={`flex-1 py-2 px-4 text-sm font-medium rounded-lg transition-colors ${
+              activeTab === 'stats'
+                ? 'bg-indigo-600 text-white'
+                : 'text-gray-600 hover:bg-gray-100'
+            }`}
+          >
+            <FontAwesomeIcon icon={faChartLine} className="mr-2" />
+            Estadísticas
+          </button>
+          <button
+            onClick={() => setActiveTab('tools')}
+            className={`flex-1 py-2 px-4 text-sm font-medium rounded-lg transition-colors ${
+              activeTab === 'tools'
+                ? 'bg-indigo-600 text-white'
+                : 'text-gray-600 hover:bg-gray-100'
+            }`}
+          >
+            <FontAwesomeIcon icon={faWrench} className="mr-2" />
+            Herramientas
+          </button>
+        </div>
+      </div>
+
+      {/* Tab Content */}
+      {activeTab === 'profile' && (
+        <>
+          {/* Resumen del Perfil */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold text-gray-900">Mi Perfil</h3>
           <button
@@ -130,34 +175,44 @@ export default function ControlPanel({
         </div>
       </div>
 
-      {/* Checklist de Perfil */}
-      <ProfileChecklist 
-        profesional={profesional} 
-        onEditClick={onEditClick} 
-      />
+          {/* Checklist de Perfil */}
+          <ProfileChecklist 
+            profesional={profesional} 
+            onEditClick={onEditClick} 
+          />
 
-      {/* Estadísticas Rápidas */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Estadísticas</h3>
-        <div className="grid grid-cols-2 gap-4">
-          <div className="text-center p-3 bg-blue-50 rounded-lg">
-            <div className="text-2xl font-bold text-blue-600">{stats.totalLeads}</div>
-            <div className="text-xs text-blue-700">Total Leads</div>
+          {/* Estadísticas Rápidas */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Estadísticas</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="text-center p-3 bg-blue-50 rounded-lg">
+                <div className="text-2xl font-bold text-blue-600">{stats.totalLeads}</div>
+                <div className="text-xs text-blue-700">Total Leads</div>
+              </div>
+              <div className="text-center p-3 bg-green-50 rounded-lg">
+                <div className="text-2xl font-bold text-green-600">{stats.completedLeads}</div>
+                <div className="text-xs text-green-700">Completados</div>
+              </div>
+              <div className="text-center p-3 bg-yellow-50 rounded-lg">
+                <div className="text-2xl font-bold text-yellow-600">{stats.activeLeads}</div>
+                <div className="text-xs text-yellow-700">Activos</div>
+              </div>
+              <div className="text-center p-3 bg-purple-50 rounded-lg">
+                <div className="text-2xl font-bold text-purple-600">{stats.newLeads}</div>
+                <div className="text-xs text-purple-700">Nuevos</div>
+              </div>
+            </div>
           </div>
-          <div className="text-center p-3 bg-green-50 rounded-lg">
-            <div className="text-2xl font-bold text-green-600">{stats.completedLeads}</div>
-            <div className="text-xs text-green-700">Completados</div>
-          </div>
-          <div className="text-center p-3 bg-yellow-50 rounded-lg">
-            <div className="text-2xl font-bold text-yellow-600">{stats.activeLeads}</div>
-            <div className="text-xs text-yellow-700">Activos</div>
-          </div>
-          <div className="text-center p-3 bg-purple-50 rounded-lg">
-            <div className="text-2xl font-bold text-purple-600">{stats.newLeads}</div>
-            <div className="text-xs text-purple-700">Nuevos</div>
-          </div>
-        </div>
-      </div>
+        </>
+      )}
+
+      {activeTab === 'stats' && (
+        <ProfessionalStats profesional={profesional} leads={leads} />
+      )}
+
+      {activeTab === 'tools' && (
+        <ProfessionalTools profesional={profesional} />
+      )}
 
       {/* Mapa Pequeño */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
