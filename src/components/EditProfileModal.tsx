@@ -1,7 +1,7 @@
 'use client';
 import React, { useState, FormEvent, useEffect } from 'react';
 import { Profesional } from '@/types/supabase';
-import { updateProfesionalProfile, checkUserPermissions } from '@/lib/supabase/data';
+import { updateUserProfile, verifyUserPermissions } from '@/lib/supabase/actions';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
   faTimes, 
@@ -150,33 +150,50 @@ export default function EditProfileModal({ profesional, isOpen, onClose, onSucce
         }
 
         try {
-            // Verificar permisos antes de intentar actualizar
+            // 1. Verificar permisos del usuario
             setStatusMessage('Verificando permisos...');
-            await checkUserPermissions(userId);
+            await verifyUserPermissions(userId);
             
-            // Asegurar que full_name no sea null antes de enviar
+            // 2. Preparar datos para actualización
             const dataToSubmit = {
                 ...formData,
                 full_name: formData.full_name || profesional.full_name || 'Sin nombre'
             };
             
+            // 3. Actualizar perfil usando función centralizada
             setStatusMessage('Guardando información...');
-            await updateProfesionalProfile(userId, dataToSubmit, locationAddress || undefined);
+            const updatedProfile = await updateUserProfile(
+                userId, 
+                dataToSubmit, 
+                locationAddress || undefined
+            );
+            
+            console.log('✅ Perfil actualizado exitosamente:', updatedProfile);
             setStatusMessage('¡Perfil actualizado con éxito!');
             setIsSuccess(true);
             
             // Delay before closing to show success message
             setTimeout(() => {
-            onSuccess(); 
+                onSuccess(); 
             }, 1500);
+            
         } catch (error: any) {
-            console.error('Error al actualizar el perfil:', error);
-            // Mensaje más específico para errores de permisos
+            console.error('❌ Error al actualizar el perfil:', error);
+            
+            // Manejo específico de errores
+            let errorMessage = 'Error desconocido';
+            
             if (error.message.includes('permisos') || error.message.includes('RLS')) {
-                setStatusMessage(`Error de permisos: ${error.message}. Contacta al administrador.`);
+                errorMessage = `Error de permisos: ${error.message}. Contacta al administrador.`;
+            } else if (error.message.includes('coordenadas')) {
+                errorMessage = `Error de ubicación: ${error.message}. Intenta con una dirección más específica.`;
+            } else if (error.message.includes('No se encontró')) {
+                errorMessage = `Error de perfil: ${error.message}. Verifica que estés registrado correctamente.`;
             } else {
-                setStatusMessage(`Error al guardar: ${error.message || 'Error desconocido'}. Revisa la consola.`);
+                errorMessage = `Error al guardar: ${error.message || 'Error desconocido'}. Revisa la consola.`;
             }
+            
+            setStatusMessage(errorMessage);
         } finally {
             setLoading(false);
         }
