@@ -1,10 +1,9 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-// Usamos el cliente del NAVEGADOR
-import { supabase } from '@/lib/supabase/client-new';
+import { supabase } from '@/lib/supabase/client';
 import { Profesional, Lead } from '@/types/supabase';
-import { PostgrestError } from '@supabase/supabase-js';
+import { PostgrestError, User } from '@supabase/supabase-js';
 
 type UseProfesionalDataReturn = {
   profesional: Profesional | null;
@@ -17,12 +16,11 @@ type UseProfesionalDataReturn = {
 export function useProfesionalData(): UseProfesionalDataReturn {
   const [profesional, setProfesional] = useState<Profesional | null>(null);
   const [leads, setLeads] = useState<Lead[]>([]);
-  const [isLoading, setIsLoading] = useState(true); // Empezamos cargando por defecto
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<PostgrestError | string | null>(null);
-  const [userId, setUserId] = useState<string | null>(null);
+  const [user, setUser] = useState<User | null>(null);
 
   const fetchData = useCallback(async (currentUserId: string) => {
-    // Si no hay ID, no hacemos nada.
     if (!currentUserId) {
       setIsLoading(false);
       return;
@@ -32,6 +30,8 @@ export function useProfesionalData(): UseProfesionalDataReturn {
     setError(null);
     
     try {
+      console.log('🔍 Buscando datos para usuario:', currentUserId);
+      
       const [profesionalResult, leadsResult] = await Promise.all([
         supabase
           .from('profiles')
@@ -45,47 +45,77 @@ export function useProfesionalData(): UseProfesionalDataReturn {
           .order('fecha_creacion', { ascending: false })
       ]);
 
-      if (profesionalResult.error) throw profesionalResult.error;
-      if (leadsResult.error) throw leadsResult.error;
+      if (profesionalResult.error) {
+        console.error('❌ Error obteniendo perfil:', profesionalResult.error);
+        throw profesionalResult.error;
+      }
+      if (leadsResult.error) {
+        console.error('❌ Error obteniendo leads:', leadsResult.error);
+        throw leadsResult.error;
+      }
+
+      console.log('✅ Datos obtenidos:', { 
+        profesional: profesionalResult.data, 
+        leadsCount: leadsResult.data?.length || 0 
+      });
 
       setProfesional(profesionalResult.data as Profesional);
       setLeads(leadsResult.data as Lead[]);
 
     } catch (err: any) {
-      console.error("Error fetching professional data:", err);
+      console.error("❌ Error fetching professional data:", err);
       setError(err.message || 'Error al obtener los datos.');
-      setProfesional(null); // Limpiamos el perfil si hay error
+      setProfesional(null);
     } finally {
       setIsLoading(false);
     }
   }, []);
 
   const refetchData = useCallback(() => {
-    if (userId) {
-      fetchData(userId);
+    if (user?.id) {
+      fetchData(user.id);
     }
-  }, [userId, fetchData]);
+  }, [user?.id, fetchData]);
 
   useEffect(() => {
-    // --- LA LÓGICA CLAVE ESTÁ AQUÍ ---
-    // Usamos onAuthStateChange para reaccionar a los cambios de sesión.
-    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
-      const currentUserId = session?.user?.id ?? null;
-      setUserId(currentUserId);
-
-      if (currentUserId) {
-        // Solo obtenemos los datos si hay un ID de usuario.
-        fetchData(currentUserId);
+    console.log('🚀 Iniciando useProfesionalData hook');
+    
+    // Obtener sesión inicial
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      const currentUser = session?.user ?? null;
+      setUser(currentUser);
+      
+      if (currentUser) {
+        console.log('👤 Usuario encontrado en sesión inicial:', currentUser.id);
+        fetchData(currentUser.id);
       } else {
-        // Si no hay sesión (logout), limpiamos los datos y paramos la carga.
+        console.log('❌ No hay usuario en sesión inicial');
         setProfesional(null);
         setLeads([]);
         setIsLoading(false);
       }
     });
 
-    // Limpiamos el listener al desmontar el componente.
+    // Escuchar cambios de autenticación
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('🔄 Auth state change:', event, session?.user?.id);
+      
+      const currentUser = session?.user ?? null;
+      setUser(currentUser);
+
+      if (currentUser) {
+        console.log('👤 Usuario autenticado, obteniendo datos...');
+        fetchData(currentUser.id);
+      } else {
+        console.log('🚪 Usuario desautenticado, limpiando datos...');
+        setProfesional(null);
+        setLeads([]);
+        setIsLoading(false);
+      }
+    });
+
     return () => {
+      console.log('🧹 Limpiando auth listener');
       authListener.subscription.unsubscribe();
     };
   }, [fetchData]);
