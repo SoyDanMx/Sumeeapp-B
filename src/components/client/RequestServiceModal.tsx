@@ -26,7 +26,8 @@ import {
   faCubes
 } from '@fortawesome/free-solid-svg-icons';
 import { supabase } from '@/lib/supabase/client';
-import { useUser } from '@/hooks/useUser';
+import { useUserContext } from '@/context/UserContext';
+import StripeBuyButton from '@/components/stripe/StripeBuyButton';
 
 interface RequestServiceModalProps {
   isOpen: boolean;
@@ -60,9 +61,10 @@ export default function RequestServiceModal({ isOpen, onClose }: RequestServiceM
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isGettingLocation, setIsGettingLocation] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
-  const { user } = useUser();
+  const { user, profile, hasActiveMembership, isLoading } = useUserContext();
 
   const totalSteps = 4;
 
@@ -74,6 +76,55 @@ export default function RequestServiceModal({ isOpen, onClose }: RequestServiceM
     const file = event.target.files?.[0];
     if (file) {
       setFormData(prev => ({ ...prev, imagen: file }));
+    }
+  };
+
+  const handleUseMyLocation = async () => {
+    if (!navigator.geolocation) {
+      setError('La geolocalización no está disponible en tu navegador');
+      return;
+    }
+
+    setIsGettingLocation(true);
+    setError(null);
+
+    try {
+      const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject, {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 300000
+        });
+      });
+
+      const { latitude, longitude } = position.coords;
+      
+      // Usar Google Maps Geocoding API para obtener la dirección
+      const response = await fetch(
+        `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}`
+      );
+      
+      const data = await response.json();
+      
+      if (data.results && data.results.length > 0) {
+        const address = data.results[0].formatted_address;
+        setFormData(prev => ({ ...prev, ubicacion: address }));
+      } else {
+        setError('No se pudo obtener la dirección. Por favor, ingrésala manualmente.');
+      }
+    } catch (err: any) {
+      console.error('Error getting location:', err);
+      if (err.code === 1) {
+        setError('Permiso de ubicación denegado. Por favor, ingresa la dirección manualmente.');
+      } else if (err.code === 2) {
+        setError('Ubicación no disponible. Por favor, ingresa la dirección manualmente.');
+      } else if (err.code === 3) {
+        setError('Tiempo de espera agotado. Por favor, ingresa la dirección manualmente.');
+      } else {
+        setError('Error al obtener la ubicación. Por favor, ingresa la dirección manualmente.');
+      }
+    } finally {
+      setIsGettingLocation(false);
     }
   };
 
@@ -295,13 +346,33 @@ export default function RequestServiceModal({ isOpen, onClose }: RequestServiceM
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Dirección
                   </label>
-                  <input
-                    type="text"
-                    value={formData.ubicacion}
-                    onChange={(e) => setFormData(prev => ({ ...prev, ubicacion: e.target.value }))}
-                    className="w-full p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="Calle, número, colonia, delegación"
-                  />
+                  <div className="flex space-x-2">
+                    <input
+                      type="text"
+                      value={formData.ubicacion}
+                      onChange={(e) => setFormData(prev => ({ ...prev, ubicacion: e.target.value }))}
+                      className="flex-1 p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="Calle, número, colonia, delegación"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleUseMyLocation}
+                      disabled={isGettingLocation}
+                      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors flex items-center space-x-2"
+                    >
+                      {isGettingLocation ? (
+                        <>
+                          <FontAwesomeIcon icon={faSpinner} spin />
+                          <span>Detectando...</span>
+                        </>
+                      ) : (
+                        <>
+                          <FontAwesomeIcon icon={faMapMarkerAlt} />
+                          <span>Usar mi Ubicación</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
                 </div>
                 
                 <div>
@@ -325,8 +396,15 @@ export default function RequestServiceModal({ isOpen, onClose }: RequestServiceM
           {currentStep === 4 && (
             <div className="space-y-6">
               <div className="text-center">
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">Confirma y Envía</h3>
-                <p className="text-gray-600">Revisa los detalles de tu solicitud</p>
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">
+                  {hasActiveMembership ? 'Confirma y Envía' : '¡Activa tu Membresía!'}
+                </h3>
+                <p className="text-gray-600">
+                  {hasActiveMembership 
+                    ? 'Revisa los detalles de tu solicitud' 
+                    : 'Tu solicitud está lista. Activa tu membresía para conectar con profesionales.'
+                  }
+                </p>
               </div>
               
               <div className="bg-gray-50 rounded-lg p-6 space-y-4">
@@ -349,6 +427,58 @@ export default function RequestServiceModal({ isOpen, onClose }: RequestServiceM
                   <span><strong>Ubicación:</strong> {formData.ubicacion || 'CDMX'}</span>
                 </div>
               </div>
+
+              {/* Lógica de Membresía */}
+              {!hasActiveMembership && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
+                  <h4 className="text-lg font-semibold text-blue-900 mb-3">
+                    ¡Estás a un paso de conectar con profesionales!
+                  </h4>
+                  <p className="text-blue-800 mb-4">
+                    Tu solicitud ha sido preparada. Para que los profesionales puedan verla y contactarte, necesitas una membresía activa.
+                  </p>
+                  
+                  <div className="grid md:grid-cols-2 gap-4">
+                    {/* Plan Básico */}
+                    <div className="bg-white border border-blue-200 rounded-lg p-4">
+                      <h5 className="font-semibold text-gray-900 mb-2">Plan Básico</h5>
+                      <div className="text-2xl font-bold text-blue-600 mb-2">$299 MXN</div>
+                      <p className="text-sm text-gray-600 mb-4">Suscripción anual</p>
+                      <ul className="text-sm text-gray-700 space-y-1 mb-4">
+                        <li>• Hasta 2 solicitudes por mes</li>
+                        <li>• Acceso a técnicos verificados</li>
+                        <li>• Diagnóstico por foto/video</li>
+                        <li>• Seguimiento en la app</li>
+                      </ul>
+                      <StripeBuyButton 
+                        buyButtonId="buy_btn_1SLx83E2shKTNR9MwlSZog2K"
+                        publishableKey="pk_live_51P8c4AE2shKTNR9MVARQB4La2uYMMc2shlTCcpcg8EI6MqqPV1uN5uj6UbB5mpfReRKd4HL2OP1LoF17WXcYYeB000Ot1l847E"
+                      />
+                    </div>
+
+                    {/* Plan Premium */}
+                    <div className="bg-white border-2 border-purple-300 rounded-lg p-4 relative">
+                      <div className="absolute -top-2 left-1/2 transform -translate-x-1/2">
+                        <span className="bg-purple-600 text-white text-xs px-3 py-1 rounded-full">Más Popular</span>
+                      </div>
+                      <h5 className="font-semibold text-gray-900 mb-2">Plan Premium</h5>
+                      <div className="text-2xl font-bold text-purple-600 mb-2">$499 MXN</div>
+                      <p className="text-sm text-gray-600 mb-4">Suscripción anual</p>
+                      <ul className="text-sm text-gray-700 space-y-1 mb-4">
+                        <li>• Solicitudes ilimitadas</li>
+                        <li>• Prioridad en asignación</li>
+                        <li>• Diagnóstico por foto/video</li>
+                        <li>• Servicio de conserjería</li>
+                        <li>• Historial de mantenimiento</li>
+                      </ul>
+                      <StripeBuyButton 
+                        buyButtonId="buy_btn_1RmpzwE2shKTNR9M91kuSgKh"
+                        publishableKey="pk_live_51P8c4AE2shKTNR9MVARQB4La2uYMMc2shlTCcpcg8EI6MqqPV1uN5uj6UbB5mpfReRKd4HL2OP1LoF17WXcYYeB000Ot1l847E"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
@@ -380,23 +510,31 @@ export default function RequestServiceModal({ isOpen, onClose }: RequestServiceM
                 <FontAwesomeIcon icon={faArrowRight} />
               </button>
             ) : (
-              <button
-                onClick={handleSubmit}
-                disabled={loading}
-                className="flex items-center space-x-2 px-8 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
-              >
-                {loading ? (
-                  <>
-                    <FontAwesomeIcon icon={faSpinner} spin />
-                    <span>Enviando...</span>
-                  </>
-                ) : (
-                  <>
-                    <FontAwesomeIcon icon={faCheck} />
-                    <span>Enviar Solicitud</span>
-                  </>
-                )}
-              </button>
+              hasActiveMembership ? (
+                <button
+                  onClick={handleSubmit}
+                  disabled={loading}
+                  className="flex items-center space-x-2 px-8 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
+                >
+                  {loading ? (
+                    <>
+                      <FontAwesomeIcon icon={faSpinner} spin />
+                      <span>Enviando...</span>
+                    </>
+                  ) : (
+                    <>
+                      <FontAwesomeIcon icon={faCheck} />
+                      <span>Enviar Solicitud</span>
+                    </>
+                  )}
+                </button>
+              ) : (
+                <div className="text-center">
+                  <p className="text-sm text-gray-600 mb-4">
+                    Selecciona un plan arriba para continuar
+                  </p>
+                </div>
+              )
             )}
           </div>
         </div>
