@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation';
-import { supabase } from '@/lib/supabase';
+import { createSupabaseServerClient } from '@/lib/supabase/server';
 import DisciplineAIHelper from '@/components/services/DisciplineAIHelper';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
@@ -151,6 +151,7 @@ export default async function ServicePage({ params }: ServicePageProps) {
   const { slug } = await params;
   
   // Obtener datos del servicio desde Supabase
+  const supabase = await createSupabaseServerClient();
   const { data: service, error } = await supabase
     .from('services')
     .select('*')
