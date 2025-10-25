@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation';
-import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { supabase } from '@/lib/supabase';
 import DisciplineAIHelper from '@/components/services/DisciplineAIHelper';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
@@ -17,16 +17,15 @@ import {
   faClock,
   faShield,
   faUsers,
-  faPhone,
-  faWhatsapp
+  faPhone
 } from '@fortawesome/free-solid-svg-icons';
 import { faWhatsapp as faWhatsappBrand } from '@fortawesome/free-brands-svg-icons';
 import Link from 'next/link';
 
 interface ServicePageProps {
-  params: {
+  params: Promise<{
     slug: string;
-  };
+  }>;
 }
 
 const DISCIPLINE_CONFIG = {
@@ -149,10 +148,9 @@ const DISCIPLINE_CONFIG = {
 };
 
 export default async function ServicePage({ params }: ServicePageProps) {
-  const { slug } = params;
+  const { slug } = await params;
   
   // Obtener datos del servicio desde Supabase
-  const supabase = createSupabaseServerClient();
   const { data: service, error } = await supabase
     .from('services')
     .select('*')
@@ -341,7 +339,7 @@ export default async function ServicePage({ params }: ServicePageProps) {
 }
 
 export async function generateMetadata({ params }: ServicePageProps) {
-  const { slug } = params;
+  const { slug } = await params;
   const config = DISCIPLINE_CONFIG[slug as keyof typeof DISCIPLINE_CONFIG];
   
   if (!config) {
