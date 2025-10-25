@@ -28,6 +28,7 @@ interface Message {
 
 interface AIAdvisorProps {
   onServiceRecommendation?: (service: string) => void;
+  initialQuery?: string;
 }
 
 const SPECIALISTS = {
@@ -97,7 +98,7 @@ const SPECIALISTS = {
   }
 };
 
-export default function AIAdvisor({ onServiceRecommendation }: AIAdvisorProps) {
+export default function AIAdvisor({ onServiceRecommendation, initialQuery }: AIAdvisorProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -111,6 +112,17 @@ export default function AIAdvisor({ onServiceRecommendation }: AIAdvisorProps) {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // Efecto para manejar consulta inicial
+  useEffect(() => {
+    if (initialQuery && isOpen) {
+      setInputValue(initialQuery);
+      // Auto-enviar la consulta inicial
+      setTimeout(() => {
+        handleSendMessage(initialQuery);
+      }, 500);
+    }
+  }, [initialQuery, isOpen]);
 
   const detectSpecialist = (query: string): string => {
     const lowerQuery = query.toLowerCase();
@@ -234,13 +246,14 @@ export default function AIAdvisor({ onServiceRecommendation }: AIAdvisorProps) {
     };
   };
 
-  const handleSendMessage = async () => {
-    if (!inputValue.trim() || isLoading) return;
+  const handleSendMessage = async (query?: string) => {
+    const messageToSend = query || inputValue;
+    if (!messageToSend.trim() || isLoading) return;
 
     const userMessage: Message = {
       id: Date.now().toString(),
       role: 'user',
-      content: inputValue,
+      content: messageToSend,
       timestamp: new Date()
     };
 
@@ -249,7 +262,7 @@ export default function AIAdvisor({ onServiceRecommendation }: AIAdvisorProps) {
     setIsLoading(true);
 
     try {
-      const aiResponse = await generateAIResponse(inputValue);
+      const aiResponse = await generateAIResponse(messageToSend);
       
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
@@ -377,11 +390,11 @@ export default function AIAdvisor({ onServiceRecommendation }: AIAdvisorProps) {
                 className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                 disabled={isLoading}
               />
-              <button
-                onClick={handleSendMessage}
-                disabled={!inputValue.trim() || isLoading}
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
-              >
+                <button
+                  onClick={() => handleSendMessage()}
+                  disabled={!inputValue.trim() || isLoading}
+                  className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                >
                 <FontAwesomeIcon icon={faPaperPlane} />
               </button>
             </div>

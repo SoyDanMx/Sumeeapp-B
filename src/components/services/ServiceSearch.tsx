@@ -7,7 +7,7 @@ import { faSearch, faSpinner } from '@fortawesome/free-solid-svg-icons';
 interface ServiceSearchProps {
   onSearch?: (query: string) => void;
   placeholder?: string;
-  onAIConsultation?: () => void;
+  onAIConsultation?: (query?: string) => void;
 }
 
 export default function ServiceSearch({ 
@@ -26,12 +26,11 @@ export default function ServiceSearch({
     setIsSearching(true);
     
     try {
-      // Lógica de búsqueda futura:
-      // 1. Filtrar servicios por nombre/descripción
-      // 2. Abrir modal RequestServiceModal con servicio preseleccionado
-      // 3. Navegar a página de resultados de búsqueda
-      
-      if (onSearch) {
+      // Si hay función de consulta IA, abrir el AI Helper con la consulta
+      if (onAIConsultation) {
+        // Abrir AI Helper con la consulta pre-rellenada
+        onAIConsultation(searchQuery);
+      } else if (onSearch) {
         onSearch(searchQuery);
       } else {
         // Comportamiento por defecto: abrir modal de solicitud
@@ -95,7 +94,7 @@ export default function ServiceSearch({
       {onAIConsultation && (
         <div className="mt-4 text-center">
           <button
-            onClick={onAIConsultation}
+            onClick={() => onAIConsultation?.()}
             className="inline-flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:from-purple-700 hover:to-blue-700 transition-all duration-200 shadow-md hover:shadow-lg"
           >
             <span className="text-sm font-medium">🤖 Consultar con IA Especialista</span>
