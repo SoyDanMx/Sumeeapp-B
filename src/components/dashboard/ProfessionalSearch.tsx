@@ -3,10 +3,10 @@
 import React, { useState, useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import { supabase } from '@/lib/supabaseClient';
-import type { Profile } from '@/types'; // Importamos el tipo centralizado
+import type { Profesional } from '@/types/supabase'; // Importamos el tipo centralizado
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSearch, faSpinner } from '@fortawesome/free-solid-svg-icons';
-import { ProfessionalCard } from '@/components/ProfessionalCard';
+import ProfessionalCard from '@/components/ProfessionalCard';
 
 // ⚠️ Asumimos la estructura del objeto de ubicación para consistencia en el useMemo
 const DEFAULT_LOCATION = { lat: 19.4326, lng: -99.1332 }; // Centro de CDMX
@@ -20,7 +20,7 @@ const MapDisplay = dynamic(() => import('@/components/MapDisplay'), {
 export const ProfessionalSearch = () => {
   const [service, setService] = useState('');
   const [area, setArea] = useState('');
-  const [results, setResults] = useState<Profile[]>([]); // Tipado correcto en lugar de any[]
+  const [results, setResults] = useState<Profesional[]>([]); // Tipado correcto en lugar de any[]
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
 
@@ -30,7 +30,7 @@ export const ProfessionalSearch = () => {
     return results.map((prof) => ({
       ...prof,
       // Si prof.location es null o undefined, usa DEFAULT_LOCATION
-      location: (prof.location as any) || DEFAULT_LOCATION, 
+      location: DEFAULT_LOCATION, 
     }));
   }, [results]);
 
@@ -108,7 +108,7 @@ export const ProfessionalSearch = () => {
           {!loading && results.length > 0 && (
             <div className="space-y-4">
               {results.map(profile => (
-                <ProfessionalCard key={profile.id} profile={profile} />
+                <ProfessionalCard key={profile.id} professional={profile} />
               ))}
             </div>
           )}

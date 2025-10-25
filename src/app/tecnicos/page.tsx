@@ -1,313 +1,428 @@
 'use client';
 
-import React, { useState, useEffect, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
+import React, { useState, useEffect } from 'react';
+import Head from 'next/head';
+import { supabase } from '@/lib/supabase/client';
+import { Profesional } from '@/types/supabase';
+import ProfessionalCard from '@/components/ProfessionalCard';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
   faSearch, 
-  faFilter, 
-  faStar, 
   faMapMarkerAlt, 
-  faPhone,
-  faUser,
-  faSpinner
+  faStar, 
+  faCheckCircle,
+  faFilter,
+  faSort,
+  faUsers
 } from '@fortawesome/free-solid-svg-icons';
-import { faWhatsapp } from '@fortawesome/free-brands-svg-icons';
-import { supabase } from '@/lib/supabase/client';
-import { Profesional } from '@/types/supabase';
-import Link from 'next/link';
 
-function TecnicosContent() {
-  const [tecnicos, setTecnicos] = useState<Profesional[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedService, setSelectedService] = useState('');
-  const searchParams = useSearchParams();
+// Categorías de servicios principales
+const serviceCategories = [
+  { id: 'plomeria', name: 'Plomería', icon: '🔧' },
+  { id: 'electricidad', name: 'Electricidad', icon: '⚡' },
+  { id: 'carpinteria', name: 'Carpintería', icon: '🔨' },
+  { id: 'pintura', name: 'Pintura', icon: '🎨' },
+  { id: 'aire_acondicionado', name: 'Aire Acondicionado', icon: '❄️' },
+  { id: 'jardineria', name: 'Jardinería', icon: '🌱' },
+  { id: 'limpieza', name: 'Limpieza', icon: '🧽' },
+  { id: 'fumigacion', name: 'Fumigación', icon: '🐛' },
+  { id: 'cctv', name: 'CCTV', icon: '📹' },
+  { id: 'wifi', name: 'WiFi', icon: '📶' }
+];
+
+// Opciones de ordenamiento
+const sortOptions = [
+  { value: 'relevancia', label: 'Más Relevantes' },
+  { value: 'calificacion', label: 'Mejor Calificados' },
+  { value: 'reseñas', label: 'Más Reseñas' },
+  { value: 'nombre', label: 'Nombre A-Z' }
+];
+
+export default function TecnicosPage() {
+  // Estados principales
+  const [professionals, setProfessionals] = useState<Profesional[]>([]);
+  const [filteredProfessionals, setFilteredProfessionals] = useState<Profesional[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   
-  const servicioParam = searchParams.get('servicio') || '';
+  // Estados de filtros
+  const [searchTerm, setSearchTerm] = useState('');
+  const [postalCode, setPostalCode] = useState('');
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [minRating, setMinRating] = useState(0);
+  const [showVerifiedOnly, setShowVerifiedOnly] = useState(false);
+  const [sortBy, setSortBy] = useState('relevancia');
+  
+  // Estados de UI
+  const [showFilters, setShowFilters] = useState(false);
 
-  useEffect(() => {
-    fetchTecnicos();
-  }, []);
-
-  useEffect(() => {
-    if (servicioParam) {
-      setSelectedService(servicioParam);
-    }
-  }, [servicioParam]);
-
-  const fetchTecnicos = async () => {
+  // Función para obtener profesionales
+  const fetchProfessionals = async () => {
     try {
-      setLoading(true);
-      setError(null);
-
-      const { data, error: fetchError } = await supabase
+      setIsLoading(true);
+      // Usar el cliente de Supabase directamente
+      
+      let query = supabase
         .from('profiles')
         .select('*')
         .eq('role', 'profesional')
-        .eq('status', 'active')
-        .order('calificacion_promedio', { ascending: false });
+        .not('full_name', 'is', null);
 
-      if (fetchError) {
-        throw fetchError;
+      // Aplicar filtros
+      if (searchTerm) {
+        query = query.ilike('full_name', `%${searchTerm}%`);
+      }
+      
+      if (postalCode) {
+        query = query.ilike('codigo_postal', `%${postalCode}%`);
+      }
+      
+      if (selectedCategories.length > 0) {
+        query = query.overlaps('areas_servicio', selectedCategories);
+      }
+      
+      if (minRating > 0) {
+        query = query.gte('calificacion_promedio', minRating);
+      }
+      
+      if (showVerifiedOnly) {
+        query = query.eq('is_verified', true);
       }
 
-      setTecnicos(data as Profesional[] || []);
-    } catch (err: any) {
-      console.error('Error fetching técnicos:', err);
-      setError('Error al cargar los técnicos. Por favor, intenta de nuevo.');
+      const { data, error } = await query;
+
+      if (error) {
+        console.error('Error fetching professionals:', error);
+        return;
+      }
+
+      setProfessionals(data || []);
+    } catch (error) {
+      console.error('Error in fetchProfessionals:', error);
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
-  const filteredTecnicos = tecnicos.filter(tecnico => {
-    const matchesSearch = tecnico.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         tecnico.profession?.toLowerCase().includes(searchTerm.toLowerCase());
+  // Función para ordenar profesionales
+  const sortProfessionals = (professionals: Profesional[]) => {
+    const sorted = [...professionals];
     
-    const matchesService = !selectedService || 
-                          tecnico.areas_servicio?.includes(selectedService) ||
-                          tecnico.profession?.toLowerCase().includes(selectedService.toLowerCase());
+    switch (sortBy) {
+      case 'calificacion':
+        return sorted.sort((a, b) => (b.calificacion_promedio || 0) - (a.calificacion_promedio || 0));
+      case 'reseñas':
+        return sorted.sort((a, b) => (b.calificacion_promedio || 0) - (a.calificacion_promedio || 0));
+      case 'nombre':
+        return sorted.sort((a, b) => (a.full_name || '').localeCompare(b.full_name || ''));
+      default:
+        return sorted;
+    }
+  };
+
+  // Efecto para obtener datos
+  useEffect(() => {
+    fetchProfessionals();
+  }, []);
+
+  // Efecto para búsqueda en tiempo real
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (searchTerm || postalCode) {
+        fetchProfessionals();
+      }
+    }, 300); // Debounce de 300ms
+
+    return () => clearTimeout(timeoutId);
+  }, [searchTerm, postalCode]);
+
+  // Efecto para aplicar filtros y ordenamiento
+  useEffect(() => {
+    let filtered = [...professionals];
     
-    return matchesSearch && matchesService;
-  });
+    // Aplicar filtros adicionales
+    if (selectedCategories.length > 0) {
+      filtered = filtered.filter(prof => 
+        prof.areas_servicio && 
+        selectedCategories.some(cat => prof.areas_servicio?.includes(cat))
+      );
+    }
+    
+    if (minRating > 0) {
+      filtered = filtered.filter(prof => 
+        (prof.calificacion_promedio || 0) >= minRating
+      );
+    }
+    
+    if (showVerifiedOnly) {
+      // filtered = filtered.filter(prof => prof.is_verified);
+      // Comentado temporalmente hasta que se añada is_verified al tipo Profesional
+    }
+    
+    // Ordenar resultados
+    const sorted = sortProfessionals(filtered);
+    setFilteredProfessionals(sorted);
+  }, [professionals, selectedCategories, minRating, showVerifiedOnly, sortBy]);
 
-  const services = [
-    'plomeria', 'electricidad', 'aire-acondicionado', 'cerrajeria', 
-    'pintura', 'limpieza', 'jardineria', 'carpinteria', 'construccion', 
-    'tablaroca', 'cctv', 'wifi', 'fumigacion'
-  ];
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <FontAwesomeIcon icon={faSpinner} spin className="text-4xl text-blue-600 mb-4" />
-          <h2 className="text-xl font-semibold text-gray-700">Cargando técnicos...</h2>
-        </div>
-      </div>
+  // Manejar selección de categorías
+  const handleCategoryToggle = (categoryId: string) => {
+    setSelectedCategories(prev => 
+      prev.includes(categoryId) 
+        ? prev.filter(id => id !== categoryId)
+        : [...prev, categoryId]
     );
-  }
+  };
 
-  if (error) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-2xl font-semibold text-red-600 mb-4">Error</h2>
-          <p className="text-gray-600 mb-4">{error}</p>
-          <button 
-            onClick={fetchTecnicos}
-            className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            Intentar de Nuevo
-          </button>
-        </div>
-      </div>
-    );
-  }
+  // Limpiar filtros
+  const clearFilters = () => {
+    setSearchTerm('');
+    setPostalCode('');
+    setSelectedCategories([]);
+    setMinRating(0);
+    setShowVerifiedOnly(false);
+    setSortBy('relevancia');
+  };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <>
+      <Head>
+        <title>Técnicos Verificados en México | Sumee App</title>
+        <meta name="description" content="Encuentra técnicos verificados y calificados en tu zona. Plomeros, electricistas, carpinteros y más profesionales de confianza." />
+        <meta name="keywords" content="técnicos, plomeros, electricistas, carpinteros, servicios, México, verificados" />
+        <meta property="og:title" content="Técnicos Verificados en México | Sumee App" />
+        <meta property="og:description" content="Encuentra técnicos verificados y calificados en tu zona. Plomeros, electricistas, carpinteros y más profesionales de confianza." />
+        <meta property="og:type" content="website" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="Técnicos Verificados en México | Sumee App" />
+        <meta name="twitter:description" content="Encuentra técnicos verificados y calificados en tu zona. Plomeros, electricistas, carpinteros y más profesionales de confianza." />
+      </Head>
+      <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <section className="bg-gradient-to-r from-blue-600 to-purple-700 text-white py-16">
-        <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto text-center">
-            <h1 className="text-4xl md:text-5xl font-bold mb-4">
-              Técnicos Verificados en CDMX
-            </h1>
-            <p className="text-xl text-blue-100 mb-8">
-              Encuentra el profesional perfecto para tu proyecto
-            </p>
+      <div className="bg-white shadow-sm border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">
+                Encuentra el Profesional Perfecto
+              </h1>
+              <p className="mt-2 text-gray-600">
+                Técnicos verificados y calificados en tu zona
+              </p>
+            </div>
+            <button
+              onClick={() => setShowFilters(!showFilters)}
+              className="lg:hidden flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              <FontAwesomeIcon icon={faFilter} />
+              <span>Filtros</span>
+            </button>
           </div>
         </div>
-      </section>
+      </div>
 
-      {/* Filters */}
-      <section className="py-8 bg-white border-b">
-        <div className="container mx-auto px-4">
-          <div className="max-w-6xl mx-auto">
-            <div className="flex flex-col md:flex-row gap-4">
-              {/* Search */}
-              <div className="flex-1">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="flex flex-col lg:flex-row gap-8">
+          {/* Barra de Filtros - Columna Izquierda */}
+          <div className={`lg:w-1/4 ${showFilters ? 'block' : 'hidden lg:block'}`}>
+            <div className="bg-white rounded-lg shadow-sm border p-6 space-y-6">
+              <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+                <FontAwesomeIcon icon={faFilter} className="mr-2" />
+                Filtros
+              </h3>
+
+              {/* Búsqueda por Nombre */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Buscar por Nombre
+                </label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <FontAwesomeIcon icon={faSearch} className="text-gray-400" />
-                  </div>
+                  <FontAwesomeIcon 
+                    icon={faSearch} 
+                    className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                  />
                   <input
                     type="text"
-                    placeholder="Buscar por nombre o especialidad..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Ej: Juan Pérez"
+                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   />
                 </div>
               </div>
 
-              {/* Service Filter */}
-              <div className="md:w-64">
+              {/* Código Postal */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Código Postal
+                </label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <FontAwesomeIcon icon={faFilter} className="text-gray-400" />
-                  </div>
+                  <FontAwesomeIcon 
+                    icon={faMapMarkerAlt} 
+                    className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                  />
+                  <input
+                    type="text"
+                    value={postalCode}
+                    onChange={(e) => setPostalCode(e.target.value)}
+                    placeholder="Ej: 06700"
+                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+              </div>
+
+              {/* Categorías de Servicio */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-3">
+                  Categorías
+                </label>
+                <div className="space-y-2">
+                  {serviceCategories.map((category) => (
+                    <label key={category.id} className="flex items-center">
+                      <input
+                        type="checkbox"
+                        checked={selectedCategories.includes(category.id)}
+                        onChange={() => handleCategoryToggle(category.id)}
+                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      />
+                      <span className="ml-3 text-sm text-gray-700">
+                        {category.icon} {category.name}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {/* Calificación Mínima */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-3">
+                  Calificación Mínima
+                </label>
+                <div className="space-y-2">
+                  {[0, 3, 4, 5].map((rating) => (
+                    <label key={rating} className="flex items-center">
+                      <input
+                        type="radio"
+                        name="minRating"
+                        checked={minRating === rating}
+                        onChange={() => setMinRating(rating)}
+                        className="text-blue-600 focus:ring-blue-500"
+                      />
+                      <span className="ml-3 text-sm text-gray-700">
+                        {rating === 0 ? 'Todas las calificaciones' : `${rating}+ estrellas`}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {/* Solo Verificados */}
+              <div>
+                <label className="flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={showVerifiedOnly}
+                    onChange={(e) => setShowVerifiedOnly(e.target.checked)}
+                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <span className="ml-3 text-sm text-gray-700 flex items-center">
+                    <FontAwesomeIcon icon={faCheckCircle} className="mr-2 text-green-600" />
+                    Solo Verificados
+                  </span>
+                </label>
+              </div>
+
+              {/* Botón Limpiar Filtros */}
+              <button
+                onClick={clearFilters}
+                className="w-full py-2 px-4 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+              >
+                Limpiar Filtros
+              </button>
+            </div>
+          </div>
+
+          {/* Resultados - Columna Derecha */}
+          <div className="lg:w-3/4">
+            {/* Encabezado de Resultados */}
+            <div className="bg-white rounded-lg shadow-sm border p-6 mb-6">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                  <h2 className="text-xl font-semibold text-gray-900">
+                    {isLoading ? 'Cargando...' : `${filteredProfessionals.length} profesionales encontrados`}
+                  </h2>
+                  {!isLoading && (
+                    <p className="text-gray-600 mt-1">
+                      {selectedCategories.length > 0 && `Filtrado por: ${selectedCategories.join(', ')}`}
+                    </p>
+                  )}
+                </div>
+                
+                {/* Ordenamiento */}
+                <div className="flex items-center space-x-2">
+                  <FontAwesomeIcon icon={faSort} className="text-gray-400" />
                   <select
-                    value={selectedService}
-                    onChange={(e) => setSelectedService(e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none"
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value)}
+                    className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   >
-                    <option value="">Todos los servicios</option>
-                    {services.map(service => (
-                      <option key={service} value={service}>
-                        {service.charAt(0).toUpperCase() + service.slice(1).replace('-', ' ')}
+                    {sortOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
                       </option>
                     ))}
                   </select>
                 </div>
               </div>
             </div>
-          </div>
-        </div>
-      </section>
 
-      {/* Results */}
-      <section className="py-12">
-        <div className="container mx-auto px-4">
-          <div className="max-w-6xl mx-auto">
-            <div className="flex justify-between items-center mb-8">
-              <h2 className="text-2xl font-bold text-gray-900">
-                {filteredTecnicos.length} técnicos encontrados
-              </h2>
-              {selectedService && (
-                <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm">
-                  Filtrado por: {selectedService}
-                </span>
-              )}
-            </div>
-
-            {filteredTecnicos.length === 0 ? (
-              <div className="text-center py-12">
-                <FontAwesomeIcon icon={faUser} className="text-6xl text-gray-300 mb-4" />
-                <h3 className="text-xl font-semibold text-gray-700 mb-2">
-                  No se encontraron técnicos
-                </h3>
-                <p className="text-gray-500 mb-4">
-                  Intenta ajustar los filtros de búsqueda
-                </p>
-                <button 
-                  onClick={() => {
-                    setSearchTerm('');
-                    setSelectedService('');
-                  }}
-                  className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
-                >
-                  Limpiar Filtros
-                </button>
-              </div>
-            ) : (
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredTecnicos.map((tecnico) => (
-                  <div key={tecnico.user_id} className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow p-6">
-                    {/* Header */}
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                          {tecnico.avatar_url ? (
-                            <img 
-                              src={tecnico.avatar_url} 
-                              alt={tecnico.full_name}
-                              className="w-12 h-12 rounded-full object-cover"
-                            />
-                          ) : (
-                            <FontAwesomeIcon icon={faUser} className="text-blue-600" />
-                          )}
-                        </div>
-                        <div>
-                          <h3 className="font-semibold text-gray-900">{tecnico.full_name}</h3>
-                          <p className="text-sm text-gray-600">{tecnico.profession}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center space-x-1">
-                        <FontAwesomeIcon icon={faStar} className="text-yellow-400" />
-                        <span className="text-sm font-medium">
-                          {tecnico.calificacion_promedio?.toFixed(1) || '0.0'}
-                        </span>
+            {/* Grid de Profesionales */}
+            {isLoading ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                {[...Array(6)].map((_, i) => (
+                  <div key={i} className="bg-white rounded-lg shadow-sm border p-6 animate-pulse">
+                    <div className="flex items-center space-x-4 mb-4">
+                      <div className="w-16 h-16 bg-gray-200 rounded-full"></div>
+                      <div className="flex-1">
+                        <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                        <div className="h-3 bg-gray-200 rounded w-1/2"></div>
                       </div>
                     </div>
-
-                    {/* Services */}
-                    {tecnico.areas_servicio && tecnico.areas_servicio.length > 0 && (
-                      <div className="mb-4">
-                        <div className="flex flex-wrap gap-1">
-                          {tecnico.areas_servicio.slice(0, 3).map((area, index) => (
-                            <span 
-                              key={index}
-                              className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full"
-                            >
-                              {area}
-                            </span>
-                          ))}
-                          {tecnico.areas_servicio.length > 3 && (
-                            <span className="text-xs text-gray-500">
-                              +{tecnico.areas_servicio.length - 3} más
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Location */}
-                    {tecnico.ubicacion_lat && tecnico.ubicacion_lng && (
-                      <div className="flex items-center text-sm text-gray-600 mb-4">
-                        <FontAwesomeIcon icon={faMapMarkerAlt} className="mr-2" />
-                        <span>Disponible en CDMX</span>
-                      </div>
-                    )}
-
-                    {/* Contact */}
-                    <div className="flex space-x-2">
-                      {tecnico.whatsapp && (
-                        <a
-                          href={`https://wa.me/${tecnico.whatsapp.replace(/[^\d]/g, '')}?text=Hola, te contacté por el servicio a través de Sumee App.`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex-1 bg-green-600 hover:bg-green-700 text-white text-center py-2 px-4 rounded-lg text-sm font-medium transition-colors flex items-center justify-center"
-                        >
-                          <FontAwesomeIcon icon={faWhatsapp} className="mr-2" />
-                          WhatsApp
-                        </a>
-                      )}
-                      {tecnico.phone && (
-                        <a
-                          href={`tel:${tecnico.phone}`}
-                          className="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-center py-2 px-4 rounded-lg text-sm font-medium transition-colors flex items-center justify-center"
-                        >
-                          <FontAwesomeIcon icon={faPhone} className="mr-2" />
-                          Llamar
-                        </a>
-                      )}
+                    <div className="space-y-2">
+                      <div className="h-3 bg-gray-200 rounded"></div>
+                      <div className="h-3 bg-gray-200 rounded w-2/3"></div>
                     </div>
                   </div>
                 ))}
               </div>
+            ) : filteredProfessionals.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                {filteredProfessionals.map((professional) => (
+                  <ProfessionalCard 
+                    key={professional.user_id} 
+                    professional={professional} 
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="bg-white rounded-lg shadow-sm border p-12 text-center">
+                <FontAwesomeIcon icon={faUsers} className="text-6xl text-gray-300 mb-4" />
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                  No se encontraron profesionales
+                </h3>
+                <p className="text-gray-600 mb-6">
+                  Intenta ajustar tus filtros de búsqueda
+                </p>
+                <button
+                  onClick={clearFilters}
+                  className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  Limpiar Filtros
+                </button>
+              </div>
             )}
           </div>
         </div>
-      </section>
-    </div>
-  );
-}
-
-export default function TecnicosPage() {
-  return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <FontAwesomeIcon icon={faSpinner} spin className="text-4xl text-blue-600 mb-4" />
-          <h2 className="text-xl font-semibold text-gray-700">Cargando técnicos...</h2>
-        </div>
       </div>
-    }>
-      <TecnicosContent />
-    </Suspense>
+      </div>
+    </>
   );
 }

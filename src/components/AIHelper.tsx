@@ -4,7 +4,7 @@
 import React, { useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPaperPlane, faSpinner, faBrain, faCheckCircle, faLightbulb, faCog, faBox, faDollarSign, faRobot } from '@fortawesome/free-solid-svg-icons';
-import { ProfessionalCard } from './ProfessionalCard';
+import ProfessionalCard from './ProfessionalCard';
 import { AIDiagnosisChatbot } from './AIDiagnosisChatbot';
 import Link from 'next/link';
 
