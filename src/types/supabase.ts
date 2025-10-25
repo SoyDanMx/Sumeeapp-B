@@ -13,7 +13,7 @@ import { User } from '@supabase/supabase-js';
 
 export type UserRole = 'client' | 'profesional';
 
-export type LeadEstado = 'nuevo' | 'contactado' | 'en_progreso' | 'completado' | 'cancelado';
+export type LeadEstado = 'buscando' | 'aceptado' | 'nuevo' | 'contactado' | 'en_progreso' | 'completado' | 'cancelado';
 
 // =========================================================================
 // INTERFAZ PARA PROFILES (ESQUEMA REAL)
@@ -79,8 +79,13 @@ export interface Lead {
   fecha_creacion: string;
   estado: LeadEstado;
   profesional_asignado_id?: string | null;
+  imagen_url?: string | null;
+  servicio_solicitado?: string | null;
+  urgencia?: string | null;
+  cliente_id?: string | null;
   // Propiedad para datos del profesional asignado (obtenida via JOIN)
   profiles?: Partial<Profile> | null;
+  profesional_asignado?: Partial<Profile> | null;
 }
 
 // =========================================================================

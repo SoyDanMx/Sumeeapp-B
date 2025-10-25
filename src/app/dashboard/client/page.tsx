@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { getClientLeads } from '@/lib/supabase/data';
 import { Lead } from '@/types/supabase';
 import { useAuth } from '@/components/AuthProvider';
+import RequestServiceModal from '@/components/client/RequestServiceModal';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
   faUser, 
@@ -13,7 +14,9 @@ import {
   faSpinner,
   faMapMarkerAlt,
   faPhone,
-  faExclamationTriangle
+  faExclamationTriangle,
+  faPlus,
+  faWrench
 } from '@fortawesome/free-solid-svg-icons';
 import { faWhatsapp } from '@fortawesome/free-brands-svg-icons';
 
@@ -22,6 +25,7 @@ export default function ClientDashboardPage() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
     const fetchLeads = async () => {
@@ -138,9 +142,16 @@ export default function ClientDashboardPage() {
               <p className="text-gray-600 mt-1">Gestiona y sigue el estado de tus solicitudes de servicios</p>
             </div>
             <div className="flex items-center space-x-4">
+              <button
+                onClick={() => setIsModalOpen(true)}
+                className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2"
+              >
+                <FontAwesomeIcon icon={faPlus} />
+                <span>Solicitar un Servicio</span>
+              </button>
               <Link 
                 href="/client-dashboard"
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors"
               >
                 Buscar Profesionales
               </Link>
@@ -160,13 +171,13 @@ export default function ClientDashboardPage() {
             <p className="text-gray-600 mb-6 max-w-md mx-auto">
               Cuando solicites un servicio a través de nuestro formulario, aparecerán aquí para que puedas seguir su estado.
             </p>
-            <Link 
-              href="/"
+            <button
+              onClick={() => setIsModalOpen(true)}
               className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors inline-flex items-center"
             >
-              <FontAwesomeIcon icon={faUser} className="mr-2" />
+              <FontAwesomeIcon icon={faWrench} className="mr-2" />
               Solicitar un Servicio
-            </Link>
+            </button>
           </div>
         ) : (
           <div className="space-y-6">
@@ -224,6 +235,12 @@ export default function ClientDashboardPage() {
           </div>
         )}
       </div>
+
+      {/* Modal de Solicitud de Servicio */}
+      <RequestServiceModal 
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)} 
+      />
     </div>
   );
 }
