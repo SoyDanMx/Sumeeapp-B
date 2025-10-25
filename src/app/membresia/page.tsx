@@ -1,440 +1,246 @@
-// src/app/membresia/page.tsx
-'use client';
-
-import React, { useEffect, useState, useRef } from 'react';
-import { PageLayout } from '@/components/PageLayout';
+import React from 'react';
+import { Metadata } from 'next';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
+  faCheck, 
+  faStar, 
   faShieldAlt, 
-  faComments, 
-  faCheckCircle, 
-  faCrown, 
-  faSpinner, 
-  faExclamationTriangle,
-  faCheck,
-  faStar,
-  faInfinity,
-  faClock,
-  faMobile,
-  faWifi,
-  faUserCheck
+  faClock, 
+  faUsers, 
+  faPhone,
+  faCrown,
+  faArrowRight
 } from '@fortawesome/free-solid-svg-icons';
-import { loadStripe } from '@stripe/stripe-js';
-import { supabase } from '@/lib/supabaseClient';
+import Link from 'next/link';
 
-// Tu clave publicable de Stripe. ¡Debe ser 'pk_live_' o 'pk_test_'!
-const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
-
-// --- Configuración de Stripe ---
-const isStripeLiveMode = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY?.startsWith('pk_live_');
-
-// IDs de precio - usando el ID del botón que ya funciona
-const STRIPE_PRICE_IDS = {
-  test: 'price_1RnBgaE2shKTNR9MlLPyxmzS', // ID de test mode
-  live: 'buy_btn_1RmpzwE2shKTNR9M91kuSgKh' // Usando el buy button ID que sabemos que funciona
+export const metadata: Metadata = {
+  title: 'Membresía Premium - Accede a los Mejores Técnicos de CDMX | Sumee App',
+  description: 'Convierte en miembro premium y accede a los mejores técnicos de Ciudad de México. Servicios verificados, garantía total y respuesta en 2 horas.',
+  keywords: ['membresía premium', 'técnicos CDMX', 'servicios hogar', 'garantía', 'Ciudad de México'],
 };
 
-const STRIPE_PRICE_ID = isStripeLiveMode ? STRIPE_PRICE_IDS.live : STRIPE_PRICE_IDS.test;
-
-// Configuración del botón de Stripe directo (fallback)
-const STRIPE_BUY_BUTTON_ID = 'buy_btn_1RmpzwE2shKTNR9M91kuSgKh';
-const STRIPE_PUBLISHABLE_KEY = 'pk_live_51P8c4AE2shKTNR9MVARQB4La2uYMMc2shlTCcpcg8EI6MqqPV1uN5uj6UbB5mpfReRKd4HL2OP1LoF17WXcYYeB000Ot1l847E';
-
 export default function MembresiaPage() {
-  const [isLoadingCheckout, setIsLoadingCheckout] = useState(false);
-  const [user, setUser] = useState<any | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [useDirectButton, setUseDirectButton] = useState(false);
-  const stripeButtonRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        setUser(user);
-        setIsAuthenticated(!!user);
-      } catch (error) {
-        console.error('Error fetching user:', error);
-        setIsAuthenticated(false);
-      }
-    };
-    
-    fetchUser();
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      setUser(session?.user || null);
-      setIsAuthenticated(!!session?.user);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  // Cargar el botón de Stripe directo cuando sea necesario
-  useEffect(() => {
-    if (useDirectButton && stripeButtonRef.current) {
-      // Limpiar contenido anterior
-      stripeButtonRef.current.innerHTML = '';
-      
-      // Crear y cargar el script del botón de Stripe
-      const script = document.createElement('script');
-      script.src = 'https://js.stripe.com/v3/buy-button.js';
-      script.async = true;
-      
-      // Crear el elemento del botón de Stripe
-      const buyButton = document.createElement('stripe-buy-button');
-      buyButton.setAttribute('buy-button-id', STRIPE_BUY_BUTTON_ID);
-      buyButton.setAttribute('publishable-key', STRIPE_PUBLISHABLE_KEY);
-      
-      // Agregar el botón al contenedor cuando el script se cargue
-      script.onload = () => {
-        if (stripeButtonRef.current) {
-          stripeButtonRef.current.appendChild(buyButton);
-          setError(null); // Limpiar error cuando se carga el botón
-        }
-      };
-      
-      document.head.appendChild(script);
-      
-      return () => {
-        // Limpiar el script al desmontar
-        if (script.parentNode) {
-          script.parentNode.removeChild(script);
-        }
-      };
+  const benefits = [
+    {
+      icon: faCheck,
+      title: 'Acceso a Técnicos Verificados',
+      description: 'Solo profesionales con licencia y experiencia comprobada'
+    },
+    {
+      icon: faShieldAlt,
+      title: 'Garantía Total',
+      description: 'Todos nuestros trabajos tienen garantía de satisfacción'
+    },
+    {
+      icon: faClock,
+      title: 'Respuesta en 2 Horas',
+      description: 'Técnicos disponibles para emergencias y servicios urgentes'
+    },
+    {
+      icon: faUsers,
+      title: 'Múltiples Cotizaciones',
+      description: 'Recibe hasta 3 cotizaciones de diferentes técnicos'
+    },
+    {
+      icon: faPhone,
+      title: 'Soporte 24/7',
+      description: 'Línea de atención disponible las 24 horas del día'
+    },
+    {
+      icon: faStar,
+      title: 'Calificación y Reseñas',
+      description: 'Accede a reseñas reales de otros clientes'
     }
-  }, [useDirectButton]);
+  ];
 
-  // Función para manejar el clic en el botón de compra
-  const handleCheckout = async () => {
-    if (!user) {
-      setError('Debes iniciar sesión para comprar una membresía.');
-      return;
+  const pricingPlans = [
+    {
+      name: 'Plan Básico',
+      price: '$299',
+      period: 'por mes',
+      description: 'Perfecto para servicios ocasionales',
+      features: [
+        'Hasta 2 solicitudes por mes',
+        'Acceso a técnicos verificados',
+        'Garantía de 30 días',
+        'Soporte por chat'
+      ],
+      popular: false
+    },
+    {
+      name: 'Plan Premium',
+      price: '$499',
+      period: 'por mes',
+      description: 'Ideal para hogares activos',
+      features: [
+        'Solicitudes ilimitadas',
+        'Prioridad en respuesta',
+        'Garantía extendida de 90 días',
+        'Soporte telefónico 24/7',
+        'Múltiples cotizaciones',
+        'Descuentos exclusivos'
+      ],
+      popular: true
+    },
+    {
+      name: 'Plan Anual',
+      price: '$4,999',
+      period: 'por año',
+      description: 'Ahorra 2 meses con el plan anual',
+      features: [
+        'Todo del Plan Premium',
+        '2 meses gratis',
+        'Descuentos adicionales',
+        'Soporte prioritario'
+      ],
+      popular: false
     }
-    
-    setIsLoadingCheckout(true);
-    setError(null);
-
-    try {
-      console.log('🚀 Starting checkout process...', { 
-        priceId: STRIPE_PRICE_ID, 
-        userId: user.id,
-        stripeMode: isStripeLiveMode ? 'LIVE' : 'TEST',
-        publishableKey: process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY?.substring(0, 20) + '...'
-      });
-      
-      const response = await fetch('/api/stripe/create-checkout-session', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ 
-          priceId: STRIPE_PRICE_ID,
-          userId: user.id
-        }),
-      });
-
-      console.log('📡 Response status:', response.status, response.statusText);
-
-      // Verificar si la respuesta es JSON válido
-      let responseData;
-      const contentType = response.headers.get('content-type');
-      
-      console.log('📄 Content-Type:', contentType);
-      
-      if (!contentType || !contentType.includes('application/json')) {
-        const textResponse = await response.text();
-        console.error('❌ Non-JSON response received:', textResponse.substring(0, 500));
-        
-        // Verificar si es un error 404
-        if (response.status === 404) {
-          throw new Error('La API de pago no está disponible. Por favor, contacta al soporte.');
-        }
-        
-        throw new Error(`Error del servidor (${response.status}). Inténtalo de nuevo.`);
-      }
-
-      try {
-        responseData = await response.json();
-        console.log('✅ JSON response parsed:', responseData);
-      } catch (parseError) {
-        console.error('❌ JSON parse error:', parseError);
-        const textResponse = await response.text();
-        console.error('Raw response:', textResponse.substring(0, 500));
-        throw new Error('Error al procesar la respuesta del servidor.');
-      }
-
-      if (!response.ok) {
-        throw new Error(responseData.error || responseData.message || 'Error al crear la sesión de checkout.');
-      }
-
-      const { sessionId } = responseData;
-
-      if (!sessionId) {
-        throw new Error('No se recibió el ID de sesión.');
-      }
-
-      // Redirigir a Stripe Checkout
-      const stripe = await stripePromise;
-      if (!stripe) {
-        throw new Error('Error al cargar Stripe.');
-      }
-
-      const { error } = await stripe.redirectToCheckout({
-        sessionId: sessionId,
-      });
-
-      if (error) {
-        console.error('Error al redirigir a Stripe Checkout:', error);
-        throw new Error(`Error al redirigir al pago: ${error.message}`);
-      }
-
-    } catch (error: any) {
-      console.error('Error en el proceso de checkout:', error);
-      
-      // Si es un error de configuración de Stripe, activar el botón directo
-      if (error.message?.includes('Stripe configuration error') || 
-          error.message?.includes('config.authenticator')) {
-        console.log('🔄 Switching to direct Stripe button due to configuration error');
-        setUseDirectButton(true);
-        setError('Configurando método de pago alternativo...');
-        return;
-      }
-      
-      setError(error.message || 'Error al iniciar el pago. Inténtalo de nuevo.');
-    } finally {
-      setIsLoadingCheckout(false);
-    }
-  };
-
-  // El código del `useEffect` para el botón de Stripe con `buy-button.js`
-  // Lo he eliminado aquí porque ahora usaremos un botón propio y la lógica `handleCheckout`
-  // Si deseas mantener el buy-button.js por alguna razón, necesitarías refactorizar
-  // para que no entre en conflicto con el `handleCheckout` o usar el `buy-button`
-  // para llamar a tu API. Por simplicidad, un botón normal es más controlable.
-  // const stripeContainerRef = useRef<HTMLDivElement>(null);
-  // useEffect para buy-button.js va aquí si lo mantienes.
+  ];
 
   return (
-    <PageLayout>
+    <div className="min-h-screen bg-gray-50">
       {/* Hero Section */}
-      <div className="bg-gradient-to-br from-indigo-900 via-blue-800 to-indigo-900 text-white py-20">
-        <div className="container mx-auto px-4 text-center">
-          <div className="max-w-4xl mx-auto">
-            <div className="flex justify-center mb-6">
-              <div className="w-20 h-20 bg-gradient-to-br from-yellow-400 to-yellow-500 rounded-full flex items-center justify-center shadow-2xl">
-                <FontAwesomeIcon icon={faCrown} className="text-4xl text-white" />
-              </div>
-            </div>
-            <h1 className="text-4xl md:text-6xl font-bold mb-6 leading-tight">
-              Accede a Nuestra Red Exclusiva de Profesionales Verificados
-            </h1>
-            <p className="text-xl text-blue-100 mb-8 max-w-3xl mx-auto leading-relaxed">
-              Tu membresía Sumee te da acceso directo a los mejores técnicos de tu zona. 
-              Olvídate de la incertidumbre y contrata con total confianza.
-            </p>
-            <div className="flex flex-wrap justify-center gap-4 text-sm text-blue-200">
-              <div className="flex items-center">
-                <FontAwesomeIcon icon={faUserCheck} className="mr-2" />
-                <span>Profesionales verificados</span>
-              </div>
-              <div className="flex items-center">
-                <FontAwesomeIcon icon={faShieldAlt} className="mr-2" />
-                <span>100% confiable</span>
-              </div>
-              <div className="flex items-center">
-                <FontAwesomeIcon icon={faMobile} className="mr-2" />
-                <span>Contacto directo</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Benefits Section */}
-      <div className="py-20 bg-gray-50">
-        <div className="container mx-auto px-4">
-          <div className="max-w-6xl mx-auto">
-            <div className="text-center mb-16">
-              <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-                ¿Por qué elegir Sumee Premium?
-              </h2>
-              <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-                Desbloquea el acceso completo a nuestra red de técnicos certificados
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
-              <div className="bg-white p-8 rounded-2xl shadow-lg hover:shadow-xl transition-shadow duration-300 border border-gray-100">
-                <div className="w-16 h-16 bg-blue-100 rounded-xl flex items-center justify-center mb-6">
-                  <FontAwesomeIcon icon={faShieldAlt} className="text-2xl text-blue-600" />
-                </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-4">Verificación de Confianza</h3>
-                <p className="text-gray-600 leading-relaxed">
-                  Cada profesional pasa por un riguroso proceso de validación de identidad, 
-                  referencias y certificaciones antes de unirse a nuestra red.
-                </p>
-              </div>
-
-              <div className="bg-white p-8 rounded-2xl shadow-lg hover:shadow-xl transition-shadow duration-300 border border-gray-100">
-                <div className="w-16 h-16 bg-green-100 rounded-xl flex items-center justify-center mb-6">
-                  <FontAwesomeIcon icon={faComments} className="text-2xl text-green-600" />
-                </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-4">Contacto Directo</h3>
-                <p className="text-gray-600 leading-relaxed">
-                  Comunícate directamente con los profesionales para explicar tus necesidades, 
-                  acordar precios justos y coordinar los horarios que más te convengan.
-                </p>
-              </div>
-
-              <div className="bg-white p-8 rounded-2xl shadow-lg hover:shadow-xl transition-shadow duration-300 border border-gray-100">
-                <div className="w-16 h-16 bg-purple-100 rounded-xl flex items-center justify-center mb-6">
-                  <FontAwesomeIcon icon={faCheckCircle} className="text-2xl text-purple-600" />
-                </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-4">Garantía de Satisfacción</h3>
-                <p className="text-gray-600 leading-relaxed">
-                  Contamos con un sistema de reseñas, soporte al cliente y garantías 
-                  para asegurar la calidad de cada trabajo realizado.
-                </p>
-              </div>
-
-              <div className="bg-white p-8 rounded-2xl shadow-lg hover:shadow-xl transition-shadow duration-300 border border-gray-100">
-                <div className="w-16 h-16 bg-orange-100 rounded-xl flex items-center justify-center mb-6">
-                  <FontAwesomeIcon icon={faClock} className="text-2xl text-orange-600" />
-                </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-4">Respuesta Rápida</h3>
-                <p className="text-gray-600 leading-relaxed">
-                  Los profesionales verificados responden en menos de 2 horas y están 
-                  disponibles para emergencias las 24 horas.
-                </p>
-              </div>
-
-              <div className="bg-white p-8 rounded-2xl shadow-lg hover:shadow-xl transition-shadow duration-300 border border-gray-100">
-                <div className="w-16 h-16 bg-red-100 rounded-xl flex items-center justify-center mb-6">
-                  <FontAwesomeIcon icon={faStar} className="text-2xl text-red-600" />
-                </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-4">Calidad Premium</h3>
-                <p className="text-gray-600 leading-relaxed">
-                  Acceso exclusivo a los técnicos mejor calificados de tu área, 
-                  con promedio de 4.8+ estrellas en todas las categorías.
-                </p>
-              </div>
-
-              <div className="bg-white p-8 rounded-2xl shadow-lg hover:shadow-xl transition-shadow duration-300 border border-gray-100">
-                <div className="w-16 h-16 bg-teal-100 rounded-xl flex items-center justify-center mb-6">
-                  <FontAwesomeIcon icon={faInfinity} className="text-2xl text-teal-600" />
-                </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-4">Acceso Ilimitado</h3>
-                <p className="text-gray-600 leading-relaxed">
-                  Sin límites en el número de solicitudes. Contacta a todos los profesionales 
-                  que necesites durante el período de tu membresía.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* CTA Section */}
-      <div className="py-20 bg-white">
+      <section className="bg-gradient-to-r from-blue-600 to-purple-700 text-white py-20">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center">
-            <div className="bg-gradient-to-r from-indigo-600 to-blue-600 rounded-3xl p-12 text-white shadow-2xl">
-              <h2 className="text-3xl md:text-4xl font-bold mb-6">¿Listo para Empezar?</h2>
-              <p className="text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
-                Obtén tu membresía premium ahora y encuentra la solución perfecta para tu hogar.
-              </p>
-              
-              {/* Error Display */}
-              {error && (
-                <div className="mb-6 p-4 bg-red-500/20 border border-red-400/50 rounded-xl">
-                  <div className="flex items-center justify-center space-x-2 text-red-200">
-                    <FontAwesomeIcon icon={faExclamationTriangle} />
-                    <span className="font-medium">{error}</span>
-                  </div>
-                </div>
-              )}
-
-              {/* Auth Status */}
-              {!isAuthenticated && (
-                <div className="mb-6 p-4 bg-yellow-500/20 border border-yellow-400/50 rounded-xl">
-                  <div className="flex items-center justify-center space-x-2 text-yellow-200">
-                    <FontAwesomeIcon icon={faMobile} />
-                    <span className="font-medium">Necesitas iniciar sesión para comprar</span>
-                  </div>
-                </div>
-              )}
-
-              {/* CTA Button */}
-              <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-                {!useDirectButton ? (
-                  <button 
-                    onClick={handleCheckout}
-                    disabled={isLoadingCheckout || !isAuthenticated}
-                    className={`px-12 py-4 rounded-xl text-lg font-bold transition-all duration-200 shadow-lg transform hover:scale-105 flex items-center space-x-3 ${
-                      !isAuthenticated 
-                        ? 'bg-gray-400 text-gray-200 cursor-not-allowed' 
-                        : isLoadingCheckout
-                          ? 'bg-blue-400 text-white cursor-wait'
-                          : 'bg-white text-indigo-600 hover:bg-blue-50 hover:shadow-xl'
-                    }`}
-                  >
-                    {isLoadingCheckout ? (
-                      <>
-                        <FontAwesomeIcon icon={faSpinner} spin className="text-xl" />
-                        <span>Procesando...</span>
-                      </>
-                    ) : (
-                      <>
-                        <FontAwesomeIcon icon={faCrown} className="text-xl" />
-                        <span>Comprar Membresía Premium</span>
-                      </>
-                    )}
-                  </button>
-                ) : (
-                  <div className="flex flex-col items-center space-y-4">
-                    <div ref={stripeButtonRef} className="stripe-button-container"></div>
-                    <button 
-                      onClick={() => setUseDirectButton(false)}
-                      className="px-4 py-2 text-sm text-blue-200 hover:text-white border border-blue-300 hover:border-white rounded-lg transition-colors duration-200"
-                    >
-                      Usar método alternativo
-                    </button>
-                  </div>
-                )}
-                
-                {!isAuthenticated && (
-                  <a 
-                    href="/login"
-                    className="px-8 py-3 text-blue-200 hover:text-white border border-blue-300 hover:border-white rounded-xl transition-colors duration-200"
-                  >
-                    Iniciar Sesión
-                  </a>
-                )}
-              </div>
-
-              {/* Security & Trust Indicators */}
-              <div className="mt-8 pt-8 border-t border-blue-400/30">
-                <div className="flex flex-wrap justify-center items-center gap-6 text-blue-200 text-sm">
-                  <div className="flex items-center space-x-2">
-                    <FontAwesomeIcon icon={faShieldAlt} />
-                    <span>Pago 100% seguro</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <FontAwesomeIcon icon={faCheckCircle} />
-                    <span>Garantía de satisfacción</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <FontAwesomeIcon icon={faWifi} />
-                    <span>Acceso inmediato</span>
-                  </div>
-                </div>
-              </div>
+            <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-6">
+              <FontAwesomeIcon icon={faCrown} className="text-3xl" />
+            </div>
+            <h1 className="text-4xl md:text-5xl font-bold mb-6">
+              Accede a los Mejores Técnicos de CDMX
+            </h1>
+            <p className="text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
+              Convierte en miembro premium y disfruta de servicios de calidad con técnicos verificados, 
+              garantía total y respuesta en menos de 2 horas.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Link 
+                href="#planes"
+                className="bg-white text-blue-600 px-8 py-4 rounded-lg font-semibold text-lg hover:bg-blue-50 transition-colors inline-flex items-center"
+              >
+                Ver Planes
+                <FontAwesomeIcon icon={faArrowRight} className="ml-2" />
+              </Link>
+              <Link 
+                href="/registro-cliente"
+                className="border-2 border-white text-white px-8 py-4 rounded-lg font-semibold text-lg hover:bg-white/10 transition-colors"
+              >
+                ¿Ya tienes cuenta? Inicia Sesión
+              </Link>
             </div>
           </div>
         </div>
-      </div>
-    </PageLayout>
+      </section>
+
+      {/* Benefits Section */}
+      <section className="py-16 bg-white">
+        <div className="container mx-auto px-4">
+          <div className="max-w-6xl mx-auto">
+            <h2 className="text-3xl font-bold text-center text-gray-900 mb-12">
+              ¿Por qué ser miembro premium?
+            </h2>
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {benefits.map((benefit, index) => (
+                <div key={index} className="text-center p-6 bg-gray-50 rounded-lg">
+                  <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <FontAwesomeIcon icon={benefit.icon} className="text-2xl text-blue-600" />
+                  </div>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                    {benefit.title}
+                  </h3>
+                  <p className="text-gray-600">
+                    {benefit.description}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Pricing Section */}
+      <section id="planes" className="py-16 bg-gray-50">
+        <div className="container mx-auto px-4">
+          <div className="max-w-6xl mx-auto">
+            <h2 className="text-3xl font-bold text-center text-gray-900 mb-12">
+              Elige tu Plan Premium
+            </h2>
+            <div className="grid md:grid-cols-3 gap-8">
+              {pricingPlans.map((plan, index) => (
+                <div 
+                  key={index} 
+                  className={`bg-white rounded-xl shadow-lg p-8 relative ${
+                    plan.popular ? 'ring-2 ring-blue-500 transform scale-105' : ''
+                  }`}
+                >
+                  {plan.popular && (
+                    <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
+                      <span className="bg-blue-600 text-white px-4 py-2 rounded-full text-sm font-semibold">
+                        Más Popular
+                      </span>
+                    </div>
+                  )}
+                  
+                  <div className="text-center mb-6">
+                    <h3 className="text-2xl font-bold text-gray-900 mb-2">{plan.name}</h3>
+                    <p className="text-gray-600 mb-4">{plan.description}</p>
+                    <div className="mb-4">
+                      <span className="text-4xl font-bold text-gray-900">{plan.price}</span>
+                      <span className="text-gray-600 ml-2">{plan.period}</span>
+                    </div>
+                  </div>
+
+                  <ul className="space-y-3 mb-8">
+                    {plan.features.map((feature, featureIndex) => (
+                      <li key={featureIndex} className="flex items-center">
+                        <FontAwesomeIcon icon={faCheck} className="text-green-500 mr-3 flex-shrink-0" />
+                        <span className="text-gray-700">{feature}</span>
+                      </li>
+                    ))}
+                  </ul>
+
+                  <Link 
+                    href="/registro-cliente"
+                    className={`w-full py-3 px-6 rounded-lg font-semibold text-center block transition-colors ${
+                      plan.popular
+                        ? 'bg-blue-600 text-white hover:bg-blue-700'
+                        : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
+                    }`}
+                  >
+                    {plan.name === 'Plan Anual' ? 'Ahorrar 2 Meses' : 'Comenzar Ahora'}
+                  </Link>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section className="py-16 bg-blue-600 text-white">
+        <div className="container mx-auto px-4 text-center">
+          <h2 className="text-3xl font-bold mb-4">
+            ¿Listo para acceder a los mejores técnicos?
+          </h2>
+          <p className="text-xl text-blue-100 mb-8">
+            Únete a miles de clientes satisfechos en Ciudad de México
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Link 
+              href="/registro-cliente"
+              className="bg-white text-blue-600 px-8 py-4 rounded-lg font-semibold text-lg hover:bg-blue-50 transition-colors inline-block"
+            >
+              Registrarse Ahora
+            </Link>
+            <Link 
+              href="/login"
+              className="border-2 border-white text-white px-8 py-4 rounded-lg font-semibold text-lg hover:bg-white/10 transition-colors inline-block"
+            >
+              ¿Ya tienes cuenta? Inicia Sesión
+            </Link>
+          </div>
+        </div>
+      </section>
+    </div>
   );
 }
