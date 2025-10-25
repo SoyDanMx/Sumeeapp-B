@@ -39,6 +39,7 @@ interface AIChatHelperProps {
   isOpen: boolean;
   onClose: () => void;
   onServiceSelected?: (service: any) => void;
+  initialQuery?: string;
 }
 
 const SERVICE_SUGGESTIONS = {
@@ -100,7 +101,7 @@ const SERVICE_SUGGESTIONS = {
   }
 };
 
-export default function AIChatHelper({ isOpen, onClose, onServiceSelected }: AIChatHelperProps) {
+export default function AIChatHelper({ isOpen, onClose, onServiceSelected, initialQuery }: AIChatHelperProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -124,8 +125,16 @@ export default function AIChatHelper({ isOpen, onClose, onServiceSelected }: AIC
         timestamp: new Date()
       };
       setMessages([initialMessage]);
+      
+      // Si hay consulta inicial, auto-enviarla
+      if (initialQuery) {
+        setInputValue(initialQuery);
+        setTimeout(() => {
+          handleSendMessage(initialQuery);
+        }, 1000);
+      }
     }
-  }, [isOpen]);
+  }, [isOpen, initialQuery]);
 
   const generateAIResponse = async (query: string): Promise<{ response: string; serviceSuggestion?: any }> => {
     // Simular delay de IA
@@ -170,13 +179,14 @@ export default function AIChatHelper({ isOpen, onClose, onServiceSelected }: AIC
     };
   };
 
-  const handleSendMessage = async () => {
-    if (!inputValue.trim() || isLoading) return;
+  const handleSendMessage = async (query?: string) => {
+    const messageToSend = query || inputValue;
+    if (!messageToSend.trim() || isLoading) return;
 
     const userMessage: Message = {
       id: Date.now().toString(),
       role: 'user',
-      content: inputValue,
+      content: messageToSend,
       timestamp: new Date()
     };
 
@@ -185,7 +195,7 @@ export default function AIChatHelper({ isOpen, onClose, onServiceSelected }: AIC
     setIsLoading(true);
 
     try {
-      const aiResponse = await generateAIResponse(inputValue);
+      const aiResponse = await generateAIResponse(messageToSend);
       
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
@@ -324,7 +334,7 @@ export default function AIChatHelper({ isOpen, onClose, onServiceSelected }: AIC
               disabled={isLoading}
             />
             <button
-              onClick={handleSendMessage}
+              onClick={() => handleSendMessage()}
               disabled={!inputValue.trim() || isLoading}
               className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
             >

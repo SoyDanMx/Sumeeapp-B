@@ -336,6 +336,7 @@ function IntelligentCTA() {
 export default function ServicesPage() {
   const [isAIChatOpen, setIsAIChatOpen] = useState(false);
   const [selectedService, setSelectedService] = useState(null);
+  const [initialQuery, setInitialQuery] = useState<string>('');
   
   const services = getServices();
   
@@ -343,7 +344,10 @@ export default function ServicesPage() {
   const popularServices = services.filter(service => service.is_popular);
   const allServices = services.filter(service => !service.is_popular);
 
-  const handleAIConsultation = () => {
+  const handleAIConsultation = (query?: string) => {
+    if (query) {
+      setInitialQuery(query);
+    }
     setIsAIChatOpen(true);
   };
 
@@ -371,6 +375,7 @@ export default function ServicesPage() {
             <div className="max-w-3xl mx-auto">
               <ServiceSearch 
                 placeholder="¿Qué problema necesitas resolver? (Ej: fuga de agua, instalar lámpara, pintar habitación)"
+                onAIConsultation={handleAIConsultation}
               />
             </div>
           </div>
@@ -463,6 +468,7 @@ export default function ServicesPage() {
         isOpen={isAIChatOpen}
         onClose={() => setIsAIChatOpen(false)}
         onServiceSelected={handleServiceSelected}
+        initialQuery={initialQuery}
       />
     </div>
   );
