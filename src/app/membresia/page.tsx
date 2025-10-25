@@ -8,7 +8,7 @@ import {
   faClock, 
   faUsers, 
   faPhone,
-  faCrown,
+  faCrown, 
   faArrowRight,
   faCamera,
   faMobile,
@@ -66,7 +66,7 @@ export default function MembresiaPage() {
       name: 'Plan Básico',
       price: '$299',
       period: 'MXN / anual',
-      description: 'Perfecto para reparaciones y servicios ocasionales',
+      description: 'Perfecto para reparaciones y servicios ocasionales - Suscripción anual',
       features: [
         { icon: faUsers, text: 'Hasta 2 solicitudes de servicio por mes' },
         { icon: faCheck, text: 'Acceso a técnicos verificados' },
@@ -76,7 +76,7 @@ export default function MembresiaPage() {
         { icon: faHeadset, text: 'Soporte por chat' }
       ],
       popular: false,
-      buyButtonId: 'buy_btn_1RmpzwE2shKTNR9M91kuSgKh'
+      buyButtonId: 'buy_btn_1SLx83E2shKTNR9MwlSZog2K'
     },
     {
       name: 'Plan Premium',
@@ -142,13 +142,13 @@ export default function MembresiaPage() {
           <div className="max-w-6xl mx-auto">
             <h2 className="text-3xl font-bold text-center text-gray-900 mb-12">
               ¿Por qué ser miembro premium?
-            </h2>
+              </h2>
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
               {benefits.map((benefit, index) => (
                 <div key={index} className="text-center p-6 bg-gray-50 rounded-lg">
                   <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
                     <FontAwesomeIcon icon={benefit.icon} className="text-2xl text-blue-600" />
-                  </div>
+            </div>
                   <h3 className="text-xl font-semibold text-gray-900 mb-2">
                     {benefit.title}
                   </h3>
@@ -190,9 +190,9 @@ export default function MembresiaPage() {
                       <span className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-full text-sm font-bold shadow-lg">
                         ⭐ Más Popular
                       </span>
-                    </div>
-                  )}
-                  
+                </div>
+              )}
+
                   <div className="text-center mb-8">
                     <div className="flex items-center justify-center mb-4">
                       <div className={`w-16 h-16 rounded-full flex items-center justify-center ${
@@ -202,8 +202,8 @@ export default function MembresiaPage() {
                           icon={plan.popular ? faCrown : faCheck} 
                           className={`text-2xl ${plan.popular ? 'text-white' : 'text-blue-600'}`} 
                         />
-                      </div>
-                    </div>
+                  </div>
+                </div>
                     
                     <h3 className="text-3xl font-bold text-gray-900 mb-2">{plan.name}</h3>
                     <p className="text-gray-600 mb-2 text-lg">{plan.description}</p>
@@ -214,6 +214,13 @@ export default function MembresiaPage() {
                     <div className="mb-6">
                       <span className="text-5xl font-bold text-gray-900">{plan.price}</span>
                       <span className="text-gray-600 ml-2 text-lg">{plan.period}</span>
+                      {plan.name === 'Plan Básico' && (
+                        <div className="mt-2">
+                          <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                            🔄 Suscripción Recurrente Anual
+                          </span>
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -231,7 +238,7 @@ export default function MembresiaPage() {
                           />
                         </div>
                         <span className="text-gray-700 font-medium">{feature.text}</span>
-                      </div>
+              </div>
                     ))}
                   </div>
 
@@ -246,7 +253,7 @@ export default function MembresiaPage() {
                       <p className="text-xs text-gray-500">
                         Pago seguro procesado por Stripe
                       </p>
-                    </div>
+                  </div>
                   </div>
                 </div>
               ))}
@@ -298,6 +305,6 @@ export default function MembresiaPage() {
           </div>
         </div>
       </section>
-    </div>
+      </div>
   );
 }
