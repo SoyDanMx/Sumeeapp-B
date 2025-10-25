@@ -14,7 +14,9 @@ import {
   faHammer,
   faVideo,
   faWifi,
-  faBug
+  faBug,
+  faHardHat,
+  faCubes
 } from '@fortawesome/free-solid-svg-icons';
 
 interface PopularService {
@@ -130,6 +132,24 @@ const popularServices: PopularService[] = [
     color: 'text-red-600',
     bgColor: 'bg-red-50',
     hoverColor: 'hover:bg-red-100'
+  },
+  {
+    name: 'Arquitectos & Ingenieros',
+    icon: faHardHat,
+    href: '/servicios/construccion',
+    description: 'Especialistas en construcción',
+    color: 'text-indigo-600',
+    bgColor: 'bg-indigo-50',
+    hoverColor: 'hover:bg-indigo-100'
+  },
+  {
+    name: 'Tablaroca',
+    icon: faCubes,
+    href: '/servicios/tablaroca',
+    description: 'Construcción en seco',
+    color: 'text-orange-600',
+    bgColor: 'bg-orange-50',
+    hoverColor: 'hover:bg-orange-100'
   }
 ];
 

@@ -4,9 +4,11 @@
 import React from 'react';
 import Link from 'next/link'; // 1. Importamos Link para la navegación
 import { ServiceCard } from './ServiceCard';
-import { servicesData } from '@/lib/servicesData'; // 2. Importamos los datos desde el archivo central
+import { getPopularServices } from '@/lib/servicesData'; // 2. Importamos los datos desde el archivo central
 
 export const ServicesSection = () => {
+  const popularServices = getPopularServices();
+  
   return (
     <section className="py-16 bg-white" id="servicios">
       <div className="container mx-auto px-4">
@@ -15,15 +17,15 @@ export const ServicesSection = () => {
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">Encuentra expertos calificados para cualquier proyecto en tu hogar</p>
         </div>
         
-        {/* Mostramos solo los primeros 6 servicios para una UI limpia en la página de inicio. */}
+        {/* Mostramos solo los servicios populares para una UI limpia en la página de inicio. */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {servicesData.slice(0, 6).map((service) => (
+          {popularServices.slice(0, 6).map((service) => (
             <ServiceCard 
-              key={service.name}
+              key={service.slug}
               name={service.name}
-              rating={service.rating}
-              image={service.image}
-              priceRange={service.priceRange}
+              rating={4.8} // Rating fijo por ahora
+              image={`/images/services/${service.slug}.jpg`} // Imagen basada en slug
+              priceRange="Desde $200" // Precio fijo por ahora
             />
           ))}
         </div>
