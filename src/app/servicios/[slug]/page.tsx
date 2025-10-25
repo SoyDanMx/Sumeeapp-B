@@ -149,6 +149,11 @@ const DISCIPLINE_CONFIG = {
 export default async function ServicePage({ params }: ServicePageProps) {
   const { slug } = await params;
   
+  // Validación robusta del slug
+  if (!slug || typeof slug !== 'string') {
+    notFound();
+  }
+  
   const config = DISCIPLINE_CONFIG[slug as keyof typeof DISCIPLINE_CONFIG];
   
   if (!config) {

@@ -3,10 +3,8 @@ import Link from 'next/link';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { IconDefinition } from '@fortawesome/fontawesome-svg-core';
 import * as solidIcons from '@fortawesome/free-solid-svg-icons';
-import { Service } from '@/types/supabase';
-
 interface ServiceCardProps {
-  service: Service;
+  service: any;
 }
 
 const getIcon = (iconName: string): IconDefinition | null => {
