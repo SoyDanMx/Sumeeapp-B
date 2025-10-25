@@ -1,5 +1,5 @@
 import React from 'react';
-import { createSupabaseServerClient } from '@/lib/supabase/server-new';
+import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { Service, ServiceCategory } from '@/types/supabase';
 import ServiceCard from '@/components/services/ServiceCard';
 import ServiceSearch from '@/components/services/ServiceSearch';
