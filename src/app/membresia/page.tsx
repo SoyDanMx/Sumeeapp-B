@@ -9,9 +9,17 @@ import {
   faUsers, 
   faPhone,
   faCrown,
-  faArrowRight
+  faArrowRight,
+  faCamera,
+  faMobile,
+  faHistory,
+  faHeadset,
+  faConciergeBell,
+  faTrophy,
+  faInfinity
 } from '@fortawesome/free-solid-svg-icons';
 import Link from 'next/link';
+import StripeBuyButton from '@/components/stripe/StripeBuyButton';
 
 export const metadata: Metadata = {
   title: 'Membresía Premium - Accede a los Mejores Técnicos de CDMX | Sumee App',
@@ -57,45 +65,41 @@ export default function MembresiaPage() {
     {
       name: 'Plan Básico',
       price: '$299',
-      period: 'por mes',
-      description: 'Perfecto para servicios ocasionales',
+      period: 'MXN / anual',
+      description: 'Perfecto para reparaciones y servicios ocasionales',
       features: [
-        'Hasta 2 solicitudes por mes',
-        'Acceso a técnicos verificados',
-        'Garantía de 30 días',
-        'Soporte por chat'
+        { icon: faUsers, text: 'Hasta 2 solicitudes de servicio por mes' },
+        { icon: faCheck, text: 'Acceso a técnicos verificados' },
+        { icon: faCamera, text: 'Diagnóstico inicial por Foto/Video' },
+        { icon: faMobile, text: 'Seguimiento completo en la App' },
+        { icon: faShieldAlt, text: 'Garantía Sumee de 30 días' },
+        { icon: faHeadset, text: 'Soporte por chat' }
       ],
-      popular: false
+      popular: false,
+      buyButtonId: 'buy_btn_1RmpzwE2shKTNR9M91kuSgKh'
     },
     {
       name: 'Plan Premium',
       price: '$499',
-      period: 'por mes',
-      description: 'Ideal para hogares activos',
+      period: 'MXN / anual',
+      description: 'La tranquilidad total para tu hogar u oficina',
+      subtitle: 'Recomendado para Administradores de Edificios, Contratistas, Arquitectos, Ingenieros y más',
       features: [
-        'Solicitudes ilimitadas',
-        'Prioridad en respuesta',
-        'Garantía extendida de 90 días',
-        'Soporte telefónico 24/7',
-        'Múltiples cotizaciones',
-        'Descuentos exclusivos'
+        { icon: faInfinity, text: 'Solicitudes de servicio ilimitadas' },
+        { icon: faClock, text: 'Prioridad en asignación y respuesta' },
+        { icon: faTrophy, text: 'Acceso exclusivo a técnicos "Sumee Pro"' },
+        { icon: faShieldAlt, text: 'Garantía extendida Sumee de 90 días' },
+        { icon: faConciergeBell, text: 'Servicio de Conserjería (Concierge)' },
+        { icon: faUsers, text: 'Múltiples cotizaciones para proyectos grandes' },
+        { icon: faHistory, text: 'Historial de Mantenimiento del Hogar' },
+        { icon: faPhone, text: 'Soporte prioritario por teléfono y WhatsApp 24/7' }
       ],
-      popular: true
-    },
-    {
-      name: 'Plan Anual',
-      price: '$4,999',
-      period: 'por año',
-      description: 'Ahorra 2 meses con el plan anual',
-      features: [
-        'Todo del Plan Premium',
-        '2 meses gratis',
-        'Descuentos adicionales',
-        'Soporte prioritario'
-      ],
-      popular: false
+      popular: true,
+      buyButtonId: 'buy_btn_1SLwlqE2shKTNR9MmwebXHlB'
     }
   ];
+
+  const publishableKey = 'pk_live_51P8c4AE2shKTNR9MVARQB4La2uYMMc2shlTCcpcg8EI6MqqPV1uN5uj6UbB5mpfReRKd4HL2OP1LoF17WXcYYeB000Ot1l847E';
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -162,55 +166,108 @@ export default function MembresiaPage() {
       <section id="planes" className="py-16 bg-gray-50">
         <div className="container mx-auto px-4">
           <div className="max-w-6xl mx-auto">
-            <h2 className="text-3xl font-bold text-center text-gray-900 mb-12">
-              Elige tu Plan Premium
-            </h2>
-            <div className="grid md:grid-cols-3 gap-8">
+            <div className="text-center mb-12">
+              <h2 className="text-4xl font-bold text-gray-900 mb-4">
+                Elige el Plan Perfecto para Ti
+              </h2>
+              <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+                Accede a los mejores técnicos de CDMX con garantía total y respuesta en menos de 2 horas
+              </p>
+            </div>
+            
+            <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
               {pricingPlans.map((plan, index) => (
                 <div 
                   key={index} 
-                  className={`bg-white rounded-xl shadow-lg p-8 relative ${
-                    plan.popular ? 'ring-2 ring-blue-500 transform scale-105' : ''
+                  className={`bg-white rounded-2xl shadow-xl p-8 relative transition-all duration-300 hover:shadow-2xl ${
+                    plan.popular 
+                      ? 'ring-4 ring-blue-500 ring-opacity-50 transform scale-105 border-2 border-blue-200' 
+                      : 'border-2 border-gray-200 hover:border-blue-300'
                   }`}
                 >
                   {plan.popular && (
-                    <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                      <span className="bg-blue-600 text-white px-4 py-2 rounded-full text-sm font-semibold">
-                        Más Popular
+                    <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 z-10">
+                      <span className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-full text-sm font-bold shadow-lg">
+                        ⭐ Más Popular
                       </span>
                     </div>
                   )}
                   
-                  <div className="text-center mb-6">
-                    <h3 className="text-2xl font-bold text-gray-900 mb-2">{plan.name}</h3>
-                    <p className="text-gray-600 mb-4">{plan.description}</p>
-                    <div className="mb-4">
-                      <span className="text-4xl font-bold text-gray-900">{plan.price}</span>
-                      <span className="text-gray-600 ml-2">{plan.period}</span>
+                  <div className="text-center mb-8">
+                    <div className="flex items-center justify-center mb-4">
+                      <div className={`w-16 h-16 rounded-full flex items-center justify-center ${
+                        plan.popular ? 'bg-gradient-to-r from-blue-500 to-purple-600' : 'bg-blue-100'
+                      }`}>
+                        <FontAwesomeIcon 
+                          icon={plan.popular ? faCrown : faCheck} 
+                          className={`text-2xl ${plan.popular ? 'text-white' : 'text-blue-600'}`} 
+                        />
+                      </div>
+                    </div>
+                    
+                    <h3 className="text-3xl font-bold text-gray-900 mb-2">{plan.name}</h3>
+                    <p className="text-gray-600 mb-2 text-lg">{plan.description}</p>
+                    {plan.subtitle && (
+                      <p className="text-sm text-blue-600 font-medium mb-4">{plan.subtitle}</p>
+                    )}
+                    
+                    <div className="mb-6">
+                      <span className="text-5xl font-bold text-gray-900">{plan.price}</span>
+                      <span className="text-gray-600 ml-2 text-lg">{plan.period}</span>
                     </div>
                   </div>
 
-                  <ul className="space-y-3 mb-8">
+                  <div className="space-y-4 mb-8">
                     {plan.features.map((feature, featureIndex) => (
-                      <li key={featureIndex} className="flex items-center">
-                        <FontAwesomeIcon icon={faCheck} className="text-green-500 mr-3 flex-shrink-0" />
-                        <span className="text-gray-700">{feature}</span>
-                      </li>
+                      <div key={featureIndex} className="flex items-start space-x-3">
+                        <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${
+                          plan.popular ? 'bg-blue-100' : 'bg-green-100'
+                        }`}>
+                          <FontAwesomeIcon 
+                            icon={feature.icon} 
+                            className={`text-sm ${
+                              plan.popular ? 'text-blue-600' : 'text-green-600'
+                            }`} 
+                          />
+                        </div>
+                        <span className="text-gray-700 font-medium">{feature.text}</span>
+                      </div>
                     ))}
-                  </ul>
+                  </div>
 
-                  <Link 
-                    href="/registro-cliente"
-                    className={`w-full py-3 px-6 rounded-lg font-semibold text-center block transition-colors ${
-                      plan.popular
-                        ? 'bg-blue-600 text-white hover:bg-blue-700'
-                        : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
-                    }`}
-                  >
-                    {plan.name === 'Plan Anual' ? 'Ahorrar 2 Meses' : 'Comenzar Ahora'}
-                  </Link>
+                  <div className="space-y-4">
+                    <StripeBuyButton
+                      buyButtonId={plan.buyButtonId}
+                      publishableKey={publishableKey}
+                      className="w-full"
+                    />
+                    
+                    <div className="text-center">
+                      <p className="text-xs text-gray-500">
+                        Pago seguro procesado por Stripe
+                      </p>
+                    </div>
+                  </div>
                 </div>
               ))}
+            </div>
+            
+            {/* Trust Indicators */}
+            <div className="mt-16 text-center">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
+                <div className="flex items-center justify-center space-x-2 text-gray-600">
+                  <FontAwesomeIcon icon={faShieldAlt} className="text-blue-600 text-xl" />
+                  <span className="font-medium">Pago 100% Seguro</span>
+                </div>
+                <div className="flex items-center justify-center space-x-2 text-gray-600">
+                  <FontAwesomeIcon icon={faClock} className="text-green-600 text-xl" />
+                  <span className="font-medium">Cancelación en cualquier momento</span>
+                </div>
+                <div className="flex items-center justify-center space-x-2 text-gray-600">
+                  <FontAwesomeIcon icon={faStar} className="text-yellow-600 text-xl" />
+                  <span className="font-medium">Garantía de satisfacción</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
