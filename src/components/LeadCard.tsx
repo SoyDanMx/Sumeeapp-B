@@ -3,7 +3,8 @@
 import { Lead } from '@/types/supabase';
 import React, { useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCheck, faSpinner, faUser } from '@fortawesome/free-solid-svg-icons';
+import { faCheck, faSpinner, faUser, faQuestion, faPhone } from '@fortawesome/free-solid-svg-icons';
+import { faWhatsapp as faWhatsappBrand } from '@fortawesome/free-brands-svg-icons';
 import { acceptLead } from '@/lib/supabase/data';
 import { supabase } from '@/lib/supabase/client';
 
@@ -111,26 +112,54 @@ export default function LeadCard({ lead, profesionalLat, profesionalLng, isSelec
                 </div>
             </div>
 
-            {/* Botón Aceptar Proyecto - Solo si está en estado 'Nuevo' */}
-            {lead.estado?.toLowerCase() === 'nuevo' && !accepted && (
+            {/* Botones de Acción - Solo si está en estado 'buscando' o 'nuevo' */}
+            {(lead.estado?.toLowerCase() === 'buscando' || lead.estado?.toLowerCase() === 'nuevo') && !accepted && (
                 <div className="mt-3 pt-3 border-t border-gray-200">
-                    <button
-                        onClick={handleAcceptLead}
-                        disabled={isAccepting}
-                        className="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white py-2 px-4 rounded-lg text-sm font-medium transition-colors flex items-center justify-center space-x-2"
-                    >
-                        {isAccepting ? (
-                            <>
-                                <FontAwesomeIcon icon={faSpinner} spin />
-                                <span>Aceptando...</span>
-                            </>
-                        ) : (
-                            <>
-                                <FontAwesomeIcon icon={faCheck} />
-                                <span>Aceptar Proyecto</span>
-                            </>
-                        )}
-                    </button>
+                    <div className="grid grid-cols-1 gap-2">
+                        <button
+                            onClick={handleAcceptLead}
+                            disabled={isAccepting}
+                            className="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white py-2 px-4 rounded-lg text-sm font-medium transition-colors flex items-center justify-center space-x-2"
+                        >
+                            {isAccepting ? (
+                                <>
+                                    <FontAwesomeIcon icon={faSpinner} spin />
+                                    <span>Aceptando...</span>
+                                </>
+                            ) : (
+                                <>
+                                    <FontAwesomeIcon icon={faCheck} />
+                                    <span>Aceptar Trabajo</span>
+                                </>
+                            )}
+                        </button>
+                        
+                        <div className="grid grid-cols-2 gap-2">
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    // TODO: Implementar chat
+                                    alert('Función de chat próximamente');
+                                }}
+                                className="bg-yellow-500 hover:bg-yellow-600 text-white py-2 px-3 rounded-lg text-xs font-medium transition-colors flex items-center justify-center space-x-1"
+                            >
+                                <FontAwesomeIcon icon={faQuestion} />
+                                <span>Preguntar</span>
+                            </button>
+                            
+                            {lead.whatsapp && (
+                                <a
+                                    href={`https://wa.me/${lead.whatsapp.replace(/[^\d]/g, '')}?text=Hola, soy un técnico de Sumee App y vi tu solicitud. ¿Podemos coordinar el servicio?`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="bg-green-500 hover:bg-green-600 text-white py-2 px-3 rounded-lg text-xs font-medium transition-colors flex items-center justify-center space-x-1"
+                                >
+                                    <FontAwesomeIcon icon={faWhatsappBrand} />
+                                    <span>WhatsApp</span>
+                                </a>
+                            )}
+                        </div>
+                    </div>
                 </div>
             )}
 
