@@ -115,26 +115,49 @@ export default function AIAdvisor({ onServiceRecommendation }: AIAdvisorProps) {
   const detectSpecialist = (query: string): string => {
     const lowerQuery = query.toLowerCase();
     
-    // Detectar especialista basado en palabras clave
-    if (lowerQuery.includes('electricidad') || lowerQuery.includes('corto') || lowerQuery.includes('luz') || lowerQuery.includes('energía')) {
+    // Detectar especialista basado en palabras clave más específicas
+    if (lowerQuery.includes('electricidad') || lowerQuery.includes('corto') || lowerQuery.includes('luz') || 
+        lowerQuery.includes('energía') || lowerQuery.includes('contacto') || lowerQuery.includes('cable') ||
+        lowerQuery.includes('tablero') || lowerQuery.includes('luminaria') || lowerQuery.includes('corto circuito') ||
+        lowerQuery.includes('disyuntor') || lowerQuery.includes('chispa') || lowerQuery.includes('quemado')) {
       return 'electricista';
     }
-    if (lowerQuery.includes('agua') || lowerQuery.includes('fuga') || lowerQuery.includes('plomería') || lowerQuery.includes('drenaje')) {
+    if (lowerQuery.includes('agua') || lowerQuery.includes('fuga') || lowerQuery.includes('plomería') || 
+        lowerQuery.includes('drenaje') || lowerQuery.includes('baño') || lowerQuery.includes('lavabo') ||
+        lowerQuery.includes('tinaco') || lowerQuery.includes('boiler') || lowerQuery.includes('llave') ||
+        lowerQuery.includes('tubería') || lowerQuery.includes('desagüe') || lowerQuery.includes('sanitario') ||
+        lowerQuery.includes('wc') || lowerQuery.includes('regadera') || lowerQuery.includes('grifo')) {
       return 'plomero';
     }
-    if (lowerQuery.includes('construcción') || lowerQuery.includes('obra') || lowerQuery.includes('tablaroca') || lowerQuery.includes('albañilería')) {
+    if (lowerQuery.includes('construcción') || lowerQuery.includes('obra') || lowerQuery.includes('tablaroca') || 
+        lowerQuery.includes('albañilería') || lowerQuery.includes('muro') || lowerQuery.includes('pared') ||
+        lowerQuery.includes('cemento') || lowerQuery.includes('ladrillo') || lowerQuery.includes('yeso') ||
+        lowerQuery.includes('pintura') || lowerQuery.includes('remodelación') || lowerQuery.includes('ampliación')) {
       return 'construccion';
     }
-    if (lowerQuery.includes('wifi') || lowerQuery.includes('red') || lowerQuery.includes('cctv') || lowerQuery.includes('cámara')) {
+    if (lowerQuery.includes('wifi') || lowerQuery.includes('red') || lowerQuery.includes('cctv') || 
+        lowerQuery.includes('cámara') || lowerQuery.includes('seguridad') || lowerQuery.includes('alarma') ||
+        lowerQuery.includes('monitoreo') || lowerQuery.includes('vigilancia') || lowerQuery.includes('router') ||
+        lowerQuery.includes('internet') || lowerQuery.includes('señal') || lowerQuery.includes('conectividad')) {
       return 'tecnologia';
     }
-    if (lowerQuery.includes('aire') || lowerQuery.includes('clima') || lowerQuery.includes('ventilación') || lowerQuery.includes('calefacción')) {
+    if (lowerQuery.includes('aire') || lowerQuery.includes('clima') || lowerQuery.includes('ventilación') || 
+        lowerQuery.includes('calefacción') || lowerQuery.includes('frío') || lowerQuery.includes('calor') ||
+        lowerQuery.includes('minisplit') || lowerQuery.includes('compresor') || lowerQuery.includes('refrigeración') ||
+        lowerQuery.includes('ventilador') || lowerQuery.includes('acondicionado') || lowerQuery.includes('hvac')) {
       return 'hvac';
     }
-    if (lowerQuery.includes('limpieza') || lowerQuery.includes('jardín') || lowerQuery.includes('mantenimiento')) {
+    if (lowerQuery.includes('limpieza') || lowerQuery.includes('limpio') || lowerQuery.includes('sucio') ||
+        lowerQuery.includes('lavado') || lowerQuery.includes('limpiar') || lowerQuery.includes('mantenimiento') ||
+        lowerQuery.includes('jardín') || lowerQuery.includes('planta') || lowerQuery.includes('pasto') ||
+        lowerQuery.includes('césped') || lowerQuery.includes('verde') || lowerQuery.includes('jardinería') ||
+        lowerQuery.includes('poda') || lowerQuery.includes('riego') || lowerQuery.includes('fertilización')) {
       return 'limpieza';
     }
-    if (lowerQuery.includes('plaga') || lowerQuery.includes('fumigación') || lowerQuery.includes('insecto')) {
+    if (lowerQuery.includes('plaga') || lowerQuery.includes('fumigación') || lowerQuery.includes('insecto') ||
+        lowerQuery.includes('cucaracha') || lowerQuery.includes('rata') || lowerQuery.includes('mosquito') ||
+        lowerQuery.includes('control de plagas') || lowerQuery.includes('roedor') || lowerQuery.includes('hormiga') ||
+        lowerQuery.includes('araña') || lowerQuery.includes('termita')) {
       return 'fumigacion';
     }
     
@@ -150,44 +173,44 @@ export default function AIAdvisor({ onServiceRecommendation }: AIAdvisorProps) {
     
     const responses = {
       electricista: [
-        "Como Ingeniero Eléctrico, te recomiendo revisar inmediatamente el sistema eléctrico. Los cortos circuitos pueden ser peligrosos. ¿El problema es en toda la casa o solo en un área específica?",
-        "Para problemas eléctricos, es crucial identificar si es un corto circuito, sobrecarga o falla en el medidor. ¿Puedes describir exactamente qué está pasando?",
-        "Los problemas eléctricos requieren atención inmediata por seguridad. Te recomiendo contactar a un electricista certificado para una evaluación completa."
+        "🔌 Como Ingeniero Eléctrico certificado, puedo ayudarte a diagnosticar el problema. Para darte la mejor asesoría, necesito más detalles: ¿El problema es en toda la casa o solo en un área específica? ¿Hay olor a quemado?",
+        "⚡ Los problemas eléctricos pueden ser peligrosos. ¿Puedes describir exactamente qué está pasando? ¿Se fue la luz completamente o hay chispas? ¿Cuándo empezó el problema?",
+        "🔧 Para una evaluación segura, necesito saber: ¿El tablero principal tiene disyuntores disparados? ¿Hay humedad cerca de los contactos? ¿Es un problema nuevo o recurrente?"
       ],
       plomero: [
-        "Como especialista en sistemas hidráulicos, las fugas de agua pueden causar daños estructurales. ¿La fuga es visible o sospechas que está en las tuberías ocultas?",
-        "Para diagnosticar el problema hidráulico, necesito saber: ¿es agua fría o caliente? ¿En qué área de la casa? ¿Hay humedad en paredes o techos?",
-        "Las fugas de agua requieren atención inmediata. Te recomiendo cerrar la llave de paso principal y contactar a un plomero especializado."
+        "🚰 Como especialista en sistemas hidráulicos, las fugas pueden causar daños graves. ¿La fuga es visible o sospechas que está oculta? ¿En qué área de la casa?",
+        "💧 Para diagnosticar correctamente, necesito saber: ¿Es agua fría o caliente? ¿Hay humedad en paredes o techos? ¿El problema es constante o intermitente?",
+        "🔧 Las fugas requieren atención inmediata. ¿Puedes cerrar la llave de paso principal? ¿Hay agua acumulándose en algún lugar específico? ¿El problema empezó recientemente?"
       ],
       construccion: [
-        "Como Ingeniero Civil, para proyectos de construcción necesito evaluar la estructura existente. ¿Es una remodelación, ampliación o construcción nueva?",
-        "Para trabajos de tablaroca y construcción, es importante verificar la estructura de soporte. ¿El área tiene humedad o problemas estructurales previos?",
-        "Los proyectos de construcción requieren permisos y planos técnicos. Te recomiendo una consulta con un arquitecto o ingeniero civil."
+        "🏗️ Como Ingeniero Civil, para proyectos de construcción necesito evaluar la estructura. ¿Es remodelación, ampliación o construcción nueva? ¿Tienes planos?",
+        "📐 Para trabajos de tablaroca, es importante verificar la estructura. ¿El área tiene humedad o problemas previos? ¿Qué tipo de acabado necesitas?",
+        "🏠 Los proyectos requieren planificación técnica. ¿Cuál es el área aproximada? ¿Necesitas permisos? ¿Hay restricciones de espacio o altura?"
       ],
       tecnologia: [
-        "Como especialista en redes, para optimizar tu WiFi necesito conocer la estructura de tu casa y el tipo de router. ¿En qué áreas tienes señal débil?",
-        "Para sistemas de CCTV y seguridad, es importante planificar la cobertura completa. ¿Qué áreas necesitas monitorear? ¿Interior, exterior o ambos?",
-        "Los sistemas de red requieren configuración profesional. Te recomiendo una evaluación técnica para optimizar tu conectividad."
+        "📡 Como especialista en redes, para optimizar tu WiFi necesito conocer tu casa. ¿En qué áreas tienes señal débil? ¿Cuántos dispositivos conectas?",
+        "🔒 Para sistemas de CCTV, es importante planificar la cobertura. ¿Qué áreas necesitas monitorear? ¿Interior, exterior o ambos? ¿Cuántas cámaras necesitas?",
+        "💻 Los sistemas de red requieren configuración profesional. ¿Qué tipo de router tienes? ¿Necesitas cobertura en todo el hogar? ¿Hay áreas con señal nula?"
       ],
       hvac: [
-        "Como Ingeniero en HVAC, para problemas de aire acondicionado necesito conocer el tipo de sistema, la antigüedad y los síntomas específicos.",
-        "Los sistemas de climatización requieren mantenimiento regular. ¿Cuándo fue la última vez que se le dio mantenimiento al equipo?",
-        "Para optimizar tu sistema HVAC, es importante evaluar la carga térmica del espacio. Te recomiendo una inspección técnica completa."
+        "❄️ Como Ingeniero en HVAC, para problemas de aire acondicionado necesito conocer tu sistema. ¿Qué tipo de equipo tienes? ¿Cuándo fue el último mantenimiento?",
+        "🌡️ Los sistemas requieren mantenimiento regular. ¿El problema es que no enfría, hace ruido, o consume mucha energía? ¿En qué áreas tienes problemas?",
+        "🔧 Para optimizar tu sistema, necesito evaluar la carga térmica. ¿Cuántos metros cuadrados cubre? ¿Hay ventanas grandes o techos altos? ¿El problema es en todo el espacio?"
       ],
       limpieza: [
-        "Como especialista en servicios generales, para limpieza profunda necesito conocer el tipo de superficie y el nivel de suciedad acumulada.",
-        "Los servicios de jardinería requieren conocimiento de plantas y sistemas de riego. ¿Qué tipo de jardín tienes? ¿Tienes sistema de riego?",
-        "Para mantenimiento general, es importante establecer un programa de limpieza regular. Te recomiendo un servicio profesional especializado."
+        "🧹 Como especialista en servicios generales, para limpieza profunda necesito conocer el espacio. ¿Qué tipo de superficie? ¿Cuál es el nivel de suciedad? ¿Hay áreas difíciles?",
+        "🌿 Para jardinería, necesito saber qué plantas tienes. ¿Qué tipo de jardín? ¿Tienes sistema de riego? ¿Necesitas poda, fertilización o control de plagas?",
+        "✨ Para mantenimiento general, es importante establecer un programa. ¿Qué áreas necesitan atención? ¿Residencial o comercial? ¿Hay mascotas o niños?"
       ],
       fumigacion: [
-        "Como técnico en fumigación, para control de plagas necesito identificar el tipo de plaga y el nivel de infestación. ¿Qué tipo de insectos o roedores has visto?",
-        "Las plagas requieren tratamiento especializado. ¿El problema es en interior, exterior o ambos? ¿Hay niños o mascotas en el hogar?",
-        "Para fumigación efectiva, es importante usar productos seguros y profesionales. Te recomiendo un servicio especializado en control de plagas."
+        "🐛 Como técnico en fumigación, para control de plagas necesito identificar el problema. ¿Qué tipo de insectos o roedores has visto? ¿En qué áreas?",
+        "🔍 Las plagas requieren tratamiento especializado. ¿El problema es interior, exterior o ambos? ¿Hay niños o mascotas? ¿Desde cuándo tienes el problema?",
+        "💊 Para fumigación efectiva, necesito saber el nivel de infestación. ¿Has intentado alguna solución? ¿Hay áreas específicas donde se concentran las plagas?"
       ],
       general: [
-        "Como asistente técnico, puedo ayudarte a identificar el servicio más adecuado para tu problema. ¿Podrías describir más detalles sobre lo que necesitas?",
-        "Para brindarte la mejor asesoría, necesito entender mejor tu situación específica. ¿En qué área de tu hogar o negocio está el problema?",
-        "Estoy aquí para ayudarte a encontrar la solución perfecta. ¿Hay algún síntoma específico o problema que hayas notado?"
+        "🤖 Como asistente técnico especializado, puedo ayudarte a identificar el servicio correcto. ¿Podrías describir más detalles sobre tu problema? ¿En qué área ocurre?",
+        "🔧 Para brindarte la mejor asesoría, necesito entender tu situación. ¿Cuál es el problema principal? ¿Es urgente o puede esperar? ¿Hay síntomas específicos?",
+        "💡 Estoy aquí para ayudarte a encontrar la solución perfecta. ¿Podrías ser más específico sobre lo que necesitas? ¿Es reparación, instalación o asesoría?"
       ]
     };
 
@@ -262,7 +285,7 @@ export default function AIAdvisor({ onServiceRecommendation }: AIAdvisorProps) {
   };
 
   return (
-    <div className="fixed bottom-4 right-4 z-50">
+    <div className="fixed bottom-4 left-4 z-50">
       {/* Botón flotante */}
       {!isOpen && (
         <button
