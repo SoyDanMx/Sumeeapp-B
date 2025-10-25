@@ -92,25 +92,49 @@ export default function RequestServiceModal({ isOpen, onClose }: RequestServiceM
       const position = await new Promise<GeolocationPosition>((resolve, reject) => {
         navigator.geolocation.getCurrentPosition(resolve, reject, {
           enableHighAccuracy: true,
-          timeout: 10000,
+          timeout: 15000,
           maximumAge: 300000
         });
       });
 
       const { latitude, longitude } = position.coords;
       
-      // Usar Google Maps Geocoding API para obtener la dirección
-      const response = await fetch(
-        `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}`
-      );
+      // Verificar si tenemos API key de Google Maps
+      const googleMapsApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
       
-      const data = await response.json();
-      
-      if (data.results && data.results.length > 0) {
-        const address = data.results[0].formatted_address;
-        setFormData(prev => ({ ...prev, ubicacion: address }));
+      if (!googleMapsApiKey) {
+        // Fallback: usar OpenStreetMap Nominatim (gratuito)
+        console.log('Google Maps API key no configurada, usando OpenStreetMap');
+        const response = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&addressdetails=1&accept-language=es`
+        );
+        
+        const data = await response.json();
+        
+        if (data && data.display_name) {
+          const address = data.display_name;
+          setFormData(prev => ({ ...prev, ubicacion: address }));
+        } else {
+          setError('No se pudo obtener la dirección. Por favor, ingrésala manualmente.');
+        }
       } else {
-        setError('No se pudo obtener la dirección. Por favor, ingrésala manualmente.');
+        // Usar Google Maps Geocoding API
+        const response = await fetch(
+          `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${googleMapsApiKey}&language=es&region=mx`
+        );
+        
+        const data = await response.json();
+        
+        if (data.status === 'OK' && data.results && data.results.length > 0) {
+          const address = data.results[0].formatted_address;
+          setFormData(prev => ({ ...prev, ubicacion: address }));
+        } else if (data.status === 'ZERO_RESULTS') {
+          setError('No se encontró dirección para esta ubicación. Por favor, ingrésala manualmente.');
+        } else if (data.status === 'OVER_QUERY_LIMIT') {
+          setError('Límite de consultas excedido. Por favor, ingresa la dirección manualmente.');
+        } else {
+          setError('Error en el servicio de geocodificación. Por favor, ingresa la dirección manualmente.');
+        }
       }
     } catch (err: any) {
       console.error('Error getting location:', err);
@@ -120,6 +144,8 @@ export default function RequestServiceModal({ isOpen, onClose }: RequestServiceM
         setError('Ubicación no disponible. Por favor, ingresa la dirección manualmente.');
       } else if (err.code === 3) {
         setError('Tiempo de espera agotado. Por favor, ingresa la dirección manualmente.');
+      } else if (err.name === 'NetworkError') {
+        setError('Error de conexión. Por favor, verifica tu internet e intenta de nuevo.');
       } else {
         setError('Error al obtener la ubicación. Por favor, ingresa la dirección manualmente.');
       }
@@ -359,6 +385,7 @@ export default function RequestServiceModal({ isOpen, onClose }: RequestServiceM
                       onClick={handleUseMyLocation}
                       disabled={isGettingLocation}
                       className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors flex items-center space-x-2"
+                      title="Permite al navegador acceder a tu ubicación para llenar automáticamente la dirección"
                     >
                       {isGettingLocation ? (
                         <>
@@ -373,6 +400,9 @@ export default function RequestServiceModal({ isOpen, onClose }: RequestServiceM
                       )}
                     </button>
                   </div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    💡 Tip: Permite el acceso a tu ubicación para llenar automáticamente la dirección
+                  </p>
                 </div>
                 
                 <div>
