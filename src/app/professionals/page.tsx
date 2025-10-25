@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useLocation } from '@/context/LocationContext'; // Importa el hook de ubicación
-import { ProfessionalCard } from '@/components/ProfessionalCard'; // Tu componente de tarjeta de profesional
+import ProfessionalCard from '@/components/ProfessionalCard'; // Tu componente de tarjeta de profesional
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSpinner, faMapMarkerAlt, faSearch } from '@fortawesome/free-solid-svg-icons';
 import type { Profesional } from '@/types/supabase'; // Usar el tipo Profesional como fuente única de verdad
@@ -245,7 +245,7 @@ export default function ProfessionalsPage() {
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {professionals.map((professional) => (
-                <ProfessionalCard key={professional.user_id} profile={professional} />
+                <ProfessionalCard key={professional.user_id} professional={professional} />
               ))}
             </div>
             
