@@ -161,6 +161,81 @@ const DISCIPLINE_CONFIG = {
       'Control de mosquitos',
       'Tratamiento preventivo'
     ]
+  },
+  'pintura': {
+    name: 'Pintura',
+    icon: faPaintRoller,
+    gradient: 'from-indigo-600 to-purple-700',
+    specialistRole: 'Arquitecto',
+    description: 'Pintura interior y exterior, impermeabilización y acabados',
+    services: [
+      'Pintura interior',
+      'Pintura exterior',
+      'Impermeabilización',
+      'Acabados especiales',
+      'Restauración de fachadas',
+      'Pintura industrial'
+    ]
+  },
+  'wifi': {
+    name: 'Redes y WiFi',
+    icon: faWifi,
+    gradient: 'from-cyan-600 to-blue-700',
+    specialistRole: 'Especialista en Redes y Ciberseguridad',
+    description: 'Instalación y configuración de redes informáticas y WiFi',
+    services: [
+      'Instalación de WiFi',
+      'Configuración de routers',
+      'Cableado estructurado',
+      'Redes empresariales',
+      'Seguridad de red',
+      'Optimización de señal'
+    ]
+  },
+  'tablaroca': {
+    name: 'Tablaroca',
+    icon: faSquare,
+    gradient: 'from-gray-600 to-gray-800',
+    specialistRole: 'Arquitecto',
+    description: 'Instalación y reparación de sistemas de tablaroca',
+    services: [
+      'Instalación de tablaroca',
+      'Reparación de grietas',
+      'Acabados en tablaroca',
+      'Instalación de cielos',
+      'Muros divisorios',
+      'Restauración de tablaroca'
+    ]
+  },
+  'construccion': {
+    name: 'Construcción',
+    icon: faHardHat,
+    gradient: 'from-orange-600 to-red-700',
+    specialistRole: 'Ingeniero Civil',
+    description: 'Construcción, remodelación y obras civiles',
+    services: [
+      'Construcción residencial',
+      'Remodelación integral',
+      'Obras civiles',
+      'Albañilería',
+      'Azulejos y pisos',
+      'Construcción comercial'
+    ]
+  },
+  'arquitectos': {
+    name: 'Arquitectos & Ingenieros',
+    icon: faBuilding,
+    gradient: 'from-teal-600 to-cyan-700',
+    specialistRole: 'Arquitecto',
+    description: 'Servicios de arquitectura, ingeniería y diseño',
+    services: [
+      'Diseño arquitectónico',
+      'Planos y proyectos',
+      'Supervisión de obra',
+      'Consultoría técnica',
+      'Diseño de interiores',
+      'Ingeniería estructural'
+    ]
   }
 };
 
@@ -266,14 +341,20 @@ export default async function ServiceDetailPage({ params }: ServicePageProps) {
               {service.description || config.description}
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <button className="bg-white text-gray-900 font-bold px-8 py-4 rounded-lg shadow-lg hover:bg-gray-100 transition-all duration-300 transform hover:scale-105">
+              <a 
+                href="/dashboard/client" 
+                className="bg-white text-gray-900 font-bold px-8 py-4 rounded-lg shadow-lg hover:bg-gray-100 transition-all duration-300 transform hover:scale-105 inline-flex items-center justify-center"
+              >
                 <FontAwesomeIcon icon={faUsers} className="mr-2" />
                 Solicitar Servicio
-              </button>
-              <button className="bg-transparent border-2 border-white text-white font-bold px-8 py-4 rounded-lg hover:bg-white hover:text-gray-900 transition-all duration-300">
+              </a>
+              <a 
+                href="/tecnicos" 
+                className="bg-transparent border-2 border-white text-white font-bold px-8 py-4 rounded-lg hover:bg-white hover:text-gray-900 transition-all duration-300 inline-flex items-center justify-center"
+              >
                 <FontAwesomeIcon icon={faStar} className="mr-2" />
                 Ver Técnicos
-              </button>
+              </a>
             </div>
           </div>
         </div>
@@ -359,14 +440,22 @@ export default async function ServiceDetailPage({ params }: ServicePageProps) {
             Conecta con nuestros técnicos especializados y obtén una solución profesional
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <button className="bg-white text-blue-600 font-bold px-8 py-4 rounded-lg shadow-lg hover:bg-gray-100 transition-all duration-300 transform hover:scale-105">
+            <a 
+              href="/dashboard/client" 
+              className="bg-white text-blue-600 font-bold px-8 py-4 rounded-lg shadow-lg hover:bg-gray-100 transition-all duration-300 transform hover:scale-105 inline-flex items-center justify-center"
+            >
               <FontAwesomeIcon icon={faUsers} className="mr-2" />
               Solicitar Servicio Ahora
-            </button>
-            <button className="bg-transparent border-2 border-white text-white font-bold px-8 py-4 rounded-lg hover:bg-white hover:text-blue-600 transition-all duration-300">
+            </a>
+            <a 
+              href="https://wa.me/5215636741156?text=Hola, necesito ayuda con servicios de {service.name.toLowerCase()}" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="bg-transparent border-2 border-white text-white font-bold px-8 py-4 rounded-lg hover:bg-white hover:text-blue-600 transition-all duration-300 inline-flex items-center justify-center"
+            >
               <FontAwesomeIcon icon={faWhatsappBrand} className="mr-2" />
               Consultar por WhatsApp
-            </button>
+            </a>
           </div>
         </div>
       </div>
