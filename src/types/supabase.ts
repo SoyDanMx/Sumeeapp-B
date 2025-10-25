@@ -15,6 +15,27 @@ export type UserRole = 'client' | 'profesional';
 
 export type LeadEstado = 'buscando' | 'aceptado' | 'nuevo' | 'contactado' | 'en_progreso' | 'completado' | 'cancelado';
 
+export type ServiceCategory = 'Urgencias' | 'Mantenimiento' | 'Tecnología' | 'Especializado' | 'Construcción';
+
+// =========================================================================
+// INTERFAZ PARA SERVICES (NUEVA TABLA)
+// =========================================================================
+/**
+ * Representa un servicio disponible en la plataforma
+ * Corresponde a la tabla public.services
+ */
+export interface Service {
+  id: string;
+  created_at: string;
+  updated_at: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  icon_name: string;
+  is_popular: boolean;
+  category: ServiceCategory;
+}
+
 // =========================================================================
 // INTERFAZ PARA PROFILES (ESQUEMA REAL)
 // =========================================================================
