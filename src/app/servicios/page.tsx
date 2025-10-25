@@ -1,9 +1,10 @@
-import React from 'react';
-import { createSupabaseServerClient } from '@/lib/supabase/server';
-import { Service, ServiceCategory } from '@/types/supabase';
+'use client';
+
+import React, { useState } from 'react';
 import ServiceCard from '@/components/services/ServiceCard';
 import ServiceSearch from '@/components/services/ServiceSearch';
 import AIAdvisor from '@/components/services/AIAdvisor';
+import AIChatHelper from '@/components/ai/AIChatHelper';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
   faStar, 
@@ -29,21 +30,102 @@ import {
 import { faWhatsapp as faWhatsappBrand } from '@fortawesome/free-brands-svg-icons';
 
 // Función para obtener servicios desde Supabase
-async function getServices(): Promise<Service[]> {
-  const supabase = await createSupabaseServerClient();
-  
-  const { data, error } = await supabase
-    .from('services')
-    .select('*')
-    .order('is_popular', { ascending: false })
-    .order('name', { ascending: true });
-
-  if (error) {
-    console.error('Error fetching services:', error);
-    return [];
+// Datos estáticos de servicios
+const SERVICES_DATA = [
+  {
+    id: '1',
+    name: 'Plomería',
+    slug: 'plomeria',
+    description: 'Reparaciones, instalaciones y mantenimiento de sistemas hidráulicos',
+    icon_name: 'faWrench',
+    is_popular: true,
+    category: 'Urgencias'
+  },
+  {
+    id: '2',
+    name: 'Electricidad',
+    slug: 'electricidad',
+    description: 'Instalaciones eléctricas, reparaciones y mantenimiento',
+    icon_name: 'faLightbulb',
+    is_popular: true,
+    category: 'Urgencias'
+  },
+  {
+    id: '3',
+    name: 'Aire Acondicionado',
+    slug: 'aire-acondicionado',
+    description: 'Instalación, reparación y mantenimiento de sistemas de climatización',
+    icon_name: 'faFan',
+    is_popular: true,
+    category: 'Mantenimiento'
+  },
+  {
+    id: '4',
+    name: 'CCTV y Seguridad',
+    slug: 'cctv',
+    description: 'Sistemas de seguridad, cámaras de vigilancia y alarmas',
+    icon_name: 'faVideo',
+    is_popular: false,
+    category: 'Tecnología'
+  },
+  {
+    id: '5',
+    name: 'Carpintería',
+    slug: 'carpinteria',
+    description: 'Trabajos en madera, muebles y estructuras',
+    icon_name: 'faHammer',
+    is_popular: false,
+    category: 'Mantenimiento'
+  },
+  {
+    id: '6',
+    name: 'Pintura',
+    slug: 'pintura',
+    description: 'Pintura interior y exterior, impermeabilización',
+    icon_name: 'faPaintRoller',
+    is_popular: false,
+    category: 'Mantenimiento'
+  },
+  {
+    id: '7',
+    name: 'Limpieza',
+    slug: 'limpieza',
+    description: 'Servicios de limpieza residencial y comercial',
+    icon_name: 'faBroom',
+    is_popular: false,
+    category: 'Mantenimiento'
+  },
+  {
+    id: '8',
+    name: 'Jardinería',
+    slug: 'jardineria',
+    description: 'Mantenimiento de jardines y áreas verdes',
+    icon_name: 'faLeaf',
+    is_popular: false,
+    category: 'Mantenimiento'
+  },
+  {
+    id: '9',
+    name: 'Redes y WiFi',
+    slug: 'wifi',
+    description: 'Instalación y configuración de redes informáticas',
+    icon_name: 'faWifi',
+    is_popular: false,
+    category: 'Tecnología'
+  },
+  {
+    id: '10',
+    name: 'Fumigación',
+    slug: 'fumigacion',
+    description: 'Control de plagas y fumigación profesional',
+    icon_name: 'faBug',
+    is_popular: false,
+    category: 'Especializado'
   }
+];
 
-  return data || [];
+function getServices() {
+  return SERVICES_DATA;
 }
 
 // Componente para categorías principales
@@ -75,7 +157,7 @@ function CategoryButtons() {
 }
 
 // Componente para sección de servicios populares
-function PopularServicesSection({ services }: { services: Service[] }) {
+function PopularServicesSection({ services }: { services: any[] }) {
   const popularServices = services.filter(service => service.is_popular);
 
   if (popularServices.length === 0) return null;
@@ -102,7 +184,7 @@ function PopularServicesSection({ services }: { services: Service[] }) {
 }
 
 // Componente para sección de urgencias
-function EmergencyServicesSection({ services }: { services: Service[] }) {
+function EmergencyServicesSection({ services }: { services: any[] }) {
   const emergencyServices = services.filter(service => 
     service.category === 'Urgencias' && !service.is_popular
   );
@@ -131,7 +213,7 @@ function EmergencyServicesSection({ services }: { services: Service[] }) {
 }
 
 // Componente para sección de mantenimiento
-function MaintenanceServicesSection({ services }: { services: Service[] }) {
+function MaintenanceServicesSection({ services }: { services: any[] }) {
   const maintenanceServices = services.filter(service => 
     service.category === 'Mantenimiento'
   );
@@ -160,7 +242,7 @@ function MaintenanceServicesSection({ services }: { services: Service[] }) {
 }
 
 // Componente para sección de tecnología
-function TechnologyServicesSection({ services }: { services: Service[] }) {
+function TechnologyServicesSection({ services }: { services: any[] }) {
   const techServices = services.filter(service => 
     service.category === 'Tecnología'
   );
@@ -189,7 +271,7 @@ function TechnologyServicesSection({ services }: { services: Service[] }) {
 }
 
 // Componente para sección de servicios especializados
-function SpecializedServicesSection({ services }: { services: Service[] }) {
+function SpecializedServicesSection({ services }: { services: any[] }) {
   const specializedServices = services.filter(service => 
     service.category === 'Especializado' || service.category === 'Construcción'
   );
@@ -251,12 +333,25 @@ function IntelligentCTA() {
   );
 }
 
-export default async function ServicesPage() {
-  const services = await getServices();
+export default function ServicesPage() {
+  const [isAIChatOpen, setIsAIChatOpen] = useState(false);
+  const [selectedService, setSelectedService] = useState(null);
+  
+  const services = getServices();
   
   // Filtrar servicios populares y el resto
   const popularServices = services.filter(service => service.is_popular);
   const allServices = services.filter(service => !service.is_popular);
+
+  const handleAIConsultation = () => {
+    setIsAIChatOpen(true);
+  };
+
+  const handleServiceSelected = (service: any) => {
+    setSelectedService(service);
+    // Aquí podrías redirigir a la página del servicio o abrir un modal
+    console.log('Servicio seleccionado:', service);
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 relative">
@@ -362,6 +457,13 @@ export default async function ServicesPage() {
 
       {/* Asistente IA Flotante */}
       <AIAdvisor />
+      
+      {/* AI Chat Helper */}
+      <AIChatHelper 
+        isOpen={isAIChatOpen}
+        onClose={() => setIsAIChatOpen(false)}
+        onServiceSelected={handleServiceSelected}
+      />
     </div>
   );
 }
