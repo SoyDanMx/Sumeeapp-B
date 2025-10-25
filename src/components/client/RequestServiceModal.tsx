@@ -80,7 +80,10 @@ export default function RequestServiceModal({ isOpen, onClose }: RequestServiceM
   };
 
   const handleUseMyLocation = async () => {
+    console.log('🔍 Iniciando geolocalización...');
+    
     if (!navigator.geolocation) {
+      console.error('❌ Geolocalización no disponible');
       setError('La geolocalización no está disponible en tu navegador');
       return;
     }
@@ -89,55 +92,79 @@ export default function RequestServiceModal({ isOpen, onClose }: RequestServiceM
     setError(null);
 
     try {
+      console.log('📍 Solicitando ubicación...');
       const position = await new Promise<GeolocationPosition>((resolve, reject) => {
-        navigator.geolocation.getCurrentPosition(resolve, reject, {
-          enableHighAccuracy: true,
-          timeout: 15000,
-          maximumAge: 300000
-        });
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            console.log('✅ Ubicación obtenida:', pos.coords);
+            resolve(pos);
+          },
+          (err) => {
+            console.error('❌ Error de geolocalización:', err);
+            reject(err);
+          },
+          {
+            enableHighAccuracy: true,
+            timeout: 20000,
+            maximumAge: 300000
+          }
+        );
       });
 
       const { latitude, longitude } = position.coords;
+      console.log(`📍 Coordenadas: ${latitude}, ${longitude}`);
       
       // Verificar si tenemos API key de Google Maps
       const googleMapsApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+      console.log('🔑 Google Maps API Key:', googleMapsApiKey ? 'Configurada' : 'No configurada');
       
       if (!googleMapsApiKey) {
         // Fallback: usar OpenStreetMap Nominatim (gratuito)
-        console.log('Google Maps API key no configurada, usando OpenStreetMap');
+        console.log('🗺️ Usando OpenStreetMap Nominatim...');
         const response = await fetch(
-          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&addressdetails=1&accept-language=es`
+          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&addressdetails=1&accept-language=es&zoom=18`
         );
         
+        console.log('📡 Respuesta OpenStreetMap:', response.status);
         const data = await response.json();
+        console.log('📋 Datos OpenStreetMap:', data);
         
         if (data && data.display_name) {
           const address = data.display_name;
+          console.log('✅ Dirección obtenida:', address);
           setFormData(prev => ({ ...prev, ubicacion: address }));
         } else {
+          console.error('❌ No se pudo obtener dirección de OpenStreetMap');
           setError('No se pudo obtener la dirección. Por favor, ingrésala manualmente.');
         }
       } else {
         // Usar Google Maps Geocoding API
+        console.log('🗺️ Usando Google Maps API...');
         const response = await fetch(
           `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${googleMapsApiKey}&language=es&region=mx`
         );
         
+        console.log('📡 Respuesta Google Maps:', response.status);
         const data = await response.json();
+        console.log('📋 Datos Google Maps:', data);
         
         if (data.status === 'OK' && data.results && data.results.length > 0) {
           const address = data.results[0].formatted_address;
+          console.log('✅ Dirección obtenida:', address);
           setFormData(prev => ({ ...prev, ubicacion: address }));
         } else if (data.status === 'ZERO_RESULTS') {
+          console.error('❌ ZERO_RESULTS de Google Maps');
           setError('No se encontró dirección para esta ubicación. Por favor, ingrésala manualmente.');
         } else if (data.status === 'OVER_QUERY_LIMIT') {
+          console.error('❌ OVER_QUERY_LIMIT de Google Maps');
           setError('Límite de consultas excedido. Por favor, ingresa la dirección manualmente.');
         } else {
+          console.error('❌ Error de Google Maps:', data.status);
           setError('Error en el servicio de geocodificación. Por favor, ingresa la dirección manualmente.');
         }
       }
     } catch (err: any) {
-      console.error('Error getting location:', err);
+      console.error('❌ Error en geolocalización:', err);
       if (err.code === 1) {
         setError('Permiso de ubicación denegado. Por favor, ingresa la dirección manualmente.');
       } else if (err.code === 2) {
@@ -150,6 +177,7 @@ export default function RequestServiceModal({ isOpen, onClose }: RequestServiceM
         setError('Error al obtener la ubicación. Por favor, ingresa la dirección manualmente.');
       }
     } finally {
+      console.log('🏁 Finalizando geolocalización...');
       setIsGettingLocation(false);
     }
   };
@@ -502,7 +530,7 @@ export default function RequestServiceModal({ isOpen, onClose }: RequestServiceM
                         <li>• Historial de mantenimiento</li>
                       </ul>
                       <StripeBuyButton 
-                        buyButtonId="buy_btn_1RmpzwE2shKTNR9M91kuSgKh"
+                        buyButtonId="buy_btn_1SLwlqE2shKTNR9MmwebXHlB"
                         publishableKey="pk_live_51P8c4AE2shKTNR9MVARQB4La2uYMMc2shlTCcpcg8EI6MqqPV1uN5uj6UbB5mpfReRKd4HL2OP1LoF17WXcYYeB000Ot1l847E"
                       />
                     </div>
