@@ -1,7 +1,7 @@
 'use client';
 import React, { useState, FormEvent, useEffect } from 'react';
 import { Profesional } from '@/types/supabase';
-import { updateUserProfile, verifyUserPermissions } from '@/lib/supabase/actions-fixed';
+import { updateUserProfileFallback, verifyUserPermissions } from '@/lib/supabase/actions-alternative';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
   faTimes, 
@@ -162,7 +162,7 @@ export default function EditProfileModal({ profesional, isOpen, onClose, onSucce
             
             // 3. Actualizar perfil usando función centralizada
             setStatusMessage('Guardando información...');
-            const updatedProfile = await updateUserProfile(
+            const updatedProfile = await updateUserProfileFallback(
                 userId, 
                 dataToSubmit, 
                 locationAddress || undefined
