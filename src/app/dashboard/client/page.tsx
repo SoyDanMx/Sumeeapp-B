@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { getClientLeads } from '@/lib/supabase/data';
 import { Lead } from '@/types/supabase';
-import { useAuth } from '@/components/AuthProvider';
+import { useAuth } from '@/context/AuthContext';
 import { useMembership } from '@/context/MembershipContext';
 import RequestServiceModal from '@/components/client/RequestServiceModal';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -22,7 +22,7 @@ import {
 import { faWhatsapp } from '@fortawesome/free-brands-svg-icons';
 
 export default function ClientDashboardPage() {
-  const { user, loading: userLoading } = useAuth();
+  const { user, isLoading: userLoading } = useAuth();
   const { 
     permissions, 
     isFreeUser, 
