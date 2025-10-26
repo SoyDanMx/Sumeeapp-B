@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase/client';
-import { useAuth } from '@/components/AuthProvider';
+import { useAuth } from '@/context/AuthContext';
 import { useUserRole } from '@/hooks/useUserRole';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSpinner, faCheckCircle, faExclamationTriangle, faInfoCircle } from '@fortawesome/free-solid-svg-icons';
@@ -14,7 +14,7 @@ export default function DebugAuthPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
-  const { user: authUser, loading: authLoading } = useAuth();
+  const { user: authUser, isLoading: authLoading } = useAuth();
   const { role, loading: roleLoading, error: roleError } = useUserRole();
 
   useEffect(() => {
