@@ -63,12 +63,28 @@ export default function MembresiaPage() {
 
   const pricingPlans = [
     {
+      name: 'Plan Gratuito',
+      price: '$0',
+      period: 'MXN / siempre gratis',
+      description: 'Perfecto para probar nuestros servicios',
+      features: [
+        { icon: faUsers, text: '1 solicitud de servicio por mes' },
+        { icon: faCheck, text: 'Acceso básico a técnicos' },
+        { icon: faMobile, text: 'Seguimiento básico en la App' },
+        { icon: faHeadset, text: 'Soporte por chat' }
+      ],
+      popular: false,
+      isFree: true,
+      ctaText: 'Regístrate Gratis',
+      ctaLink: '/registro-cliente'
+    },
+    {
       name: 'Plan Básico',
       price: '$299',
       period: 'MXN / anual',
       description: 'Perfecto para reparaciones y servicios ocasionales - Suscripción anual',
       features: [
-        { icon: faUsers, text: 'Hasta 2 solicitudes de servicio por mes' },
+        { icon: faUsers, text: 'Hasta 5 solicitudes de servicio por mes' },
         { icon: faCheck, text: 'Acceso a técnicos verificados' },
         { icon: faCamera, text: 'Diagnóstico inicial por Foto/Video' },
         { icon: faMobile, text: 'Seguimiento completo en la App' },
@@ -175,7 +191,7 @@ export default function MembresiaPage() {
               </p>
             </div>
             
-            <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+            <div className="grid md:grid-cols-3 gap-8 max-w-7xl mx-auto">
               {pricingPlans.map((plan, index) => (
                 <div 
                   key={index} 
@@ -243,15 +259,24 @@ export default function MembresiaPage() {
                   </div>
 
                   <div className="space-y-4">
-                    <StripeBuyButton
-                      buyButtonId={plan.buyButtonId}
-                      publishableKey={publishableKey}
-                      className="w-full"
-                    />
+                    {plan.isFree ? (
+                      <Link
+                        href={plan.ctaLink}
+                        className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 px-6 rounded-lg transition-colors text-center block"
+                      >
+                        {plan.ctaText}
+                      </Link>
+                    ) : (
+                      <StripeBuyButton
+                        buyButtonId={plan.buyButtonId || ''}
+                        publishableKey={publishableKey}
+                        className="w-full"
+                      />
+                    )}
                     
                     <div className="text-center">
                       <p className="text-xs text-gray-500">
-                        Pago seguro procesado por Stripe
+                        {plan.isFree ? 'Registro gratuito sin compromiso' : 'Pago seguro procesado por Stripe'}
                       </p>
                   </div>
                   </div>
