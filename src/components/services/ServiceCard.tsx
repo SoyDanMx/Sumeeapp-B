@@ -16,7 +16,7 @@ const getIcon = (iconName: string): IconDefinition | null => {
 
 export default function ServiceCard({ service }: ServiceCardProps) {
   const icon = getIcon(service.icon_name);
-  const backgroundImage = service.thumbnail_image_url || `/images/services/placeholder-thumb.svg`;
+  const backgroundImage = service.thumbnail_image_url || `/images/services/${service.slug}-thumb.svg`;
   const backgroundColor = service.background_color || '#3B82F6';
 
   return (
