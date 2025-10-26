@@ -22,7 +22,7 @@ import {
 import { faWhatsapp } from '@fortawesome/free-brands-svg-icons';
 
 export default function ClientDashboardPage() {
-  const { user, isLoading: userLoading } = useAuth();
+  const { user, isLoading: userLoading, isAuthenticated } = useAuth();
   const { 
     permissions, 
     isFreeUser, 
@@ -39,8 +39,13 @@ export default function ClientDashboardPage() {
 
   useEffect(() => {
     const fetchLeads = async () => {
-      if (userLoading) return; // Esperar a que se cargue el usuario
+      // Esperar a que termine de cargar la autenticación
+      if (userLoading) {
+        setLoading(true);
+        return;
+      }
       
+      // Si no hay usuario después de cargar, mostrar error
       if (!user) {
         setError('Usuario no autenticado');
         setLoading(false);
@@ -49,9 +54,9 @@ export default function ClientDashboardPage() {
 
       try {
         setLoading(true);
+        setError(null);
         const userLeads = await getClientLeads(user.id);
         setLeads(userLeads);
-        setError(null);
       } catch (leadError) {
         console.error('Error fetching client leads:', leadError);
         setLeads([]);
@@ -119,6 +124,14 @@ export default function ClientDashboardPage() {
         <div className="text-center">
           <FontAwesomeIcon icon={faSpinner} spin className="text-4xl text-blue-600 mb-4" />
           <p className="text-gray-600">Cargando tus solicitudes...</p>
+          {/* DEBUG: Mostrar información de autenticación */}
+          {process.env.NODE_ENV === 'development' && (
+            <div className="mt-4 p-4 bg-gray-100 rounded-lg text-sm text-gray-600">
+              <p>DEBUG: userLoading={userLoading ? 'YES' : 'NO'}</p>
+              <p>DEBUG: isAuthenticated={isAuthenticated ? 'YES' : 'NO'}</p>
+              <p>DEBUG: user={user ? 'YES' : 'NO'}</p>
+            </div>
+          )}
         </div>
       </div>
     );
@@ -130,12 +143,29 @@ export default function ClientDashboardPage() {
         <div className="text-center">
           <FontAwesomeIcon icon={faExclamationTriangle} className="text-4xl text-red-600 mb-4" />
           <p className="text-red-600 mb-4">{error}</p>
-          <button 
-            onClick={() => window.location.reload()}
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
-          >
-            Reintentar
-          </button>
+          {/* DEBUG: Mostrar información de autenticación en error */}
+          {process.env.NODE_ENV === 'development' && (
+            <div className="mb-4 p-4 bg-red-100 rounded-lg text-sm text-red-600">
+              <p>DEBUG: userLoading={userLoading ? 'YES' : 'NO'}</p>
+              <p>DEBUG: isAuthenticated={isAuthenticated ? 'YES' : 'NO'}</p>
+              <p>DEBUG: user={user ? 'YES' : 'NO'}</p>
+              <p>DEBUG: error={error}</p>
+            </div>
+          )}
+          <div className="space-y-2">
+            <button 
+              onClick={() => window.location.reload()}
+              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 mr-2"
+            >
+              Reintentar
+            </button>
+            <Link 
+              href="/login" 
+              className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 inline-block"
+            >
+              Iniciar Sesión
+            </Link>
+          </div>
         </div>
       </div>
     );
