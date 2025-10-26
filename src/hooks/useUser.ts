@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 // 1. Usamos el cliente del NAVEGADOR, que es el correcto para un hook de cliente.
-import { supabase } from '@/lib/supabase/client-new';
+import { supabase } from '@/lib/supabase/client';
 import { AppUser } from '@/types/supabase'; // Nuestro tipo de usuario personalizado
 import { User } from '@supabase/supabase-js';
 
@@ -35,7 +35,9 @@ export function useUser(): { user: AppUser | null; isLoading: boolean } {
     // --- LA LÓGICA CLAVE ESTÁ AQUÍ ---
     // 1. Obtenemos la sesión inicial para saber si el usuario ya está logueado al cargar la página.
     supabase.auth.getSession().then(async ({ data: { session } }) => {
+      console.log('🔍 useUser - Sesión inicial:', session?.user?.id || 'No hay usuario');
       const appUser = await fetchUserWithProfile(session?.user ?? null);
+      console.log('🔍 useUser - AppUser creado:', appUser?.id || 'No hay usuario');
       setUser(appUser);
       setIsLoading(false); // La carga inicial ha terminado
     });
