@@ -49,12 +49,20 @@ export function AuthProvider({ children }: AuthProviderProps) {
   // =========================================================================
   useEffect(() => {
     const updateProfile = async () => {
+      console.log('🔍 AuthContext - updateProfile iniciado');
+      console.log('🔍 AuthContext - userLoading:', userLoading);
+      console.log('🔍 AuthContext - professionalLoading:', professionalLoading);
+      console.log('🔍 AuthContext - clientLoading:', clientLoading);
+      console.log('🔍 AuthContext - user:', user?.id || 'No hay usuario');
+      
       if (userLoading || professionalLoading || clientLoading) {
+        console.log('🔍 AuthContext - Aún cargando, estableciendo isLoading=true');
         setIsLoading(true);
         return;
       }
 
       if (!user) {
+        console.log('🔍 AuthContext - No hay usuario, estableciendo profile=null');
         setProfile(null);
         setIsLoading(false);
         return;
@@ -62,13 +70,17 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
       // Determinar el perfil según el rol del usuario
       if (user.role === 'profesional') {
+        console.log('🔍 AuthContext - Usuario es profesional, profile:', profesional?.id || 'No hay perfil');
         setProfile(profesional);
       } else if (user.role === 'client') {
+        console.log('🔍 AuthContext - Usuario es cliente, profile:', clientProfile?.id || 'No hay perfil');
         setProfile(clientProfile);
       } else {
+        console.log('🔍 AuthContext - Rol desconocido:', user.role);
         setProfile(null);
       }
 
+      console.log('🔍 AuthContext - Finalizando carga, estableciendo isLoading=false');
       setIsLoading(false);
     };
 
