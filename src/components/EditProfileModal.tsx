@@ -1,7 +1,7 @@
 'use client';
 import React, { useState, FormEvent, useEffect } from 'react';
 import { Profesional } from '@/types/supabase';
-import { updateUserProfile, verifyUserPermissions } from '@/lib/supabase/actions';
+import { updateUserProfile, verifyUserPermissions } from '@/lib/supabase/actions-fixed';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
   faTimes, 
