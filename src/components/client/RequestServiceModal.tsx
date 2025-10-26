@@ -27,7 +27,9 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import { supabase } from '@/lib/supabase/client';
 import { useUserContext } from '@/context/UserContext';
+import { useMembership } from '@/context/MembershipContext';
 import StripeBuyButton from '@/components/stripe/StripeBuyButton';
+import Link from 'next/link';
 
 interface RequestServiceModalProps {
   isOpen: boolean;
@@ -65,6 +67,7 @@ export default function RequestServiceModal({ isOpen, onClose }: RequestServiceM
   const fileInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
   const { user, profile, hasActiveMembership, isLoading } = useUserContext();
+  const { isFreeUser, isBasicUser, isPremiumUser, requestsRemaining } = useMembership();
 
   const totalSteps = 4;
 
@@ -496,17 +499,36 @@ export default function RequestServiceModal({ isOpen, onClose }: RequestServiceM
                     Tu solicitud ha sido preparada. Para que los profesionales puedan verla y contactarte, necesitas una membresía activa.
                   </p>
                   
-                  <div className="grid md:grid-cols-2 gap-4">
+                  <div className="grid md:grid-cols-3 gap-4">
+                    {/* Plan Gratuito */}
+                    <div className="bg-white border border-green-200 rounded-lg p-4">
+                      <h5 className="font-semibold text-gray-900 mb-2">Plan Gratuito</h5>
+                      <div className="text-2xl font-bold text-green-600 mb-2">$0 MXN</div>
+                      <p className="text-sm text-gray-600 mb-4">Siempre gratis</p>
+                      <ul className="text-sm text-gray-700 space-y-1 mb-4">
+                        <li>• 1 solicitud por mes</li>
+                        <li>• Acceso básico a técnicos</li>
+                        <li>• Seguimiento básico en la app</li>
+                        <li>• Soporte por chat</li>
+                      </ul>
+                      <Link
+                        href="/registro-cliente"
+                        className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg transition-colors text-center block"
+                      >
+                        Regístrate Gratis
+                      </Link>
+                    </div>
+
                     {/* Plan Básico */}
                     <div className="bg-white border border-blue-200 rounded-lg p-4">
                       <h5 className="font-semibold text-gray-900 mb-2">Plan Básico</h5>
                       <div className="text-2xl font-bold text-blue-600 mb-2">$299 MXN</div>
                       <p className="text-sm text-gray-600 mb-4">Suscripción anual</p>
                       <ul className="text-sm text-gray-700 space-y-1 mb-4">
-                        <li>• Hasta 2 solicitudes por mes</li>
+                        <li>• Hasta 5 solicitudes por mes</li>
                         <li>• Acceso a técnicos verificados</li>
                         <li>• Diagnóstico por foto/video</li>
-                        <li>• Seguimiento en la app</li>
+                        <li>• Seguimiento completo en la app</li>
                       </ul>
                       <StripeBuyButton 
                         buyButtonId="buy_btn_1SLx83E2shKTNR9MwlSZog2K"
