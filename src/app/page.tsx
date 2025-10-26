@@ -1,6 +1,6 @@
 // src/app/page.tsx
 import { Header } from '@/components/Header';
-import { Hero } from '@/components/Hero';
+import HeroVisual from '@/components/HeroVisual';
 import { PricingTransparencyBanner } from '@/components/PricingTransparencyBanner';
 import { ValueProposition } from '@/components/ValueProposition';
 import { TestimonialsSection } from '@/components/TestimonialsSection';
@@ -17,7 +17,7 @@ export default function Home() {
     <div className="flex flex-col min-h-screen">
       <Header />
       <main className="flex-grow">
-        <Hero />
+        <HeroVisual />
         
         {/* Banner de Transparencia de Tarifas */}
         <PricingTransparencyBanner />

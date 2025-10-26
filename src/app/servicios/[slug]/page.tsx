@@ -2,6 +2,7 @@ import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { notFound } from 'next/navigation';
 import { Service } from '@/types/supabase';
 import DisciplineAIHelper from '@/components/services/DisciplineAIHelper';
+import Image from 'next/image';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
   faWrench, 
@@ -328,19 +329,20 @@ export default async function ServiceDetailPage({ params }: ServicePageProps) {
     <div className="min-h-screen bg-gray-50">
       {/* Hero Section */}
       <div className={`bg-gradient-to-r ${config.gradient} text-white py-16`}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <FontAwesomeIcon 
-              icon={config.icon} 
-              className="text-6xl mb-6 text-white opacity-90" 
-            />
-            <h1 className="text-4xl md:text-6xl font-bold mb-4">
-              {service.name}
-            </h1>
-            <p className="text-xl md:text-2xl text-white/90 max-w-3xl mx-auto mb-8">
-              {service.description || config.description}
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center">
+              <FontAwesomeIcon 
+                icon={config.icon} 
+                className="text-6xl mb-6 text-white opacity-90" 
+              />
+              <h1 className="text-4xl md:text-6xl font-bold mb-4">
+                {service.name}
+              </h1>
+              <p className="text-xl md:text-2xl text-white/90 max-w-3xl mx-auto mb-8">
+                {service.description || config.description}
+              </p>
+              
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <a 
                 href="/dashboard/client" 
                 className="bg-white text-gray-900 font-bold px-8 py-4 rounded-lg shadow-lg hover:bg-gray-100 transition-all duration-300 transform hover:scale-105 inline-flex items-center justify-center"
