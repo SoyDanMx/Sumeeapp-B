@@ -156,12 +156,20 @@ export const Hero = () => {
           <div className="absolute bottom-40 right-1/3 w-40 h-40 bg-purple-300 rounded-full blur-3xl"></div>
         </div>
         
-        {/* Elementos geométricos */}
+        {/* Elementos geométricos y herramientas */}
         <div className="absolute inset-0">
           <div className="absolute top-32 left-16 w-2 h-32 bg-white/20 rotate-45"></div>
           <div className="absolute top-48 right-24 w-2 h-24 bg-white/30 -rotate-12"></div>
           <div className="absolute bottom-32 left-1/3 w-2 h-40 bg-white/15 rotate-12"></div>
           <div className="absolute bottom-48 right-16 w-2 h-28 bg-white/25 -rotate-45"></div>
+          
+          {/* Iconos de herramientas flotantes */}
+          <div className="absolute top-20 right-1/4 text-4xl opacity-20 animate-pulse">🔧</div>
+          <div className="absolute top-40 left-1/4 text-3xl opacity-15 animate-bounce">⚡</div>
+          <div className="absolute bottom-40 right-1/3 text-3xl opacity-20 animate-pulse">🔨</div>
+          <div className="absolute bottom-20 left-1/5 text-2xl opacity-15 animate-bounce">🎨</div>
+          <div className="absolute top-1/2 right-10 text-2xl opacity-10 animate-pulse">🛠️</div>
+          <div className="absolute bottom-1/3 left-10 text-2xl opacity-15 animate-bounce">⚙️</div>
         </div>
       </div>
 
@@ -254,7 +262,7 @@ export const Hero = () => {
               </div>
             </div>
 
-            {/* Lado derecho - Elementos visuales */}
+            {/* Lado derecho - Elementos visuales con técnicos */}
             <div className="hidden lg:block relative">
               <div className="relative">
                 {/* Círculos decorativos */}
@@ -262,24 +270,68 @@ export const Hero = () => {
                 <div className="absolute bottom-0 left-0 w-48 h-48 bg-blue-400/20 rounded-full blur-2xl"></div>
                 <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-gradient-to-r from-yellow-400/10 to-orange-400/10 rounded-full blur-3xl"></div>
                 
-                {/* Iconos de servicios */}
-                <div className="grid grid-cols-2 gap-8 relative z-10">
-                  <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20 text-center">
-                    <div className="text-4xl mb-2">🔧</div>
-                    <div className="text-white font-semibold">Plomería</div>
+                {/* Tarjetas de técnicos profesionales */}
+                <div className="grid grid-cols-2 gap-6 relative z-10">
+                  {/* Técnico Plomero */}
+                  <div className="bg-white/15 backdrop-blur-md rounded-2xl p-6 border border-white/30 text-center transform hover:scale-105 transition-all duration-300">
+                    <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-2xl">
+                      🔧
+                    </div>
+                    <div className="text-white font-bold text-lg mb-1">Carlos Mendoza</div>
+                    <div className="text-blue-200 text-sm mb-2">Plomero Certificado</div>
+                    <div className="flex items-center justify-center space-x-1 mb-2">
+                      <span className="text-yellow-400">⭐⭐⭐⭐⭐</span>
+                      <span className="text-white text-sm">(4.9)</span>
+                    </div>
+                    <div className="text-xs text-blue-200">+500 servicios</div>
                   </div>
-                  <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20 text-center">
-                    <div className="text-4xl mb-2">⚡</div>
-                    <div className="text-white font-semibold">Electricidad</div>
+
+                  {/* Técnico Electricista */}
+                  <div className="bg-white/15 backdrop-blur-md rounded-2xl p-6 border border-white/30 text-center transform hover:scale-105 transition-all duration-300">
+                    <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-yellow-500 to-orange-600 flex items-center justify-center text-2xl">
+                      ⚡
+                    </div>
+                    <div className="text-white font-bold text-lg mb-1">Ana Rodríguez</div>
+                    <div className="text-blue-200 text-sm mb-2">Electricista Profesional</div>
+                    <div className="flex items-center justify-center space-x-1 mb-2">
+                      <span className="text-yellow-400">⭐⭐⭐⭐⭐</span>
+                      <span className="text-white text-sm">(4.8)</span>
+                    </div>
+                    <div className="text-xs text-blue-200">+300 servicios</div>
                   </div>
-                  <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20 text-center">
-                    <div className="text-4xl mb-2">🔨</div>
-                    <div className="text-white font-semibold">Construcción</div>
+
+                  {/* Técnico Constructor */}
+                  <div className="bg-white/15 backdrop-blur-md rounded-2xl p-6 border border-white/30 text-center transform hover:scale-105 transition-all duration-300">
+                    <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-gray-600 to-gray-800 flex items-center justify-center text-2xl">
+                      🔨
+                    </div>
+                    <div className="text-white font-bold text-lg mb-1">Miguel Torres</div>
+                    <div className="text-blue-200 text-sm mb-2">Constructor Experto</div>
+                    <div className="flex items-center justify-center space-x-1 mb-2">
+                      <span className="text-yellow-400">⭐⭐⭐⭐⭐</span>
+                      <span className="text-white text-sm">(4.9)</span>
+                    </div>
+                    <div className="text-xs text-blue-200">+400 servicios</div>
                   </div>
-                  <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20 text-center">
-                    <div className="text-4xl mb-2">🎨</div>
-                    <div className="text-white font-semibold">Pintura</div>
+
+                  {/* Técnico Pintor */}
+                  <div className="bg-white/15 backdrop-blur-md rounded-2xl p-6 border border-white/30 text-center transform hover:scale-105 transition-all duration-300">
+                    <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center text-2xl">
+                      🎨
+                    </div>
+                    <div className="text-white font-bold text-lg mb-1">Luis García</div>
+                    <div className="text-blue-200 text-sm mb-2">Pintor Especialista</div>
+                    <div className="flex items-center justify-center space-x-1 mb-2">
+                      <span className="text-yellow-400">⭐⭐⭐⭐⭐</span>
+                      <span className="text-white text-sm">(4.7)</span>
+                    </div>
+                    <div className="text-xs text-blue-200">+250 servicios</div>
                   </div>
+                </div>
+
+                {/* Badge de verificación */}
+                <div className="absolute -top-4 -right-4 bg-green-500 text-white px-4 py-2 rounded-full text-sm font-bold shadow-lg">
+                  ✓ Verificados
                 </div>
               </div>
             </div>
