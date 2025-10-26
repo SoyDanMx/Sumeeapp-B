@@ -70,6 +70,7 @@ export interface Profile {
   whatsapp?: string | null;
   numero_imss?: string | null;
   calificacion_promedio: number;
+  review_count?: number | null;
   descripcion_perfil?: string | null;
   role: UserRole;
 }

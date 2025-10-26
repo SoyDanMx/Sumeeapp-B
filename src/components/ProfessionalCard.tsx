@@ -6,43 +6,43 @@ import Image from 'next/image';
 import { Profesional } from '@/types/supabase';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
-  faStar, 
   faCheckCircle, 
   faMapMarkerAlt, 
   faEye,
   faPhone,
 } from '@fortawesome/free-solid-svg-icons';
 import { faWhatsapp as faWhatsappBrand } from '@fortawesome/free-brands-svg-icons';
+import RatingDisplay from './RatingDisplay';
 
 interface ProfessionalCardProps {
   professional: Profesional;
 }
 
-// Componente para mostrar estrellas
-const StarRating = ({ rating, reviewCount }: { rating: number; reviewCount?: number }) => {
-  const fullStars = Math.floor(rating);
-  const hasHalfStar = rating % 1 !== 0;
-  const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
+// Componente para mostrar estrellas (DEPRECATED - usar RatingDisplay)
+// const StarRating = ({ rating, reviewCount }: { rating: number; reviewCount?: number }) => {
+//   const fullStars = Math.floor(rating);
+//   const hasHalfStar = rating % 1 !== 0;
+//   const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
 
-  return (
-    <div className="flex items-center space-x-1">
-      <div className="flex">
-        {[...Array(fullStars)].map((_, i) => (
-          <FontAwesomeIcon key={i} icon={faStar} className="text-yellow-400 text-sm" />
-        ))}
-        {hasHalfStar && (
-          <FontAwesomeIcon icon={faStar} className="text-yellow-400 text-sm opacity-50" />
-        )}
-        {[...Array(emptyStars)].map((_, i) => (
-          <FontAwesomeIcon key={i} icon={faStar} className="text-gray-300 text-sm" />
-        ))}
-      </div>
-      <span className="text-sm text-gray-600">
-        {rating.toFixed(1)} ({reviewCount || 0} reseñas)
-      </span>
-    </div>
-  );
-};
+//   return (
+//     <div className="flex items-center space-x-1">
+//       <div className="flex">
+//         {[...Array(fullStars)].map((_, i) => (
+//           <FontAwesomeIcon key={i} icon={faStar} className="text-yellow-400 text-sm" />
+//         ))}
+//         {hasHalfStar && (
+//           <FontAwesomeIcon icon={faStar} className="text-yellow-400 text-sm opacity-50" />
+//         )}
+//         {[...Array(emptyStars)].map((_, i) => (
+//           <FontAwesomeIcon key={i} icon={faStar} className="text-gray-300 text-sm" />
+//         ))}
+//       </div>
+//       <span className="text-sm text-gray-600">
+//         {rating.toFixed(1)} ({reviewCount || 0} reseñas)
+//       </span>
+//     </div>
+//   );
+// };
 
 // Componente para mostrar especialidades
 const SpecialtiesTags = ({ specialties }: { specialties: string[] }) => {
@@ -124,7 +124,11 @@ export default function ProfessionalCard({ professional }: ProfessionalCardProps
             </p>
             
             {/* Calificación */}
-            <StarRating rating={rating} reviewCount={0} />
+            <RatingDisplay 
+              rating={professional.calificacion_promedio} 
+              reviewCount={professional.review_count || null} 
+              size="sm"
+            />
           </div>
         </div>
 
