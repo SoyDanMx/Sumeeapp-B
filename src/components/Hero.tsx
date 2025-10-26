@@ -151,13 +151,15 @@ export const Hero = () => {
         <Image 
           src={imageError ? 
             "https://images.unsplash.com/photo-1504307651254-35680f356dfd?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80" : 
-            "https://images.unsplash.com/photo-1581094794329-c8112a89af12?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80"
+            "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80"
           }
           alt="Equipo diverso de técnicos profesionales de Sumee App con herramientas y tecnología"
           fill
           className="object-cover"
           priority
           onError={() => setImageError(true)}
+          sizes="100vw"
+          unoptimized={true}
         />
       </div>
 
