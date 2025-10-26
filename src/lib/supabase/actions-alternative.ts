@@ -6,6 +6,33 @@ import { geocodeAddress } from '@/lib/geocoding';
 import { Profesional } from '@/types/supabase';
 
 /**
+ * Verifica los permisos del usuario para operaciones RLS
+ * @param userId ID del usuario
+ * @returns true si tiene permisos
+ * @throws Error si no tiene permisos
+ */
+export async function verifyUserPermissions(userId: string): Promise<boolean> {
+  try {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('user_id')
+      .eq('user_id', userId)
+      .single();
+
+    if (error) {
+      console.error('❌ Error de permisos:', error);
+      throw new Error(`Error de permisos: ${error.message}`);
+    }
+
+    console.log('✅ Permisos verificados para usuario:', userId);
+    return true;
+  } catch (error) {
+    console.error('❌ Error en verifyUserPermissions:', error);
+    throw error;
+  }
+}
+
+/**
  * Actualiza el perfil usando UPSERT para evitar problemas de esquema
  * Esta versión es más robusta y evita errores de columnas faltantes
  */
@@ -130,7 +157,8 @@ export async function updateUserProfileFallback(
       
     } catch (fallbackError) {
       console.error('❌ Error en fallback:', fallbackError);
-      throw new Error(`No se pudo actualizar el perfil. Error: ${fallbackError.message}`);
+      const errorMessage = fallbackError instanceof Error ? fallbackError.message : 'Error desconocido';
+      throw new Error(`No se pudo actualizar el perfil. Error: ${errorMessage}`);
     }
   }
 }
