@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { getClientLeads } from '@/lib/supabase/data';
 import { Lead } from '@/types/supabase';
 import { useAuth } from '@/components/AuthProvider';
+import { useMembership } from '@/context/MembershipContext';
 import RequestServiceModal from '@/components/client/RequestServiceModal';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
@@ -22,6 +23,15 @@ import { faWhatsapp } from '@fortawesome/free-brands-svg-icons';
 
 export default function ClientDashboardPage() {
   const { user, loading: userLoading } = useAuth();
+  const { 
+    permissions, 
+    isFreeUser, 
+    isBasicUser, 
+    isPremiumUser, 
+    requestsUsed, 
+    requestsRemaining, 
+    upgradeUrl 
+  } = useMembership();
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -142,15 +152,41 @@ export default function ClientDashboardPage() {
               <p className="text-gray-600 mt-1">Gestiona y sigue el estado de tus solicitudes de servicios</p>
             </div>
             <div className="flex items-center space-x-4">
-              <button
-                onClick={() => setIsModalOpen(true)}
-                className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2"
-              >
-                <FontAwesomeIcon icon={faPlus} />
-                <span>Solicitar un Servicio</span>
-              </button>
+              {/* Contador de solicitudes */}
+              <div className="text-sm text-gray-600 bg-gray-100 px-3 py-2 rounded-lg">
+                <span className="font-medium">Solicitudes este mes: {requestsUsed} / {permissions.maxRequests === 999 ? '∞' : permissions.maxRequests}</span>
+              </div>
+              
+              {/* Botón de solicitar servicio */}
+              {requestsRemaining > 0 ? (
+                <button
+                  onClick={() => setIsModalOpen(true)}
+                  className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2"
+                >
+                  <FontAwesomeIcon icon={faPlus} />
+                  <span>Solicitar un Servicio</span>
+                </button>
+              ) : (
+                <div className="text-center">
+                  <button
+                    disabled
+                    className="bg-gray-400 text-white px-6 py-3 rounded-lg cursor-not-allowed flex items-center space-x-2"
+                  >
+                    <FontAwesomeIcon icon={faExclamationTriangle} />
+                    <span>Límite Alcanzado</span>
+                  </button>
+                  <p className="text-xs text-red-600 mt-1">
+                    Has alcanzado tu límite de solicitudes para este mes.{' '}
+                    <Link href={upgradeUrl} className="text-blue-600 hover:underline">
+                      Haz upgrade a Premium
+                    </Link>{' '}
+                    para solicitudes ilimitadas.
+                  </p>
+                </div>
+              )}
+              
               <Link 
-                href="/client-dashboard"
+                href="/tecnicos"
                 className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors"
               >
                 Buscar Profesionales
@@ -159,6 +195,29 @@ export default function ClientDashboardPage() {
           </div>
         </div>
       </div>
+
+      {/* Banner de Upgrade */}
+      {isFreeUser && (
+        <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white py-4">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <FontAwesomeIcon icon={faWrench} className="text-2xl" />
+                <div>
+                  <h3 className="font-bold text-lg">Disfruta de solicitudes ilimitadas y soporte prioritario</h3>
+                  <p className="text-blue-100">Con el Plan Premium obtienes acceso a los mejores técnicos de CDMX</p>
+                </div>
+              </div>
+              <Link
+                href={upgradeUrl}
+                className="bg-white text-blue-600 px-6 py-2 rounded-lg font-semibold hover:bg-blue-50 transition-colors"
+              >
+                Ver Beneficios
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Contenido principal */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

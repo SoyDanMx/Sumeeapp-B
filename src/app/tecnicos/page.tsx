@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Head from 'next/head';
 import { supabase } from '@/lib/supabase/client';
 import { Profesional } from '@/types/supabase';
+import { useMembership } from '@/context/MembershipContext';
 import ProfessionalCard from '@/components/ProfessionalCard';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
@@ -39,6 +40,9 @@ const sortOptions = [
 ];
 
 export default function TecnicosPage() {
+  // Contexto de membresía
+  const { permissions, isFreeUser, upgradeUrl } = useMembership();
+  
   // Estados principales
   const [professionals, setProfessionals] = useState<Profesional[]>([]);
   const [filteredProfessionals, setFilteredProfessionals] = useState<Profesional[]>([]);
@@ -158,10 +162,15 @@ export default function TecnicosPage() {
       // Comentado temporalmente hasta que se añada is_verified al tipo Profesional
     }
     
+    // Limitar resultados para usuarios gratuitos
+    if (isFreeUser) {
+      filtered = filtered.slice(0, permissions.maxTechniciansVisible);
+    }
+    
     // Ordenar resultados
     const sorted = sortProfessionals(filtered);
     setFilteredProfessionals(sorted);
-  }, [professionals, selectedCategories, minRating, showVerifiedOnly, sortBy]);
+  }, [professionals, selectedCategories, minRating, showVerifiedOnly, sortBy, isFreeUser, permissions.maxTechniciansVisible]);
 
   // Manejar selección de categorías
   const handleCategoryToggle = (categoryId: string) => {
@@ -373,6 +382,27 @@ export default function TecnicosPage() {
                 </div>
               </div>
             </div>
+
+            {/* Banner de Upgrade para usuarios gratuitos */}
+            {isFreeUser && (
+              <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg p-6 mb-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <FontAwesomeIcon icon={faUsers} className="text-2xl" />
+                    <div>
+                      <h3 className="font-bold text-lg">Desbloquea todos los profesionales</h3>
+                      <p className="text-blue-100">Con un plan premium puedes ver todos los técnicos disponibles</p>
+                    </div>
+                  </div>
+                  <a
+                    href={upgradeUrl}
+                    className="bg-white text-blue-600 px-6 py-2 rounded-lg font-semibold hover:bg-blue-50 transition-colors"
+                  >
+                    Ver Planes
+                  </a>
+                </div>
+              </div>
+            )}
 
             {/* Grid de Profesionales */}
             {isLoading ? (
