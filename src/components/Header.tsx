@@ -6,7 +6,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { supabase } from '@/lib/supabaseClient';
 import type { User } from '@supabase/supabase-js';
-import { useAuth } from './AuthProvider';
+import { useAuth } from '@/context/AuthContext';
 import UserPanelMenu from './UserPanelMenu';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faBars, faTimes, faMapMarkerAlt, faChevronDown } from '@fortawesome/free-solid-svg-icons';
@@ -26,7 +26,7 @@ export const Header = () => {
   const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
 
   const { location, setLocation } = useLocation();
-  const { user, loading: userLoading } = useAuth();
+  const { user, isLoading: userLoading } = useAuth();
 
   useEffect(() => {
     setLoading(userLoading);
