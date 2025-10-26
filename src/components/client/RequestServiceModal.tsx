@@ -23,7 +23,8 @@ import {
   faWifi,
   faBug,
   faHardHat,
-  faCubes
+  faCubes,
+  faExclamationTriangle
 } from '@fortawesome/free-solid-svg-icons';
 import { supabase } from '@/lib/supabase/client';
 import { useAuth } from '@/context/AuthContext';
@@ -327,7 +328,23 @@ export default function RequestServiceModal({ isOpen, onClose, onLeadCreated }: 
       console.log('🔍 handleFreeRequestSubmit - Lead creado exitosamente:', leadData);
 
       // Actualizar el contador de solicitudes usadas en el perfil
-      // TODO: Implementar actualización de last_free_request_date
+      try {
+        const { error: updateError } = await supabase
+          .from('profiles')
+          .update({ 
+            requests_used: ((profile as any)?.requests_used || 0) + 1,
+            last_free_request_date: new Date().toISOString()
+          })
+          .eq('user_id', user.id);
+
+        if (updateError) {
+          console.error('Error updating requests_used:', updateError);
+        } else {
+          console.log('🔍 handleFreeRequestSubmit - Contador de solicitudes actualizado');
+        }
+      } catch (updateError) {
+        console.error('Error updating profile:', updateError);
+      }
       
       // Refrescar los leads en el dashboard
       if (onLeadCreated) {
@@ -620,7 +637,8 @@ export default function RequestServiceModal({ isOpen, onClose, onLeadCreated }: 
                         <div className="text-xs text-gray-500 mb-2 p-2 bg-gray-100 rounded">
                           DEBUG: isAuthenticated={isAuthenticated ? 'YES' : 'NO'}, 
                           user={user ? 'YES' : 'NO'}, profile={profile ? 'YES' : 'NO'}, 
-                          membership={profile?.membership_status || 'none'}
+                          membership={profile?.membership_status || 'none'}, 
+                          requestsRemaining={requestsRemaining || 1}
                         </div>
                       )}
                       {isLoading ? (
@@ -639,13 +657,18 @@ export default function RequestServiceModal({ isOpen, onClose, onLeadCreated }: 
                         <div className="space-y-2">
                           <button
                             onClick={handleFreeRequestSubmit}
-                            disabled={isSubmittingFreeRequest}
+                            disabled={isSubmittingFreeRequest || requestsRemaining <= 0}
                             className="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white font-bold py-3 px-4 rounded-lg transition-colors flex items-center justify-center space-x-2"
                           >
                             {isSubmittingFreeRequest ? (
                               <>
                                 <FontAwesomeIcon icon={faSpinner} className="animate-spin" />
                                 <span>Publicando...</span>
+                              </>
+                            ) : requestsRemaining <= 0 ? (
+                              <>
+                                <FontAwesomeIcon icon={faExclamationTriangle} />
+                                <span>Solicitud Usada</span>
                               </>
                             ) : (
                               <>
@@ -655,7 +678,10 @@ export default function RequestServiceModal({ isOpen, onClose, onLeadCreated }: 
                             )}
                           </button>
                           <p className="text-xs text-green-600 text-center">
-                            Estás usando tu solicitud gratuita de este mes
+                            {requestsRemaining <= 0 ? 
+                              'Ya usaste tu solicitud gratuita de este mes' : 
+                              'Tienes 1 solicitud gratuita disponible este mes'
+                            }
                           </p>
                         </div>
                       ) : (
