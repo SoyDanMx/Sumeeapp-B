@@ -2,7 +2,6 @@
 import { Header } from '@/components/Header';
 import { Hero } from '@/components/Hero';
 import { PricingTransparencyBanner } from '@/components/PricingTransparencyBanner';
-import { ServicesSection } from '@/components/ServicesSection';
 import { ValueProposition } from '@/components/ValueProposition';
 import { TestimonialsSection } from '@/components/TestimonialsSection';
 import { ProfessionalCTA } from '@/components/ProfessionalCTA';
@@ -41,10 +40,8 @@ export default function Home() {
           </div>
         </section>
         
-        {/* 🎯 NUEVA SECCIÓN: Servicios Populares - Insight de Aora MX */}
+        {/* 🎯 SECCIÓN: Servicios Populares - Versión mejorada */}
         <PopularServices />
-        
-        <ServicesSection />
         <ValueProposition />
         {/* 2. Mantenemos la sección original y añadimos el Asistente de IA debajo */}
         <HowItWorks />
