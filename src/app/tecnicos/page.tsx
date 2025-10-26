@@ -107,19 +107,42 @@ export default function TecnicosPage() {
     }
   };
 
-  // Función para ordenar profesionales
+  // Función para ordenar profesionales con boost para nuevos
   const sortProfessionals = (professionals: Profesional[]) => {
     const sorted = [...professionals];
     
     switch (sortBy) {
       case 'calificacion':
-        return sorted.sort((a, b) => (b.calificacion_promedio || 0) - (a.calificacion_promedio || 0));
+        // Ordenar por calificación, pero dar boost a nuevos profesionales
+        return sorted.sort((a, b) => {
+          const aIsNew = !a.review_count || a.review_count <= 3;
+          const bIsNew = !b.review_count || b.review_count <= 3;
+          
+          // Si ambos son nuevos o ambos tienen reseñas, ordenar por calificación
+          if (aIsNew === bIsNew) {
+            return (b.calificacion_promedio || 0) - (a.calificacion_promedio || 0);
+          }
+          
+          // Dar prioridad a nuevos profesionales
+          return aIsNew ? -1 : 1;
+        });
       case 'reseñas':
-        return sorted.sort((a, b) => (b.calificacion_promedio || 0) - (a.calificacion_promedio || 0));
+        // Ordenar por número de reseñas
+        return sorted.sort((a, b) => (b.review_count || 0) - (a.review_count || 0));
       case 'nombre':
         return sorted.sort((a, b) => (a.full_name || '').localeCompare(b.full_name || ''));
       default:
-        return sorted;
+        // Orden por relevancia: nuevos profesionales primero, luego por calificación
+        return sorted.sort((a, b) => {
+          const aIsNew = !a.review_count || a.review_count <= 3;
+          const bIsNew = !b.review_count || b.review_count <= 3;
+          
+          if (aIsNew === bIsNew) {
+            return (b.calificacion_promedio || 0) - (a.calificacion_promedio || 0);
+          }
+          
+          return aIsNew ? -1 : 1;
+        });
     }
   };
 
