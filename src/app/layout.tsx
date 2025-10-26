@@ -7,8 +7,8 @@ import "leaflet/dist/leaflet.css"; // 1. Importamos los estilos de Leaflet aquí
 // --- IMPORTS ADICIONALES NECESARIOS ---
 import { Header } from "../components/Header"; // Importa tu componente Header
 import { LocationProvider } from "../context/LocationContext"; // Importa el LocationProvider
-import { AuthProvider } from "../components/AuthProvider"; // Importa el AuthProvider
-import { UserProvider } from "../context/UserContext"; // Importa el UserProvider
+import { AuthProvider } from "../context/AuthContext"; // Importa el AuthProvider centralizado
+import { UserProvider } from "../context/UserContext"; // Importa el UserProvider (legacy)
 import { MembershipProvider } from "../context/MembershipContext"; // Importa el MembershipProvider
 // --- FIN IMPORTS ADICIONALES ---
 
