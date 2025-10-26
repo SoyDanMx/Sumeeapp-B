@@ -151,7 +151,7 @@ export const Hero = () => {
         <Image 
           src={imageError ? 
             "https://images.unsplash.com/photo-1504307651254-35680f356dfd?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80" : 
-            "/images/hero/team-professionals-hero.jpg"
+            "https://images.unsplash.com/photo-1581094794329-c8112a89af12?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80"
           }
           alt="Equipo diverso de técnicos profesionales de Sumee App con herramientas y tecnología"
           fill
@@ -164,11 +164,10 @@ export const Hero = () => {
       <div className="container mx-auto px-4 sm:px-6 relative z-20">
         <div className="max-w-4xl text-white">
           <h1 className="text-4xl sm:text-5xl font-bold mb-4">
-            Conectamos Técnicos Profesionales con Usuarios
+            Técnicos Verificados<br />Para Tu Hogar
           </h1>
           <p className="text-lg sm:text-xl mb-8">
-            Encuentra el técnico perfecto para tu hogar en Ciudad de México. 
-            Equipos verificados, herramientas modernas y tecnología avanzada para tu tranquilidad.
+            Conectamos hogares mexicanos con los mejores profesionales. Respuesta en menos de 2 horas.
           </p>
           
           {/* Búsqueda por Código Postal */}
