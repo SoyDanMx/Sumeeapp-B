@@ -63,13 +63,23 @@ export function MembershipProvider({ children }: { children: React.ReactNode }) 
 
   // Obtener solicitudes usadas del perfil o localStorage
   useEffect(() => {
-    if (profile?.requests_used) {
+    console.log('🔍 MembershipContext - Actualizando requestsUsed');
+    console.log('🔍 MembershipContext - profile:', profile?.id || 'No hay perfil');
+    console.log('🔍 MembershipContext - profile.requests_used:', profile?.requests_used);
+    
+    if (profile?.requests_used !== undefined) {
+      console.log('🔍 MembershipContext - Usando requests_used del perfil:', profile.requests_used);
       setRequestsUsed(profile.requests_used);
     } else {
+      console.log('🔍 MembershipContext - No hay requests_used en perfil, usando localStorage');
       // Fallback a localStorage para desarrollo
       const stored = localStorage.getItem('sumee_requests_used');
       if (stored) {
+        console.log('🔍 MembershipContext - Valor de localStorage:', stored);
         setRequestsUsed(parseInt(stored));
+      } else {
+        console.log('🔍 MembershipContext - No hay valor en localStorage, estableciendo 0');
+        setRequestsUsed(0);
       }
     }
   }, [profile]);
@@ -101,6 +111,13 @@ export function MembershipProvider({ children }: { children: React.ReactNode }) 
 
   const requestsRemaining = Math.max(0, permissions.maxRequests - requestsUsed);
   const upgradeUrl = '/membresia';
+
+  // DEBUG: Logging del cálculo de requests
+  console.log('🔍 MembershipContext - Cálculo de requests:');
+  console.log('🔍 MembershipContext - profile?.membership_status:', profile?.membership_status);
+  console.log('🔍 MembershipContext - permissions.maxRequests:', permissions.maxRequests);
+  console.log('🔍 MembershipContext - requestsUsed:', requestsUsed);
+  console.log('🔍 MembershipContext - requestsRemaining:', requestsRemaining);
 
   const value: MembershipContextType = {
     profile,

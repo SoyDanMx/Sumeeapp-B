@@ -73,6 +73,8 @@ export interface Profile {
   review_count?: number | null;
   descripcion_perfil?: string | null;
   role: UserRole;
+  requests_used?: number | null;
+  last_free_request_date?: string | null;
 }
 
 // =========================================================================
