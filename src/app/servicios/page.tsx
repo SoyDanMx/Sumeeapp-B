@@ -121,6 +121,33 @@ const SERVICES_DATA = [
     icon_name: 'faBug',
     is_popular: false,
     category: 'Especializado'
+  },
+  {
+    id: '11',
+    name: 'Tablaroca',
+    slug: 'tablaroca',
+    description: 'Instalación y reparación de muros de tablaroca y drywall',
+    icon_name: 'faHardHat',
+    is_popular: false,
+    category: 'Construcción'
+  },
+  {
+    id: '12',
+    name: 'Construcción',
+    slug: 'construccion',
+    description: 'Albañilería, acabados y construcción general',
+    icon_name: 'faHammer',
+    is_popular: false,
+    category: 'Construcción'
+  },
+  {
+    id: '13',
+    name: 'Arquitectos e Ingenieros',
+    slug: 'arquitectos',
+    description: 'Especialistas en construcción, diseño y proyectos arquitectónicos',
+    icon_name: 'faBuilding',
+    is_popular: false,
+    category: 'Especializado'
   }
 ];
 
