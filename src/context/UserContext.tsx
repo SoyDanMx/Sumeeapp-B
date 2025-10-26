@@ -3,11 +3,12 @@
 import React, { createContext, useContext, ReactNode } from 'react';
 import { useUser } from '@/hooks/useUser';
 import { useProfesionalData } from '@/hooks/useProfesionalData';
-import { AppUser, Profesional } from '@/types/supabase';
+import { useClientData } from '@/hooks/useClientData';
+import { AppUser, Profesional, Profile } from '@/types/supabase';
 
 interface UserContextType {
   user: AppUser | null;
-  profile: Profesional | null;
+  profile: Profile | null;
   isLoading: boolean;
   isProfessional: boolean;
   hasActiveMembership: boolean;
@@ -21,17 +22,20 @@ interface UserProviderProps {
 
 export function UserProvider({ children }: UserProviderProps) {
   const { user, isLoading: userLoading } = useUser();
-  const { profesional, isLoading: profileLoading } = useProfesionalData();
+  const { profesional, isLoading: professionalLoading } = useProfesionalData();
+  const { profile: clientProfile, isLoading: clientLoading } = useClientData();
   
-  const isLoading = userLoading || profileLoading;
+  const isLoading = userLoading || professionalLoading || clientLoading;
   const isProfessional = user?.role === 'profesional';
-  const hasActiveMembership = user?.role === 'profesional' 
-    ? profesional?.membership_status === 'basic' || profesional?.membership_status === 'premium'
-    : false; // Los clientes no tienen membresía por defecto
+  
+  // Obtener perfil del usuario (cliente o profesional)
+  const profile = user?.role === 'profesional' ? profesional : clientProfile;
+  
+  const hasActiveMembership = profile?.membership_status === 'basic' || profile?.membership_status === 'premium';
 
   const value: UserContextType = {
     user,
-    profile: profesional,
+    profile,
     isLoading,
     isProfessional,
     hasActiveMembership
