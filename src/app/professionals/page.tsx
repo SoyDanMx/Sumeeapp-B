@@ -6,7 +6,6 @@ import ProfessionalCard from '@/components/ProfessionalCard'; // Tu componente d
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSpinner, faMapMarkerAlt, faSearch } from '@fortawesome/free-solid-svg-icons';
 import type { Profesional } from '@/types/supabase'; // Usar el tipo Profesional como fuente única de verdad
-import { PageLayout } from '@/components/PageLayout'; // Asumo que usas PageLayout para el layout de la página
 
 // AVISO: Asumiendo que useLocation() devuelve un objeto con { location: { lat, lon, address } }
 // Se recomienda definir un tipo LocationContextType explícito para el contexto.
@@ -137,51 +136,92 @@ export default function ProfessionalsPage() {
   ];
 
   return (
-    <PageLayout> {/* Envuelve la página con PageLayout si lo usas */}
-      <div className="container mx-auto px-4 py-8 mt-20"> {/* mt-20 para dejar espacio al header fijo */}
-        <h1 className="text-3xl font-bold text-center mb-8">Profesionales Cerca de Ti</h1>
-
-        {/* Barra de Filtros y Búsqueda */}
-        <div className="bg-white p-6 rounded-xl shadow-md mb-8">
-          <div className="flex flex-col md:flex-row gap-4 items-center">
-            <div className="flex-1 w-full relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <FontAwesomeIcon icon={faSearch} className="text-gray-400" />
-              </div>
-              <input
-                type="text"
-                className="w-full pl-10 pr-3 py-3 border border-gray-200 rounded-lg text-gray-900 focus:ring-2 focus:ring-blue-500"
-                placeholder="Buscar por nombre..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
-            <div className="flex-1 w-full">
-              <select
-                className="w-full px-3 py-3 border border-gray-200 rounded-lg text-gray-900 focus:ring-2 focus:ring-blue-500"
-                value={selectedProfession}
-                onChange={(e) => setSelectedProfession(e.target.value)}
-              >
-                <option value="">Todas las profesiones</option>
-                {professionsList.map(prof => (
-                  <option key={prof} value={prof}>{prof}</option>
-                ))}
-              </select>
-            </div>
-            <div className="flex-1 w-full">
-              <select
-                className="w-full px-3 py-3 border border-gray-200 rounded-lg text-gray-900 focus:ring-2 focus:ring-blue-500"
-                value={searchRadius}
-                onChange={(e) => setSearchRadius(parseFloat(e.target.value))}
-              >
-                <option value={5000}>5 km</option>
-                <option value={10000}>10 km</option>
-                <option value={25000}>25 km</option>
-                <option value={50000}>50 km</option>
-                <option value={100000}>100 km</option>
-              </select>
+    <div className="min-h-screen bg-gray-50">
+        {/* Hero Section */}
+        <div className="bg-gradient-to-r from-blue-600 to-purple-700 text-white py-16">
+          <div className="container mx-auto px-4">
+            <div className="text-center">
+              <h1 className="text-4xl md:text-6xl font-bold mb-4">
+                Encuentra el Profesional Perfecto
+              </h1>
+              <p className="text-xl md:text-2xl text-white/90 max-w-3xl mx-auto mb-8">
+                Conecta con técnicos verificados y especializados en tu zona. 
+                Respuesta rápida, garantía total y precios transparentes.
+              </p>
             </div>
           </div>
+        </div>
+
+        {/* Contenido Principal */}
+        <div className="container mx-auto px-4 py-8">
+          
+          {/* Sección de Beneficios */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+            <div className="bg-white p-6 rounded-xl shadow-md text-center">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <FontAwesomeIcon icon={faMapMarkerAlt} className="text-2xl text-green-600" />
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">Cerca de Ti</h3>
+              <p className="text-gray-600">Encuentra técnicos en tu zona con respuesta rápida</p>
+            </div>
+            <div className="bg-white p-6 rounded-xl shadow-md text-center">
+              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <FontAwesomeIcon icon={faSearch} className="text-2xl text-blue-600" />
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">Verificados</h3>
+              <p className="text-gray-600">Todos nuestros profesionales están verificados y calificados</p>
+            </div>
+            <div className="bg-white p-6 rounded-xl shadow-md text-center">
+              <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <FontAwesomeIcon icon={faSpinner} className="text-2xl text-purple-600" />
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">Garantía Total</h3>
+              <p className="text-gray-600">Servicios con garantía de satisfacción del 100%</p>
+            </div>
+          </div>
+
+          {/* Barra de Filtros y Búsqueda Mejorada */}
+          <div className="bg-white p-6 rounded-xl shadow-lg mb-8">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">Filtros de Búsqueda</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <FontAwesomeIcon icon={faSearch} className="text-gray-400" />
+                </div>
+                <input
+                  type="text"
+                  className="w-full pl-10 pr-3 py-3 border border-gray-200 rounded-lg text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="Buscar por nombre..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
+              <div>
+                <select
+                  className="w-full px-3 py-3 border border-gray-200 rounded-lg text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  value={selectedProfession}
+                  onChange={(e) => setSelectedProfession(e.target.value)}
+                >
+                  <option value="">Todas las profesiones</option>
+                  {professionsList.map(prof => (
+                    <option key={prof} value={prof}>{prof}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <select
+                  className="w-full px-3 py-3 border border-gray-200 rounded-lg text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  value={searchRadius}
+                  onChange={(e) => setSearchRadius(parseFloat(e.target.value))}
+                >
+                  <option value={5000}>5 km</option>
+                  <option value={10000}>10 km</option>
+                  <option value={25000}>25 km</option>
+                  <option value={50000}>50 km</option>
+                  <option value={100000}>100 km</option>
+                </select>
+              </div>
+            </div>
           
           {/* Información de ubicación */}
           <div className="mt-4 text-center">
@@ -234,31 +274,31 @@ export default function ProfessionalsPage() {
           </div>
         )}
 
-        {!isLoading && !error && professionals.length > 0 && (
-          <div>
-            <div className="mb-6 text-center">
-              <p className="text-gray-600">
-                Se encontraron <span className="font-semibold text-blue-600">{professionals.length}</span> profesional{professionals.length !== 1 ? 'es' : ''}
-                {selectedProfession && ` en ${selectedProfession}`}
-              </p>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {professionals.map((professional) => (
-                <ProfessionalCard key={professional.user_id} professional={professional} />
-              ))}
-            </div>
-            
-            {professionals.length >= 20 && (
-              <div className="text-center mt-8 p-4 bg-gray-50 rounded-lg">
+          {!isLoading && !error && professionals.length > 0 && (
+            <div>
+              <div className="mb-6 text-center">
                 <p className="text-gray-600">
-                  Mostrando los primeros 20 resultados. Usa los filtros para refinar tu búsqueda.
+                  Se encontraron <span className="font-semibold text-blue-600">{professionals.length}</span> profesional{professionals.length !== 1 ? 'es' : ''}
+                  {selectedProfession && ` en ${selectedProfession}`}
                 </p>
               </div>
-            )}
-          </div>
-        )}
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {professionals.map((professional) => (
+                  <ProfessionalCard key={professional.user_id} professional={professional} />
+                ))}
+              </div>
+              
+              {professionals.length >= 20 && (
+                <div className="text-center mt-8 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                  <p className="text-blue-800">
+                    <strong>Mostrando los primeros 20 resultados.</strong> Usa los filtros para refinar tu búsqueda y encontrar el profesional perfecto.
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </div>
-    </PageLayout>
-  );
+    );
 }
