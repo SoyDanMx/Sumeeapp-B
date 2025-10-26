@@ -147,13 +147,13 @@ export const Hero = () => {
   return (
     <section className="relative h-[500px] md:h-[600px] flex items-center bg-gray-800">
       <div className="absolute inset-0 z-0">
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-900/80 to-transparent z-10"></div>
+        <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/50 to-transparent z-10"></div>
         <Image 
           src={imageError ? 
-            "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80" : 
-            "https://images.unsplash.com/photo-1504307651254-35680f356dfd?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80"
+            "https://images.unsplash.com/photo-1504307651254-35680f356dfd?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80" : 
+            "/images/hero/team-professionals-hero.jpg"
           }
-          alt="Profesionales de servicios para el hogar trabajando en CDMX"
+          alt="Equipo diverso de técnicos profesionales de Sumee App con herramientas y tecnología"
           fill
           className="object-cover"
           priority
@@ -164,15 +164,15 @@ export const Hero = () => {
       <div className="container mx-auto px-4 sm:px-6 relative z-20">
         <div className="max-w-4xl text-white">
           <h1 className="text-4xl sm:text-5xl font-bold mb-4">
-            Plomeros, Electricistas y Más Verificados en CDMX
+            Conectamos Técnicos Profesionales con Usuarios
           </h1>
           <p className="text-lg sm:text-xl mb-8">
-            Encuentra técnicos profesionales de confianza para tu hogar en Ciudad de México. 
-            Servicios 100% verificados con garantía de satisfacción.
+            Encuentra el técnico perfecto para tu hogar en Ciudad de México. 
+            Equipos verificados, herramientas modernas y tecnología avanzada para tu tranquilidad.
           </p>
           
           {/* Búsqueda por Código Postal */}
-          <div className="bg-white p-6 rounded-xl shadow-2xl">
+          <div className="bg-white/95 backdrop-blur-sm p-6 rounded-xl shadow-2xl border border-white/20">
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none z-10">
                 <FontAwesomeIcon icon={faMapMarkerAlt} className="text-gray-400 text-lg" />
@@ -183,7 +183,7 @@ export const Hero = () => {
                 inputMode="numeric"
                 maxLength={5}
                 className="w-full pl-12 pr-4 py-4 text-lg border border-gray-200 rounded-lg text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                placeholder="Ingresa tu Código Postal (CP) para buscar servicios en CDMX"
+                placeholder="03100"
                 value={postalCode}
                 onChange={handlePostalCodeChange}
               />
