@@ -39,7 +39,9 @@ const SERVICES_DATA = [
     description: 'Reparaciones, instalaciones y mantenimiento de sistemas hidráulicos',
     icon_name: 'faWrench',
     is_popular: true,
-    category: 'Urgencias'
+    category: 'Urgencias',
+    thumbnail_image_url: '/images/services/plomeria.jpg',
+    background_color: '#3B82F6'
   },
   {
     id: '2',
@@ -48,7 +50,9 @@ const SERVICES_DATA = [
     description: 'Instalaciones eléctricas, reparaciones y mantenimiento',
     icon_name: 'faLightbulb',
     is_popular: true,
-    category: 'Urgencias'
+    category: 'Urgencias',
+    thumbnail_image_url: '/images/services/electricidad.jpg',
+    background_color: '#F59E0B'
   },
   {
     id: '3',
@@ -57,7 +61,9 @@ const SERVICES_DATA = [
     description: 'Instalación, reparación y mantenimiento de sistemas de climatización',
     icon_name: 'faFan',
     is_popular: true,
-    category: 'Mantenimiento'
+    category: 'Mantenimiento',
+    thumbnail_image_url: '/images/services/aire-acondicionado.jpg',
+    background_color: '#10B981'
   },
   {
     id: '4',
@@ -66,7 +72,9 @@ const SERVICES_DATA = [
     description: 'Sistemas de seguridad, cámaras de vigilancia y alarmas',
     icon_name: 'faVideo',
     is_popular: false,
-    category: 'Tecnología'
+    category: 'Tecnología',
+    thumbnail_image_url: '/images/services/cctv.jpg',
+    background_color: '#8B5CF6'
   },
   {
     id: '5',
@@ -75,7 +83,9 @@ const SERVICES_DATA = [
     description: 'Trabajos en madera, muebles y estructuras',
     icon_name: 'faHammer',
     is_popular: false,
-    category: 'Mantenimiento'
+    category: 'Mantenimiento',
+    thumbnail_image_url: '/images/services/carpinteria.jpg',
+    background_color: '#D97706'
   },
   {
     id: '6',
@@ -84,7 +94,9 @@ const SERVICES_DATA = [
     description: 'Pintura interior y exterior, impermeabilización',
     icon_name: 'faPaintRoller',
     is_popular: false,
-    category: 'Mantenimiento'
+    category: 'Mantenimiento',
+    thumbnail_image_url: '/images/services/pintura.jpg',
+    background_color: '#EC4899'
   },
   {
     id: '7',
@@ -93,7 +105,9 @@ const SERVICES_DATA = [
     description: 'Servicios de limpieza residencial y comercial',
     icon_name: 'faBroom',
     is_popular: false,
-    category: 'Mantenimiento'
+    category: 'Mantenimiento',
+    thumbnail_image_url: '/images/services/limpieza.jpg',
+    background_color: '#06B6D4'
   },
   {
     id: '8',
@@ -102,7 +116,9 @@ const SERVICES_DATA = [
     description: 'Mantenimiento de jardines y áreas verdes',
     icon_name: 'faLeaf',
     is_popular: false,
-    category: 'Mantenimiento'
+    category: 'Mantenimiento',
+    thumbnail_image_url: '/images/services/jardineria.jpg',
+    background_color: '#22C55E'
   },
   {
     id: '9',
@@ -111,7 +127,9 @@ const SERVICES_DATA = [
     description: 'Instalación y configuración de redes informáticas',
     icon_name: 'faWifi',
     is_popular: false,
-    category: 'Tecnología'
+    category: 'Tecnología',
+    thumbnail_image_url: '/images/services/wifi.jpg',
+    background_color: '#6366F1'
   },
   {
     id: '10',
@@ -120,7 +138,9 @@ const SERVICES_DATA = [
     description: 'Control de plagas y fumigación profesional',
     icon_name: 'faBug',
     is_popular: false,
-    category: 'Especializado'
+    category: 'Especializado',
+    thumbnail_image_url: '/images/services/fumigacion.jpg',
+    background_color: '#EF4444'
   },
   {
     id: '11',
@@ -129,7 +149,9 @@ const SERVICES_DATA = [
     description: 'Instalación y reparación de muros de tablaroca y drywall',
     icon_name: 'faHardHat',
     is_popular: false,
-    category: 'Construcción'
+    category: 'Construcción',
+    thumbnail_image_url: '/images/services/tablaroca.jpg',
+    background_color: '#F97316'
   },
   {
     id: '12',
@@ -138,7 +160,9 @@ const SERVICES_DATA = [
     description: 'Albañilería, acabados y construcción general',
     icon_name: 'faHammer',
     is_popular: false,
-    category: 'Construcción'
+    category: 'Construcción',
+    thumbnail_image_url: '/images/services/construccion.jpg',
+    background_color: '#84CC16'
   },
   {
     id: '13',
@@ -147,7 +171,9 @@ const SERVICES_DATA = [
     description: 'Especialistas en construcción, diseño y proyectos arquitectónicos',
     icon_name: 'faBuilding',
     is_popular: false,
-    category: 'Especializado'
+    category: 'Especializado',
+    thumbnail_image_url: '/images/services/arquitectos.jpg',
+    background_color: '#6366F1'
   }
 ];
 

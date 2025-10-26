@@ -1,103 +1,60 @@
 # Imágenes de Servicios - Sumee App
 
-## 📸 Estrategia de Imágenes Generadas por IA
+Esta carpeta contiene las imágenes para cada servicio de la aplicación.
 
-Este directorio contiene las imágenes optimizadas para la experiencia visual de Sumee App, generadas por IA para crear una identidad visual única y profesional.
+## Imágenes Requeridas
 
-## 🎯 Estructura de Archivos
+Basándome en las imágenes que proporcionaste, necesitas agregar los siguientes archivos:
 
-### Hero Images (Imágenes principales)
-- `sumee-hero-main.jpg` - Imagen principal del hero section
-- `plomeria-hero.jpg` - Hero para página de plomería
-- `electricidad-hero.jpg` - Hero para página de electricidad
-- `aire-acondicionado-hero.jpg` - Hero para página de aire acondicionado
-- `carpinteria-hero.jpg` - Hero para página de carpintería
-- `pintura-hero.jpg` - Hero para página de pintura
-- `limpieza-hero.jpg` - Hero para página de limpieza
-- `jardineria-hero.jpg` - Hero para página de jardinería
-- `cctv-hero.jpg` - Hero para página de CCTV
-- `wifi-hero.jpg` - Hero para página de WiFi
-- `fumigacion-hero.jpg` - Hero para página de fumigación
-- `tablaroca-hero.jpg` - Hero para página de tablaroca
-- `construccion-hero.jpg` - Hero para página de construcción
-- `arquitectos-hero.jpg` - Hero para página de arquitectos
+### Servicios Principales
+- `plomeria.jpg` - Imagen del plomero trabajando (ya proporcionada)
+- `electricidad.jpg` - Imagen del electricista con multímetro (ya proporcionada)
+- `aire-acondicionado.jpg` - Imagen de limpieza de aire acondicionado (ya proporcionada)
+- `cctv.jpg` - Imagen de instalación de cámaras de seguridad (ya proporcionada)
+- `carpinteria.jpg` - Imagen de carpintería (ya proporcionada)
+- `pintura.jpg` - Imagen del pintor en escalera (ya proporcionada)
+- `limpieza.jpg` - Imagen de limpieza profesional (ya proporcionada)
+- `jardineria.jpg` - Imagen de jardinería con cortadora (ya proporcionada)
+- `wifi.jpg` - Imagen de instalación de WiFi (ya proporcionada)
+- `fumigacion.jpg` - Imagen de fumigación profesional (ya proporcionada)
+- `tablaroca.jpg` - Imagen de construcción/tablaroca (ya proporcionada)
+- `construccion.jpg` - Imagen de construcción (ya proporcionada)
+- `arquitectos.jpg` - Imagen de arquitectos/ingenieros (ya proporcionada)
 
-### Thumbnail Images (Imágenes para tarjetas)
-- `plomeria-thumb.jpg` - Thumbnail para tarjeta de plomería
-- `electricidad-thumb.jpg` - Thumbnail para tarjeta de electricidad
-- `aire-acondicionado-thumb.jpg` - Thumbnail para tarjeta de aire acondicionado
-- `carpinteria-thumb.jpg` - Thumbnail para tarjeta de carpintería
-- `pintura-thumb.jpg` - Thumbnail para tarjeta de pintura
-- `limpieza-thumb.jpg` - Thumbnail para tarjeta de limpieza
-- `jardineria-thumb.jpg` - Thumbnail para tarjeta de jardinería
-- `cctv-thumb.jpg` - Thumbnail para tarjeta de CCTV
-- `wifi-thumb.jpg` - Thumbnail para tarjeta de WiFi
-- `fumigacion-thumb.jpg` - Thumbnail para tarjeta de fumigación
-- `tablaroca-thumb.jpg` - Thumbnail para tarjeta de tablaroca
-- `construccion-thumb.jpg` - Thumbnail para tarjeta de construcción
-- `arquitectos-thumb.jpg` - Thumbnail para tarjeta de arquitectos
+## Especificaciones Técnicas
 
-## 🎨 Especificaciones Técnicas
+- **Formato**: JPG (recomendado) o PNG
+- **Resolución**: Mínimo 800x600px, ideal 1200x800px
+- **Tamaño**: Máximo 500KB por imagen
+- **Aspecto**: Horizontal (16:9 o 4:3)
 
-### Hero Images
-- **Resolución**: 1920x1080px (Full HD)
-- **Formato**: JPG optimizado
-- **Peso**: Máximo 500KB
-- **Aspecto**: 16:9 horizontal
+## Colores de Fondo Asignados
 
-### Thumbnail Images
-- **Resolución**: 400x300px
-- **Formato**: JPG optimizado
-- **Peso**: Máximo 100KB
-- **Aspecto**: 4:3
+Cada servicio tiene un color de fondo específico para el overlay:
 
-## 🚀 Generación con IA
+- Plomería: #3B82F6 (Azul)
+- Electricidad: #F59E0B (Amarillo)
+- Aire Acondicionado: #10B981 (Verde)
+- CCTV: #8B5CF6 (Púrpura)
+- Carpintería: #D97706 (Naranja)
+- Pintura: #EC4899 (Rosa)
+- Limpieza: #06B6D4 (Cian)
+- Jardinería: #22C55E (Verde)
+- WiFi: #6366F1 (Índigo)
+- Fumigación: #EF4444 (Rojo)
+- Tablaroca: #F97316 (Naranja)
+- Construcción: #84CC16 (Lima)
+- Arquitectos: #6366F1 (Índigo)
 
-### Prompts Sugeridos para Midjourney/DALL-E:
+## Instrucciones de Uso
 
-#### Hero Principal
-```
-"Professional Mexican technician in blue uniform working in modern Mexican home, warm lighting, high quality, professional photography style, confident smile, tools visible, clean environment, 16:9 aspect ratio"
-```
+1. Guarda cada imagen con el nombre exacto especificado
+2. Asegúrate de que las imágenes sean de alta calidad y profesionales
+3. Las imágenes se mostrarán en las tarjetas de servicios con un overlay de color
+4. El componente ServiceCard ya está configurado para usar estas imágenes
 
-#### Plomería
-```
-"Mexican plumber fixing pipe under modern kitchen sink, professional tools, clean environment, warm lighting, high quality, 16:9 aspect ratio"
-```
+## Notas
 
-#### Electricidad
-```
-"Mexican electrician installing electrical panel in modern home, safety equipment, professional tools, clean environment, warm lighting, high quality, 16:9 aspect ratio"
-```
-
-#### Aire Acondicionado
-```
-"Mexican HVAC technician servicing air conditioning unit, professional uniform, clean environment, warm lighting, high quality, 16:9 aspect ratio"
-```
-
-## 📋 Checklist de Implementación
-
-- [ ] Generar todas las imágenes hero con IA
-- [ ] Generar todas las imágenes thumbnail con IA
-- [ ] Optimizar imágenes para web (compresión)
-- [ ] Subir imágenes a directorio `/public/images/services/`
-- [ ] Ejecutar script SQL para actualizar base de datos
-- [ ] Probar visualización en todas las páginas
-- [ ] Verificar responsive design
-- [ ] Optimizar Core Web Vitals
-
-## 🎯 Objetivos de la Transformación Visual
-
-1. **Generar Confianza**: Imágenes profesionales que transmitan calidad
-2. **Diferenciación**: Imágenes únicas que no se encuentran en otros sitios
-3. **Consistencia**: Estilo visual coherente en toda la plataforma
-4. **Conversión**: Mejorar la percepción de la marca para aumentar conversiones
-5. **Profesionalismo**: Elevar la percepción de "proyecto" a "empresa seria"
-
-## 📊 Métricas de Éxito
-
-- **Tiempo de carga**: < 3 segundos para imágenes
-- **Core Web Vitals**: LCP < 2.5s
-- **Conversión**: Aumento en solicitudes de servicio
-- **Engagement**: Tiempo en página mejorado
-- **Percepción**: Feedback positivo sobre diseño profesional
+- Las imágenes deben mostrar profesionales trabajando en el servicio específico
+- Evita imágenes genéricas o de stock que no representen el trabajo real
+- Las imágenes deben transmitir profesionalismo y confianza

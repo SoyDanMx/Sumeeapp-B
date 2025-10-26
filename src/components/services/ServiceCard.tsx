@@ -16,7 +16,7 @@ const getIcon = (iconName: string): IconDefinition | null => {
 
 export default function ServiceCard({ service }: ServiceCardProps) {
   const icon = getIcon(service.icon_name);
-  const backgroundImage = service.thumbnail_image_url || `/images/services/${service.slug}-thumb.svg`;
+  const backgroundImage = service.thumbnail_image_url || `/images/services/${service.slug}.jpg`;
   const backgroundColor = service.background_color || '#3B82F6';
 
   return (
@@ -24,12 +24,30 @@ export default function ServiceCard({ service }: ServiceCardProps) {
       <div className="relative rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-2 h-full">
         {/* Imagen de fondo con overlay */}
         <div className="relative h-48 overflow-hidden">
+          {/* Imagen principal */}
           <Image
             src={backgroundImage}
             alt={`${service.name} - Servicio profesional`}
             fill
             className="object-cover group-hover:scale-110 transition-transform duration-500"
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            onError={(e) => {
+              // Si la imagen falla, mostrar un placeholder con color
+              const target = e.target as HTMLImageElement;
+              target.style.display = 'none';
+              const parent = target.parentElement;
+              if (parent) {
+                parent.innerHTML = `
+                  <div class="w-full h-full flex items-center justify-center" style="background: linear-gradient(135deg, ${backgroundColor}40, ${backgroundColor}80);">
+                    <div class="text-center text-white">
+                      <div class="text-6xl mb-4">🔧</div>
+                      <div class="text-2xl font-bold">${service.name}</div>
+                      <div class="text-sm opacity-80">Servicio Profesional</div>
+                    </div>
+                  </div>
+                `;
+              }
+            }}
           />
           {/* Overlay con gradiente */}
           <div 
