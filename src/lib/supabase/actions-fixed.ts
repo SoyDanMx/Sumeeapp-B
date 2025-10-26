@@ -46,12 +46,21 @@ export async function updateUserProfile(
       // REMOVIDO: updated_at: new Date().toISOString() - Causa error de esquema
     };
 
-    console.log('📝 Datos a actualizar:', dataToUpdate);
+    // Filtrar campos que podrían no existir en la tabla
+    const filteredUpdates = Object.fromEntries(
+      Object.entries(dataToUpdate).filter(([key, value]) => {
+        // Excluir campos que podrían causar errores de esquema
+        const problematicFields = ['updated_at', 'created_at'];
+        return !problematicFields.includes(key) && value !== undefined;
+      })
+    );
+
+    console.log('📝 Datos a actualizar:', filteredUpdates);
 
     // 3. Actualización usando UPDATE con .eq() para RLS
     const { data, error } = await supabase
       .from('profiles')
-      .update(dataToUpdate)
+      .update(filteredUpdates)
       .eq('user_id', userId) // CRÍTICO: Filtro para RLS
       .select()
       .single();
