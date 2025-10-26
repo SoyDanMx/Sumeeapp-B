@@ -344,6 +344,7 @@ export default async function ServiceDetailPage({ params }: ServicePageProps) {
               <a 
                 href="/dashboard/client" 
                 className="bg-white text-gray-900 font-bold px-8 py-4 rounded-lg shadow-lg hover:bg-gray-100 transition-all duration-300 transform hover:scale-105 inline-flex items-center justify-center"
+                title={`Solicitar servicio de ${service.name.toLowerCase()}`}
               >
                 <FontAwesomeIcon icon={faUsers} className="mr-2" />
                 Solicitar Servicio
@@ -351,9 +352,18 @@ export default async function ServiceDetailPage({ params }: ServicePageProps) {
               <a 
                 href="/tecnicos" 
                 className="bg-transparent border-2 border-white text-white font-bold px-8 py-4 rounded-lg hover:bg-white hover:text-gray-900 transition-all duration-300 inline-flex items-center justify-center"
+                title={`Ver técnicos especializados en ${service.name.toLowerCase()}`}
               >
                 <FontAwesomeIcon icon={faStar} className="mr-2" />
                 Ver Técnicos
+              </a>
+              <a 
+                href="#ai-helper" 
+                className="bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold px-8 py-4 rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all duration-300 transform hover:scale-105 inline-flex items-center justify-center"
+                title={`Consultar con IA especialista en ${service.name.toLowerCase()}`}
+              >
+                <FontAwesomeIcon icon={faQuestionCircle} className="mr-2" />
+                Consultar IA
               </a>
             </div>
           </div>
@@ -419,7 +429,7 @@ export default async function ServiceDetailPage({ params }: ServicePageProps) {
       </div>
 
       {/* AI Helper para esta disciplina específica */}
-      <div className="py-16 bg-white">
+      <div id="ai-helper" className="py-16 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <DisciplineAIHelper 
             discipline={slug}
@@ -443,15 +453,17 @@ export default async function ServiceDetailPage({ params }: ServicePageProps) {
             <a 
               href="/dashboard/client" 
               className="bg-white text-blue-600 font-bold px-8 py-4 rounded-lg shadow-lg hover:bg-gray-100 transition-all duration-300 transform hover:scale-105 inline-flex items-center justify-center"
+              title={`Solicitar servicio profesional de ${service.name.toLowerCase()}`}
             >
               <FontAwesomeIcon icon={faUsers} className="mr-2" />
               Solicitar Servicio Ahora
             </a>
             <a 
-              href="https://wa.me/5215636741156?text=Hola, necesito ayuda con servicios de {service.name.toLowerCase()}" 
+              href={`https://wa.me/5215636741156?text=Hola, necesito ayuda con servicios de ${service.name.toLowerCase()}`}
               target="_blank" 
               rel="noopener noreferrer"
               className="bg-transparent border-2 border-white text-white font-bold px-8 py-4 rounded-lg hover:bg-white hover:text-blue-600 transition-all duration-300 inline-flex items-center justify-center"
+              title={`Consultar por WhatsApp sobre ${service.name.toLowerCase()}`}
             >
               <FontAwesomeIcon icon={faWhatsappBrand} className="mr-2" />
               Consultar por WhatsApp
