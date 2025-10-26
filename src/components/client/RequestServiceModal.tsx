@@ -584,6 +584,13 @@ export default function RequestServiceModal({ isOpen, onClose }: RequestServiceM
                       </ul>
                       
                       {/* LÓGICA CONDICIONAL INTELIGENTE */}
+                      {/* DEBUG: Mostrar información del usuario */}
+                      {process.env.NODE_ENV === 'development' && (
+                        <div className="text-xs text-gray-500 mb-2 p-2 bg-gray-100 rounded">
+                          DEBUG: user={user ? 'YES' : 'NO'}, profile={profile ? 'YES' : 'NO'}, 
+                          membership={profile?.membership_status || 'none'}
+                        </div>
+                      )}
                       {user ? (
                         // Usuario logueado - mostrar botón de acción
                         <div className="space-y-2">
