@@ -26,7 +26,7 @@ import {
   faCubes
 } from '@fortawesome/free-solid-svg-icons';
 import { supabase } from '@/lib/supabase/client';
-import { useUserContext } from '@/context/UserContext';
+import { useAuth } from '@/context/AuthContext';
 import { useMembership } from '@/context/MembershipContext';
 import StripeBuyButton from '@/components/stripe/StripeBuyButton';
 import Link from 'next/link';
@@ -67,7 +67,7 @@ export default function RequestServiceModal({ isOpen, onClose }: RequestServiceM
   const [isSubmittingFreeRequest, setIsSubmittingFreeRequest] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
-  const { user, profile, hasActiveMembership, isLoading } = useUserContext();
+  const { user, profile, isAuthenticated, isLoading, hasActiveMembership } = useAuth();
   const { isFreeUser, isBasicUser, isPremiumUser, requestsRemaining } = useMembership();
 
   const totalSteps = 4;
@@ -583,15 +583,27 @@ export default function RequestServiceModal({ isOpen, onClose }: RequestServiceM
                         <li>• Soporte por chat</li>
                       </ul>
                       
-                      {/* LÓGICA CONDICIONAL INTELIGENTE */}
+                      {/* LÓGICA CONDICIONAL INTELIGENTE CON AUTHCONTEXT */}
                       {/* DEBUG: Mostrar información del usuario */}
                       {process.env.NODE_ENV === 'development' && (
                         <div className="text-xs text-gray-500 mb-2 p-2 bg-gray-100 rounded">
-                          DEBUG: user={user ? 'YES' : 'NO'}, profile={profile ? 'YES' : 'NO'}, 
+                          DEBUG: isAuthenticated={isAuthenticated ? 'YES' : 'NO'}, 
+                          user={user ? 'YES' : 'NO'}, profile={profile ? 'YES' : 'NO'}, 
                           membership={profile?.membership_status || 'none'}
                         </div>
                       )}
-                      {user ? (
+                      {isLoading ? (
+                        // Estado de carga
+                        <div className="space-y-2">
+                          <button
+                            disabled
+                            className="w-full bg-gray-400 text-white font-bold py-3 px-4 rounded-lg cursor-not-allowed flex items-center justify-center space-x-2"
+                          >
+                            <FontAwesomeIcon icon={faSpinner} className="animate-spin" />
+                            <span>Cargando...</span>
+                          </button>
+                        </div>
+                      ) : isAuthenticated && user ? (
                         // Usuario logueado - mostrar botón de acción
                         <div className="space-y-2">
                           <button
