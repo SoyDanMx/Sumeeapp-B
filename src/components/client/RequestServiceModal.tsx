@@ -64,6 +64,7 @@ export default function RequestServiceModal({ isOpen, onClose }: RequestServiceM
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isGettingLocation, setIsGettingLocation] = useState(false);
+  const [isSubmittingFreeRequest, setIsSubmittingFreeRequest] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
   const { user, profile, hasActiveMembership, isLoading } = useUserContext();
@@ -243,6 +244,76 @@ export default function RequestServiceModal({ isOpen, onClose }: RequestServiceM
       setError(err.message || 'Error al crear la solicitud');
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Función específica para manejar la solicitud gratuita
+  const handleFreeRequestSubmit = async () => {
+    if (!user) {
+      setError('Debes estar logueado para solicitar un servicio');
+      return;
+    }
+
+    // Verificar si ya usó su solicitud gratuita este mes
+    // TODO: Implementar lógica de verificación de límite mensual
+    // Por ahora, permitimos la solicitud
+    // En el futuro: verificar last_free_request_date en el perfil
+    
+    setIsSubmittingFreeRequest(true);
+    setError(null);
+
+    try {
+      // Subir imagen si existe
+      let imagenUrl = null;
+      if (formData.imagen) {
+        const fileExt = formData.imagen.name.split('.').pop();
+        const fileName = `${user.id}-${Date.now()}.${fileExt}`;
+        
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('lead-images')
+          .upload(fileName, formData.imagen);
+
+        if (uploadError) throw uploadError;
+        
+        const { data: { publicUrl } } = supabase.storage
+          .from('lead-images')
+          .getPublicUrl(fileName);
+        
+        imagenUrl = publicUrl;
+      }
+
+      // Crear el lead
+      const { data: leadData, error: leadError } = await supabase
+        .from('leads')
+        .insert({
+          nombre_cliente: user.user_metadata?.full_name || 'Cliente',
+          whatsapp: user.user_metadata?.phone || null,
+          descripcion_proyecto: formData.descripcion,
+          ubicacion_lat: 19.4326, // CDMX por defecto - se puede mejorar con geocoding
+          ubicacion_lng: -99.1332,
+          estado: 'buscando',
+          servicio_solicitado: formData.servicio,
+          imagen_url: imagenUrl,
+          urgencia: formData.urgencia,
+          cliente_id: user.id
+        })
+        .select()
+        .single();
+
+      if (leadError) throw leadError;
+
+      // Actualizar el contador de solicitudes usadas en el perfil
+      // TODO: Implementar actualización de last_free_request_date
+      
+      // Redirigir a la página de estado del lead
+      router.push(`/solicitudes/${leadData.id}`);
+      onClose();
+
+    } catch (err: any) {
+      console.error('Error creating free lead:', err);
+      setError(err.message || 'Error al crear la solicitud gratuita');
+    } finally {
+      setIsSubmittingFreeRequest(false);
     }
   };
 
@@ -511,12 +582,41 @@ export default function RequestServiceModal({ isOpen, onClose }: RequestServiceM
                         <li>• Seguimiento básico en la app</li>
                         <li>• Soporte por chat</li>
                       </ul>
-                      <Link
-                        href="/registro-cliente"
-                        className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg transition-colors text-center block"
-                      >
-                        Regístrate Gratis
-                      </Link>
+                      
+                      {/* LÓGICA CONDICIONAL INTELIGENTE */}
+                      {user ? (
+                        // Usuario logueado - mostrar botón de acción
+                        <div className="space-y-2">
+                          <button
+                            onClick={handleFreeRequestSubmit}
+                            disabled={isSubmittingFreeRequest}
+                            className="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white font-bold py-3 px-4 rounded-lg transition-colors flex items-center justify-center space-x-2"
+                          >
+                            {isSubmittingFreeRequest ? (
+                              <>
+                                <FontAwesomeIcon icon={faSpinner} className="animate-spin" />
+                                <span>Publicando...</span>
+                              </>
+                            ) : (
+                              <>
+                                <FontAwesomeIcon icon={faCheck} />
+                                <span>Publicar mi Solicitud Gratis</span>
+                              </>
+                            )}
+                          </button>
+                          <p className="text-xs text-green-600 text-center">
+                            Estás usando tu solicitud gratuita de este mes
+                          </p>
+                        </div>
+                      ) : (
+                        // Usuario no logueado - mostrar registro
+                        <Link
+                          href="/registro-cliente"
+                          className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg transition-colors text-center block"
+                        >
+                          Regístrate Gratis
+                        </Link>
+                      )}
                     </div>
 
                     {/* Plan Básico */}
