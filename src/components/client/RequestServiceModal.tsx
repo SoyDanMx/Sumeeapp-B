@@ -34,6 +34,7 @@ import Link from 'next/link';
 interface RequestServiceModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onLeadCreated?: () => void;
 }
 
 const serviceCategories = [
@@ -52,7 +53,7 @@ const serviceCategories = [
   { id: 'fumigacion', name: 'Fumigación', icon: faBug, color: 'text-red-600', bgColor: 'bg-red-50' }
 ];
 
-export default function RequestServiceModal({ isOpen, onClose }: RequestServiceModalProps) {
+export default function RequestServiceModal({ isOpen, onClose, onLeadCreated }: RequestServiceModalProps) {
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState({
     servicio: '',
@@ -249,7 +250,12 @@ export default function RequestServiceModal({ isOpen, onClose }: RequestServiceM
 
   // Función específica para manejar la solicitud gratuita
   const handleFreeRequestSubmit = async () => {
+    console.log('🔍 handleFreeRequestSubmit - Iniciando solicitud gratuita');
+    console.log('🔍 handleFreeRequestSubmit - user:', user?.id || 'No hay usuario');
+    console.log('🔍 handleFreeRequestSubmit - formData:', formData);
+    
     if (!user) {
+      console.log('🔍 handleFreeRequestSubmit - Error: No hay usuario');
       setError('Debes estar logueado para solicitar un servicio');
       return;
     }
@@ -283,6 +289,19 @@ export default function RequestServiceModal({ isOpen, onClose }: RequestServiceM
       }
 
       // Crear el lead
+      console.log('🔍 handleFreeRequestSubmit - Creando lead con datos:', {
+        nombre_cliente: user.user_metadata?.full_name || 'Cliente',
+        whatsapp: user.user_metadata?.phone || null,
+        descripcion_proyecto: formData.descripcion,
+        ubicacion_lat: 19.4326,
+        ubicacion_lng: -99.1332,
+        estado: 'buscando',
+        servicio_solicitado: formData.servicio,
+        imagen_url: imagenUrl,
+        urgencia: formData.urgencia,
+        cliente_id: user.id
+      });
+      
       const { data: leadData, error: leadError } = await supabase
         .from('leads')
         .insert({
@@ -300,12 +319,24 @@ export default function RequestServiceModal({ isOpen, onClose }: RequestServiceM
         .select()
         .single();
 
-      if (leadError) throw leadError;
+      if (leadError) {
+        console.log('🔍 handleFreeRequestSubmit - Error al crear lead:', leadError);
+        throw leadError;
+      }
+
+      console.log('🔍 handleFreeRequestSubmit - Lead creado exitosamente:', leadData);
 
       // Actualizar el contador de solicitudes usadas en el perfil
       // TODO: Implementar actualización de last_free_request_date
       
+      // Refrescar los leads en el dashboard
+      if (onLeadCreated) {
+        console.log('🔍 handleFreeRequestSubmit - Refrescando leads en dashboard...');
+        onLeadCreated();
+      }
+      
       // Redirigir a la página de estado del lead
+      console.log('🔍 handleFreeRequestSubmit - Redirigiendo a:', `/solicitudes/${leadData.id}`);
       router.push(`/solicitudes/${leadData.id}`);
       onClose();
 
