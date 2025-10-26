@@ -17,7 +17,7 @@ export default function HeroVisual() {
         {/* Imagen de fondo hero principal */}
         <div className="absolute inset-0">
           <Image
-            src="/images/services/placeholder-hero.svg"
+            src="/images/services/plomeria-hero.jpg"
             alt="Técnico profesional de Sumee trabajando en hogar mexicano"
             fill
             priority
