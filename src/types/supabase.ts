@@ -34,6 +34,9 @@ export interface Service {
   icon_name: string;
   is_popular: boolean;
   category: ServiceCategory;
+  hero_image_url: string | null;
+  thumbnail_image_url: string | null;
+  background_color: string | null;
 }
 
 // =========================================================================
