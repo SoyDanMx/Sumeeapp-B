@@ -332,7 +332,7 @@ export default function RequestServiceModal({ isOpen, onClose, onLeadCreated }: 
         const { error: updateError } = await supabase
           .from('profiles')
           .update({ 
-            requests_used: ((profile as any)?.requests_used || 0) + 1,
+            requests_used: (profile?.requests_used || 0) + 1,
             last_free_request_date: new Date().toISOString()
           })
           .eq('user_id', user.id);
@@ -341,6 +341,22 @@ export default function RequestServiceModal({ isOpen, onClose, onLeadCreated }: 
           console.error('Error updating requests_used:', updateError);
         } else {
           console.log('🔍 handleFreeRequestSubmit - Contador de solicitudes actualizado');
+          // Refrescar el perfil para actualizar el contexto
+          try {
+            const { data: updatedProfile } = await supabase
+              .from('profiles')
+              .select('*')
+              .eq('user_id', user.id)
+              .single();
+            
+            if (updatedProfile) {
+              console.log('🔍 handleFreeRequestSubmit - Perfil actualizado:', updatedProfile);
+              // Forzar re-render del contexto
+              window.location.reload();
+            }
+          } catch (refreshError) {
+            console.error('Error refreshing profile:', refreshError);
+          }
         }
       } catch (updateError) {
         console.error('Error updating profile:', updateError);
