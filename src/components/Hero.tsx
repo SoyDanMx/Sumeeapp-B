@@ -148,11 +148,11 @@ export const Hero = () => {
     <section className="relative h-[500px] md:h-[600px] flex items-center bg-gradient-to-br from-blue-900 via-gray-800 to-gray-900">
       <div className="absolute inset-0 z-0">
         <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/50 to-transparent z-10"></div>
-        {/* Imagen de fondo usando CSS background-image */}
+        {/* Imagen de fondo local */}
         <div 
           className="absolute inset-0 bg-cover bg-center bg-no-repeat"
           style={{
-            backgroundImage: `url('https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80')`
+            backgroundImage: `url('/images/hero/professionals-hero.jpg')`
           }}
         />
       </div>
