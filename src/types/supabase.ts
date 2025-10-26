@@ -25,7 +25,7 @@ export type ServiceCategory = 'Urgencias' | 'Mantenimiento' | 'Tecnología' | 'E
  * Corresponde a la tabla public.services
  */
 export interface Service {
-  id: string;
+  id: string; 
   created_at: string;
   updated_at: string;
   name: string;
@@ -103,7 +103,7 @@ export interface Lead {
   descripcion_proyecto: string;
   ubicacion_lat: number;
   ubicacion_lng: number;
-  fecha_creacion: string;
+  fecha_creacion: string; 
   estado: LeadEstado;
   profesional_asignado_id?: string | null;
   imagen_url?: string | null;
@@ -125,10 +125,10 @@ export interface Lead {
 export interface ProfesionalCompleto extends Profile {
   // Datos específicos de profesionales
   profesional_id: string;
-  profession: string;
+    profession: string;
   specialties: string[];
   experience_years: number;
-  calificacion_promedio: number;
+    calificacion_promedio: number;
   ubicacion_lat?: number | null;
   ubicacion_lng?: number | null;
   ubicacion_direccion?: string | null;

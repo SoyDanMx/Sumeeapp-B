@@ -230,33 +230,37 @@ export async function getLeadById(leadId: string) {
  */
 export async function getClientLeads(clientId: string) {
   try {
-    // Buscar leads donde el cliente_id coincida con el user_id del cliente
-    // Si no existe la columna cliente_id, usar una lógica alternativa
-    const { data, error } = await supabase
+    console.log('🔍 getClientLeads - Buscando leads para cliente:', clientId);
+    
+    // Primero intentar con cliente_id si existe
+    let { data, error } = await supabase
       .from('leads')
-      .select(`
-        *,
-        profesional_asignado:profesional_asignado_id(
-          full_name,
-          profession,
-          calificacion_promedio,
-          whatsapp,
-          avatar_url
-        )
-      `)
-      .or(`cliente_id.eq.${clientId},nombre_cliente.not.is.null`) // Fallback si no hay cliente_id
+      .select('*')
+      .eq('cliente_id', clientId)
       .order('fecha_creacion', { ascending: false });
 
+    // Si no hay datos y hay error, intentar con nombre_cliente como fallback
+    if ((!data || data.length === 0) && error) {
+      console.log('🔍 getClientLeads - Intentando con nombre_cliente como fallback');
+      const fallbackQuery = await supabase
+        .from('leads')
+        .select('*')
+        .not('nombre_cliente', 'is', null)
+        .order('fecha_creacion', { ascending: false });
+      
+      data = fallbackQuery.data;
+      error = fallbackQuery.error;
+    }
+
     if (error) {
-      console.error('Error getting client leads:', error);
-      // Si hay error, retornar array vacío en lugar de lanzar excepción
+      console.error('❌ Error getting client leads:', error);
       return [];
     }
 
+    console.log('✅ getClientLeads - Leads encontrados:', data?.length || 0);
     return data || [];
   } catch (error) {
-    console.error('Error en getClientLeads:', error);
-    // Retornar array vacío en caso de error para evitar crashes
+    console.error('❌ Error en getClientLeads:', error);
     return [];
   }
 }
