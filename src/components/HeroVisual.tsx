@@ -12,16 +12,19 @@ import { faArrowRight, faStar, faUsers, faClock } from '@fortawesome/free-solid-
 export default function HeroVisual() {
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
-      {/* Imagen de fondo hero principal */}
-      <div className="absolute inset-0 z-0">
-        <Image
-          src="/images/sumee-hero-main.jpg"
-          alt="Técnico profesional de Sumee trabajando en hogar mexicano"
-          fill
-          priority
-          className="object-cover"
-          sizes="100vw"
-        />
+      {/* Fondo con gradiente como fallback */}
+      <div className="absolute inset-0 z-0 bg-gradient-to-br from-gray-900 via-blue-900 to-gray-800">
+        {/* Imagen de fondo hero principal */}
+        <div className="absolute inset-0">
+          <Image
+            src="/images/services/placeholder-hero.svg"
+            alt="Técnico profesional de Sumee trabajando en hogar mexicano"
+            fill
+            priority
+            className="object-cover"
+            sizes="100vw"
+          />
+        </div>
         {/* Overlay con gradiente para legibilidad */}
         <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/50 to-black/30" />
       </div>
