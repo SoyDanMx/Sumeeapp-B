@@ -11,9 +11,14 @@ import {
   faCheckCircle,
   faExclamationTriangle,
   faTimes,
+  faStar,
+  faUsers,
+  faClock,
+  faShieldAlt,
 } from "@fortawesome/free-solid-svg-icons";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import Link from "next/link";
 import { supabase } from "@/lib/supabaseClient";
 import {
   getCurrentPostalCode,
@@ -36,6 +41,16 @@ export const Hero = () => {
   const [locationError, setLocationError] = useState<string | null>(null);
   const [showLocationDetails, setShowLocationDetails] = useState(false);
   const router = useRouter();
+
+  // Servicios populares con enlaces
+  const popularServices = [
+    { name: "Plomería", icon: "🔧", slug: "plomeria" },
+    { name: "Electricidad", icon: "⚡", slug: "electricidad" },
+    { name: "Construcción", icon: "🔨", slug: "construccion" },
+    { name: "Pintura", icon: "🎨", slug: "pintura" },
+    { name: "Limpieza", icon: "🧹", slug: "limpieza" },
+    { name: "Jardinería", icon: "🌱", slug: "jardineria" },
+  ];
 
   // Validación de código postal mexicano usando la función de location.ts
   const validatePostalCode = (code: string) => {
@@ -174,8 +189,8 @@ export const Hero = () => {
   };
 
   return (
-    <section className="relative min-h-[600px] md:min-h-[700px] flex items-center overflow-hidden">
-      {/* Fondo con imagen de técnicos */}
+    <section className="relative min-h-[80vh] flex items-center overflow-hidden">
+      {/* Fondo con imagen del electricista */}
       <div className="absolute inset-0">
         <div
           className="absolute inset-0 bg-cover bg-center bg-no-repeat"
@@ -184,49 +199,55 @@ export const Hero = () => {
           }}
         ></div>
         {/* Overlay oscuro para legibilidad del texto */}
-        <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/50 to-black/30"></div>
-        {/* Overlay azul para mantener la identidad de marca */}
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-900/40 via-blue-800/30 to-indigo-900/40"></div>
+        <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/60 to-black/40"></div>
+        {/* Overlay azul sutil para mantener la identidad de marca */}
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-900/30 via-transparent to-indigo-900/20"></div>
       </div>
 
       <div className="container mx-auto px-4 sm:px-6 relative z-20">
-        <div className="max-w-6xl">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
+        <div className="max-w-7xl">
+          <div className="grid lg:grid-cols-2 gap-16 items-center">
             {/* Contenido principal */}
             <div className="text-white">
               {/* Badge de confianza */}
-              <div className="inline-flex items-center bg-white/10 backdrop-blur-sm rounded-full px-4 py-2 mb-6 border border-white/20">
-                <span className="text-yellow-400 mr-2">⭐</span>
-                <span className="text-sm font-medium">
+              <div className="inline-flex items-center bg-white/15 backdrop-blur-sm rounded-full px-6 py-3 mb-8 border border-white/30 shadow-lg">
+                <FontAwesomeIcon icon={faShieldAlt} className="text-yellow-400 mr-3 text-lg" />
+                <span className="text-sm font-semibold">
                   +50,000 servicios completados • 4.8/5 estrellas
                 </span>
               </div>
 
-              <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold mb-6 leading-tight">
-                <span className="text-white">Técnicos</span>
+              {/* Título principal */}
+              <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold mb-8 leading-tight">
+                <span className="text-white">La Solución Confiable</span>
                 <br />
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-400">
-                  Verificados
+                  para tu Hogar
                 </span>
                 <br />
-                <span className="text-white">Para Tu Hogar</span>
+                <span className="text-white text-4xl sm:text-5xl lg:text-6xl">
+                  Técnicos Verificados en CDMX
+                </span>
               </h1>
 
-              <p className="text-xl sm:text-2xl mb-8 text-blue-100 leading-relaxed">
-                Conectamos hogares mexicanos con los mejores profesionales.
+              {/* Subtítulo */}
+              <p className="text-xl sm:text-2xl mb-10 text-blue-100 leading-relaxed max-w-2xl">
+                Deja de buscar. Conectamos tu necesidad con el mejor profesional en{" "}
+                <span className="text-yellow-300 font-bold">menos de 2 horas</span>.
                 <br />
-                <span className="text-yellow-300 font-semibold">
-                  Respuesta en menos de 2 horas.
+                <span className="text-lg text-blue-200">
+                  Respuesta garantizada, trabajo de calidad.
                 </span>
               </p>
 
-              {/* Formulario de búsqueda moderno */}
-              <div className="bg-white/10 backdrop-blur-md p-6 rounded-2xl shadow-2xl border border-white/20 mb-8">
-                <div className="relative mb-4">
-                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none z-10">
+              {/* Formulario de búsqueda rediseñado */}
+              <div className="bg-white/15 backdrop-blur-md p-8 rounded-3xl shadow-2xl border border-white/30 mb-8">
+                {/* Campo de código postal */}
+                <div className="relative mb-6">
+                  <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none z-10">
                     <FontAwesomeIcon
                       icon={faMapMarkerAlt}
-                      className="text-blue-400 text-lg"
+                      className="text-blue-400 text-xl"
                     />
                   </div>
                   <input
@@ -234,7 +255,7 @@ export const Hero = () => {
                     type="text"
                     inputMode="numeric"
                     maxLength={5}
-                    className="w-full pl-12 pr-4 py-4 text-lg border-2 border-white/30 rounded-xl text-gray-900 bg-white/90 backdrop-blur-sm focus:ring-4 focus:ring-blue-500/50 focus:border-blue-500 transition-all placeholder-gray-500"
+                    className="w-full pl-14 pr-4 py-5 text-xl border-2 border-white/40 rounded-2xl text-gray-900 bg-white/95 backdrop-blur-sm focus:ring-4 focus:ring-blue-500/50 focus:border-blue-500 transition-all placeholder-gray-500 font-medium"
                     placeholder="03100"
                     value={postalCode}
                     onChange={handlePostalCodeChange}
@@ -245,11 +266,11 @@ export const Hero = () => {
                 <button
                   onClick={handleUseCurrentLocation}
                   disabled={isUsingCurrentLocation}
-                  className="w-full mb-4 bg-white/20 hover:bg-white/30 disabled:bg-white/10 disabled:cursor-not-allowed text-white px-4 py-3 rounded-xl font-medium transition-all flex items-center justify-center border border-white/30"
+                  className="w-full mb-6 bg-white/25 hover:bg-white/35 disabled:bg-white/15 disabled:cursor-not-allowed text-white px-6 py-4 rounded-2xl font-semibold transition-all flex items-center justify-center border border-white/40 text-lg"
                 >
                   <FontAwesomeIcon
                     icon={isUsingCurrentLocation ? faSpinner : faLocationDot}
-                    className={`mr-2 ${
+                    className={`mr-3 text-xl ${
                       isUsingCurrentLocation ? "animate-spin" : ""
                     }`}
                   />
@@ -258,80 +279,114 @@ export const Hero = () => {
                     : "Usar mi Ubicación Actual"}
                 </button>
 
+                {/* Botones de servicios populares */}
+                <div className="mb-6">
+                  <p className="text-white/90 text-lg font-semibold mb-4 text-center">
+                    O selecciona un servicio:
+                  </p>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    {popularServices.map((service) => (
+                      <Link
+                        key={service.slug}
+                        href={`/professionals?servicio=${service.slug}&cp=${postalCode || '03100'}`}
+                        className="bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-xl p-4 text-center border border-white/30 transition-all transform hover:scale-105 hover:shadow-lg"
+                      >
+                        <div className="text-2xl mb-2">{service.icon}</div>
+                        <div className="text-white font-semibold text-sm">
+                          {service.name}
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+
                 {/* CTA Button principal */}
                 <button
                   onClick={handlePostalCodeSubmit}
-                  className="w-full bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed text-white px-8 py-4 rounded-xl font-bold text-lg transition-all transform hover:scale-105 flex items-center justify-center shadow-lg"
+                  className="w-full bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed text-white px-8 py-5 rounded-2xl font-bold text-xl transition-all transform hover:scale-105 flex items-center justify-center shadow-2xl"
                   disabled={!isPostalCodeValid || isLoadingUser}
                 >
                   {isLoadingUser ? (
-                    <FontAwesomeIcon icon={faSpinner} spin className="mr-2" />
+                    <FontAwesomeIcon icon={faSpinner} spin className="mr-3 text-xl" />
                   ) : (
                     <>
-                      <FontAwesomeIcon icon={faSearch} className="mr-2" />
+                      <FontAwesomeIcon icon={faSearch} className="mr-3 text-xl" />
                       Encontrar mi técnico
                     </>
                   )}
                 </button>
               </div>
 
-              {/* Estadísticas visuales */}
-              <div className="grid grid-cols-3 gap-4 mb-8">
-                <div className="text-center">
-                  <div className="text-3xl font-bold text-yellow-400">
-                    2,500+
+              {/* Trust Bar - Estadísticas de confianza */}
+              <div className="grid grid-cols-3 gap-6 mb-8">
+                <div className="text-center bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/20">
+                  <div className="text-3xl font-bold text-yellow-400 mb-1">
+                    50,000+
                   </div>
-                  <div className="text-sm text-blue-200">Profesionales</div>
+                  <div className="text-sm text-blue-200 font-medium">Servicios</div>
                 </div>
-                <div className="text-center">
-                  <div className="text-3xl font-bold text-green-400">2h</div>
-                  <div className="text-sm text-blue-200">Tiempo Promedio</div>
+                <div className="text-center bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/20">
+                  <div className="text-3xl font-bold text-green-400 mb-1">2h</div>
+                  <div className="text-sm text-blue-200 font-medium">Tiempo Promedio</div>
                 </div>
-                <div className="text-center">
-                  <div className="text-3xl font-bold text-purple-400">4.8</div>
-                  <div className="text-sm text-blue-200">Calificación</div>
+                <div className="text-center bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/20">
+                  <div className="text-3xl font-bold text-purple-400 mb-1">4.8</div>
+                  <div className="text-sm text-blue-200 font-medium">Calificación</div>
                 </div>
               </div>
             </div>
 
-            {/* Lado derecho - Elementos visuales con técnicos */}
+            {/* Lado derecho - Tarjetas de perfiles flotantes */}
             <div className="hidden lg:block relative">
               <div className="relative">
-                {/* Círculos decorativos */}
-                <div className="absolute top-0 right-0 w-32 h-32 bg-yellow-400/20 rounded-full blur-xl"></div>
-                <div className="absolute bottom-0 left-0 w-48 h-48 bg-blue-400/20 rounded-full blur-2xl"></div>
-                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-gradient-to-r from-yellow-400/10 to-orange-400/10 rounded-full blur-3xl"></div>
+                {/* Tarjetas de perfiles flotantes */}
+                <div className="space-y-4">
+                  {/* Perfil 1 - Carlos */}
+                  <div className="bg-white/20 backdrop-blur-sm rounded-2xl p-6 border border-white/30 shadow-2xl transform hover:scale-105 transition-all">
+                    <div className="flex items-center mb-3">
+                      <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-lg">
+                        C
+                      </div>
+                      <div className="ml-4">
+                        <div className="text-white font-bold text-lg">Carlos</div>
+                        <div className="text-yellow-400 text-sm">★★★★★ 5/5</div>
+                      </div>
+                    </div>
+                    <div className="text-blue-200 text-sm">Electricista • 150+ trabajos</div>
+                  </div>
 
-                {/* Tarjetas de servicios principales */}
-                <div className="grid grid-cols-2 gap-4 relative z-10">
-                  <div className="bg-white/20 backdrop-blur-sm rounded-xl p-4 text-center border border-white/30">
-                    <div className="text-3xl mb-2">🔧</div>
-                    <div className="text-white font-semibold text-sm">
-                      Plomería
+                  {/* Perfil 2 - Ana */}
+                  <div className="bg-white/20 backdrop-blur-sm rounded-2xl p-6 border border-white/30 shadow-2xl transform hover:scale-105 transition-all ml-8">
+                    <div className="flex items-center mb-3">
+                      <div className="w-12 h-12 bg-gradient-to-r from-pink-500 to-red-600 rounded-full flex items-center justify-center text-white font-bold text-lg">
+                        A
+                      </div>
+                      <div className="ml-4">
+                        <div className="text-white font-bold text-lg">Ana</div>
+                        <div className="text-yellow-400 text-sm">★★★★★ 5/5</div>
+                      </div>
                     </div>
+                    <div className="text-blue-200 text-sm">Plomera • 200+ trabajos</div>
                   </div>
-                  <div className="bg-white/20 backdrop-blur-sm rounded-xl p-4 text-center border border-white/30">
-                    <div className="text-3xl mb-2">⚡</div>
-                    <div className="text-white font-semibold text-sm">
-                      Electricidad
+
+                  {/* Perfil 3 - Miguel */}
+                  <div className="bg-white/20 backdrop-blur-sm rounded-2xl p-6 border border-white/30 shadow-2xl transform hover:scale-105 transition-all -ml-4">
+                    <div className="flex items-center mb-3">
+                      <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-teal-600 rounded-full flex items-center justify-center text-white font-bold text-lg">
+                        M
+                      </div>
+                      <div className="ml-4">
+                        <div className="text-white font-bold text-lg">Miguel</div>
+                        <div className="text-yellow-400 text-sm">★★★★★ 5/5</div>
+                      </div>
                     </div>
-                  </div>
-                  <div className="bg-white/20 backdrop-blur-sm rounded-xl p-4 text-center border border-white/30">
-                    <div className="text-3xl mb-2">🔨</div>
-                    <div className="text-white font-semibold text-sm">
-                      Construcción
-                    </div>
-                  </div>
-                  <div className="bg-white/20 backdrop-blur-sm rounded-xl p-4 text-center border border-white/30">
-                    <div className="text-3xl mb-2">🎨</div>
-                    <div className="text-white font-semibold text-sm">
-                      Pintura
-                    </div>
+                    <div className="text-blue-200 text-sm">Constructor • 300+ trabajos</div>
                   </div>
                 </div>
 
-                {/* Badge de verificación */}
-                <div className="absolute -top-4 -right-4 bg-green-500 text-white px-4 py-2 rounded-full text-sm font-bold shadow-lg">
+                {/* Badge de verificación flotante */}
+                <div className="absolute -top-6 -right-6 bg-green-500 text-white px-6 py-3 rounded-full text-sm font-bold shadow-2xl flex items-center">
+                  <FontAwesomeIcon icon={faCheckCircle} className="mr-2" />
                   ✓ Verificados
                 </div>
               </div>
