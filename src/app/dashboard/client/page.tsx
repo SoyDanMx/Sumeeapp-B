@@ -37,6 +37,20 @@ export default function ClientDashboardPage() {
   const [error, setError] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
+  // Función para refrescar los leads
+  const refreshLeads = async () => {
+    if (!user) return;
+    
+    try {
+      console.log('🔍 Dashboard - Refrescando leads...');
+      const userLeads = await getClientLeads(user.id);
+      console.log('🔍 Dashboard - Leads refrescados:', userLeads.length);
+      setLeads(userLeads);
+    } catch (error) {
+      console.error('Error refreshing leads:', error);
+    }
+  };
+
   useEffect(() => {
     const fetchLeads = async () => {
       // Esperar a que termine de cargar la autenticación
@@ -55,7 +69,9 @@ export default function ClientDashboardPage() {
       try {
         setLoading(true);
         setError(null);
+        console.log('🔍 Dashboard - Obteniendo leads para usuario:', user.id);
         const userLeads = await getClientLeads(user.id);
+        console.log('🔍 Dashboard - Leads obtenidos:', userLeads.length);
         setLeads(userLeads);
       } catch (leadError) {
         console.error('Error fetching client leads:', leadError);
@@ -326,10 +342,11 @@ export default function ClientDashboardPage() {
       </div>
 
       {/* Modal de Solicitud de Servicio */}
-      <RequestServiceModal 
-        isOpen={isModalOpen} 
-        onClose={() => setIsModalOpen(false)} 
-      />
+        <RequestServiceModal 
+          isOpen={isModalOpen} 
+          onClose={() => setIsModalOpen(false)}
+          onLeadCreated={refreshLeads}
+        />
     </div>
   );
 }
