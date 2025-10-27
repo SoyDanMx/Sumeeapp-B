@@ -16,15 +16,7 @@ import WhatsAppWidget from "@/components/WhatsAppWidget";
 import { SkipLinks } from "@/components/UX/AccessibilityHelpers";
 import CriticalCSS from "@/components/Performance/CriticalCSS";
 import ResourceHints from "@/components/Performance/ResourceHints";
-
-// Code splitting para componentes no críticos
-import dynamic from "next/dynamic";
-
-const GoogleAnalytics = dynamic(() => import("@/components/analytics/GoogleAnalytics").then(mod => ({ default: mod.GoogleAnalytics })), { ssr: false });
-const MetaPixel = dynamic(() => import("@/components/analytics/MetaPixel").then(mod => ({ default: mod.MetaPixel })), { ssr: false });
-const StructuredData = dynamic(() => import("@/components/SEO/StructuredData"), { ssr: false });
-const ServiceWorker = dynamic(() => import("@/components/Performance/ServiceWorker"), { ssr: false });
-const PerformanceMonitor = dynamic(() => import("@/components/Performance/PerformanceMonitor"), { ssr: false });
+import ClientAnalytics from "@/components/ClientAnalytics";
 
 
 const inter = Inter({ subsets: ["latin"] });
@@ -67,22 +59,11 @@ export default function RootLayout({
         <CriticalCSS />
       </head>
       <body className={inter.className}>
-        <GoogleAnalytics />
-        <MetaPixel />
-        
-        {/* Structured Data para SEO */}
-        <StructuredData type="Organization" data={{}} />
-        <StructuredData type="LocalBusiness" data={{}} />
-        <StructuredData type="WebSite" data={{}} />
-        
         {/* Skip Links para accesibilidad */}
         <SkipLinks />
         
-        {/* Service Worker para PWA */}
-        <ServiceWorker />
-        
-        {/* Performance Monitor para Web Vitals */}
-        <PerformanceMonitor />
+        {/* Analytics y Performance con carga diferida */}
+        <ClientAnalytics />
         
         {/*
           ENVOLVEMOS EL HEADER Y EL CONTENIDO PRINCIPAL (children)
