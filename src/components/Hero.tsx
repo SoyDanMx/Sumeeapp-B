@@ -2,6 +2,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import Image from "next/image";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faSearch,
@@ -17,7 +18,6 @@ import {
   faShieldAlt,
 } from "@fortawesome/free-solid-svg-icons";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
 import Link from "next/link";
 import { supabase } from "@/lib/supabaseClient";
 import ActivityCard from "./ActivityCard";
@@ -191,18 +191,17 @@ export const Hero = () => {
 
   return (
     <section className="relative min-h-[100vh] md:min-h-[85vh] flex items-center overflow-hidden pt-16 md:pt-20">
-      {/* Fondo con imagen del electricista */}
+      {/* Imagen optimizada para LCP */}
       <div className="absolute inset-0">
-        <div
-          className="absolute inset-0 bg-cover bg-no-repeat"
-          style={{
-            backgroundImage: "url('/images/hero/professional-hero.png')",
-            backgroundSize: "cover",
-            backgroundPosition: "center center",
-            backgroundRepeat: "no-repeat",
-            objectFit: "cover",
-          }}
-        ></div>
+        <Image
+          src="/images/hero/professional-hero.webp"
+          alt="Profesional electricista trabajando - Sumee App"
+          fill
+          priority
+          quality={80}
+          className="-z-10 object-cover"
+          sizes="100vw"
+        />
         {/* Overlay responsivo para mantener la imagen visible */}
         <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/60 md:bg-gradient-to-r md:from-black/40 md:via-transparent md:to-transparent"></div>
       </div>

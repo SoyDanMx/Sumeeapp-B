@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import Script from 'next/script';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
   faCheck, 
@@ -116,7 +117,17 @@ export default function MembresiaContent() {
   const publishableKey = "pk_live_51P8c4AE2shKTNR9MVARQB4La2uYMMc2shlTCcpcg8EI6MqqPV1uN5uj6UbB5mpfReRKd4HL2OP1LoF17WXcYYeB000Ot1l847E";
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+    <>
+      {/* Script de Stripe solo para esta página */}
+      <Script
+        src="https://js.stripe.com/v3/buy-button.js"
+        strategy="lazyOnload"
+        onLoad={() => {
+          console.log("Stripe script cargado");
+        }}
+      />
+      
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
       {/* Hero Section */}
       <div className="relative overflow-hidden bg-gradient-to-r from-blue-600 to-purple-700">
         <div className="absolute inset-0 bg-black opacity-20"></div>
@@ -298,5 +309,6 @@ export default function MembresiaContent() {
         </div>
       </div>
     </div>
+    </>
   );
 }

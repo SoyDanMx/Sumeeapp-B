@@ -1,17 +1,17 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import ServiceCard from '@/components/services/ServiceCard';
-import ServiceSearch from '@/components/services/ServiceSearch';
-import AIAdvisor from '@/components/services/AIAdvisor';
-import AIChatHelper from '@/components/ai/AIChatHelper';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { 
-  faStar, 
-  faFire, 
-  faTools, 
-  faCog, 
-  faLaptop, 
+import React, { useState } from "react";
+import ServiceCard from "@/components/services/ServiceCard";
+import ServiceSearch from "@/components/services/ServiceSearch";
+import AIAdvisor from "@/components/services/AIAdvisor";
+import AIChatHelper from "@/components/ai/AIChatHelper";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+  faStar,
+  faFire,
+  faTools,
+  faCog,
+  faLaptop,
   faBuilding,
   faQuestionCircle,
   faWrench,
@@ -25,156 +25,159 @@ import {
   faVideo,
   faWifi,
   faBug,
-  faHardHat
-} from '@fortawesome/free-solid-svg-icons';
-import { faWhatsapp as faWhatsappBrand } from '@fortawesome/free-brands-svg-icons';
+  faHardHat,
+} from "@fortawesome/free-solid-svg-icons";
+import { faWhatsapp as faWhatsappBrand } from "@fortawesome/free-brands-svg-icons";
 
 // Función para obtener servicios desde Supabase
 // Datos estáticos de servicios
 const SERVICES_DATA = [
   {
-    id: '1',
-    name: 'Plomería',
-    slug: 'plomeria',
-    description: 'Reparaciones, instalaciones y mantenimiento de sistemas hidráulicos',
-    icon_name: 'faWrench',
+    id: "1",
+    name: "Plomería",
+    slug: "plomeria",
+    description:
+      "Reparaciones, instalaciones y mantenimiento de sistemas hidráulicos",
+    icon_name: "faWrench",
     is_popular: true,
-    category: 'Urgencias',
-    thumbnail_image_url: '/images/services/plomeria.jpg',
-    background_color: '#3B82F6'
+    category: "Urgencias",
+    thumbnail_image_url: "/images/services/plomeria.jpg",
+    background_color: "#3B82F6",
   },
   {
-    id: '2',
-    name: 'Electricidad',
-    slug: 'electricidad',
-    description: 'Instalaciones eléctricas, reparaciones y mantenimiento',
-    icon_name: 'faLightbulb',
+    id: "2",
+    name: "Electricidad",
+    slug: "electricidad",
+    description: "Instalaciones eléctricas, reparaciones y mantenimiento",
+    icon_name: "faLightbulb",
     is_popular: true,
-    category: 'Urgencias',
-    thumbnail_image_url: '/images/services/electricidad.jpg',
-    background_color: '#F59E0B'
+    category: "Urgencias",
+    thumbnail_image_url: "/images/services/electricidad.jpg",
+    background_color: "#F59E0B",
   },
   {
-    id: '3',
-    name: 'Aire Acondicionado',
-    slug: 'aire-acondicionado',
-    description: 'Instalación, reparación y mantenimiento de sistemas de climatización',
-    icon_name: 'faFan',
+    id: "3",
+    name: "Aire Acondicionado",
+    slug: "aire-acondicionado",
+    description:
+      "Instalación, reparación y mantenimiento de sistemas de climatización",
+    icon_name: "faFan",
     is_popular: true,
-    category: 'Mantenimiento',
-    thumbnail_image_url: '/images/services/aire-acondicionado.jpg',
-    background_color: '#10B981'
+    category: "Mantenimiento",
+    thumbnail_image_url: "/images/services/aire-acondicionado.jpg",
+    background_color: "#10B981",
   },
   {
-    id: '4',
-    name: 'CCTV y Seguridad',
-    slug: 'cctv',
-    description: 'Sistemas de seguridad, cámaras de vigilancia y alarmas',
-    icon_name: 'faVideo',
+    id: "4",
+    name: "CCTV y Seguridad",
+    slug: "cctv",
+    description: "Sistemas de seguridad, cámaras de vigilancia y alarmas",
+    icon_name: "faVideo",
     is_popular: false,
-    category: 'Tecnología',
-    thumbnail_image_url: '/images/services/cctv.jpg',
-    background_color: '#8B5CF6'
+    category: "Tecnología",
+    thumbnail_image_url: "/images/services/cctv.jpg",
+    background_color: "#8B5CF6",
   },
   {
-    id: '5',
-    name: 'Carpintería',
-    slug: 'carpinteria',
-    description: 'Trabajos en madera, muebles y estructuras',
-    icon_name: 'faHammer',
+    id: "5",
+    name: "Carpintería",
+    slug: "carpinteria",
+    description: "Trabajos en madera, muebles y estructuras",
+    icon_name: "faHammer",
     is_popular: false,
-    category: 'Mantenimiento',
-    thumbnail_image_url: '/images/services/carpinteria.jpg',
-    background_color: '#D97706'
+    category: "Mantenimiento",
+    thumbnail_image_url: "/images/services/carpinteria.jpg",
+    background_color: "#D97706",
   },
   {
-    id: '6',
-    name: 'Pintura',
-    slug: 'pintura',
-    description: 'Pintura interior y exterior, impermeabilización',
-    icon_name: 'faPaintRoller',
+    id: "6",
+    name: "Pintura",
+    slug: "pintura",
+    description: "Pintura interior y exterior, impermeabilización",
+    icon_name: "faPaintRoller",
     is_popular: false,
-    category: 'Mantenimiento',
-    thumbnail_image_url: '/images/services/pintura.jpg',
-    background_color: '#EC4899'
+    category: "Mantenimiento",
+    thumbnail_image_url: "/images/services/pintura.jpg",
+    background_color: "#EC4899",
   },
   {
-    id: '7',
-    name: 'Limpieza',
-    slug: 'limpieza',
-    description: 'Servicios de limpieza residencial y comercial',
-    icon_name: 'faBroom',
+    id: "7",
+    name: "Limpieza",
+    slug: "limpieza",
+    description: "Servicios de limpieza residencial y comercial",
+    icon_name: "faBroom",
     is_popular: false,
-    category: 'Mantenimiento',
-    thumbnail_image_url: '/images/services/limpieza.jpg',
-    background_color: '#06B6D4'
+    category: "Mantenimiento",
+    thumbnail_image_url: "/images/services/limpieza.jpg",
+    background_color: "#06B6D4",
   },
   {
-    id: '8',
-    name: 'Jardinería',
-    slug: 'jardineria',
-    description: 'Mantenimiento de jardines y áreas verdes',
-    icon_name: 'faLeaf',
+    id: "8",
+    name: "Jardinería",
+    slug: "jardineria",
+    description: "Mantenimiento de jardines y áreas verdes",
+    icon_name: "faLeaf",
     is_popular: false,
-    category: 'Mantenimiento',
-    thumbnail_image_url: '/images/services/jardineria.jpg',
-    background_color: '#22C55E'
+    category: "Mantenimiento",
+    thumbnail_image_url: "/images/services/jardineria.jpg",
+    background_color: "#22C55E",
   },
   {
-    id: '9',
-    name: 'Redes y WiFi',
-    slug: 'wifi',
-    description: 'Instalación y configuración de redes informáticas',
-    icon_name: 'faWifi',
+    id: "9",
+    name: "Redes y WiFi",
+    slug: "wifi",
+    description: "Instalación y configuración de redes informáticas",
+    icon_name: "faWifi",
     is_popular: false,
-    category: 'Tecnología',
-    thumbnail_image_url: '/images/services/wifi.jpg',
-    background_color: '#6366F1'
+    category: "Tecnología",
+    thumbnail_image_url: "/images/services/wifi.jpg",
+    background_color: "#6366F1",
   },
   {
-    id: '10',
-    name: 'Fumigación',
-    slug: 'fumigacion',
-    description: 'Control de plagas y fumigación profesional',
-    icon_name: 'faBug',
+    id: "10",
+    name: "Fumigación",
+    slug: "fumigacion",
+    description: "Control de plagas y fumigación profesional",
+    icon_name: "faBug",
     is_popular: false,
-    category: 'Especializado',
-    thumbnail_image_url: '/images/services/fumigacion.jpg',
-    background_color: '#EF4444'
+    category: "Especializado",
+    thumbnail_image_url: "/images/services/fumigacion.jpg",
+    background_color: "#EF4444",
   },
   {
-    id: '11',
-    name: 'Tablaroca',
-    slug: 'tablaroca',
-    description: 'Instalación y reparación de muros de tablaroca y drywall',
-    icon_name: 'faHardHat',
+    id: "11",
+    name: "Tablaroca",
+    slug: "tablaroca",
+    description: "Instalación y reparación de muros de tablaroca y drywall",
+    icon_name: "faHardHat",
     is_popular: false,
-    category: 'Construcción',
-    thumbnail_image_url: '/images/services/tablaroca.jpg',
-    background_color: '#F97316'
+    category: "Construcción",
+    thumbnail_image_url: "/images/services/tablaroca.jpg",
+    background_color: "#F97316",
   },
   {
-    id: '12',
-    name: 'Construcción',
-    slug: 'construccion',
-    description: 'Albañilería, acabados y construcción general',
-    icon_name: 'faHammer',
+    id: "12",
+    name: "Construcción",
+    slug: "construccion",
+    description: "Albañilería, acabados y construcción general",
+    icon_name: "faHammer",
     is_popular: false,
-    category: 'Construcción',
-    thumbnail_image_url: '/images/services/construccion.jpg',
-    background_color: '#84CC16'
+    category: "Construcción",
+    thumbnail_image_url: "/images/services/construccion.jpg",
+    background_color: "#84CC16",
   },
   {
-    id: '13',
-    name: 'Arquitectos e Ingenieros',
-    slug: 'arquitectos',
-    description: 'Especialistas en construcción, diseño y proyectos arquitectónicos',
-    icon_name: 'faBuilding',
+    id: "13",
+    name: "Arquitectos e Ingenieros",
+    slug: "arquitectos",
+    description:
+      "Especialistas en construcción, diseño y proyectos arquitectónicos",
+    icon_name: "faBuilding",
     is_popular: false,
-    category: 'Especializado',
-    thumbnail_image_url: '/images/services/arquitectos.jpg',
-    background_color: '#6366F1'
-  }
+    category: "Especializado",
+    thumbnail_image_url: "/images/services/arquitectos.jpg",
+    background_color: "#6366F1",
+  },
 ];
 
 function getServices() {
@@ -184,10 +187,30 @@ function getServices() {
 // Componente para categorías principales
 function CategoryButtons() {
   const categories = [
-    { name: 'Urgencias', icon: faFire, color: 'red', description: 'Problemas urgentes' },
-    { name: 'Mantenimiento', icon: faTools, color: 'blue', description: 'Cuidado del hogar' },
-    { name: 'Instalaciones', icon: faWrench, color: 'green', description: 'Nuevas instalaciones' },
-    { name: 'Proyectos', icon: faBuilding, color: 'purple', description: 'Proyectos grandes' }
+    {
+      name: "Urgencias",
+      icon: faFire,
+      color: "red",
+      description: "Problemas urgentes",
+    },
+    {
+      name: "Mantenimiento",
+      icon: faTools,
+      color: "blue",
+      description: "Cuidado del hogar",
+    },
+    {
+      name: "Instalaciones",
+      icon: faWrench,
+      color: "green",
+      description: "Nuevas instalaciones",
+    },
+    {
+      name: "Proyectos",
+      icon: faBuilding,
+      color: "purple",
+      description: "Proyectos grandes",
+    },
   ];
 
   return (
@@ -197,8 +220,8 @@ function CategoryButtons() {
           key={category.name}
           className="flex flex-col items-center p-6 bg-white rounded-xl border-2 border-gray-200 hover:border-blue-300 hover:shadow-md transition-all duration-200 group"
         >
-          <FontAwesomeIcon 
-            icon={category.icon} 
+          <FontAwesomeIcon
+            icon={category.icon}
             className={`text-3xl mb-3 text-${category.color}-500 group-hover:text-${category.color}-600 transition-colors`}
           />
           <h3 className="font-semibold text-gray-900 mb-1">{category.name}</h3>
@@ -211,7 +234,7 @@ function CategoryButtons() {
 
 // Componente para sección de servicios populares
 function PopularServicesSection({ services }: { services: any[] }) {
-  const popularServices = services.filter(service => service.is_popular);
+  const popularServices = services.filter((service) => service.is_popular);
 
   if (popularServices.length === 0) return null;
 
@@ -220,13 +243,15 @@ function PopularServicesSection({ services }: { services: any[] }) {
       <div className="text-center mb-8">
         <div className="flex items-center justify-center space-x-2 mb-4">
           <FontAwesomeIcon icon={faStar} className="text-yellow-500 text-2xl" />
-          <h2 className="text-3xl font-bold text-gray-900">Servicios Más Populares</h2>
+          <h2 className="text-3xl font-bold text-gray-900">
+            Servicios Más Populares
+          </h2>
         </div>
         <p className="text-lg text-gray-600 max-w-2xl mx-auto">
           Los servicios más solicitados por nuestros clientes
         </p>
       </div>
-      
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {popularServices.map((service) => (
           <ServiceCard key={service.id} service={service} />
@@ -238,8 +263,8 @@ function PopularServicesSection({ services }: { services: any[] }) {
 
 // Componente para sección de urgencias
 function EmergencyServicesSection({ services }: { services: any[] }) {
-  const emergencyServices = services.filter(service => 
-    service.category === 'Urgencias' && !service.is_popular
+  const emergencyServices = services.filter(
+    (service) => service.category === "Urgencias" && !service.is_popular
   );
 
   if (emergencyServices.length === 0) return null;
@@ -249,13 +274,15 @@ function EmergencyServicesSection({ services }: { services: any[] }) {
       <div className="text-center mb-8">
         <div className="flex items-center justify-center space-x-2 mb-4">
           <FontAwesomeIcon icon={faFire} className="text-red-500 text-2xl" />
-          <h2 className="text-3xl font-bold text-gray-900">Urgencias del Hogar</h2>
+          <h2 className="text-3xl font-bold text-gray-900">
+            Urgencias del Hogar
+          </h2>
         </div>
         <p className="text-lg text-gray-600 max-w-2xl mx-auto">
           Problemas que requieren atención inmediata
         </p>
       </div>
-      
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {emergencyServices.map((service) => (
           <ServiceCard key={service.id} service={service} />
@@ -267,8 +294,8 @@ function EmergencyServicesSection({ services }: { services: any[] }) {
 
 // Componente para sección de mantenimiento
 function MaintenanceServicesSection({ services }: { services: any[] }) {
-  const maintenanceServices = services.filter(service => 
-    service.category === 'Mantenimiento'
+  const maintenanceServices = services.filter(
+    (service) => service.category === "Mantenimiento"
   );
 
   if (maintenanceServices.length === 0) return null;
@@ -278,13 +305,15 @@ function MaintenanceServicesSection({ services }: { services: any[] }) {
       <div className="text-center mb-8">
         <div className="flex items-center justify-center space-x-2 mb-4">
           <FontAwesomeIcon icon={faTools} className="text-blue-500 text-2xl" />
-          <h2 className="text-3xl font-bold text-gray-900">Mantenimiento y Mejoras</h2>
+          <h2 className="text-3xl font-bold text-gray-900">
+            Mantenimiento y Mejoras
+          </h2>
         </div>
         <p className="text-lg text-gray-600 max-w-2xl mx-auto">
           Servicios para mantener y mejorar tu hogar
         </p>
       </div>
-      
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {maintenanceServices.map((service) => (
           <ServiceCard key={service.id} service={service} />
@@ -296,8 +325,8 @@ function MaintenanceServicesSection({ services }: { services: any[] }) {
 
 // Componente para sección de tecnología
 function TechnologyServicesSection({ services }: { services: any[] }) {
-  const techServices = services.filter(service => 
-    service.category === 'Tecnología'
+  const techServices = services.filter(
+    (service) => service.category === "Tecnología"
   );
 
   if (techServices.length === 0) return null;
@@ -306,14 +335,19 @@ function TechnologyServicesSection({ services }: { services: any[] }) {
     <section className="mb-16">
       <div className="text-center mb-8">
         <div className="flex items-center justify-center space-x-2 mb-4">
-          <FontAwesomeIcon icon={faLaptop} className="text-purple-500 text-2xl" />
-          <h2 className="text-3xl font-bold text-gray-900">Tecnología y Seguridad</h2>
+          <FontAwesomeIcon
+            icon={faLaptop}
+            className="text-purple-500 text-2xl"
+          />
+          <h2 className="text-3xl font-bold text-gray-900">
+            Tecnología y Seguridad
+          </h2>
         </div>
         <p className="text-lg text-gray-600 max-w-2xl mx-auto">
           Soluciones tecnológicas para tu hogar y oficina
         </p>
       </div>
-      
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {techServices.map((service) => (
           <ServiceCard key={service.id} service={service} />
@@ -325,8 +359,10 @@ function TechnologyServicesSection({ services }: { services: any[] }) {
 
 // Componente para sección de servicios especializados
 function SpecializedServicesSection({ services }: { services: any[] }) {
-  const specializedServices = services.filter(service => 
-    service.category === 'Especializado' || service.category === 'Construcción'
+  const specializedServices = services.filter(
+    (service) =>
+      service.category === "Especializado" ||
+      service.category === "Construcción"
   );
 
   if (specializedServices.length === 0) return null;
@@ -335,14 +371,19 @@ function SpecializedServicesSection({ services }: { services: any[] }) {
     <section className="mb-16">
       <div className="text-center mb-8">
         <div className="flex items-center justify-center space-x-2 mb-4">
-          <FontAwesomeIcon icon={faBuilding} className="text-green-500 text-2xl" />
-          <h2 className="text-3xl font-bold text-gray-900">Servicios Especializados</h2>
+          <FontAwesomeIcon
+            icon={faBuilding}
+            className="text-green-500 text-2xl"
+          />
+          <h2 className="text-3xl font-bold text-gray-900">
+            Servicios Especializados
+          </h2>
         </div>
         <p className="text-lg text-gray-600 max-w-2xl mx-auto">
           Proyectos de construcción y servicios profesionales
         </p>
       </div>
-      
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {specializedServices.map((service) => (
           <ServiceCard key={service.id} service={service} />
@@ -358,11 +399,10 @@ function IntelligentCTA() {
     <section className="bg-gradient-to-r from-blue-600 to-purple-700 rounded-2xl p-8 text-white text-center">
       <div className="max-w-2xl mx-auto">
         <FontAwesomeIcon icon={faQuestionCircle} className="text-4xl mb-4" />
-        <h3 className="text-2xl font-bold mb-4">
-          ¿No encuentras tu servicio?
-        </h3>
+        <h3 className="text-2xl font-bold mb-4">¿No encuentras tu servicio?</h3>
         <p className="text-lg mb-6 opacity-90">
-          Describe tu problema y un experto de Sumee te guiará hacia la solución perfecta
+          Describe tu problema y un experto de Sumee te guiará hacia la solución
+          perfecta
         </p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <a
@@ -389,13 +429,13 @@ function IntelligentCTA() {
 export default function ServicesPage() {
   const [isAIChatOpen, setIsAIChatOpen] = useState(false);
   const [selectedService, setSelectedService] = useState(null);
-  const [initialQuery, setInitialQuery] = useState<string>('');
-  
+  const [initialQuery, setInitialQuery] = useState<string>("");
+
   const services = getServices();
-  
+
   // Filtrar servicios populares y el resto
-  const popularServices = services.filter(service => service.is_popular);
-  const allServices = services.filter(service => !service.is_popular);
+  const popularServices = services.filter((service) => service.is_popular);
+  const allServices = services.filter((service) => !service.is_popular);
 
   const handleAIConsultation = (query?: string) => {
     if (query) {
@@ -407,7 +447,7 @@ export default function ServicesPage() {
   const handleServiceSelected = (service: any) => {
     setSelectedService(service);
     // Aquí podrías redirigir a la página del servicio o abrir un modal
-    console.log('Servicio seleccionado:', service);
+    console.log("Servicio seleccionado:", service);
   };
 
   return (
@@ -420,13 +460,14 @@ export default function ServicesPage() {
               Todos Nuestros Servicios
             </h1>
             <p className="text-xl text-blue-100 max-w-3xl mx-auto mb-12">
-              Encuentra la solución perfecta para tu hogar. Desde urgencias hasta proyectos especializados, 
-              tenemos el técnico perfecto para ti.
+              Encuentra la solución perfecta para tu hogar. Desde urgencias
+              hasta proyectos especializados, tenemos el técnico perfecto para
+              ti.
             </p>
-            
+
             {/* Buscador Principal Mejorado */}
             <div className="max-w-3xl mx-auto">
-              <ServiceSearch 
+              <ServiceSearch
                 placeholder="¿Qué problema necesitas resolver? (Ej: fuga de agua, instalar lámpara, pintar habitación)"
                 onAIConsultation={handleAIConsultation}
               />
@@ -439,14 +480,19 @@ export default function ServicesPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="text-center mb-12">
           <div className="flex items-center justify-center space-x-3 mb-4">
-            <FontAwesomeIcon icon={faStar} className="text-yellow-500 text-3xl" />
-            <h2 className="text-4xl font-bold text-gray-900">Servicios Populares</h2>
+            <FontAwesomeIcon
+              icon={faStar}
+              className="text-yellow-500 text-3xl"
+            />
+            <h2 className="text-4xl font-bold text-gray-900">
+              Servicios Populares
+            </h2>
           </div>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">
             Los servicios más solicitados por nuestros clientes
           </p>
         </div>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {popularServices.map((service) => (
             <ServiceCard key={service.id} service={service} />
@@ -458,44 +504,63 @@ export default function ServicesPage() {
       <div className="bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
           <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">Catálogo Completo</h2>
+            <h2 className="text-4xl font-bold text-gray-900 mb-4">
+              Catálogo Completo
+            </h2>
             <p className="text-xl text-gray-600 max-w-2xl mx-auto">
               Explora todos nuestros servicios organizados por categorías
             </p>
           </div>
-          
+
           {/* Agrupar servicios por categoría */}
           <div className="space-y-16">
-            {['Urgencias', 'Mantenimiento', 'Tecnología', 'Especializado', 'Construcción'].map((category) => {
-              const categoryServices = allServices.filter(service => service.category === category);
+            {[
+              "Urgencias",
+              "Mantenimiento",
+              "Tecnología",
+              "Especializado",
+              "Construcción",
+            ].map((category) => {
+              const categoryServices = allServices.filter(
+                (service) => service.category === category
+              );
               if (categoryServices.length === 0) return null;
-              
+
               const categoryIcons = {
-                'Urgencias': faFire,
-                'Mantenimiento': faTools,
-                'Tecnología': faLaptop,
-                'Especializado': faBuilding,
-                'Construcción': faHardHat
+                Urgencias: faFire,
+                Mantenimiento: faTools,
+                Tecnología: faLaptop,
+                Especializado: faBuilding,
+                Construcción: faHardHat,
               };
-              
+
               const categoryColors = {
-                'Urgencias': 'text-red-500',
-                'Mantenimiento': 'text-blue-500',
-                'Tecnología': 'text-purple-500',
-                'Especializado': 'text-green-500',
-                'Construcción': 'text-orange-500'
+                Urgencias: "text-red-500",
+                Mantenimiento: "text-blue-500",
+                Tecnología: "text-purple-500",
+                Especializado: "text-green-500",
+                Construcción: "text-orange-500",
               };
-              
+
               return (
-                <div key={category} className="border-b border-gray-200 pb-12 last:border-b-0">
+                <div
+                  key={category}
+                  className="border-b border-gray-200 pb-12 last:border-b-0"
+                >
                   <div className="flex items-center space-x-3 mb-8">
-                    <FontAwesomeIcon 
-                      icon={categoryIcons[category as keyof typeof categoryIcons]} 
-                      className={`text-2xl ${categoryColors[category as keyof typeof categoryColors]}`}
+                    <FontAwesomeIcon
+                      icon={
+                        categoryIcons[category as keyof typeof categoryIcons]
+                      }
+                      className={`text-2xl ${
+                        categoryColors[category as keyof typeof categoryColors]
+                      }`}
                     />
-                    <h3 className="text-2xl font-bold text-gray-900">{category}</h3>
+                    <h3 className="text-2xl font-bold text-gray-900">
+                      {category}
+                    </h3>
                   </div>
-                  
+
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                     {categoryServices.map((service) => (
                       <ServiceCard key={service.id} service={service} />
@@ -515,9 +580,9 @@ export default function ServicesPage() {
 
       {/* Asistente IA Flotante */}
       <AIAdvisor />
-      
+
       {/* AI Chat Helper */}
-      <AIChatHelper 
+      <AIChatHelper
         isOpen={isAIChatOpen}
         onClose={() => setIsAIChatOpen(false)}
         onServiceSelected={handleServiceSelected}

@@ -12,15 +12,19 @@ import { UserProvider } from "../context/UserContext"; // Importa el UserProvide
 import { MembershipProvider } from "../context/MembershipContext"; // Importa el MembershipProvider
 // --- FIN IMPORTS ADICIONALES ---
 
-import { WhatsAppButton } from "@/components/WhatsAppButton";
-import { GoogleAnalytics } from "@/components/analytics/GoogleAnalytics";
-import { MetaPixel } from "@/components/analytics/MetaPixel";
-import StructuredData from "@/components/SEO/StructuredData";
+import WhatsAppWidget from "@/components/WhatsAppWidget";
 import { SkipLinks } from "@/components/UX/AccessibilityHelpers";
 import CriticalCSS from "@/components/Performance/CriticalCSS";
 import ResourceHints from "@/components/Performance/ResourceHints";
-import ServiceWorker from "@/components/Performance/ServiceWorker";
-import PerformanceMonitor from "@/components/Performance/PerformanceMonitor";
+
+// Code splitting para componentes no críticos
+import dynamic from "next/dynamic";
+
+const GoogleAnalytics = dynamic(() => import("@/components/analytics/GoogleAnalytics").then(mod => ({ default: mod.GoogleAnalytics })), { ssr: false });
+const MetaPixel = dynamic(() => import("@/components/analytics/MetaPixel").then(mod => ({ default: mod.MetaPixel })), { ssr: false });
+const StructuredData = dynamic(() => import("@/components/SEO/StructuredData"), { ssr: false });
+const ServiceWorker = dynamic(() => import("@/components/Performance/ServiceWorker"), { ssr: false });
+const PerformanceMonitor = dynamic(() => import("@/components/Performance/PerformanceMonitor"), { ssr: false });
 
 
 const inter = Inter({ subsets: ["latin"] });
@@ -97,7 +101,7 @@ export default function RootLayout({
           </AuthProvider>
         </LocationProvider>
         
-        <WhatsAppButton />
+        <WhatsAppWidget />
       </body>
     </html>
   );
