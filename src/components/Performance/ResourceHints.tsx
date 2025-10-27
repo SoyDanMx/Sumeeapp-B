@@ -6,15 +6,9 @@ export default function ResourceHints() {
   return (
     <>
       {/* DNS Prefetch para recursos externos */}
-      <link rel="dns-prefetch" href="//fonts.googleapis.com" />
-      <link rel="dns-prefetch" href="//fonts.gstatic.com" />
       <link rel="dns-prefetch" href="//www.google-analytics.com" />
       <link rel="dns-prefetch" href="//www.googletagmanager.com" />
       <link rel="dns-prefetch" href="//images.unsplash.com" />
-      
-      {/* Preconnect para recursos críticos */}
-      <link rel="preconnect" href="https://fonts.googleapis.com" />
-      <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
       
       {/* Preload para recursos críticos */}
       <link 
