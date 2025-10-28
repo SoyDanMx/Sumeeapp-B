@@ -1,35 +1,21 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import Head from 'next/head';
+import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase/client';
 import { Profesional } from '@/types/supabase';
 import { useMembership } from '@/context/MembershipContext';
-import ProfessionalCard from '@/components/ProfessionalCard';
+import FilterSidebar from '@/components/tecnicos/FilterSidebar';
+import ProfessionalCard from '@/components/tecnicos/ProfessionalCard';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
-  faSearch, 
-  faMapMarkerAlt, 
-  faStar, 
-  faCheckCircle,
-  faFilter,
+  faSpinner, 
   faSort,
-  faUsers
+  faUsers,
+  faStar,
+  faChevronUp,
+  faChevronDown
 } from '@fortawesome/free-solid-svg-icons';
-
-// Categorías de servicios principales
-const serviceCategories = [
-  { id: 'plomeria', name: 'Plomería', icon: '🔧' },
-  { id: 'electricidad', name: 'Electricidad', icon: '⚡' },
-  { id: 'carpinteria', name: 'Carpintería', icon: '🔨' },
-  { id: 'pintura', name: 'Pintura', icon: '🎨' },
-  { id: 'aire_acondicionado', name: 'Aire Acondicionado', icon: '❄️' },
-  { id: 'jardineria', name: 'Jardinería', icon: '🌱' },
-  { id: 'limpieza', name: 'Limpieza', icon: '🧽' },
-  { id: 'fumigacion', name: 'Fumigación', icon: '🐛' },
-  { id: 'cctv', name: 'CCTV', icon: '📹' },
-  { id: 'wifi', name: 'WiFi', icon: '📶' }
-];
+import Link from 'next/link';
 
 // Opciones de ordenamiento
 const sortOptions = [
@@ -47,10 +33,10 @@ export default function TecnicosPage() {
   const [professionals, setProfessionals] = useState<Profesional[]>([]);
   const [filteredProfessionals, setFilteredProfessionals] = useState<Profesional[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   
   // Estados de filtros
   const [searchTerm, setSearchTerm] = useState('');
-  const [postalCode, setPostalCode] = useState('');
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [minRating, setMinRating] = useState(0);
   const [showVerifiedOnly, setShowVerifiedOnly] = useState(false);
@@ -60,10 +46,10 @@ export default function TecnicosPage() {
   const [showFilters, setShowFilters] = useState(false);
 
   // Función para obtener profesionales
-  const fetchProfessionals = async () => {
+  const fetchProfessionals = useCallback(async () => {
     try {
       setIsLoading(true);
-      // Usar el cliente de Supabase directamente
+      setError(null);
       
       let query = supabase
         .from('profiles')
@@ -71,411 +57,288 @@ export default function TecnicosPage() {
         .eq('role', 'profesional')
         .not('full_name', 'is', null);
 
-      // Aplicar filtros
+      // Aplicar filtro de búsqueda
       if (searchTerm) {
         query = query.ilike('full_name', `%${searchTerm}%`);
       }
       
-      if (postalCode) {
-        query = query.ilike('codigo_postal', `%${postalCode}%`);
-      }
-      
+      // Aplicar filtro de categorías
       if (selectedCategories.length > 0) {
         query = query.overlaps('areas_servicio', selectedCategories);
       }
       
+      // Aplicar filtro de calificación mínima
       if (minRating > 0) {
         query = query.gte('calificacion_promedio', minRating);
       }
       
+      // Aplicar filtro de verificación (asumimos que todos están verificados, pero mantendremos la lógica)
       if (showVerifiedOnly) {
-        query = query.eq('is_verified', true);
+        // En el futuro, cuando tengamos el campo is_verified:
+        // query = query.eq('is_verified', true);
       }
 
-      const { data, error } = await query;
+      const { data, error: supabaseError } = await query;
 
-      if (error) {
-        console.error('Error fetching professionals:', error);
+      if (supabaseError) {
+        console.error('Error fetching professionals:', supabaseError);
+        setError('Error al cargar profesionales. Por favor, intenta de nuevo.');
         return;
       }
 
       setProfessionals(data || []);
-    } catch (error) {
-      console.error('Error in fetchProfessionals:', error);
+    } catch (err) {
+      console.error('Error in fetchProfessionals:', err);
+      setError('Error al cargar profesionales. Por favor, intenta de nuevo.');
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [searchTerm, selectedCategories, minRating, showVerifiedOnly]);
 
-  // Función para ordenar profesionales con boost para nuevos
-  const sortProfessionals = (professionals: Profesional[]) => {
-    const sorted = [...professionals];
-    
-    switch (sortBy) {
-      case 'calificacion':
-        // Ordenar por calificación, pero dar boost a nuevos profesionales
-        return sorted.sort((a, b) => {
-          const aIsNew = !a.review_count || a.review_count <= 3;
-          const bIsNew = !b.review_count || b.review_count <= 3;
-          
-          // Si ambos son nuevos o ambos tienen reseñas, ordenar por calificación
-          if (aIsNew === bIsNew) {
-            return (b.calificacion_promedio || 0) - (a.calificacion_promedio || 0);
-          }
-          
-          // Dar prioridad a nuevos profesionales
-          return aIsNew ? -1 : 1;
-        });
-      case 'reseñas':
-        // Ordenar por número de reseñas
-        return sorted.sort((a, b) => (b.review_count || 0) - (a.review_count || 0));
-      case 'nombre':
-        return sorted.sort((a, b) => (a.full_name || '').localeCompare(b.full_name || ''));
-      default:
-        // Orden por relevancia: nuevos profesionales primero, luego por calificación
-        return sorted.sort((a, b) => {
-          const aIsNew = !a.review_count || a.review_count <= 3;
-          const bIsNew = !b.review_count || b.review_count <= 3;
-          
-          if (aIsNew === bIsNew) {
-            return (b.calificacion_promedio || 0) - (a.calificacion_promedio || 0);
-          }
-          
-          return aIsNew ? -1 : 1;
-        });
-    }
-  };
-
-  // Efecto para obtener datos
+  // Efecto para cargar profesionales
   useEffect(() => {
     fetchProfessionals();
-  }, []);
+  }, [fetchProfessionals]);
 
-  // Efecto para búsqueda en tiempo real
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      if (searchTerm || postalCode) {
-        fetchProfessionals();
-      }
-    }, 300); // Debounce de 300ms
-
-    return () => clearTimeout(timeoutId);
-  }, [searchTerm, postalCode]);
-
-  // Efecto para aplicar filtros y ordenamiento
+  // Efecto para filtrar y ordenar profesionales
   useEffect(() => {
     let filtered = [...professionals];
-    
-    // Aplicar filtros adicionales
-    if (selectedCategories.length > 0) {
-      filtered = filtered.filter(prof => 
-        prof.areas_servicio && 
-        selectedCategories.some(cat => prof.areas_servicio?.includes(cat))
-      );
-    }
-    
-    if (minRating > 0) {
-      filtered = filtered.filter(prof => 
-        (prof.calificacion_promedio || 0) >= minRating
-      );
-    }
-    
-    if (showVerifiedOnly) {
-      // filtered = filtered.filter(prof => prof.is_verified);
-      // Comentado temporalmente hasta que se añada is_verified al tipo Profesional
-    }
-    
-    // Limitar resultados para usuarios gratuitos
-    if (isFreeUser) {
-      filtered = filtered.slice(0, permissions.maxTechniciansVisible);
-    }
-    
-    // Ordenar resultados
-    const sorted = sortProfessionals(filtered);
-    setFilteredProfessionals(sorted);
-  }, [professionals, selectedCategories, minRating, showVerifiedOnly, sortBy, isFreeUser, permissions.maxTechniciansVisible]);
 
-  // Manejar selección de categorías
-  const handleCategoryToggle = (categoryId: string) => {
-    setSelectedCategories(prev => 
-      prev.includes(categoryId) 
-        ? prev.filter(id => id !== categoryId)
-        : [...prev, categoryId]
-    );
-  };
+    // Ordenamiento
+    switch (sortBy) {
+      case 'calificacion':
+        filtered.sort((a, b) => (b.calificacion_promedio || 0) - (a.calificacion_promedio || 0));
+        break;
+      case 'reseñas':
+        filtered.sort((a, b) => (b.review_count || 0) - (a.review_count || 0));
+        break;
+      case 'nombre':
+        filtered.sort((a, b) => (a.full_name || '').localeCompare(b.full_name || ''));
+        break;
+      case 'relevancia':
+      default:
+        // Ordenar por relevancia: primero mejor calificados, luego más reseñas
+        filtered.sort((a, b) => {
+          const ratingDiff = (b.calificacion_promedio || 0) - (a.calificacion_promedio || 0);
+          if (ratingDiff !== 0) return ratingDiff;
+          return (b.review_count || 0) - (a.review_count || 0);
+        });
+        break;
+    }
 
-  // Limpiar filtros
-  const clearFilters = () => {
+    setFilteredProfessionals(filtered);
+  }, [professionals, sortBy]);
+
+  // Función para limpiar filtros
+  const handleClearFilters = () => {
     setSearchTerm('');
-    setPostalCode('');
     setSelectedCategories([]);
     setMinRating(0);
     setShowVerifiedOnly(false);
-    setSortBy('relevancia');
   };
 
+  // Contar resultados
+  const resultCount = filteredProfessionals.length;
+
   return (
-    <>
-      <Head>
-        <title>Técnicos Verificados en México | Sumee App</title>
-        <meta name="description" content="Encuentra técnicos verificados y calificados en tu zona. Plomeros, electricistas, carpinteros y más profesionales de confianza." />
-        <meta name="keywords" content="técnicos, plomeros, electricistas, carpinteros, servicios, México, verificados" />
-        <meta property="og:title" content="Técnicos Verificados en México | Sumee App" />
-        <meta property="og:description" content="Encuentra técnicos verificados y calificados en tu zona. Plomeros, electricistas, carpinteros y más profesionales de confianza." />
-        <meta property="og:type" content="website" />
-        <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="Técnicos Verificados en México | Sumee App" />
-        <meta name="twitter:description" content="Encuentra técnicos verificados y calificados en tu zona. Plomeros, electricistas, carpinteros y más profesionales de confianza." />
-      </Head>
-      <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">
-                Encuentra el Profesional Perfecto
-              </h1>
-              <p className="mt-2 text-gray-600">
-                Técnicos verificados y calificados en tu zona
-              </p>
+    <div className="min-h-screen bg-gray-50">
+      {/* Hero Section */}
+      <div className="bg-gradient-to-r from-blue-600 via-blue-700 to-purple-700 text-white py-16">
+        <div className="container mx-auto px-4">
+          <div className="max-w-4xl mx-auto text-center">
+            <h1 className="text-4xl md:text-5xl font-bold mb-4">
+              Directorio de Profesionales
+            </h1>
+            <p className="text-xl text-white/90 mb-8">
+              Encuentra técnicos verificados y de confianza en tu zona
+            </p>
+            <div className="flex flex-wrap justify-center gap-4 text-sm">
+              <div className="flex items-center bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full">
+                <FontAwesomeIcon icon={faStar} className="mr-2 text-yellow-300" />
+                <span>Técnicos Verificados</span>
+              </div>
+              <div className="flex items-center bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full">
+                <FontAwesomeIcon icon={faUsers} className="mr-2" />
+                <span>+{resultCount} Profesionales</span>
+              </div>
             </div>
-            <button
-              onClick={() => setShowFilters(!showFilters)}
-              className="lg:hidden flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              <FontAwesomeIcon icon={faFilter} />
-              <span>Filtros</span>
-            </button>
           </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex flex-col lg:flex-row gap-8">
-          {/* Barra de Filtros - Columna Izquierda */}
-          <div className={`lg:w-1/4 ${showFilters ? 'block' : 'hidden lg:block'}`}>
-            <div className="bg-white rounded-lg shadow-sm border p-6 space-y-6">
-              <h3 className="text-lg font-semibold text-gray-900 flex items-center">
-                <FontAwesomeIcon icon={faFilter} className="mr-2" />
-                Filtros
-              </h3>
-
-              {/* Búsqueda por Nombre */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Buscar por Nombre
-                </label>
-                <div className="relative">
-                  <FontAwesomeIcon 
-                    icon={faSearch} 
-                    className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
-                  />
-                  <input
-                    type="text"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    placeholder="Ej: Juan Pérez"
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  />
-                </div>
-              </div>
-
-              {/* Código Postal */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Código Postal
-                </label>
-                <div className="relative">
-                  <FontAwesomeIcon 
-                    icon={faMapMarkerAlt} 
-                    className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
-                  />
-                  <input
-                    type="text"
-                    value={postalCode}
-                    onChange={(e) => setPostalCode(e.target.value)}
-                    placeholder="Ej: 06700"
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  />
-                </div>
-              </div>
-
-              {/* Categorías de Servicio */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-3">
-                  Categorías
-                </label>
-                <div className="space-y-2">
-                  {serviceCategories.map((category) => (
-                    <label key={category.id} className="flex items-center">
-                      <input
-                        type="checkbox"
-                        checked={selectedCategories.includes(category.id)}
-                        onChange={() => handleCategoryToggle(category.id)}
-                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                      />
-                      <span className="ml-3 text-sm text-gray-700">
-                        {category.icon} {category.name}
-                      </span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-
-              {/* Calificación Mínima */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-3">
-                  Calificación Mínima
-                </label>
-                <div className="space-y-2">
-                  {[0, 3, 4, 5].map((rating) => (
-                    <label key={rating} className="flex items-center">
-                      <input
-                        type="radio"
-                        name="minRating"
-                        checked={minRating === rating}
-                        onChange={() => setMinRating(rating)}
-                        className="text-blue-600 focus:ring-blue-500"
-                      />
-                      <span className="ml-3 text-sm text-gray-700">
-                        {rating === 0 ? 'Todas las calificaciones' : `${rating}+ estrellas`}
-                      </span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-
-              {/* Solo Verificados */}
-              <div>
-                <label className="flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={showVerifiedOnly}
-                    onChange={(e) => setShowVerifiedOnly(e.target.checked)}
-                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                  />
-                  <span className="ml-3 text-sm text-gray-700 flex items-center">
-                    <FontAwesomeIcon icon={faCheckCircle} className="mr-2 text-green-600" />
-                    Solo Verificados
-                  </span>
-                </label>
-              </div>
-
-              {/* Botón Limpiar Filtros */}
+      {/* Contenido Principal */}
+      <div className="container mx-auto px-4 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+          {/* Barra Lateral de Filtros */}
+          <div className="lg:col-span-1">
+            {/* Botón de Filtros para Móvil */}
+            <div className="lg:hidden mb-4">
               <button
-                onClick={clearFilters}
-                className="w-full py-2 px-4 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+                onClick={() => setShowFilters(!showFilters)}
+                className="w-full bg-white hover:bg-gray-50 text-gray-900 px-4 py-3 rounded-lg font-medium flex items-center justify-between shadow-md border border-gray-200"
               >
-                Limpiar Filtros
+                <span className="flex items-center">
+                  <FontAwesomeIcon icon={faSort} className="mr-2" />
+                  {showFilters ? 'Ocultar Filtros' : 'Mostrar Filtros'}
+                </span>
+                <FontAwesomeIcon 
+                  icon={showFilters ? faChevronUp : faChevronDown} 
+                  className="text-sm"
+                />
               </button>
+            </div>
+
+            {/* Sidebar de Filtros */}
+            <div className={`${showFilters ? 'block' : 'hidden lg:block'}`}>
+              <FilterSidebar
+                searchTerm={searchTerm}
+                onSearchChange={setSearchTerm}
+                selectedCategories={selectedCategories}
+                onCategoriesChange={setSelectedCategories}
+                minRating={minRating}
+                onMinRatingChange={setMinRating}
+                showVerifiedOnly={showVerifiedOnly}
+                onShowVerifiedOnlyChange={setShowVerifiedOnly}
+                onClearFilters={handleClearFilters}
+                resultCount={resultCount}
+              />
             </div>
           </div>
 
-          {/* Resultados - Columna Derecha */}
-          <div className="lg:w-3/4">
-            {/* Encabezado de Resultados */}
-            <div className="bg-white rounded-lg shadow-sm border p-6 mb-6">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          {/* Área de Resultados */}
+          <div className="lg:col-span-3">
+            {/* Header de Resultados */}
+            <div className="bg-white rounded-xl shadow-md p-6 mb-6">
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <div>
-                  <h2 className="text-xl font-semibold text-gray-900">
-                    {isLoading ? 'Cargando...' : `${filteredProfessionals.length} profesionales encontrados`}
+                  <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                    {resultCount > 0 ? (
+                      <>Encontramos {resultCount} profesional{resultCount !== 1 ? 'es' : ''}</>
+                    ) : (
+                      'No se encontraron profesionales'
+                    )}
                   </h2>
-                  {!isLoading && (
-                    <p className="text-gray-600 mt-1">
-                      {selectedCategories.length > 0 && `Filtrado por: ${selectedCategories.join(', ')}`}
+                  {selectedCategories.length > 0 && (
+                    <p className="text-sm text-gray-600">
+                      Filtrando por: {selectedCategories.join(', ')}
                     </p>
                   )}
                 </div>
-                
-                {/* Ordenamiento */}
-                <div className="flex items-center space-x-2">
-                  <FontAwesomeIcon icon={faSort} className="text-gray-400" />
-                  <select
-                    value={sortBy}
-                    onChange={(e) => setSortBy(e.target.value)}
-                    className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    {sortOptions.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+
+                {/* Dropdown de Ordenamiento */}
+                {resultCount > 0 && (
+                  <div className="flex items-center space-x-3">
+                    <FontAwesomeIcon icon={faSort} className="text-gray-400" />
+                    <select
+                      value={sortBy}
+                      onChange={(e) => setSortBy(e.target.value)}
+                      className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900"
+                    >
+                      {sortOptions.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
               </div>
             </div>
 
-            {/* Banner de Upgrade para usuarios gratuitos */}
-            {isFreeUser && (
-              <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg p-6 mb-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <FontAwesomeIcon icon={faUsers} className="text-2xl" />
-                    <div>
-                      <h3 className="font-bold text-lg">Desbloquea todos los profesionales</h3>
-                      <p className="text-blue-100">Con un plan premium puedes ver todos los técnicos disponibles</p>
-                    </div>
+            {/* Banner de Feature Gating para Usuarios Gratuitos */}
+            {isFreeUser && resultCount > 0 && (
+              <div className="bg-gradient-to-r from-yellow-50 to-orange-50 border-l-4 border-yellow-400 rounded-lg p-6 mb-6 shadow-md">
+                <div className="flex items-start">
+                  <div className="flex-shrink-0">
+                    <FontAwesomeIcon icon={faStar} className="text-yellow-500 text-2xl" />
                   </div>
-                  <a
-                    href={upgradeUrl}
-                    className="bg-white text-blue-600 px-6 py-2 rounded-lg font-semibold hover:bg-blue-50 transition-colors"
-                  >
-                    Ver Planes
-                  </a>
+                  <div className="ml-4 flex-1">
+                    <h3 className="text-lg font-bold text-gray-900 mb-2">
+                      Desbloquea todos los profesionales
+                    </h3>
+                    <p className="text-gray-700 mb-4">
+                      Con un plan Premium puedes ver los perfiles completos y contactar a los técnicos mejor calificados de forma inmediata.
+                    </p>
+                    <Link
+                      href="/membresia"
+                      className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all shadow-md hover:shadow-lg"
+                    >
+                      Ver Planes Premium
+                    </Link>
+                  </div>
                 </div>
               </div>
             )}
 
-            {/* Grid de Profesionales */}
-            {isLoading ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                {[...Array(6)].map((_, i) => (
-                  <div key={i} className="bg-white rounded-lg shadow-sm border p-6 animate-pulse">
-                    <div className="flex items-center space-x-4 mb-4">
-                      <div className="w-16 h-16 bg-gray-200 rounded-full"></div>
-                      <div className="flex-1">
-                        <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-                        <div className="h-3 bg-gray-200 rounded w-1/2"></div>
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <div className="h-3 bg-gray-200 rounded"></div>
-                      <div className="h-3 bg-gray-200 rounded w-2/3"></div>
-                    </div>
-                  </div>
-                ))}
+            {/* Loading State */}
+            {isLoading && (
+              <div className="text-center py-20">
+                <FontAwesomeIcon
+                  icon={faSpinner}
+                  spin
+                  size="3x"
+                  className="text-blue-600 mb-4"
+                />
+                <p className="text-gray-700 text-lg">Cargando profesionales...</p>
               </div>
-            ) : filteredProfessionals.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                {filteredProfessionals.map((professional) => (
-                  <ProfessionalCard 
-                    key={professional.user_id} 
-                    professional={professional} 
-                  />
-                ))}
+            )}
+
+            {/* Error State */}
+            {error && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-6 mb-6">
+                <p className="text-red-800 font-semibold mb-2">Error</p>
+                <p className="text-red-700 mb-4">{error}</p>
+                <button
+                  onClick={fetchProfessionals}
+                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                >
+                  Intentar de nuevo
+                </button>
               </div>
-            ) : (
-              <div className="bg-white rounded-lg shadow-sm border p-12 text-center">
-                <FontAwesomeIcon icon={faUsers} className="text-6xl text-gray-300 mb-4" />
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">
+            )}
+
+            {/* No Results */}
+            {!isLoading && !error && resultCount === 0 && (
+              <div className="text-center py-20 bg-white rounded-xl shadow-md">
+                <FontAwesomeIcon icon={faUsers} className="text-gray-400 text-6xl mb-4" />
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">
                   No se encontraron profesionales
                 </h3>
                 <p className="text-gray-600 mb-6">
-                  Intenta ajustar tus filtros de búsqueda
+                  Intenta ajustar tus filtros o realizar una búsqueda diferente.
                 </p>
                 <button
-                  onClick={clearFilters}
-                  className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  onClick={handleClearFilters}
+                  className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold"
                 >
                   Limpiar Filtros
                 </button>
               </div>
             )}
+
+            {/* Grid de Resultados */}
+            {!isLoading && !error && resultCount > 0 && (
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                {filteredProfessionals.map((professional) => (
+                  <ProfessionalCard
+                    key={professional.user_id}
+                    professional={professional}
+                  />
+                ))}
+              </div>
+            )}
+
+            {/* Mensaje de Límite de Resultados */}
+            {resultCount >= 50 && (
+              <div className="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-4 text-center">
+                <p className="text-sm text-blue-800">
+                  <strong>Mostrando los primeros {resultCount} resultados.</strong> Usa los filtros para refinar tu búsqueda y encontrar el profesional perfecto.
+                </p>
+              </div>
+            )}
           </div>
         </div>
       </div>
-      </div>
-    </>
+    </div>
   );
 }
