@@ -1,4 +1,5 @@
 // src/components/WhatsAppWidget.tsx
+// Optimizado para TBT: Carga diferida del componente
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -8,7 +9,7 @@ const WhatsAppWidget = () => {
   const [isPulsing, setIsPulsing] = useState(false);
 
   useEffect(() => {
-    // Mostrar el botón después de 3 segundos
+    // Mostrar el botón después de 3 segundos para no bloquear el render inicial
     const timer = setTimeout(() => {
       setIsVisible(true);
     }, 3000);

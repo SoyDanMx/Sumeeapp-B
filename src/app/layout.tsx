@@ -12,35 +12,52 @@ import { UserProvider } from "../context/UserContext"; // Importa el UserProvide
 import { MembershipProvider } from "../context/MembershipContext"; // Importa el MembershipProvider
 // --- FIN IMPORTS ADICIONALES ---
 
-import WhatsAppWidget from "@/components/WhatsAppWidget";
 import { SkipLinks } from "@/components/UX/AccessibilityHelpers";
 import CriticalCSS from "@/components/Performance/CriticalCSS";
 import ResourceHints from "@/components/Performance/ResourceHints";
 import ClientAnalytics from "@/components/ClientAnalytics";
+import ClientWhatsAppWidget from "@/components/ClientWhatsAppWidget";
 
-
-const inter = Inter({ subsets: ["latin"] });
+// Fuente optimizada para CLS - auto-hospedada con next/font
+const inter = Inter({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  display: "swap", // Reduce CLS mostrando texto con fuente de sistema mientras carga
+  variable: "--font-inter", // Variable CSS para uso en Tailwind
+  preload: true, // Preload de la fuente para mejor rendimiento
+});
 
 // Metadata optimizada para SEO y conversión
 export const metadata: Metadata = {
-  metadataBase: new URL('https://www.sumeeapp.com'),
-  
+  metadataBase: new URL("https://www.sumeeapp.com"),
+
   title: {
     default: "Plomeros, Electricistas y Más Verificados en CDMX | Sumee App",
     template: `%s | Sumee App CDMX`,
   },
-  description: "Encuentra técnicos profesionales de confianza para tu hogar en Ciudad de México. Servicios 100% verificados con garantía de satisfacción. ¡Cotiza fácil y rápido!",
-  
-  keywords: ["plomeros CDMX", "electricistas CDMX", "servicios para el hogar CDMX", "técnicos verificados CDMX", "reparaciones a domicilio", "mantenimiento del hogar Ciudad de México", "Sumee App", "servicios profesionales CDMX"],
-  
+  description:
+    "Encuentra técnicos profesionales de confianza para tu hogar en Ciudad de México. Servicios 100% verificados con garantía de satisfacción. ¡Cotiza fácil y rápido!",
+
+  keywords: [
+    "plomeros CDMX",
+    "electricistas CDMX",
+    "servicios para el hogar CDMX",
+    "técnicos verificados CDMX",
+    "reparaciones a domicilio",
+    "mantenimiento del hogar Ciudad de México",
+    "Sumee App",
+    "servicios profesionales CDMX",
+  ],
+
   openGraph: {
     title: "Plomeros, Electricistas y Más Verificados en CDMX | Sumee App",
-    description: "Encuentra técnicos profesionales de confianza para tu hogar en Ciudad de México. Servicios 100% verificados con garantía de satisfacción. ¡Cotiza fácil y rápido!",
-    url: 'https://www.sumeeapp.com',
-    siteName: 'Sumee App',
-    images: [{ url: '/og-image.png', width: 1200, height: 630 }],
-    locale: 'es_MX',
-    type: 'website',
+    description:
+      "Encuentra técnicos profesionales de confianza para tu hogar en Ciudad de México. Servicios 100% verificados con garantía de satisfacción. ¡Cotiza fácil y rápido!",
+    url: "https://www.sumeeapp.com",
+    siteName: "Sumee App",
+    images: [{ url: "/og-image.png", width: 1200, height: 630 }],
+    locale: "es_MX",
+    type: "website",
   },
 };
 
@@ -54,17 +71,17 @@ export default function RootLayout({
       <head>
         {/* Resource Hints para performance */}
         <ResourceHints />
-        
+
         {/* Critical CSS inline */}
         <CriticalCSS />
       </head>
       <body className={inter.className}>
         {/* Skip Links para accesibilidad */}
         <SkipLinks />
-        
+
         {/* Analytics y Performance con carga diferida */}
         <ClientAnalytics />
-        
+
         {/*
           ENVOLVEMOS EL HEADER Y EL CONTENIDO PRINCIPAL (children)
           CON EL LOCATIONPROVIDER PARA QUE TODOS TENGAN ACCESO AL CONTEXTO DE UBICACIÓN.
@@ -74,15 +91,18 @@ export default function RootLayout({
             <UserProvider>
               <MembershipProvider>
                 <Header /> {/* El Header ahora forma parte del layout */}
-                <main id="main-content" className="pt-20"> {/* Añadimos padding-top para que el contenido no quede bajo el fixed header */}
-                  {children} {/* Aquí se renderiza el contenido de cada página */}
+                <main id="main-content" className="pt-20">
+                  {" "}
+                  {/* Añadimos padding-top para que el contenido no quede bajo el fixed header */}
+                  {children}{" "}
+                  {/* Aquí se renderiza el contenido de cada página */}
                 </main>
               </MembershipProvider>
             </UserProvider>
           </AuthProvider>
         </LocationProvider>
-        
-        <WhatsAppWidget />
+
+        <ClientWhatsAppWidget />
       </body>
     </html>
   );

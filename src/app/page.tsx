@@ -3,14 +3,47 @@ import { Header } from '@/components/Header';
 import { Hero } from '@/components/Hero';
 import { PricingTransparencyBanner } from '@/components/PricingTransparencyBanner';
 import { ValueProposition } from '@/components/ValueProposition';
-import { TestimonialsSection } from '@/components/TestimonialsSection';
-import { ProfessionalCTA } from '@/components/ProfessionalCTA';
-import { AIHelper } from '@/components/AIHelper';
-import { HowItWorks } from '@/components/HowItWorks';
-import { BlogSection } from '@/components/BlogSection';
-import { Footer } from '@/components/Footer';
-import QuickLeadForm from '@/components/QuickLeadForm';
-import PopularServices from '@/components/landing/PopularServices';
+import dynamic from 'next/dynamic';
+
+// Componentes "below the fold" cargados dinámicamente para reducir TBT
+const TestimonialsSection = dynamic(
+  () => import('@/components/TestimonialsSection').then(mod => mod.TestimonialsSection),
+  { ssr: true }
+);
+
+const ProfessionalCTA = dynamic(
+  () => import('@/components/ProfessionalCTA').then(mod => mod.ProfessionalCTA),
+  { ssr: true }
+);
+
+const AIHelper = dynamic(
+  () => import('@/components/AIHelper').then(mod => mod.AIHelper),
+  { ssr: true }
+);
+
+const HowItWorks = dynamic(
+  () => import('@/components/HowItWorks').then(mod => mod.HowItWorks),
+  { ssr: true }
+);
+
+const BlogSection = dynamic(
+  () => import('@/components/BlogSection').then(mod => mod.BlogSection),
+  { ssr: true }
+);
+
+// Footer cargado dinámicamente - no crítico para LCP
+const Footer = dynamic(
+  () => import('@/components/Footer').then(mod => mod.Footer),
+  { ssr: true }
+);
+
+const QuickLeadForm = dynamic(() => import('@/components/QuickLeadForm'), {
+  ssr: true,
+});
+
+const PopularServices = dynamic(() => import('@/components/landing/PopularServices'), {
+  ssr: true,
+});
 
 export default function Home() {
   return (
