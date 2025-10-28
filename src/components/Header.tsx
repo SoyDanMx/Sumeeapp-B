@@ -4,8 +4,6 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { supabase } from "@/lib/supabaseClient";
-import type { User } from "@supabase/supabase-js";
 import { useAuth } from "@/context/AuthContext";
 import UserPanelMenu from "./UserPanelMenu";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -27,34 +25,41 @@ const DynamicLocationSelectorModal = dynamic(
   { ssr: false }
 );
 
+// Componente Skeleton para los botones durante la carga
+const ButtonSkeleton = () => (
+  <div className="h-8 w-24 bg-gray-200 rounded animate-pulse"></div>
+);
+
 export const Header = () => {
-  const [loading, setLoading] = useState(true);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
 
   const { location, setLocation } = useLocation();
-  const { user, isLoading: userLoading } = useAuth();
+  const { user, profile, isLoading, isAuthenticated } = useAuth();
 
-  useEffect(() => {
-    setLoading(userLoading);
-  }, [userLoading]);
-
-  // Cerrar dropdown al hacer click fuera
-
+  // Cerrar todos los modales
   const closeAllModals = () => {
     setIsMenuOpen(false);
     setIsLocationModalOpen(false);
   };
 
-  const handleLogout = async () => {
-    try {
-      await supabase.auth.signOut();
-      // Redirigir a la página principal
-      window.location.href = "/";
-    } catch (error) {
-      console.error("Error al cerrar sesión:", error);
+  // Cerrar menú móvil al hacer clic fuera
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (!target.closest('.mobile-menu') && !target.closest('.menu-button')) {
+        setIsMenuOpen(false);
+      }
+    };
+
+    if (isMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
     }
-  };
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isMenuOpen]);
 
   return (
     <>
@@ -77,7 +82,7 @@ export const Header = () => {
               </Link>
             </div>
 
-            {/* Ubicación - Solo visible en móvil, más compacta */}
+            {/* Ubicación - Solo visible en móvil */}
             <div
               className="flex items-center cursor-pointer text-gray-700 hover:text-blue-600 transition-colors duration-200 md:hidden"
               onClick={() => setIsLocationModalOpen(true)}
@@ -88,28 +93,29 @@ export const Header = () => {
               </span>
             </div>
 
-            {/* CTA Principal - Compacto */}
+            {/* CTA Principal - Con skeleton durante carga */}
             <div className="flex items-center space-x-2">
-              {!loading && (
-                <>
-                  {user ? (
-                    <UserPanelMenu user={user} onClose={closeAllModals} />
-                  ) : (
-                    <Link
-                      href="/login"
-                      className="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded text-xs font-medium transition md:px-3 md:py-1.5 md:text-sm"
-                    >
-                      Iniciar Sesión
-                    </Link>
-                  )}
-                </>
+              {isLoading ? (
+                // Estado de carga: mostrar skeleton
+                <ButtonSkeleton />
+              ) : isAuthenticated && user ? (
+                // Usuario logueado: mostrar dropdown "Mi Panel"
+                <UserPanelMenu onClose={closeAllModals} />
+              ) : (
+                // Visitante anónimo: mostrar botón "Iniciar Sesión"
+                <Link
+                  href="/login"
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded text-xs font-medium transition md:px-3 md:py-1.5 md:text-sm"
+                >
+                  Iniciar Sesión
+                </Link>
               )}
 
               {/* Botón hamburguesa - Solo móvil */}
               <button
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
                 aria-label="Abrir menú"
-                className="md:hidden p-1"
+                className="md:hidden p-1 menu-button"
               >
                 <FontAwesomeIcon
                   icon={faBars}
@@ -135,7 +141,7 @@ export const Header = () => {
               <FontAwesomeIcon icon={faChevronDown} className="ml-1 text-xs" />
             </div>
 
-            {/* Navegación desktop */}
+            {/* Navegación desktop - Siempre visible */}
             <nav className="flex items-center space-x-3">
               <Link
                 href="/join-as-pro"
@@ -152,7 +158,7 @@ export const Header = () => {
       <div
         className={`fixed top-0 right-0 h-full w-80 bg-white shadow-xl z-50 transform transition-transform duration-300 ease-in-out ${
           isMenuOpen ? "translate-x-0" : "translate-x-full"
-        } md:hidden`}
+        } md:hidden mobile-menu`}
       >
         {/* Header del menú */}
         <div className="flex items-center justify-between p-4 border-b border-gray-200">
@@ -167,7 +173,7 @@ export const Header = () => {
         </div>
 
         {/* Contenido del menú */}
-        <nav className="flex flex-col p-4 space-y-4">
+        <nav className="flex flex-col p-4 space-y-4 overflow-y-auto h-[calc(100vh-64px)]">
           {/* Ubicación */}
           <div
             className="flex items-center cursor-pointer text-gray-700 hover:text-blue-600 transition-colors p-3 rounded-lg hover:bg-gray-50"
@@ -189,7 +195,7 @@ export const Header = () => {
 
           <hr className="border-gray-200" />
 
-          {/* Enlaces de navegación */}
+          {/* Enlaces de navegación - Siempre visibles */}
           <Link
             href="/join-as-pro"
             onClick={closeAllModals}
@@ -209,7 +215,7 @@ export const Header = () => {
           </Link>
 
           <Link
-            href="/professionals"
+            href="/tecnicos"
             onClick={closeAllModals}
             className="flex items-center text-gray-700 hover:text-blue-600 hover:bg-gray-50 p-3 rounded-lg transition-colors"
           >
@@ -219,27 +225,53 @@ export const Header = () => {
 
           <hr className="border-gray-200" />
 
-          {/* CTA Principal */}
-          {!loading && (
-            <div className="pt-2">
-              {user ? (
-                <Link
-                  href="/dashboard"
-                  onClick={closeAllModals}
-                  className="block bg-blue-600 hover:bg-blue-700 text-white text-center px-4 py-3 rounded-lg font-medium transition-colors"
-                >
-                  Mi Panel
-                </Link>
-              ) : (
-                <Link
-                  href="/login"
-                  onClick={closeAllModals}
-                  className="block bg-blue-600 hover:bg-blue-700 text-white text-center px-4 py-3 rounded-lg font-medium transition-colors"
-                >
-                  Iniciar Sesión
-                </Link>
-              )}
-            </div>
+          {/* CTA Principal - Con skeleton durante carga */}
+          <div className="pt-2">
+            {isLoading ? (
+              // Estado de carga: mostrar skeleton
+              <div className="h-12 bg-gray-200 rounded-lg animate-pulse"></div>
+            ) : isAuthenticated && user ? (
+              // Usuario logueado: mostrar botón "Mi Panel" con enlace al dashboard
+              <Link
+                href={profile?.role === 'profesional' ? '/professional-dashboard' : '/dashboard/client'}
+                onClick={closeAllModals}
+                className="block bg-blue-600 hover:bg-blue-700 text-white text-center px-4 py-3 rounded-lg font-medium transition-colors"
+              >
+                Mi Panel
+              </Link>
+            ) : (
+              // Visitante anónimo: mostrar botón "Iniciar Sesión"
+              <Link
+                href="/login"
+                onClick={closeAllModals}
+                className="block bg-blue-600 hover:bg-blue-700 text-white text-center px-4 py-3 rounded-lg font-medium transition-colors"
+              >
+                Iniciar Sesión
+              </Link>
+            )}
+          </div>
+
+          {/* Si está logueado, mostrar opción de cerrar sesión */}
+          {isAuthenticated && user && (
+            <>
+              <hr className="border-gray-200" />
+              <button
+                onClick={async () => {
+                  try {
+                    const { supabase } = await import('@/lib/supabase/client');
+                    await supabase.auth.signOut();
+                    closeAllModals();
+                    window.location.href = '/';
+                  } catch (error) {
+                    console.error('Error al cerrar sesión:', error);
+                  }
+                }}
+                className="flex items-center w-full text-red-600 hover:bg-red-50 p-3 rounded-lg transition-colors"
+              >
+                <FontAwesomeIcon icon={faTimes} className="mr-3 text-lg" />
+                <span className="font-medium">Cerrar Sesión</span>
+              </button>
+            </>
           )}
         </nav>
       </div>
