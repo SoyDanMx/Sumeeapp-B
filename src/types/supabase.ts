@@ -1,6 +1,6 @@
 // src/types/supabase.ts
 
-import { User } from '@supabase/supabase-js';
+import { User } from "@supabase/supabase-js";
 
 /**
  * @file Definiciones de tipos basadas en el esquema de la base de datos de Supabase.
@@ -11,11 +11,24 @@ import { User } from '@supabase/supabase-js';
 // TIPOS BASE
 // =========================================================================
 
-export type UserRole = 'client' | 'profesional';
+export type UserRole = "client" | "profesional";
 
-export type LeadEstado = 'buscando' | 'aceptado' | 'nuevo' | 'contactado' | 'en_progreso' | 'completado' | 'cancelado';
+export type LeadEstado =
+  | "buscando"
+  | "aceptado"
+  | "nuevo"
+  | "contactado"
+  | "en_progreso"
+  | "en_camino"
+  | "completado"
+  | "cancelado";
 
-export type ServiceCategory = 'Urgencias' | 'Mantenimiento' | 'Tecnología' | 'Especializado' | 'Construcción';
+export type ServiceCategory =
+  | "Urgencias"
+  | "Mantenimiento"
+  | "Tecnología"
+  | "Especializado"
+  | "Construcción";
 
 // =========================================================================
 // INTERFAZ PARA SERVICES (NUEVA TABLA)
@@ -25,7 +38,7 @@ export type ServiceCategory = 'Urgencias' | 'Mantenimiento' | 'Tecnología' | 'E
  * Corresponde a la tabla public.services
  */
 export interface Service {
-  id: string; 
+  id: string;
   created_at: string;
   updated_at: string;
   name: string;
@@ -58,9 +71,9 @@ export interface Profile {
   avatar_url?: string | null;
   bio?: string | null;
   work_photos_urls?: string | null;
-  membership_status: 'free' | 'basic' | 'premium';
+  membership_status: "free" | "basic" | "premium";
   stripe_customer_id?: string | null;
-  status: 'active' | 'inactive';
+  status: "active" | "inactive";
   work_zones?: string[] | null;
   experiencia_uber: boolean;
   años_experiencia_uber: number;
@@ -103,7 +116,7 @@ export interface Lead {
   descripcion_proyecto: string;
   ubicacion_lat: number;
   ubicacion_lng: number;
-  fecha_creacion: string; 
+  fecha_creacion: string;
   estado: LeadEstado;
   profesional_asignado_id?: string | null;
   imagen_url?: string | null;
@@ -125,10 +138,10 @@ export interface Lead {
 export interface ProfesionalCompleto extends Profile {
   // Datos específicos de profesionales
   profesional_id: string;
-    profession: string;
+  profession: string;
   specialties: string[];
   experience_years: number;
-    calificacion_promedio: number;
+  calificacion_promedio: number;
   ubicacion_lat?: number | null;
   ubicacion_lng?: number | null;
   ubicacion_direccion?: string | null;
@@ -149,7 +162,7 @@ export interface LeadCompleto extends Lead {
   // Información del cliente
   cliente_nombre?: string | null;
   cliente_email?: string | null;
-  
+
   // Información del profesional asignado
   profesional_nombre?: string | null;
   profesional_email?: string | null;
@@ -303,7 +316,7 @@ export interface AppConfig {
   app: {
     name: string;
     version: string;
-    environment: 'development' | 'production' | 'test';
+    environment: "development" | "production" | "test";
   };
 }
 
@@ -314,13 +327,13 @@ export interface AppConfig {
 /**
  * Eventos del sistema
  */
-export type SystemEvent = 
-  | 'user_registered'
-  | 'user_verified'
-  | 'lead_created'
-  | 'lead_assigned'
-  | 'lead_completed'
-  | 'profesional_updated';
+export type SystemEvent =
+  | "user_registered"
+  | "user_verified"
+  | "lead_created"
+  | "lead_assigned"
+  | "lead_completed"
+  | "profesional_updated";
 
 /**
  * Payload de eventos
