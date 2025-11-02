@@ -47,17 +47,17 @@ export const Header = () => {
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
-      if (!target.closest('.mobile-menu') && !target.closest('.menu-button')) {
+      if (!target.closest(".mobile-menu") && !target.closest(".menu-button")) {
         setIsMenuOpen(false);
       }
     };
 
     if (isMenuOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener("mousedown", handleClickOutside);
     }
 
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [isMenuOpen]);
 
@@ -69,7 +69,7 @@ export const Header = () => {
           {/* Layout principal - Una sola línea */}
           <div className="flex items-center justify-between">
             {/* Logo - Compacto */}
-            <div className="flex-shrink-0">
+            <div className="flex-shrink-0 flex items-center space-x-2">
               <Link href="/" onClick={closeAllModals}>
                 <Image
                   src="/logo.png"
@@ -80,6 +80,23 @@ export const Header = () => {
                   priority
                 />
               </Link>
+              {/* Badge "Tu Primera Revisión es Gratis" - CTA accionable para usuarios no autenticados */}
+              {!isAuthenticated && !isLoading && (
+                <Link
+                  href="/registro-cliente"
+                  onClick={closeAllModals}
+                  className="hidden md:flex items-center bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white px-3 py-1.5 rounded-full text-[10px] font-bold shadow-md hover:shadow-lg transition-all duration-300 transform hover:scale-105 cursor-pointer group"
+                  title="Regístrate ahora y obtén tu primera revisión gratis"
+                >
+                  <span className="whitespace-nowrap flex items-center">
+                    <span className="mr-1 group-hover:animate-bounce">✨</span>
+                    Tu Primera Revisión es Gratis
+                    <span className="ml-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      →
+                    </span>
+                  </span>
+                </Link>
+              )}
             </div>
 
             {/* Ubicación - Solo visible en móvil */}
@@ -156,7 +173,7 @@ export const Header = () => {
 
       {/* Menú móvil - Panel lateral */}
       <div
-        className={`fixed top-0 right-0 h-full w-80 bg-white shadow-xl z-50 transform transition-transform duration-300 ease-in-out ${
+        className={`fixed top-0 right-0 h-full w-80 bg-white dark:bg-gray-900 shadow-lg z-50 transform transition-transform duration-300 ease-in-out ${
           isMenuOpen ? "translate-x-0" : "translate-x-full"
         } md:hidden mobile-menu`}
       >
@@ -233,7 +250,11 @@ export const Header = () => {
             ) : isAuthenticated && user ? (
               // Usuario logueado: mostrar botón "Mi Panel" con enlace al dashboard
               <Link
-                href={profile?.role === 'profesional' ? '/professional-dashboard' : '/dashboard/client'}
+                href={
+                  profile?.role === "profesional"
+                    ? "/professional-dashboard"
+                    : "/dashboard/client"
+                }
                 onClick={closeAllModals}
                 className="block bg-blue-600 hover:bg-blue-700 text-white text-center px-4 py-3 rounded-lg font-medium transition-colors"
               >
@@ -258,12 +279,12 @@ export const Header = () => {
               <button
                 onClick={async () => {
                   try {
-                    const { supabase } = await import('@/lib/supabase/client');
+                    const { supabase } = await import("@/lib/supabase/client");
                     await supabase.auth.signOut();
                     closeAllModals();
-                    window.location.href = '/';
+                    window.location.href = "/";
                   } catch (error) {
-                    console.error('Error al cerrar sesión:', error);
+                    console.error("Error al cerrar sesión:", error);
                   }
                 }}
                 className="flex items-center w-full text-red-600 hover:bg-red-50 p-3 rounded-lg transition-colors"
