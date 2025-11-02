@@ -121,6 +121,7 @@ export default function DisciplineAIHelper({
   const [isOpen, setIsOpen] = useState(false);
   const [showMembershipCTA, setShowMembershipCTA] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const chatRef = useRef<HTMLDivElement>(null);
 
   const expert = DISCIPLINE_EXPERTS[discipline as keyof typeof DISCIPLINE_EXPERTS] || DISCIPLINE_EXPERTS.electricidad;
 
@@ -232,13 +233,92 @@ Nuestros ${disciplineName}s están verificados, tienen licencias vigentes y ofre
     setShowMembershipCTA(false);
   };
 
+  // Función para enviar un mensaje con un prompt específico
+  const handleSendMessageWithPrompt = async (prompt: string) => {
+    if (!prompt.trim() || isLoading) return;
+
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      role: 'user',
+      content: prompt,
+      timestamp: new Date()
+    };
+
+    setMessages(prev => [...prev, userMessage]);
+    setIsLoading(true);
+
+    try {
+      const aiResponse = await generateAIResponse(prompt);
+      
+      const assistantMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        content: aiResponse.response,
+        timestamp: new Date(),
+        showMembershipCTA: aiResponse.showMembershipCTA
+      };
+
+      setMessages(prev => [...prev, assistantMessage]);
+      setShowMembershipCTA(aiResponse.showMembershipCTA);
+    } catch (error) {
+      console.error('Error generating AI response:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Escuchar eventos personalizados para abrir el chat desde el botón "Consultar IA"
+  useEffect(() => {
+    const handleOpenChat = (event: CustomEvent) => {
+      // Verificar que el evento es para esta disciplina
+      if (event.detail?.discipline === discipline || !event.detail?.discipline) {
+        // Hacer scroll primero al contenedor
+        if (chatRef.current) {
+          // Scroll al contenedor padre (#ai-helper)
+          const aiHelperContainer = document.getElementById('ai-helper');
+          if (aiHelperContainer) {
+            aiHelperContainer.scrollIntoView({ 
+              behavior: 'smooth', 
+              block: 'start' 
+            });
+          }
+          
+          // Luego abrir el chat después de un pequeño delay
+          setTimeout(() => {
+            setIsOpen(true);
+            
+            // Si hay un prompt inicial, enviarlo automáticamente
+            if (event.detail?.initialPrompt) {
+              setTimeout(() => {
+                setInputValue(event.detail.initialPrompt);
+                // Simular envío después de que el chat esté completamente abierto
+                setTimeout(() => {
+                  handleSendMessageWithPrompt(event.detail.initialPrompt);
+                }, 500);
+              }, 300);
+            }
+          }, 500);
+        }
+      }
+    };
+
+    // Escuchar el evento personalizado
+    window.addEventListener('openAIHelperChat' as any, handleOpenChat as EventListener);
+
+    return () => {
+      window.removeEventListener('openAIHelperChat' as any, handleOpenChat as EventListener);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [discipline]);
+
   return (
-    <div className="fixed bottom-4 right-4 z-50">
+    <div ref={chatRef} className="fixed bottom-4 right-4 z-50">
       {/* Botón flotante */}
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
           className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-4 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
+          aria-label={`Abrir chat con ${expert.name}`}
         >
           <FontAwesomeIcon icon={faRobot} className="text-2xl" />
         </button>
