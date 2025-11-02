@@ -11,7 +11,7 @@ import { faWhatsapp } from "@fortawesome/free-brands-svg-icons";
 
 interface LeadStatusPageClientProps {
   initialLead: Lead;
-  currentUserId: string;
+  currentUserId: string | null;
 }
 
 export default function LeadStatusPageClient({
