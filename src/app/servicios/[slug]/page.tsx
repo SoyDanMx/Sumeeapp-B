@@ -1,17 +1,19 @@
-import { createSupabaseServerClient } from '@/lib/supabase/server';
-import { notFound } from 'next/navigation';
-import { Service } from '@/types/supabase';
-import DisciplineAIHelper from '@/components/services/DisciplineAIHelper';
-import Image from 'next/image';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { 
-  faWrench, 
-  faLightbulb, 
-  faThermometerHalf, 
-  faShieldAlt, 
-  faCog, 
-  faBroom, 
-  faBuilding, 
+import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { notFound } from "next/navigation";
+import { Service } from "@/types/supabase";
+import DisciplineAIHelper from "@/components/services/DisciplineAIHelper";
+import ScrollToAIHelper from "@/components/services/ScrollToAIHelper";
+import AIHelperHashHandler from "@/components/services/AIHelperHashHandler";
+import Image from "next/image";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+  faWrench,
+  faLightbulb,
+  faThermometerHalf,
+  faShieldAlt,
+  faCog,
+  faBroom,
+  faBuilding,
   faBug,
   faCheckCircle,
   faStar,
@@ -37,207 +39,209 @@ import {
   faConciergeBell,
   faHistory,
   faQuestionCircle,
-  faArrowLeft
-} from '@fortawesome/free-solid-svg-icons';
-import { faWhatsapp as faWhatsappBrand } from '@fortawesome/free-brands-svg-icons';
+  faArrowLeft,
+} from "@fortawesome/free-solid-svg-icons";
+import { faWhatsapp as faWhatsappBrand } from "@fortawesome/free-brands-svg-icons";
 
 // Configuración estática para disciplinas (sin dependencia de Supabase)
 const DISCIPLINE_CONFIG = {
-  'plomeria': {
-    name: 'Plomería',
+  plomeria: {
+    name: "Plomería",
     icon: faWrench,
-    gradient: 'from-blue-600 to-blue-800',
-    specialistRole: 'Ingeniero en Sistemas Hidráulicos',
-    description: 'Reparaciones, instalaciones y mantenimiento de sistemas hidráulicos',
+    gradient: "from-blue-600 to-blue-800",
+    specialistRole: "Ingeniero en Sistemas Hidráulicos",
+    description:
+      "Reparaciones, instalaciones y mantenimiento de sistemas hidráulicos",
     services: [
-      'Reparación de fugas',
-      'Instalación de tinacos',
-      'Desazolve de drenajes',
-      'Instalación de calentadores',
-      'Reparación de llaves',
-      'Instalación de sanitarios'
-    ]
+      "Reparación de fugas",
+      "Instalación de tinacos",
+      "Desazolve de drenajes",
+      "Instalación de calentadores",
+      "Reparación de llaves",
+      "Instalación de sanitarios",
+    ],
   },
-  'electricidad': {
-    name: 'Electricidad',
+  electricidad: {
+    name: "Electricidad",
     icon: faLightbulb,
-    gradient: 'from-yellow-500 to-orange-600',
-    specialistRole: 'Ingeniero Eléctrico',
-    description: 'Instalaciones eléctricas, reparaciones y mantenimiento',
+    gradient: "from-yellow-500 to-orange-600",
+    specialistRole: "Ingeniero Eléctrico",
+    description: "Instalaciones eléctricas, reparaciones y mantenimiento",
     services: [
-      'Instalación de contactos',
-      'Reparación de cortos circuitos',
-      'Instalación de luminarias',
-      'Cableado eléctrico',
-      'Instalación de ventiladores',
-      'Reparación de tableros'
-    ]
+      "Instalación de contactos",
+      "Reparación de cortos circuitos",
+      "Instalación de luminarias",
+      "Cableado eléctrico",
+      "Instalación de ventiladores",
+      "Reparación de tableros",
+    ],
   },
-  'aire-acondicionado': {
-    name: 'Aire Acondicionado',
+  "aire-acondicionado": {
+    name: "Aire Acondicionado",
     icon: faThermometerHalf,
-    gradient: 'from-green-500 to-teal-600',
-    specialistRole: 'Ingeniero en HVAC',
-    description: 'Instalación, reparación y mantenimiento de sistemas de climatización',
+    gradient: "from-green-500 to-teal-600",
+    specialistRole: "Ingeniero en HVAC",
+    description:
+      "Instalación, reparación y mantenimiento de sistemas de climatización",
     services: [
-      'Instalación de minisplits',
-      'Mantenimiento preventivo',
-      'Reparación de compresores',
-      'Limpieza de filtros',
-      'Recarga de gas',
-      'Instalación de ductos'
-    ]
+      "Instalación de minisplits",
+      "Mantenimiento preventivo",
+      "Reparación de compresores",
+      "Limpieza de filtros",
+      "Recarga de gas",
+      "Instalación de ductos",
+    ],
   },
-  'cctv': {
-    name: 'CCTV y Seguridad',
+  cctv: {
+    name: "CCTV y Seguridad",
     icon: faShieldAlt,
-    gradient: 'from-purple-600 to-indigo-700',
-    specialistRole: 'Especialista en Redes y Ciberseguridad',
-    description: 'Sistemas de seguridad, cámaras de vigilancia y alarmas',
+    gradient: "from-purple-600 to-indigo-700",
+    specialistRole: "Especialista en Redes y Ciberseguridad",
+    description: "Sistemas de seguridad, cámaras de vigilancia y alarmas",
     services: [
-      'Instalación de cámaras',
-      'Sistemas de alarma',
-      'Monitoreo 24/7',
-      'Control de acceso',
-      'DVR y NVR',
-      'Vigilancia remota'
-    ]
+      "Instalación de cámaras",
+      "Sistemas de alarma",
+      "Monitoreo 24/7",
+      "Control de acceso",
+      "DVR y NVR",
+      "Vigilancia remota",
+    ],
   },
-  'carpinteria': {
-    name: 'Carpintería',
+  carpinteria: {
+    name: "Carpintería",
     icon: faHammer,
-    gradient: 'from-amber-600 to-orange-700',
-    specialistRole: 'Arquitecto',
-    description: 'Trabajos en madera, muebles y estructuras',
+    gradient: "from-amber-600 to-orange-700",
+    specialistRole: "Arquitecto",
+    description: "Trabajos en madera, muebles y estructuras",
     services: [
-      'Fabricación de muebles',
-      'Reparación de puertas',
-      'Instalación de ventanas',
-      'Trabajos en madera',
-      'Restauración',
-      'Carpintería fina'
-    ]
+      "Fabricación de muebles",
+      "Reparación de puertas",
+      "Instalación de ventanas",
+      "Trabajos en madera",
+      "Restauración",
+      "Carpintería fina",
+    ],
   },
-  'limpieza': {
-    name: 'Limpieza',
+  limpieza: {
+    name: "Limpieza",
     icon: faBroom,
-    gradient: 'from-pink-500 to-rose-600',
-    specialistRole: 'Especialista en Servicios Generales',
-    description: 'Servicios de limpieza residencial y comercial',
+    gradient: "from-pink-500 to-rose-600",
+    specialistRole: "Especialista en Servicios Generales",
+    description: "Servicios de limpieza residencial y comercial",
     services: [
-      'Limpieza residencial',
-      'Limpieza comercial',
-      'Limpieza profunda',
-      'Limpieza post-obra',
-      'Limpieza de alfombras',
-      'Limpieza de cristales'
-    ]
+      "Limpieza residencial",
+      "Limpieza comercial",
+      "Limpieza profunda",
+      "Limpieza post-obra",
+      "Limpieza de alfombras",
+      "Limpieza de cristales",
+    ],
   },
-  'jardineria': {
-    name: 'Jardinería',
+  jardineria: {
+    name: "Jardinería",
     icon: faLeaf,
-    gradient: 'from-green-600 to-emerald-700',
-    specialistRole: 'Especialista en Servicios Generales',
-    description: 'Mantenimiento de jardines y áreas verdes',
+    gradient: "from-green-600 to-emerald-700",
+    specialistRole: "Especialista en Servicios Generales",
+    description: "Mantenimiento de jardines y áreas verdes",
     services: [
-      'Poda de árboles',
-      'Mantenimiento de jardines',
-      'Instalación de riego',
-      'Diseño de jardines',
-      'Fertilización',
-      'Control de plagas'
-    ]
+      "Poda de árboles",
+      "Mantenimiento de jardines",
+      "Instalación de riego",
+      "Diseño de jardines",
+      "Fertilización",
+      "Control de plagas",
+    ],
   },
-  'fumigacion': {
-    name: 'Fumigación',
+  fumigacion: {
+    name: "Fumigación",
     icon: faBug,
-    gradient: 'from-red-600 to-red-800',
-    specialistRole: 'Técnico en Fumigación',
-    description: 'Control de plagas y fumigación profesional',
+    gradient: "from-red-600 to-red-800",
+    specialistRole: "Técnico en Fumigación",
+    description: "Control de plagas y fumigación profesional",
     services: [
-      'Fumigación residencial',
-      'Control de cucarachas',
-      'Eliminación de roedores',
-      'Fumigación comercial',
-      'Control de mosquitos',
-      'Tratamiento preventivo'
-    ]
+      "Fumigación residencial",
+      "Control de cucarachas",
+      "Eliminación de roedores",
+      "Fumigación comercial",
+      "Control de mosquitos",
+      "Tratamiento preventivo",
+    ],
   },
-  'pintura': {
-    name: 'Pintura',
+  pintura: {
+    name: "Pintura",
     icon: faPaintRoller,
-    gradient: 'from-indigo-600 to-purple-700',
-    specialistRole: 'Arquitecto',
-    description: 'Pintura interior y exterior, impermeabilización y acabados',
+    gradient: "from-indigo-600 to-purple-700",
+    specialistRole: "Arquitecto",
+    description: "Pintura interior y exterior, impermeabilización y acabados",
     services: [
-      'Pintura interior',
-      'Pintura exterior',
-      'Impermeabilización',
-      'Acabados especiales',
-      'Restauración de fachadas',
-      'Pintura industrial'
-    ]
+      "Pintura interior",
+      "Pintura exterior",
+      "Impermeabilización",
+      "Acabados especiales",
+      "Restauración de fachadas",
+      "Pintura industrial",
+    ],
   },
-  'wifi': {
-    name: 'Redes y WiFi',
+  wifi: {
+    name: "Redes y WiFi",
     icon: faWifi,
-    gradient: 'from-cyan-600 to-blue-700',
-    specialistRole: 'Especialista en Redes y Ciberseguridad',
-    description: 'Instalación y configuración de redes informáticas y WiFi',
+    gradient: "from-cyan-600 to-blue-700",
+    specialistRole: "Especialista en Redes y Ciberseguridad",
+    description: "Instalación y configuración de redes informáticas y WiFi",
     services: [
-      'Instalación de WiFi',
-      'Configuración de routers',
-      'Cableado estructurado',
-      'Redes empresariales',
-      'Seguridad de red',
-      'Optimización de señal'
-    ]
+      "Instalación de WiFi",
+      "Configuración de routers",
+      "Cableado estructurado",
+      "Redes empresariales",
+      "Seguridad de red",
+      "Optimización de señal",
+    ],
   },
-  'tablaroca': {
-    name: 'Tablaroca',
+  tablaroca: {
+    name: "Tablaroca",
     icon: faSquare,
-    gradient: 'from-gray-600 to-gray-800',
-    specialistRole: 'Arquitecto',
-    description: 'Instalación y reparación de sistemas de tablaroca',
+    gradient: "from-gray-600 to-gray-800",
+    specialistRole: "Arquitecto",
+    description: "Instalación y reparación de sistemas de tablaroca",
     services: [
-      'Instalación de tablaroca',
-      'Reparación de grietas',
-      'Acabados en tablaroca',
-      'Instalación de cielos',
-      'Muros divisorios',
-      'Restauración de tablaroca'
-    ]
+      "Instalación de tablaroca",
+      "Reparación de grietas",
+      "Acabados en tablaroca",
+      "Instalación de cielos",
+      "Muros divisorios",
+      "Restauración de tablaroca",
+    ],
   },
-  'construccion': {
-    name: 'Construcción',
+  construccion: {
+    name: "Construcción",
     icon: faHardHat,
-    gradient: 'from-orange-600 to-red-700',
-    specialistRole: 'Ingeniero Civil',
-    description: 'Construcción, remodelación y obras civiles',
+    gradient: "from-orange-600 to-red-700",
+    specialistRole: "Ingeniero Civil",
+    description: "Construcción, remodelación y obras civiles",
     services: [
-      'Construcción residencial',
-      'Remodelación integral',
-      'Obras civiles',
-      'Albañilería',
-      'Azulejos y pisos',
-      'Construcción comercial'
-    ]
+      "Construcción residencial",
+      "Remodelación integral",
+      "Obras civiles",
+      "Albañilería",
+      "Azulejos y pisos",
+      "Construcción comercial",
+    ],
   },
-  'arquitectos': {
-    name: 'Arquitectos & Ingenieros',
+  arquitectos: {
+    name: "Arquitectos & Ingenieros",
     icon: faBuilding,
-    gradient: 'from-teal-600 to-cyan-700',
-    specialistRole: 'Arquitecto',
-    description: 'Servicios de arquitectura, ingeniería y diseño',
+    gradient: "from-teal-600 to-cyan-700",
+    specialistRole: "Arquitecto",
+    description: "Servicios de arquitectura, ingeniería y diseño",
     services: [
-      'Diseño arquitectónico',
-      'Planos y proyectos',
-      'Supervisión de obra',
-      'Consultoría técnica',
-      'Diseño de interiores',
-      'Ingeniería estructural'
-    ]
-  }
+      "Diseño arquitectónico",
+      "Planos y proyectos",
+      "Supervisión de obra",
+      "Consultoría técnica",
+      "Diseño de interiores",
+      "Ingeniería estructural",
+    ],
+  },
 };
 
 // 1. OBTENCIÓN DE DATOS SEGURA
@@ -245,14 +249,17 @@ async function getServiceData(slug: string): Promise<Service | null> {
   try {
     const supabase = await createSupabaseServerClient();
     const { data, error } = await supabase
-      .from('services')
-      .select('*')
-      .eq('slug', slug)
+      .from("services")
+      .select("*")
+      .eq("slug", slug)
       .single();
 
     if (error) {
       // Imprime el error en los logs del servidor para depuración
-      console.error(`Error fetching service with slug "${slug}":`, error.message);
+      console.error(
+        `Error fetching service with slug "${slug}":`,
+        error.message
+      );
       return null;
     }
 
@@ -264,48 +271,50 @@ async function getServiceData(slug: string): Promise<Service | null> {
 }
 
 interface ServicePageProps {
-  params: Promise<{ slug: string; }>;
+  params: Promise<{ slug: string }>;
 }
 
 export async function generateMetadata({ params }: ServicePageProps) {
   const { slug } = await params;
   const config = DISCIPLINE_CONFIG[slug as keyof typeof DISCIPLINE_CONFIG];
-  
+
   if (!config) {
     return {
-      title: 'Servicio no encontrado - Sumee App',
-      description: 'El servicio solicitado no está disponible.'
+      title: "Servicio no encontrado - Sumee App",
+      description: "El servicio solicitado no está disponible.",
     };
   }
 
   return {
     title: `${config.name} - Servicios Profesionales en CDMX | Sumee App`,
-    description: `${config.description}. Técnicos verificados y especializados en ${config.name.toLowerCase()}.`,
+    description: `${
+      config.description
+    }. Técnicos verificados y especializados en ${config.name.toLowerCase()}.`,
     keywords: `${config.name.toLowerCase()}, servicios, técnicos, CDMX, reparación, instalación`,
     openGraph: {
       title: `${config.name} - Sumee App`,
       description: config.description,
-      type: 'website',
+      type: "website",
     },
     twitter: {
-      card: 'summary_large_image',
+      card: "summary_large_image",
       title: `${config.name} - Sumee App`,
       description: config.description,
-    }
+    },
   };
 }
 
 // 2. EL COMPONENTE DE PÁGINA ASÍNCRONO
 export default async function ServiceDetailPage({ params }: ServicePageProps) {
   const { slug } = await params;
-  
+
   // Validación robusta del slug
-  if (!slug || typeof slug !== 'string') {
+  if (!slug || typeof slug !== "string") {
     notFound();
   }
-  
+
   const config = DISCIPLINE_CONFIG[slug as keyof typeof DISCIPLINE_CONFIG];
-  
+
   if (!config) {
     notFound();
   }
@@ -315,58 +324,54 @@ export default async function ServiceDetailPage({ params }: ServicePageProps) {
   try {
     serviceData = await getServiceData(slug);
   } catch (error) {
-    console.error('Error fetching service data, using static config:', error);
+    console.error("Error fetching service data, using static config:", error);
   }
 
   // Si no hay datos de Supabase, usar la configuración estática
   const service = serviceData || {
     name: config.name,
     description: config.description,
-    slug: slug
+    slug: slug,
   };
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Handler para scroll automático cuando hay hash #ai-helper en la URL */}
+      <AIHelperHashHandler />
+
       {/* Hero Section */}
       <div className={`bg-gradient-to-r ${config.gradient} text-white py-16`}>
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center">
-              <FontAwesomeIcon 
-                icon={config.icon} 
-                className="text-6xl mb-6 text-white opacity-90" 
-              />
-              <h1 className="text-4xl md:text-6xl font-bold mb-4">
-                {service.name}
-              </h1>
-              <p className="text-xl md:text-2xl text-white/90 max-w-3xl mx-auto mb-8">
-                {service.description || config.description}
-              </p>
-              
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <a 
-                href="/dashboard/client" 
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <FontAwesomeIcon
+              icon={config.icon}
+              className="text-6xl mb-6 text-white opacity-90"
+            />
+            <h1 className="text-4xl md:text-6xl font-bold mb-4">
+              {service.name}
+            </h1>
+            <p className="text-xl md:text-2xl text-white/90 max-w-3xl mx-auto mb-8">
+              {service.description || config.description}
+            </p>
+
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <a
+                href="/dashboard/client"
                 className="bg-white text-gray-900 font-bold px-8 py-4 rounded-lg shadow-lg hover:bg-gray-100 transition-all duration-300 transform hover:scale-105 inline-flex items-center justify-center"
                 title={`Solicitar servicio de ${service.name.toLowerCase()}`}
               >
                 <FontAwesomeIcon icon={faUsers} className="mr-2" />
                 Solicitar Servicio
               </a>
-              <a 
-                href="/tecnicos" 
+              <a
+                href="/tecnicos"
                 className="bg-transparent border-2 border-white text-white font-bold px-8 py-4 rounded-lg hover:bg-white hover:text-gray-900 transition-all duration-300 inline-flex items-center justify-center"
                 title={`Ver técnicos especializados en ${service.name.toLowerCase()}`}
               >
                 <FontAwesomeIcon icon={faStar} className="mr-2" />
                 Ver Técnicos
               </a>
-              <a 
-                href="#ai-helper" 
-                className="bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold px-8 py-4 rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all duration-300 transform hover:scale-105 inline-flex items-center justify-center"
-                title={`Consultar con IA especialista en ${service.name.toLowerCase()}`}
-              >
-                <FontAwesomeIcon icon={faQuestionCircle} className="mr-2" />
-                Consultar IA
-              </a>
+              <ScrollToAIHelper serviceName={service.name} />
             </div>
           </div>
         </div>
@@ -383,15 +388,20 @@ export default async function ServiceDetailPage({ params }: ServicePageProps) {
               Técnicos especializados y verificados para todos tus proyectos
             </p>
           </div>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {config.services.map((serviceItem, index) => (
-              <div key={index} className="bg-gray-50 rounded-lg p-6 hover:shadow-md transition-shadow">
-                <FontAwesomeIcon 
-                  icon={config.icon} 
-                  className="text-2xl text-blue-600 mb-3" 
+              <div
+                key={index}
+                className="bg-gray-50 rounded-lg p-6 hover:shadow-md transition-shadow"
+              >
+                <FontAwesomeIcon
+                  icon={config.icon}
+                  className="text-2xl text-blue-600 mb-3"
                 />
-                <h3 className="font-semibold text-gray-900 mb-2">{serviceItem}</h3>
+                <h3 className="font-semibold text-gray-900 mb-2">
+                  {serviceItem}
+                </h3>
                 <p className="text-sm text-gray-600">
                   Servicio profesional con garantía
                 </p>
@@ -406,22 +416,38 @@ export default async function ServiceDetailPage({ params }: ServicePageProps) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div className="text-center">
-              <FontAwesomeIcon icon={faShield} className="text-4xl text-green-600 mb-4" />
-              <h3 className="text-xl font-bold text-gray-900 mb-2">Técnicos Verificados</h3>
+              <FontAwesomeIcon
+                icon={faShield}
+                className="text-4xl text-green-600 mb-4"
+              />
+              <h3 className="text-xl font-bold text-gray-900 mb-2">
+                Técnicos Verificados
+              </h3>
               <p className="text-gray-600">
-                Todos nuestros profesionales pasan por un proceso de verificación riguroso
+                Todos nuestros profesionales pasan por un proceso de
+                verificación riguroso
               </p>
             </div>
             <div className="text-center">
-              <FontAwesomeIcon icon={faClock} className="text-4xl text-blue-600 mb-4" />
-              <h3 className="text-xl font-bold text-gray-900 mb-2">Respuesta Rápida</h3>
+              <FontAwesomeIcon
+                icon={faClock}
+                className="text-4xl text-blue-600 mb-4"
+              />
+              <h3 className="text-xl font-bold text-gray-900 mb-2">
+                Respuesta Rápida
+              </h3>
               <p className="text-gray-600">
                 Conectamos con el técnico más cercano en menos de 30 minutos
               </p>
             </div>
             <div className="text-center">
-              <FontAwesomeIcon icon={faCheckCircle} className="text-4xl text-purple-600 mb-4" />
-              <h3 className="text-xl font-bold text-gray-900 mb-2">Garantía Total</h3>
+              <FontAwesomeIcon
+                icon={faCheckCircle}
+                className="text-4xl text-purple-600 mb-4"
+              />
+              <h3 className="text-xl font-bold text-gray-900 mb-2">
+                Garantía Total
+              </h3>
               <p className="text-gray-600">
                 Todos nuestros servicios incluyen garantía de satisfacción
               </p>
@@ -433,7 +459,7 @@ export default async function ServiceDetailPage({ params }: ServicePageProps) {
       {/* AI Helper para esta disciplina específica */}
       <div id="ai-helper" className="py-16 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <DisciplineAIHelper 
+          <DisciplineAIHelper
             discipline={slug}
             disciplineName={service.name}
             disciplineIcon={config.icon}
@@ -449,20 +475,21 @@ export default async function ServiceDetailPage({ params }: ServicePageProps) {
             ¿Listo para resolver tu problema de {service.name.toLowerCase()}?
           </h2>
           <p className="text-xl mb-8 text-white/90">
-            Conecta con nuestros técnicos especializados y obtén una solución profesional
+            Conecta con nuestros técnicos especializados y obtén una solución
+            profesional
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <a 
-              href="/dashboard/client" 
+            <a
+              href="/dashboard/client"
               className="bg-white text-blue-600 font-bold px-8 py-4 rounded-lg shadow-lg hover:bg-gray-100 transition-all duration-300 transform hover:scale-105 inline-flex items-center justify-center"
               title={`Solicitar servicio profesional de ${service.name.toLowerCase()}`}
             >
               <FontAwesomeIcon icon={faUsers} className="mr-2" />
               Solicitar Servicio Ahora
             </a>
-            <a 
+            <a
               href={`https://wa.me/5215636741156?text=Hola, necesito ayuda con servicios de ${service.name.toLowerCase()}`}
-              target="_blank" 
+              target="_blank"
               rel="noopener noreferrer"
               className="bg-transparent border-2 border-white text-white font-bold px-8 py-4 rounded-lg hover:bg-white hover:text-blue-600 transition-all duration-300 inline-flex items-center justify-center"
               title={`Consultar por WhatsApp sobre ${service.name.toLowerCase()}`}
