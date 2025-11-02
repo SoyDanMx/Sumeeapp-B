@@ -124,6 +124,7 @@ export async function submitLead(leadData: {
   ubicacion: string;
   whatsapp: string;
   nombre_cliente?: string;
+  descripcion_proyecto?: string; // Nueva opción para proyectos grandes con descripción detallada
 }) {
   try {
     // Geocodificar la dirección proporcionada
@@ -139,7 +140,10 @@ export async function submitLead(leadData: {
     }
 
     // Preparar la descripción del proyecto
-    const descripcion_proyecto = `Servicio de ${leadData.servicio} solicitado. Ubicación: ${leadData.ubicacion}`;
+    // Si se proporciona descripcion_proyecto, usarla; si no, construir una genérica
+    const descripcion_proyecto =
+      leadData.descripcion_proyecto ||
+      `Servicio de ${leadData.servicio} solicitado. Ubicación: ${leadData.ubicacion}`;
     const nombre_cliente = leadData.nombre_cliente || "Cliente"; // Valor por defecto si no se proporciona
 
     // Debug: Mostrar los datos que se van a enviar a la función RPC

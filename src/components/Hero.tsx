@@ -235,8 +235,10 @@ export const Hero = () => {
                 </h1>
 
                 <p className="text-base md:text-lg text-blue-200 mb-6 md:mb-8">
-                  Deja de buscar. Conectamos tu necesidad con el mejor
-                  profesional en menos de 2 horas.
+                  Deja de buscar. Encuentra al técnico perfecto.
+                  <span className="block mt-2 text-green-300 font-semibold">
+                    Tu primera visita de revisión es gratis.
+                  </span>
                 </p>
 
                 {/* Tarjetas de Actividad Recientes - Solo visible en desktop */}

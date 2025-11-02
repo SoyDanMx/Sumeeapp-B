@@ -1,6 +1,7 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import { Service } from "@/types/supabase";
+import Link from "next/link";
 import DisciplineAIHelper from "@/components/services/DisciplineAIHelper";
 import ScrollToAIHelper from "@/components/services/ScrollToAIHelper";
 import AIHelperHashHandler from "@/components/services/AIHelperHashHandler";
@@ -242,6 +243,21 @@ const DISCIPLINE_CONFIG = {
       "Ingeniería estructural",
     ],
   },
+  proyectos: {
+    name: "Proyectos y Remodelaciones",
+    icon: faHardHat,
+    gradient: "from-orange-600 to-red-700",
+    specialistRole: "Ingeniero Civil",
+    description: "Proyectos grandes, remodelaciones integrales y obras civiles",
+    services: [
+      "Remodelación integral",
+      "Construcción desde cero",
+      "Ampliaciones",
+      "Obras civiles",
+      "Diseño y construcción",
+      "Supervisión de proyectos",
+    ],
+  },
 };
 
 // 1. OBTENCIÓN DE DATOS SEGURA
@@ -355,24 +371,47 @@ export default async function ServiceDetailPage({ params }: ServicePageProps) {
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <a
-                href="/dashboard/client"
-                className="bg-white text-gray-900 font-bold px-8 py-4 rounded-lg shadow-lg hover:bg-gray-100 transition-all duration-300 transform hover:scale-105 inline-flex items-center justify-center"
-                title={`Solicitar servicio de ${service.name.toLowerCase()}`}
-              >
-                <FontAwesomeIcon icon={faUsers} className="mr-2" />
-                Solicitar Servicio
-              </a>
-              <a
-                href="/tecnicos"
-                className="bg-transparent border-2 border-white text-white font-bold px-8 py-4 rounded-lg hover:bg-white hover:text-gray-900 transition-all duration-300 inline-flex items-center justify-center"
-                title={`Ver técnicos especializados en ${service.name.toLowerCase()}`}
-              >
-                <FontAwesomeIcon icon={faStar} className="mr-2" />
-                Ver Técnicos
-              </a>
-              <ScrollToAIHelper serviceName={service.name} discipline={slug} />
+              {/* Lógica condicional para proyectos grandes */}
+              {slug === "proyectos" ? (
+                <Link
+                  href="/cotizar-proyecto"
+                  className="bg-white text-gray-900 font-bold px-8 py-4 rounded-lg shadow-lg hover:bg-gray-100 transition-all duration-300 transform hover:scale-105 inline-flex items-center justify-center"
+                  title="Cotizar mi Proyecto"
+                >
+                  <FontAwesomeIcon icon={faUsers} className="mr-2" />
+                  Cotizar mi Proyecto
+                </Link>
+              ) : (
+                <>
+                  <a
+                    href="/dashboard/client"
+                    className="bg-white text-gray-900 font-bold px-8 py-4 rounded-lg shadow-lg hover:bg-gray-100 transition-all duration-300 transform hover:scale-105 inline-flex items-center justify-center"
+                    title={`Solicitar servicio de ${service.name.toLowerCase()}`}
+                  >
+                    <FontAwesomeIcon icon={faUsers} className="mr-2" />
+                    Solicitar Servicio
+                  </a>
+                  <a
+                    href="/tecnicos"
+                    className="bg-transparent border-2 border-white text-white font-bold px-8 py-4 rounded-lg hover:bg-white hover:text-gray-900 transition-all duration-300 inline-flex items-center justify-center"
+                    title={`Ver técnicos especializados en ${service.name.toLowerCase()}`}
+                  >
+                    <FontAwesomeIcon icon={faStar} className="mr-2" />
+                    Ver Técnicos
+                  </a>
+                  <ScrollToAIHelper
+                    serviceName={service.name}
+                    discipline={slug}
+                  />
+                </>
+              )}
             </div>
+            {/* Subtítulo de oferta "Primera Revisión Gratis" */}
+            {slug !== "proyectos" && (
+              <p className="text-sm md:text-base text-white/80 mt-4 text-center">
+                Tu primera revisión es sin costo
+              </p>
+            )}
           </div>
         </div>
       </div>
@@ -392,7 +431,7 @@ export default async function ServiceDetailPage({ params }: ServicePageProps) {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {config.services.map((serviceItem, index) => (
               <div
-                key={index}
+                key={`${slug}-service-${index}-${serviceItem}`}
                 className="bg-gray-50 rounded-lg p-6 hover:shadow-md transition-shadow"
               >
                 <FontAwesomeIcon
