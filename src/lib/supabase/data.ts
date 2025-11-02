@@ -1,8 +1,8 @@
 // src/lib/supabase/data.ts
 
-import { supabase } from '@/lib/supabase/client';
-import { geocodeAddress } from '@/lib/geocoding'; // Importamos la utilidad que acabamos de crear
-import { Profesional, Lead } from '@/types/supabase'; // Importamos los tipos necesarios
+import { supabase } from "@/lib/supabase/client";
+import { geocodeAddress } from "@/lib/geocoding"; // Importamos la utilidad que acabamos de crear
+import { Profesional, Lead } from "@/types/supabase"; // Importamos los tipos necesarios
 
 // =========================================================================
 // 🚨 NUEVA ESTRUCTURA DE BASE DE DATOS 🚨
@@ -34,20 +34,22 @@ import { Profesional, Lead } from '@/types/supabase'; // Importamos los tipos ne
  * @returns true si la lectura es exitosa, lanza un error si hay fallo de RLS.
  */
 export async function checkUserPermissions(userId: string): Promise<boolean> {
-    const { error } = await supabase
-        .from('profiles')
-        .select('user_id')
-        .eq('user_id', userId)
-        .limit(1)
-        .maybeSingle();
+  const { error } = await supabase
+    .from("profiles")
+    .select("user_id")
+    .eq("user_id", userId)
+    .limit(1)
+    .maybeSingle();
 
-    if (error) {
-        console.error("Error de diagnóstico RLS/Permisos:", error);
-        throw new Error(`Error de permisos (Código: ${error.code}). Asegura la política SELECT/RLS.`);
-    }
+  if (error) {
+    console.error("Error de diagnóstico RLS/Permisos:", error);
+    throw new Error(
+      `Error de permisos (Código: ${error.code}). Asegura la política SELECT/RLS.`
+    );
+  }
 
-    // Si no hay error, asumimos que el usuario puede leer su perfil.
-    return true;
+  // Si no hay error, asumimos que el usuario puede leer su perfil.
+  return true;
 }
 
 /**
@@ -59,46 +61,50 @@ export async function checkUserPermissions(userId: string): Promise<boolean> {
  * @throws Lanza un error si la geocodificación o la actualización fallan.
  */
 export async function updateProfesionalProfile(
-    userId: string, 
-    updates: Partial<Profesional>, 
-    address?: string
+  userId: string,
+  updates: Partial<Profesional>,
+  address?: string
 ) {
-    let lat: number | undefined;
-    let lng: number | undefined;
-    
-    // 1. Geocodificación (solo si se proporciona una dirección)
-    if (address) {
-        const coords = await geocodeAddress(address);
-        if (coords) {
-            lat = coords.lat;
-            lng = coords.lng;
-        } else {
-            throw new Error("No se pudo obtener las coordenadas de la dirección proporcionada. Intenta ser más específico.");
-        }
+  let lat: number | undefined;
+  let lng: number | undefined;
+
+  // 1. Geocodificación (solo si se proporciona una dirección)
+  if (address) {
+    const coords = await geocodeAddress(address);
+    if (coords) {
+      lat = coords.lat;
+      lng = coords.lng;
+    } else {
+      throw new Error(
+        "No se pudo obtener las coordenadas de la dirección proporcionada. Intenta ser más específico."
+      );
     }
+  }
 
-    // 2. Preparar los datos para el upsert (Actualizar/Insertar)
-    const dataToUpdate = {
-        ...updates,
-        user_id: userId, // CRÍTICO: El user_id es necesario para el upsert
-        ...(lat !== undefined && { ubicacion_lat: lat }),
-        ...(lng !== undefined && { ubicacion_lng: lng }),
-    };
+  // 2. Preparar los datos para el upsert (Actualizar/Insertar)
+  const dataToUpdate = {
+    ...updates,
+    user_id: userId, // CRÍTICO: El user_id es necesario para el upsert
+    ...(lat !== undefined && { ubicacion_lat: lat }),
+    ...(lng !== undefined && { ubicacion_lng: lng }),
+  };
 
-    // 3. Llamada a Supabase usando UPSERT
-    const { error } = await supabase
-        .from('profiles')
-        // El upsert intentará insertar; si user_id ya existe, lo actualizará
-        .upsert([dataToUpdate], { onConflict: 'user_id' });
+  // 3. Llamada a Supabase usando UPSERT
+  const { error } = await supabase
+    .from("profiles")
+    // El upsert intentará insertar; si user_id ya existe, lo actualizará
+    .upsert([dataToUpdate], { onConflict: "user_id" });
 
-    if (error) {
-        console.error('Error de Supabase al actualizar/insertar perfil:', error);
-        // Devuelve un error más claro al frontend
-        if (error.code === '42501') {
-            throw new Error("Error de permisos (RLS). Asegura la Política de UPDATE en Supabase.");
-        }
-        throw new Error(`Falló la actualización del perfil: ${error.message}`);
+  if (error) {
+    console.error("Error de Supabase al actualizar/insertar perfil:", error);
+    // Devuelve un error más claro al frontend
+    if (error.code === "42501") {
+      throw new Error(
+        "Error de permisos (RLS). Asegura la Política de UPDATE en Supabase."
+      );
     }
+    throw new Error(`Falló la actualización del perfil: ${error.message}`);
+  }
 }
 
 // =========================================================================
@@ -107,59 +113,85 @@ export async function updateProfesionalProfile(
 
 /**
  * Envía un nuevo lead desde el formulario del cliente.
+ * Utiliza una función RPC con SECURITY DEFINER para resolver problemas de RLS.
+ * Esta arquitectura resuelve el problema de permisos de FOREIGN KEY al ejecutar
+ * la función con privilegios de superusuario.
+ * Soporta tanto usuarios autenticados como anónimos.
  * @param leadData Datos del lead incluyendo servicio, ubicación y WhatsApp
  */
 export async function submitLead(leadData: {
-    servicio: string;
-    ubicacion: string;
-    whatsapp: string;
-    nombre_cliente?: string;
+  servicio: string;
+  ubicacion: string;
+  whatsapp: string;
+  nombre_cliente?: string;
 }) {
-    try {
-        // Geocodificar la dirección proporcionada
-        let lat: number | null = null;
-        let lng: number | null = null;
-        
-        if (leadData.ubicacion) {
-            const coords = await geocodeAddress(leadData.ubicacion);
-            if (coords) {
-                lat = coords.lat;
-                lng = coords.lng;
-            }
-        }
+  try {
+    // Geocodificar la dirección proporcionada
+    let lat: number | null = null;
+    let lng: number | null = null;
 
-        // Preparar los datos del lead para insertar
-        const leadToInsert = {
-            nombre_cliente: leadData.nombre_cliente || null,
-            whatsapp: leadData.whatsapp,
-            descripcion_proyecto: `Servicio de ${leadData.servicio} solicitado. Ubicación: ${leadData.ubicacion}`,
-            ubicacion_lat: lat,
-            ubicacion_lng: lng,
-            fecha_creacion: new Date().toISOString(),
-            estado: 'Nuevo' as const,
-            profesional_asignado_id: null
-        };
-
-        // Insertar el lead en la base de datos
-        const { data, error } = await supabase
-            .from('leads')
-            .insert([leadToInsert])
-            .select()
-            .single();
-
-        if (error) {
-            throw new Error(`Error al crear el lead: ${error.message}`);
-        }
-
-        return {
-            success: true,
-            leadId: data.id,
-            lead: data
-        };
-    } catch (error) {
-        console.error('Error en submitLead:', error);
-        throw error;
+    if (leadData.ubicacion) {
+      const coords = await geocodeAddress(leadData.ubicacion);
+      if (coords) {
+        lat = coords.lat;
+        lng = coords.lng;
+      }
     }
+
+    // Preparar la descripción del proyecto
+    const descripcion_proyecto = `Servicio de ${leadData.servicio} solicitado. Ubicación: ${leadData.ubicacion}`;
+    const nombre_cliente = leadData.nombre_cliente || "Cliente"; // Valor por defecto si no se proporciona
+
+    // Debug: Mostrar los datos que se van a enviar a la función RPC
+    console.log("🔍 submitLead - Llamando a función RPC create_lead con:", {
+      nombre_cliente,
+      whatsapp: leadData.whatsapp,
+      servicio: leadData.servicio,
+      ubicacion: leadData.ubicacion,
+      lat: lat || 19.4326,
+      lng: lng || -99.1332,
+    });
+
+    // Llamar a la función RPC create_lead
+    // Esta función tiene SECURITY DEFINER, por lo que resuelve automáticamente
+    // los problemas de permisos de FOREIGN KEY
+    const { data: leadId, error } = await supabase.rpc("create_lead", {
+      nombre_cliente_in: nombre_cliente,
+      whatsapp_in: leadData.whatsapp,
+      descripcion_proyecto_in: descripcion_proyecto,
+      servicio_in: leadData.servicio,
+      ubicacion_lat_in: lat || 19.4326, // CDMX por defecto si no se puede geocodificar
+      ubicacion_lng_in: lng || -99.1332, // CDMX por defecto si no se puede geocodificar
+      ubicacion_direccion_in: leadData.ubicacion || null,
+    });
+
+    if (error) {
+      console.error("❌ Error al crear lead via RPC:", error);
+      console.error("❌ Detalles del error:", {
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code,
+      });
+      throw new Error(`Error al crear el lead: ${error.message}`);
+    }
+
+    if (!leadId) {
+      throw new Error("No se recibió el ID del lead creado");
+    }
+
+    // Retornar el ID del lead creado
+    // El lead completo se obtendrá después con getLeadById() cuando sea necesario
+    // Esto evita problemas de permisos de SELECT inmediatamente después de la creación
+    return {
+      success: true,
+      leadId: leadId,
+      lead: { id: leadId }, // Estructura mínima, el lead completo se obtendrá después
+    };
+  } catch (error: any) {
+    console.error("Error en submitLead:", error);
+    throw error;
+  }
 }
 
 /**
@@ -168,60 +200,85 @@ export async function submitLead(leadData: {
  * @param profesionalId ID del profesional que acepta el lead (auth.uid()).
  */
 export async function acceptLead(leadId: string, profesionalId: string) {
-    // 💡 IMPORTANTE: Debes tener una política de RLS que permita hacer UPDATE
-    // a los leads donde el estado sea 'Nuevo' para que esta función funcione.
-    
-    const { data, error } = await supabase
-        .from('leads')
-        .update({
-            estado: 'Contactado', // Cambia el estado
-            profesional_asignado_id: profesionalId // Asigna al profesional
-        })
-        .eq('id', leadId)
-        .select()
-        .single();
+  // 💡 IMPORTANTE: Debes tener una política de RLS que permita hacer UPDATE
+  // a los leads donde el estado sea 'Nuevo' para que esta función funcione.
 
-    if (error) {
-        console.error('Error al aceptar el lead:', error);
-        throw new Error(`No se pudo aceptar el lead: ${error.message}`);
-    }
+  const { data, error } = await supabase
+    .from("leads")
+    .update({
+      estado: "Contactado", // Cambia el estado
+      profesional_asignado_id: profesionalId, // Asigna al profesional
+    })
+    .eq("id", leadId)
+    .select()
+    .single();
 
-    return {
-        success: true,
-        lead: data
-    };
+  if (error) {
+    console.error("Error al aceptar el lead:", error);
+    throw new Error(`No se pudo aceptar el lead: ${error.message}`);
+  }
+
+  return {
+    success: true,
+    lead: data,
+  };
 }
 
 /**
  * Obtiene un lead específico por su ID
+ * PATRÓN DEFENSIVO: No usar .single() para evitar race conditions
+ * después de crear un lead. En su lugar, manejamos manualmente el caso
+ * donde no se encuentra el lead o el array está vacío.
  * @param leadId ID del lead a obtener
  */
 export async function getLeadById(leadId: string) {
-    try {
-        const { data, error } = await supabase
-            .from('leads')
-            .select(`
-                *,
-                profesional_asignado:profesional_asignado_id(
-                    full_name,
-                    profession,
-                    calificacion_promedio,
-                    whatsapp,
-                    avatar_url
-                )
-            `)
-            .eq('id', leadId)
-            .single();
+  try {
+    // Primero obtener el lead básico (sin .single() para evitar race conditions)
+    const { data: leads, error: leadError } = await supabase
+      .from("leads")
+      .select("*")
+      .eq("id", leadId);
 
-        if (error) {
-            throw new Error(`Error al obtener el lead: ${error.message}`);
-        }
-
-        return data;
-    } catch (error) {
-        console.error('Error en getLeadById:', error);
-        throw error;
+    if (leadError) {
+      throw new Error(`Error al obtener el lead: ${leadError.message}`);
     }
+
+    // Verificar que se encontró exactamente un lead
+    // Esto maneja el caso de "race condition" donde el lead no es visible aún
+    if (!leads || leads.length === 0) {
+      throw new Error("Lead no encontrado");
+    }
+
+    // Extraer el lead del array (sabemos que existe porque verificamos arriba)
+    const lead = leads[0];
+
+    // Si hay un profesional asignado, obtener su perfil
+    if (lead.profesional_asignado_id) {
+      const { data: profile, error: profileError } = await supabase
+        .from("profiles")
+        .select(
+          "full_name, email, avatar_url, profession, whatsapp, calificacion_promedio"
+        )
+        .eq("user_id", lead.profesional_asignado_id)
+        .maybeSingle();
+
+      if (!profileError && profile) {
+        return {
+          ...lead,
+          profesional_asignado: profile,
+        };
+      }
+    }
+
+    // Retornar el lead sin profesional asignado si no hay uno o no se pudo obtener
+    return {
+      ...lead,
+      profesional_asignado: null,
+    };
+  } catch (error) {
+    console.error("Error en getLeadById:", error);
+    throw error;
+  }
 }
 
 /**
@@ -230,37 +287,39 @@ export async function getLeadById(leadId: string) {
  */
 export async function getClientLeads(clientId: string) {
   try {
-    console.log('🔍 getClientLeads - Buscando leads para cliente:', clientId);
-    
+    console.log("🔍 getClientLeads - Buscando leads para cliente:", clientId);
+
     // Primero intentar con cliente_id si existe
     let { data, error } = await supabase
-      .from('leads')
-      .select('*')
-      .eq('cliente_id', clientId)
-      .order('fecha_creacion', { ascending: false });
+      .from("leads")
+      .select("*")
+      .eq("cliente_id", clientId)
+      .order("fecha_creacion", { ascending: false });
 
     // Si no hay datos y hay error, intentar con nombre_cliente como fallback
     if ((!data || data.length === 0) && error) {
-      console.log('🔍 getClientLeads - Intentando con nombre_cliente como fallback');
+      console.log(
+        "🔍 getClientLeads - Intentando con nombre_cliente como fallback"
+      );
       const fallbackQuery = await supabase
-        .from('leads')
-        .select('*')
-        .not('nombre_cliente', 'is', null)
-        .order('fecha_creacion', { ascending: false });
-      
+        .from("leads")
+        .select("*")
+        .not("nombre_cliente", "is", null)
+        .order("fecha_creacion", { ascending: false });
+
       data = fallbackQuery.data;
       error = fallbackQuery.error;
     }
 
     if (error) {
-      console.error('❌ Error getting client leads:', error);
+      console.error("❌ Error getting client leads:", error);
       return [];
     }
 
-    console.log('✅ getClientLeads - Leads encontrados:', data?.length || 0);
+    console.log("✅ getClientLeads - Leads encontrados:", data?.length || 0);
     return data || [];
   } catch (error) {
-    console.error('❌ Error en getClientLeads:', error);
+    console.error("❌ Error en getClientLeads:", error);
     return [];
   }
 }
@@ -276,18 +335,18 @@ export async function getClientLeads(clientId: string) {
 export async function getProfesionalesCompletos() {
   try {
     const { data, error } = await supabase
-      .from('profesionales_completos')
-      .select('*')
-      .order('profile_created_at', { ascending: false });
+      .from("profesionales_completos")
+      .select("*")
+      .order("profile_created_at", { ascending: false });
 
     if (error) {
-      console.error('Error getting complete professionals:', error);
+      console.error("Error getting complete professionals:", error);
       throw new Error(`Error al obtener profesionales: ${error.message}`);
     }
 
     return data || [];
   } catch (error) {
-    console.error('Error en getProfesionalesCompletos:', error);
+    console.error("Error en getProfesionalesCompletos:", error);
     throw error;
   }
 }
@@ -299,19 +358,19 @@ export async function getProfesionalesCompletos() {
 export async function getProfesionalCompleto(userId: string) {
   try {
     const { data, error } = await supabase
-      .from('profesionales_completos')
-      .select('*')
-      .eq('user_id', userId)
+      .from("profesionales_completos")
+      .select("*")
+      .eq("user_id", userId)
       .single();
 
     if (error) {
-      console.error('Error getting complete professional:', error);
+      console.error("Error getting complete professional:", error);
       throw new Error(`Error al obtener profesional: ${error.message}`);
     }
 
     return data;
   } catch (error) {
-    console.error('Error en getProfesionalCompleto:', error);
+    console.error("Error en getProfesionalCompleto:", error);
     throw error;
   }
 }
@@ -324,21 +383,23 @@ export async function getProfesionalCompleto(userId: string) {
 export async function updateProfesionalData(userId: string, updates: any) {
   try {
     const { error } = await supabase
-      .from('profesionales')
+      .from("profesionales")
       .update({
         ...updates,
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
       })
-      .eq('user_id', userId);
+      .eq("user_id", userId);
 
     if (error) {
-      console.error('Error updating professional data:', error);
-      throw new Error(`Error al actualizar datos del profesional: ${error.message}`);
+      console.error("Error updating professional data:", error);
+      throw new Error(
+        `Error al actualizar datos del profesional: ${error.message}`
+      );
     }
 
     return { success: true };
   } catch (error) {
-    console.error('Error en updateProfesionalData:', error);
+    console.error("Error en updateProfesionalData:", error);
     throw error;
   }
 }
@@ -350,18 +411,18 @@ export async function updateProfesionalData(userId: string, updates: any) {
 export async function getLeadsCompletos() {
   try {
     const { data, error } = await supabase
-      .from('leads_completos')
-      .select('*')
-      .order('fecha_creacion', { ascending: false });
+      .from("leads_completos")
+      .select("*")
+      .order("fecha_creacion", { ascending: false });
 
     if (error) {
-      console.error('Error getting complete leads:', error);
+      console.error("Error getting complete leads:", error);
       throw new Error(`Error al obtener leads: ${error.message}`);
     }
 
     return data || [];
   } catch (error) {
-    console.error('Error en getLeadsCompletos:', error);
+    console.error("Error en getLeadsCompletos:", error);
     throw error;
   }
 }

@@ -15,7 +15,7 @@ interface Message {
 
 interface ChatBoxProps {
   leadId: string;
-  currentUserId: string;
+  currentUserId: string | null;
 }
 
 export default function ChatBox({ leadId, currentUserId }: ChatBoxProps) {
@@ -93,7 +93,7 @@ export default function ChatBox({ leadId, currentUserId }: ChatBoxProps) {
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!newMessage.trim() || isSending) return;
+    if (!newMessage.trim() || isSending || !currentUserId) return;
 
     try {
       setIsSending(true);
@@ -206,15 +206,19 @@ export default function ChatBox({ leadId, currentUserId }: ChatBoxProps) {
             type="text"
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
-            placeholder="Escribe un mensaje..."
+            placeholder={
+              currentUserId
+                ? "Escribe un mensaje..."
+                : "Inicia sesión para enviar mensajes"
+            }
             className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            disabled={isSending}
+            disabled={isSending || !currentUserId}
           />
           <button
             type="submit"
-            disabled={!newMessage.trim() || isSending}
+            disabled={!newMessage.trim() || isSending || !currentUserId}
             className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-              newMessage.trim() && !isSending
+              newMessage.trim() && !isSending && currentUserId
                 ? "bg-blue-600 hover:bg-blue-700 text-white"
                 : "bg-gray-300 text-gray-500 cursor-not-allowed"
             }`}

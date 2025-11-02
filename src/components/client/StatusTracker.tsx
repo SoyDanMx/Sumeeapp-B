@@ -15,7 +15,7 @@ import {
 
 interface StatusTrackerProps {
   initialLead: Lead;
-  currentUserId: string;
+  currentUserId: string | null;
 }
 
 const STATUS_STEPS = [

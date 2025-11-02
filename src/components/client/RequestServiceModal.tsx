@@ -357,8 +357,15 @@ export default function RequestServiceModal({
         throw new Error("No se pudo crear la solicitud. Intenta de nuevo.");
       }
 
-      // Redirigir a la página de estado del lead
-      router.push(`/solicitudes/${leadData.id}`);
+      // Redirigir a WhatsApp con número de soporte
+      const whatsappPhone = "525636741156"; // Número de soporte de Sumee App
+      const message = encodeURIComponent(
+        `Hola, necesito ayuda con el servicio de ${formData.servicio}. ` +
+          `Ubicación: ${formData.ubicacion || "No especificada"}. ` +
+          `Mi solicitud ID: ${leadData.id.substring(0, 8)}`
+      );
+      const whatsappUrl = `https://wa.me/${whatsappPhone}?text=${message}`;
+      window.open(whatsappUrl, "_blank");
       onClose();
     } catch (err: any) {
       console.error("Error creating lead:", err);
