@@ -6,11 +6,13 @@ import { faQuestionCircle } from "@fortawesome/free-solid-svg-icons";
 
 interface ScrollToAIHelperProps {
   serviceName: string;
+  discipline?: string;
   className?: string;
 }
 
 export default function ScrollToAIHelper({
   serviceName,
+  discipline,
   className = "",
 }: ScrollToAIHelperProps) {
   const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
@@ -20,19 +22,37 @@ export default function ScrollToAIHelper({
     const aiHelperElement = document.getElementById("ai-helper");
     
     if (aiHelperElement) {
-      // Hacer scroll suave al elemento
+      // Primero hacer scroll suave al elemento
       aiHelperElement.scrollIntoView({
         behavior: "smooth",
         block: "start",
       });
       
-      // Enfocar el elemento después del scroll para mejor accesibilidad
+      // Luego disparar el evento personalizado para abrir el chat del AI Helper
+      // Esto comunica con el componente DisciplineAIHelper
       setTimeout(() => {
-        aiHelperElement.focus({ preventScroll: true });
-      }, 500);
+        const openChatEvent = new CustomEvent('openAIHelperChat', {
+          detail: {
+            discipline: discipline || undefined,
+            initialPrompt: `Necesito ayuda con ${serviceName.toLowerCase()}. ¿Qué servicios ofrecen?`
+          }
+        });
+        
+        window.dispatchEvent(openChatEvent);
+      }, 300); // Pequeño delay para que el scroll comience primero
     } else {
-      // Si no se encuentra el elemento, hacer scroll al final de la página
+      // Si no se encuentra el elemento, intentar abrir el chat de todas formas
       // Esto puede pasar si el componente aún no se ha renderizado
+      const openChatEvent = new CustomEvent('openAIHelperChat', {
+        detail: {
+          discipline: discipline || undefined,
+          initialPrompt: `Necesito ayuda con ${serviceName.toLowerCase()}. ¿Qué servicios ofrecen?`
+        }
+      });
+      
+      window.dispatchEvent(openChatEvent);
+      
+      // También hacer scroll al final de la página
       window.scrollTo({
         top: document.documentElement.scrollHeight,
         behavior: "smooth",

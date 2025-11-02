@@ -371,7 +371,7 @@ export default async function ServiceDetailPage({ params }: ServicePageProps) {
                 <FontAwesomeIcon icon={faStar} className="mr-2" />
                 Ver Técnicos
               </a>
-              <ScrollToAIHelper serviceName={service.name} />
+              <ScrollToAIHelper serviceName={service.name} discipline={slug} />
             </div>
           </div>
         </div>
