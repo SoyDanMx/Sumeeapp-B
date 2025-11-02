@@ -117,12 +117,19 @@ export default function ProfessionalCard({ professional }: ProfessionalCardProps
                 
                 {/* Badge de Verificación */}
                 {isVerified && (
-                  <div className="flex-shrink-0 ml-2">
-                    <div className="bg-green-100 text-green-700 px-2 py-1 rounded-lg flex items-center text-xs font-semibold">
-                      <FontAwesomeIcon icon={faShieldAlt} className="mr-1" />
+                  <Link
+                    href="/verificacion"
+                    onClick={(e) => e.stopPropagation()}
+                    className="flex-shrink-0 ml-2 group"
+                  >
+                    <div className="bg-green-100 text-green-700 px-2 py-1 rounded-lg flex items-center text-xs font-semibold hover:bg-green-200 hover:text-green-800 transition-all duration-200 cursor-pointer">
+                      <FontAwesomeIcon
+                        icon={faShieldAlt}
+                        className="mr-1 group-hover:scale-110 transition-transform"
+                      />
                       Verificado
                     </div>
-                  </div>
+                  </Link>
                 )}
               </div>
               

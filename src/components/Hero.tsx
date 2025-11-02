@@ -214,15 +214,18 @@ export const Hero = () => {
             <div className="w-full lg:w-2/5 lg:pr-8 mb-8 lg:mb-0">
               <div className="bg-black/20 backdrop-blur-sm rounded-2xl md:rounded-3xl p-6 md:p-8 border border-white/20 shadow-2xl">
                 {/* Badge de confianza */}
-                <div className="inline-flex items-center bg-white/15 backdrop-blur-sm rounded-full px-3 py-1.5 md:px-4 md:py-2 mb-4 md:mb-6 border border-white/30 shadow-lg">
+                <Link
+                  href="/verificacion"
+                  className="inline-flex items-center bg-white/15 backdrop-blur-sm rounded-full px-3 py-1.5 md:px-4 md:py-2 mb-4 md:mb-6 border border-white/30 shadow-lg hover:bg-white/25 transition-all duration-300 group"
+                >
                   <FontAwesomeIcon
                     icon={faShieldAlt}
-                    className="text-green-400 mr-2 text-sm md:text-lg"
+                    className="text-green-400 mr-2 text-sm md:text-lg group-hover:scale-110 transition-transform"
                   />
-                  <span className="font-semibold text-xs md:text-sm">
+                  <span className="font-semibold text-xs md:text-sm group-hover:underline">
                     Técnicos Verificados
                   </span>
-                </div>
+                </Link>
 
                 {/* Mensaje principal */}
                 <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-3 md:mb-4 leading-tight text-white">
