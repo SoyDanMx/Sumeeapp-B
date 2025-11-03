@@ -1,47 +1,49 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { supabase } from '@/lib/supabase/client';
-import { Profesional } from '@/types/supabase';
-import { useMembership } from '@/context/MembershipContext';
-import FilterSidebar from '@/components/tecnicos/FilterSidebar';
-import ProfessionalCard from '@/components/tecnicos/ProfessionalCard';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { 
-  faSpinner, 
+import React, { useState, useEffect, useCallback } from "react";
+import { supabase } from "@/lib/supabase/client";
+import { Profesional } from "@/types/supabase";
+import { useMembership } from "@/context/MembershipContext";
+import FilterSidebar from "@/components/tecnicos/FilterSidebar";
+import ProfessionalCard from "@/components/tecnicos/ProfessionalCard";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+  faSpinner,
   faSort,
   faUsers,
   faStar,
   faChevronUp,
-  faChevronDown
-} from '@fortawesome/free-solid-svg-icons';
-import Link from 'next/link';
+  faChevronDown,
+} from "@fortawesome/free-solid-svg-icons";
+import Link from "next/link";
 
 // Opciones de ordenamiento
 const sortOptions = [
-  { value: 'relevancia', label: 'Más Relevantes' },
-  { value: 'calificacion', label: 'Mejor Calificados' },
-  { value: 'reseñas', label: 'Más Reseñas' },
-  { value: 'nombre', label: 'Nombre A-Z' }
+  { value: "relevancia", label: "Más Relevantes" },
+  { value: "calificacion", label: "Mejor Calificados" },
+  { value: "reseñas", label: "Más Reseñas" },
+  { value: "nombre", label: "Nombre A-Z" },
 ];
 
 export default function TecnicosPage() {
   // Contexto de membresía
   const { permissions, isFreeUser, upgradeUrl } = useMembership();
-  
+
   // Estados principales
   const [professionals, setProfessionals] = useState<Profesional[]>([]);
-  const [filteredProfessionals, setFilteredProfessionals] = useState<Profesional[]>([]);
+  const [filteredProfessionals, setFilteredProfessionals] = useState<
+    Profesional[]
+  >([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
+
   // Estados de filtros
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [minRating, setMinRating] = useState(0);
   const [showVerifiedOnly, setShowVerifiedOnly] = useState(false);
-  const [sortBy, setSortBy] = useState('relevancia');
-  
+  const [sortBy, setSortBy] = useState("relevancia");
+
   // Estados de UI
   const [showFilters, setShowFilters] = useState(false);
 
@@ -50,28 +52,30 @@ export default function TecnicosPage() {
     try {
       setIsLoading(true);
       setError(null);
-      
+
       let query = supabase
-        .from('profiles')
-        .select('*')
-        .eq('role', 'profesional')
-        .not('full_name', 'is', null);
+        .from("profiles")
+        .select("*")
+        .eq("role", "profesional")
+        .eq("onboarding_status", "approved") // Solo profesionales aprobados
+        .eq("city", "Ciudad de México") // Solo profesionales de CDMX (mercado activo)
+        .not("full_name", "is", null);
 
       // Aplicar filtro de búsqueda
       if (searchTerm) {
-        query = query.ilike('full_name', `%${searchTerm}%`);
+        query = query.ilike("full_name", `%${searchTerm}%`);
       }
-      
+
       // Aplicar filtro de categorías
       if (selectedCategories.length > 0) {
-        query = query.overlaps('areas_servicio', selectedCategories);
+        query = query.overlaps("areas_servicio", selectedCategories);
       }
-      
+
       // Aplicar filtro de calificación mínima
       if (minRating > 0) {
-        query = query.gte('calificacion_promedio', minRating);
+        query = query.gte("calificacion_promedio", minRating);
       }
-      
+
       // Aplicar filtro de verificación (asumimos que todos están verificados, pero mantendremos la lógica)
       if (showVerifiedOnly) {
         // En el futuro, cuando tengamos el campo is_verified:
@@ -81,15 +85,15 @@ export default function TecnicosPage() {
       const { data, error: supabaseError } = await query;
 
       if (supabaseError) {
-        console.error('Error fetching professionals:', supabaseError);
-        setError('Error al cargar profesionales. Por favor, intenta de nuevo.');
+        console.error("Error fetching professionals:", supabaseError);
+        setError("Error al cargar profesionales. Por favor, intenta de nuevo.");
         return;
       }
 
       setProfessionals(data || []);
     } catch (err) {
-      console.error('Error in fetchProfessionals:', err);
-      setError('Error al cargar profesionales. Por favor, intenta de nuevo.');
+      console.error("Error in fetchProfessionals:", err);
+      setError("Error al cargar profesionales. Por favor, intenta de nuevo.");
     } finally {
       setIsLoading(false);
     }
@@ -106,20 +110,26 @@ export default function TecnicosPage() {
 
     // Ordenamiento
     switch (sortBy) {
-      case 'calificacion':
-        filtered.sort((a, b) => (b.calificacion_promedio || 0) - (a.calificacion_promedio || 0));
+      case "calificacion":
+        filtered.sort(
+          (a, b) =>
+            (b.calificacion_promedio || 0) - (a.calificacion_promedio || 0)
+        );
         break;
-      case 'reseñas':
+      case "reseñas":
         filtered.sort((a, b) => (b.review_count || 0) - (a.review_count || 0));
         break;
-      case 'nombre':
-        filtered.sort((a, b) => (a.full_name || '').localeCompare(b.full_name || ''));
+      case "nombre":
+        filtered.sort((a, b) =>
+          (a.full_name || "").localeCompare(b.full_name || "")
+        );
         break;
-      case 'relevancia':
+      case "relevancia":
       default:
         // Ordenar por relevancia: primero mejor calificados, luego más reseñas
         filtered.sort((a, b) => {
-          const ratingDiff = (b.calificacion_promedio || 0) - (a.calificacion_promedio || 0);
+          const ratingDiff =
+            (b.calificacion_promedio || 0) - (a.calificacion_promedio || 0);
           if (ratingDiff !== 0) return ratingDiff;
           return (b.review_count || 0) - (a.review_count || 0);
         });
@@ -131,7 +141,7 @@ export default function TecnicosPage() {
 
   // Función para limpiar filtros
   const handleClearFilters = () => {
-    setSearchTerm('');
+    setSearchTerm("");
     setSelectedCategories([]);
     setMinRating(0);
     setShowVerifiedOnly(false);
@@ -154,7 +164,10 @@ export default function TecnicosPage() {
             </p>
             <div className="flex flex-wrap justify-center gap-4 text-sm">
               <div className="flex items-center bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full">
-                <FontAwesomeIcon icon={faStar} className="mr-2 text-yellow-300" />
+                <FontAwesomeIcon
+                  icon={faStar}
+                  className="mr-2 text-yellow-300"
+                />
                 <span>Técnicos Verificados</span>
               </div>
               <div className="flex items-center bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full">
@@ -179,17 +192,17 @@ export default function TecnicosPage() {
               >
                 <span className="flex items-center">
                   <FontAwesomeIcon icon={faSort} className="mr-2" />
-                  {showFilters ? 'Ocultar Filtros' : 'Mostrar Filtros'}
+                  {showFilters ? "Ocultar Filtros" : "Mostrar Filtros"}
                 </span>
-                <FontAwesomeIcon 
-                  icon={showFilters ? faChevronUp : faChevronDown} 
+                <FontAwesomeIcon
+                  icon={showFilters ? faChevronUp : faChevronDown}
                   className="text-sm"
                 />
               </button>
             </div>
 
             {/* Sidebar de Filtros */}
-            <div className={`${showFilters ? 'block' : 'hidden lg:block'}`}>
+            <div className={`${showFilters ? "block" : "hidden lg:block"}`}>
               <FilterSidebar
                 searchTerm={searchTerm}
                 onSearchChange={setSearchTerm}
@@ -213,14 +226,17 @@ export default function TecnicosPage() {
                 <div>
                   <h2 className="text-2xl font-bold text-gray-900 mb-2">
                     {resultCount > 0 ? (
-                      <>Encontramos {resultCount} profesional{resultCount !== 1 ? 'es' : ''}</>
+                      <>
+                        Encontramos {resultCount} profesional
+                        {resultCount !== 1 ? "es" : ""}
+                      </>
                     ) : (
-                      'No se encontraron profesionales'
+                      "No se encontraron profesionales"
                     )}
                   </h2>
                   {selectedCategories.length > 0 && (
                     <p className="text-sm text-gray-600">
-                      Filtrando por: {selectedCategories.join(', ')}
+                      Filtrando por: {selectedCategories.join(", ")}
                     </p>
                   )}
                 </div>
@@ -250,14 +266,19 @@ export default function TecnicosPage() {
               <div className="bg-gradient-to-r from-yellow-50 to-orange-50 border-l-4 border-yellow-400 rounded-lg p-6 mb-6 shadow-md">
                 <div className="flex items-start">
                   <div className="flex-shrink-0">
-                    <FontAwesomeIcon icon={faStar} className="text-yellow-500 text-2xl" />
+                    <FontAwesomeIcon
+                      icon={faStar}
+                      className="text-yellow-500 text-2xl"
+                    />
                   </div>
                   <div className="ml-4 flex-1">
                     <h3 className="text-lg font-bold text-gray-900 mb-2">
                       Desbloquea todos los profesionales
                     </h3>
                     <p className="text-gray-700 mb-4">
-                      Con un plan Premium puedes ver los perfiles completos y contactar a los técnicos mejor calificados de forma inmediata.
+                      Con un plan Premium puedes ver los perfiles completos y
+                      contactar a los técnicos mejor calificados de forma
+                      inmediata.
                     </p>
                     <Link
                       href="/membresia"
@@ -279,7 +300,9 @@ export default function TecnicosPage() {
                   size="3x"
                   className="text-blue-600 mb-4"
                 />
-                <p className="text-gray-700 text-lg">Cargando profesionales...</p>
+                <p className="text-gray-700 text-lg">
+                  Cargando profesionales...
+                </p>
               </div>
             )}
 
@@ -300,7 +323,10 @@ export default function TecnicosPage() {
             {/* No Results */}
             {!isLoading && !error && resultCount === 0 && (
               <div className="text-center py-20 bg-white rounded-xl shadow-md">
-                <FontAwesomeIcon icon={faUsers} className="text-gray-400 text-6xl mb-4" />
+                <FontAwesomeIcon
+                  icon={faUsers}
+                  className="text-gray-400 text-6xl mb-4"
+                />
                 <h3 className="text-2xl font-bold text-gray-900 mb-2">
                   No se encontraron profesionales
                 </h3>
@@ -332,7 +358,11 @@ export default function TecnicosPage() {
             {resultCount >= 50 && (
               <div className="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-4 text-center">
                 <p className="text-sm text-blue-800">
-                  <strong>Mostrando los primeros {resultCount} resultados.</strong> Usa los filtros para refinar tu búsqueda y encontrar el profesional perfecto.
+                  <strong>
+                    Mostrando los primeros {resultCount} resultados.
+                  </strong>{" "}
+                  Usa los filtros para refinar tu búsqueda y encontrar el
+                  profesional perfecto.
                 </p>
               </div>
             )}
