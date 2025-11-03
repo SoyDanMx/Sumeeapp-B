@@ -31,6 +31,18 @@ export type ServiceCategory =
   | "Construcción";
 
 // =========================================================================
+// INTERFAZ PARA ITEMS DE PORTFOLIO
+// =========================================================================
+/**
+ * Representa un item del portfolio de un profesional
+ */
+export interface PortfolioItem {
+  url: string; // URL de la imagen en Supabase Storage
+  description: string; // Descripción del trabajo (ej: "Instalación de bombas hidroneumáticas")
+  type?: string; // Tipo de trabajo (opcional, para categorización)
+}
+
+// =========================================================================
 // INTERFAZ PARA SERVICES (NUEVA TABLA)
 // =========================================================================
 /**
@@ -71,6 +83,9 @@ export interface Profile {
   avatar_url?: string | null;
   bio?: string | null;
   work_photos_urls?: string | null;
+  portfolio?: PortfolioItem[] | null; // Array de objetos con url, description, type
+  certificaciones_urls?: string[] | null; // Array de URLs a certificaciones
+  antecedentes_no_penales_url?: string | null; // URL a constancia de antecedentes
   membership_status: "free" | "basic" | "premium";
   stripe_customer_id?: string | null;
   status: "active" | "inactive";

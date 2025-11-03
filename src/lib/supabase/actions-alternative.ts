@@ -1,9 +1,9 @@
 // src/lib/supabase/actions-alternative.ts
 // Versión alternativa que usa UPSERT para evitar problemas de esquema
 
-import { supabase } from '@/lib/supabase/client';
-import { geocodeAddress } from '@/lib/geocoding';
-import { Profesional } from '@/types/supabase';
+import { supabase } from "@/lib/supabase/client";
+import { geocodeAddress } from "@/lib/geocoding";
+import { Profesional } from "@/types/supabase";
 
 /**
  * Verifica los permisos del usuario para operaciones RLS
@@ -14,20 +14,20 @@ import { Profesional } from '@/types/supabase';
 export async function verifyUserPermissions(userId: string): Promise<boolean> {
   try {
     const { data, error } = await supabase
-      .from('profiles')
-      .select('user_id')
-      .eq('user_id', userId)
+      .from("profiles")
+      .select("user_id")
+      .eq("user_id", userId)
       .single();
 
     if (error) {
-      console.error('❌ Error de permisos:', error);
+      console.error("❌ Error de permisos:", error);
       throw new Error(`Error de permisos: ${error.message}`);
     }
 
-    console.log('✅ Permisos verificados para usuario:', userId);
+    console.log("✅ Permisos verificados para usuario:", userId);
     return true;
   } catch (error) {
-    console.error('❌ Error en verifyUserPermissions:', error);
+    console.error("❌ Error en verifyUserPermissions:", error);
     throw error;
   }
 }
@@ -37,26 +37,31 @@ export async function verifyUserPermissions(userId: string): Promise<boolean> {
  * Esta versión es más robusta y evita errores de columnas faltantes
  */
 export async function updateUserProfileSafe(
-  userId: string, 
-  updates: Partial<Profesional>, 
+  userId: string,
+  updates: Partial<Profesional>,
   locationAddress?: string
 ): Promise<Profesional> {
   try {
-    console.log('🔄 Iniciando actualización SEGURA de perfil:', { userId, updates });
+    console.log("🔄 Iniciando actualización SEGURA de perfil:", {
+      userId,
+      updates,
+    });
 
     // 1. Geocodificación opcional
     let lat: number | undefined;
     let lng: number | undefined;
-    
+
     if (locationAddress) {
-      console.log('📍 Geocodificando dirección:', locationAddress);
+      console.log("📍 Geocodificando dirección:", locationAddress);
       const coords = await geocodeAddress(locationAddress);
       if (coords) {
         lat = coords.lat;
         lng = coords.lng;
-        console.log('✅ Coordenadas obtenidas:', { lat, lng });
+        console.log("✅ Coordenadas obtenidas:", { lat, lng });
       } else {
-        throw new Error("No se pudo obtener las coordenadas de la dirección proporcionada. Intenta ser más específico.");
+        throw new Error(
+          "No se pudo obtener las coordenadas de la dirección proporcionada. Intenta ser más específico."
+        );
       }
     }
 
@@ -65,52 +70,115 @@ export async function updateUserProfileSafe(
       user_id: userId, // CRÍTICO: Necesario para UPSERT
       ...updates,
       ...(lat !== undefined && { ubicacion_lat: lat }),
-      ...(lng !== undefined && { ubicacion_lng: lng })
+      ...(lng !== undefined && { ubicacion_lng: lng }),
     };
 
     // 3. Filtrar solo campos que sabemos que existen
+    // IMPORTANTE: Incluir todos los campos nuevos (areas_servicio, numero_imss, work_zones, city, onboarding_status)
     const safeFields = [
-      'user_id', 'full_name', 'email', 'avatar_url', 'role',
-      'profession', 'whatsapp', 'descripcion_perfil', 'specialties',
-      'experience_years', 'ubicacion_lat', 'ubicacion_lng', 'ubicacion_direccion',
-      'disponibilidad', 'calificacion_promedio'
+      "user_id",
+      "full_name",
+      "email",
+      "avatar_url",
+      "role",
+      "profession",
+      "whatsapp",
+      "descripcion_perfil",
+      "specialties",
+      "experience_years",
+      "ubicacion_lat",
+      "ubicacion_lng",
+      "ubicacion_direccion",
+      "disponibilidad",
+      "calificacion_promedio",
+      "areas_servicio",
+      "numero_imss",
+      "work_zones",
+      "city",
+      "onboarding_status",
+      "bio",
+      "phone",
+      "work_photos_urls",
+      "experiencia_uber",
+      "años_experiencia_uber",
+      "portfolio",
+      "certificaciones_urls",
+      "antecedentes_no_penales_url",
     ];
 
     const filteredData = Object.fromEntries(
-      Object.entries(dataToUpsert).filter(([key, value]) => 
-        safeFields.includes(key) && value !== undefined && value !== null
+      Object.entries(dataToUpsert).filter(
+        ([key, value]) =>
+          safeFields.includes(key) && value !== undefined && value !== null
       )
     );
 
-    console.log('📝 Datos seguros para UPSERT:', filteredData);
+    console.log("📝 Datos seguros para UPSERT:", filteredData);
 
-    // 4. UPSERT usando onConflict
-    const { data, error } = await supabase
-      .from('profiles')
-      .upsert([filteredData], { onConflict: 'user_id' })
-      .select()
+    // 4. UPDATE tradicional (más seguro que UPSERT para RLS)
+    // Primero verificar que el perfil existe
+    const { data: existingProfile, error: checkError } = await supabase
+      .from("profiles")
+      .select("user_id")
+      .eq("user_id", userId)
       .single();
 
+    if (checkError && checkError.code !== "PGRST116") {
+      // PGRST116 = no rows returned, que es aceptable si el perfil no existe
+      console.error("❌ Error verificando perfil existente:", checkError);
+      throw new Error(`Error al verificar perfil: ${checkError.message}`);
+    }
+
+    let data, error;
+
+    if (existingProfile) {
+      // Si el perfil existe, hacer UPDATE
+      console.log("📝 Perfil existe, haciendo UPDATE...");
+      ({ data, error } = await supabase
+        .from("profiles")
+        .update(filteredData)
+        .eq("user_id", userId)
+        .select()
+        .single());
+    } else {
+      // Si el perfil no existe, intentar INSERT (no debería pasar en flujo normal)
+      console.log("⚠️ Perfil no existe, intentando INSERT...");
+      ({ data, error } = await supabase
+        .from("profiles")
+        .insert([filteredData])
+        .select()
+        .single());
+    }
+
     if (error) {
-      console.error('❌ Error de Supabase UPSERT:', error);
-      
+      console.error("❌ Error de Supabase UPDATE:", error);
+
       // Manejo específico de errores
-      if (error.code === '42501') {
-        throw new Error("Error de permisos (RLS). Verifica que la política de UPSERT esté configurada correctamente.");
+      if (error.code === "42501") {
+        throw new Error(
+          "Error de permisos (RLS). Verifica que la política de UPDATE esté configurada correctamente. Ejecuta el script fix-profile-update-rls.sql en Supabase."
+        );
       }
-      
-      if (error.message.includes('updated_at')) {
-        throw new Error("Error de esquema: La columna 'updated_at' no existe. Ejecuta el script SQL de corrección en Supabase.");
+
+      if (error.message.includes("updated_at")) {
+        throw new Error(
+          "Error de esquema: La columna 'updated_at' no existe. Ejecuta el script SQL de corrección en Supabase."
+        );
       }
-      
+
+      if (error.message.includes("row-level security")) {
+        throw new Error(
+          `Error de permisos RLS: ${error.message}. Ejecuta el script fix-profile-update-rls.sql en Supabase para corregir las políticas.`
+        );
+      }
+
       throw new Error(`Error al actualizar el perfil: ${error.message}`);
     }
 
-    console.log('✅ Perfil actualizado con UPSERT:', data);
+    console.log("✅ Perfil actualizado exitosamente:", data);
     return data as Profesional;
-
   } catch (error) {
-    console.error('❌ Error en updateUserProfileSafe:', error);
+    console.error("❌ Error en updateUserProfileSafe:", error);
     throw error;
   }
 }
@@ -119,32 +187,31 @@ export async function updateUserProfileSafe(
  * Función de respaldo que intenta UPDATE primero, luego UPSERT
  */
 export async function updateUserProfileFallback(
-  userId: string, 
-  updates: Partial<Profesional>, 
+  userId: string,
+  updates: Partial<Profesional>,
   locationAddress?: string
 ): Promise<Profesional> {
   try {
-    console.log('🔄 Intentando actualización con fallback...');
-    
+    console.log("🔄 Intentando actualización con fallback...");
+
     // Intentar UPSERT primero (más seguro)
     return await updateUserProfileSafe(userId, updates, locationAddress);
-    
   } catch (error) {
-    console.error('❌ Error en updateUserProfileFallback:', error);
-    
+    console.error("❌ Error en updateUserProfileFallback:", error);
+
     // Si falla, intentar con datos mínimos
     try {
-      console.log('🔄 Intentando con datos mínimos...');
-      
+      console.log("🔄 Intentando con datos mínimos...");
+
       const minimalData = {
         user_id: userId,
-        full_name: updates.full_name || '',
-        email: updates.email || ''
+        full_name: updates.full_name || "",
+        email: updates.email || "",
       };
 
       const { data, error: minimalError } = await supabase
-        .from('profiles')
-        .upsert([minimalData], { onConflict: 'user_id' })
+        .from("profiles")
+        .upsert([minimalData], { onConflict: "user_id" })
         .select()
         .single();
 
@@ -152,13 +219,17 @@ export async function updateUserProfileFallback(
         throw new Error(`Error crítico: ${minimalError.message}`);
       }
 
-      console.log('✅ Perfil actualizado con datos mínimos:', data);
+      console.log("✅ Perfil actualizado con datos mínimos:", data);
       return data as Profesional;
-      
     } catch (fallbackError) {
-      console.error('❌ Error en fallback:', fallbackError);
-      const errorMessage = fallbackError instanceof Error ? fallbackError.message : 'Error desconocido';
-      throw new Error(`No se pudo actualizar el perfil. Error: ${errorMessage}`);
+      console.error("❌ Error en fallback:", fallbackError);
+      const errorMessage =
+        fallbackError instanceof Error
+          ? fallbackError.message
+          : "Error desconocido";
+      throw new Error(
+        `No se pudo actualizar el perfil. Error: ${errorMessage}`
+      );
     }
   }
 }
