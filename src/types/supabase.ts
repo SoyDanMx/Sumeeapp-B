@@ -88,6 +88,12 @@ export interface Profile {
   role: UserRole;
   requests_used?: number | null;
   last_free_request_date?: string | null;
+  city?: string | null;
+  onboarding_status?:
+    | "approved"
+    | "pending_review"
+    | "waitlist_other_city"
+    | "rejected";
 }
 
 // =========================================================================
@@ -197,6 +203,8 @@ export interface ProfesionalRegistrationData {
   password: string;
   bio?: string;
   workZones?: string[];
+  city?: string;
+  work_zones_other?: string;
 }
 
 /**
