@@ -1,19 +1,19 @@
-'use client';
+"use client";
 
-import React from 'react';
-import Link from 'next/link';
-import Image from 'next/image';
-import { Profesional } from '@/types/supabase';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { 
-  faCheckCircle, 
-  faMapMarkerAlt, 
+import React from "react";
+import Link from "next/link";
+import Image from "next/image";
+import { Profesional } from "@/types/supabase";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+  faCheckCircle,
+  faMapMarkerAlt,
   faEye,
   faBriefcase,
   faClock,
-  faShieldAlt
-} from '@fortawesome/free-solid-svg-icons';
-import RatingDisplay from '@/components/RatingDisplay';
+  faShieldAlt,
+} from "@fortawesome/free-solid-svg-icons";
+import RatingDisplay from "@/components/RatingDisplay";
 
 interface ProfessionalCardProps {
   professional: Profesional;
@@ -43,7 +43,9 @@ const SpecialtiesTags = ({ specialties }: { specialties: string[] }) => {
   );
 };
 
-export default function ProfessionalCard({ professional }: ProfessionalCardProps) {
+export default function ProfessionalCard({
+  professional,
+}: ProfessionalCardProps) {
   const {
     user_id,
     full_name,
@@ -56,20 +58,20 @@ export default function ProfessionalCard({ professional }: ProfessionalCardProps
     años_experiencia_uber,
     ubicacion_lat,
     ubicacion_lng,
-    descripcion_perfil
+    descripcion_perfil,
   } = professional;
 
-  const rating = calificacion_promedio || 0;
+  const rating = calificacion_promedio || 5;
   const specialties = areas_servicio || [];
   const reviewCount = review_count || 0;
   const experienceYears = años_experiencia_uber || 0;
   const isVerified = true; // Asumimos que todos los profesionales en la plataforma están verificados
   const isAvailable = true; // Por ahora, todos están disponibles
-  
+
   // Determinar el color del borde del avatar según disponibilidad
-  const avatarBorderColor = isAvailable 
-    ? 'border-green-400' 
-    : 'border-gray-300';
+  const avatarBorderColor = isAvailable
+    ? "border-green-400"
+    : "border-gray-300";
 
   return (
     <Link href={`/tecnico/${user_id}`} className="group">
@@ -79,22 +81,24 @@ export default function ProfessionalCard({ professional }: ProfessionalCardProps
           <div className="flex items-start space-x-4">
             {/* Avatar Grande con Borde de Estado */}
             <div className="relative flex-shrink-0">
-              <div className={`w-20 h-20 rounded-full overflow-hidden bg-white border-4 ${avatarBorderColor} shadow-lg`}>
+              <div
+                className={`w-20 h-20 rounded-full overflow-hidden bg-white border-4 ${avatarBorderColor} shadow-lg`}
+              >
                 {avatar_url ? (
                   <Image
                     src={avatar_url}
-                    alt={full_name || 'Profesional'}
+                    alt={full_name || "Profesional"}
                     width={80}
                     height={80}
                     className="w-full h-full object-cover"
                   />
                 ) : (
                   <div className="w-full h-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-2xl">
-                    {(full_name || 'P').charAt(0).toUpperCase()}
+                    {(full_name || "P").charAt(0).toUpperCase()}
                   </div>
                 )}
               </div>
-              
+
               {/* Badge de Disponibilidad */}
               {isAvailable && (
                 <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full border-2 border-white flex items-center justify-center">
@@ -102,19 +106,19 @@ export default function ProfessionalCard({ professional }: ProfessionalCardProps
                 </div>
               )}
             </div>
-            
+
             {/* Info Principal */}
             <div className="flex-1 min-w-0">
               <div className="flex items-start justify-between mb-2">
                 <div className="flex-1 min-w-0">
                   <h3 className="text-xl font-bold text-gray-900 group-hover:text-blue-600 transition-colors truncate">
-                    {full_name || 'Profesional'}
+                    {full_name || "Profesional"}
                   </h3>
                   <p className="text-sm text-gray-600 mt-1">
-                    {profession || 'Técnico Especializado'}
+                    {profession || "Técnico Especializado"}
                   </p>
                 </div>
-                
+
                 {/* Badge de Verificación */}
                 {isVerified && (
                   <Link
@@ -132,12 +136,12 @@ export default function ProfessionalCard({ professional }: ProfessionalCardProps
                   </Link>
                 )}
               </div>
-              
+
               {/* Calificación */}
               <div className="mt-2">
-                <RatingDisplay 
-                  rating={rating} 
-                  reviewCount={reviewCount} 
+                <RatingDisplay
+                  rating={rating}
+                  reviewCount={reviewCount}
                   size="sm"
                   showLabel={true}
                 />
@@ -153,22 +157,32 @@ export default function ProfessionalCard({ professional }: ProfessionalCardProps
             {experienceYears > 0 && (
               <div className="flex items-center text-sm text-gray-700">
                 <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center mr-2">
-                  <FontAwesomeIcon icon={faBriefcase} className="text-blue-600" />
+                  <FontAwesomeIcon
+                    icon={faBriefcase}
+                    className="text-blue-600"
+                  />
                 </div>
                 <div>
-                  <p className="font-semibold text-gray-900">{experienceYears}+ años</p>
+                  <p className="font-semibold text-gray-900">
+                    {experienceYears}+ años
+                  </p>
                   <p className="text-xs text-gray-500">Experiencia</p>
                 </div>
               </div>
             )}
-            
+
             {reviewCount > 0 && (
               <div className="flex items-center text-sm text-gray-700">
                 <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center mr-2">
-                  <FontAwesomeIcon icon={faCheckCircle} className="text-green-600" />
+                  <FontAwesomeIcon
+                    icon={faCheckCircle}
+                    className="text-green-600"
+                  />
                 </div>
                 <div>
-                  <p className="font-semibold text-gray-900">+{reviewCount * 10} trabajos</p>
+                  <p className="font-semibold text-gray-900">
+                    +{reviewCount * 10} trabajos
+                  </p>
                   <p className="text-xs text-gray-500">Completados</p>
                 </div>
               </div>
@@ -179,7 +193,7 @@ export default function ProfessionalCard({ professional }: ProfessionalCardProps
           {descripcion_perfil && (
             <p className="text-sm text-gray-600 mb-4 line-clamp-2">
               {descripcion_perfil.substring(0, 100)}
-              {descripcion_perfil.length > 100 && '...'}
+              {descripcion_perfil.length > 100 && "..."}
             </p>
           )}
 
@@ -191,9 +205,12 @@ export default function ProfessionalCard({ professional }: ProfessionalCardProps
           )}
 
           {/* Ubicación */}
-          {(ubicacion_lat && ubicacion_lng) && (
+          {ubicacion_lat && ubicacion_lng && (
             <div className="flex items-center text-sm text-gray-600 mb-4">
-              <FontAwesomeIcon icon={faMapMarkerAlt} className="mr-2 text-gray-400" />
+              <FontAwesomeIcon
+                icon={faMapMarkerAlt}
+                className="mr-2 text-gray-400"
+              />
               <span>Servicio en zona</span>
             </div>
           )}
@@ -216,4 +233,3 @@ export default function ProfessionalCard({ professional }: ProfessionalCardProps
     </Link>
   );
 }
-

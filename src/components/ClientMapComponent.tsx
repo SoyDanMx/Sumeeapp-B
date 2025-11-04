@@ -127,7 +127,7 @@ export default function ClientMapComponent({
           profesional.ubicacion_lng
         ];
 
-        const rating = Math.min(Math.max(profesional.calificacion_promedio || 0, 0), 5);
+        const rating = Math.min(Math.max(profesional.calificacion_promedio || 5, 0), 5);
         const stars = '⭐'.repeat(Math.round(rating));
 
         return (
