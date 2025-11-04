@@ -48,6 +48,7 @@ import {
   uploadBackgroundCheck,
 } from "@/lib/supabase/storage-helpers";
 import ProfessionalVerificationID from "@/components/ProfessionalVerificationID";
+import { reverseGeocode } from "@/lib/geocoding";
 
 interface EditProfileModalProps {
   profesional: Profesional;
@@ -106,6 +107,8 @@ export default function EditProfileModal({
   const [currentStep, setCurrentStep] = useState(1);
   const [isSuccess, setIsSuccess] = useState(false);
   const [customService, setCustomService] = useState("");
+  const [isDetectingLocation, setIsDetectingLocation] = useState(false);
+  const [profileSaved, setProfileSaved] = useState(false); // Para rastrear si el perfil ya se guardó en el Paso 5
 
   // Estados para archivos y previews
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
@@ -151,6 +154,8 @@ export default function EditProfileModal({
       setStatusMessage("");
       setCurrentStep(1);
       setIsSuccess(false);
+      setProfileSaved(false);
+      setIsDetectingLocation(false);
 
       // Resetear estados de archivos
       setAvatarFile(null);
@@ -319,11 +324,21 @@ export default function EditProfileModal({
       console.log("✅ Perfil actualizado exitosamente:", updatedProfile);
       setStatusMessage("¡Perfil actualizado con éxito!");
       setIsSuccess(true);
+      setProfileSaved(true); // Marcar que el perfil ya se guardó
 
-      // Delay before closing to show success message
-      setTimeout(() => {
-        onSuccess();
-      }, 2000);
+      // Si estamos en el Paso 5, NO cerrar automáticamente el modal
+      // Permitir al usuario descargar el PDF antes de cerrar
+      if (currentStep === 5) {
+        // No cerrar automáticamente, el usuario puede cerrar manualmente
+        console.log(
+          "Perfil guardado en Paso 5. Modal permanecerá abierto para permitir descargar PDF."
+        );
+      } else {
+        // Si no estamos en el Paso 5, cerrar después de 2 segundos como antes
+        setTimeout(() => {
+          onSuccess();
+        }, 2000);
+      }
     } catch (error: any) {
       console.error("❌ Error al actualizar el perfil:", error);
 
@@ -1064,9 +1079,124 @@ export default function EditProfileModal({
                 </div>
 
                 <div className="space-y-4">
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Dirección de Servicio
-                  </label>
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="block text-sm font-semibold text-gray-700">
+                      Dirección de Servicio
+                    </label>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        setIsDetectingLocation(true);
+                        setStatusMessage("Detectando tu ubicación...");
+
+                        try {
+                          // Verificar si el navegador soporta geolocalización
+                          if (!navigator.geolocation) {
+                            throw new Error(
+                              "Tu navegador no soporta geolocalización"
+                            );
+                          }
+
+                          // Obtener la ubicación actual
+                          navigator.geolocation.getCurrentPosition(
+                            async (position) => {
+                              try {
+                                const { latitude, longitude } = position.coords;
+
+                                // Convertir coordenadas a dirección usando reverse geocoding
+                                const result = await reverseGeocode(
+                                  latitude,
+                                  longitude
+                                );
+
+                                if (result && result.address) {
+                                  setLocationAddress(result.address);
+                                  setStatusMessage(
+                                    "✅ Ubicación detectada exitosamente"
+                                  );
+                                  setTimeout(() => setStatusMessage(""), 3000);
+                                } else {
+                                  throw new Error(
+                                    "No se pudo obtener la dirección de las coordenadas"
+                                  );
+                                }
+                              } catch (error: any) {
+                                console.error(
+                                  "Error al obtener dirección:",
+                                  error
+                                );
+                                setStatusMessage(
+                                  `Error: ${
+                                    error.message ||
+                                    "No se pudo obtener la dirección"
+                                  }`
+                                );
+                                setTimeout(() => setStatusMessage(""), 5000);
+                              } finally {
+                                setIsDetectingLocation(false);
+                              }
+                            },
+                            (error) => {
+                              console.error("Error de geolocalización:", error);
+                              let errorMessage = "Error al detectar ubicación";
+
+                              switch (error.code) {
+                                case error.PERMISSION_DENIED:
+                                  errorMessage =
+                                    "Permiso de ubicación denegado. Por favor, permite el acceso a tu ubicación en la configuración de tu navegador.";
+                                  break;
+                                case error.POSITION_UNAVAILABLE:
+                                  errorMessage =
+                                    "Ubicación no disponible. Intenta con una dirección manual.";
+                                  break;
+                                case error.TIMEOUT:
+                                  errorMessage =
+                                    "Tiempo de espera agotado. Intenta de nuevo.";
+                                  break;
+                                default:
+                                  errorMessage =
+                                    "Error desconocido al detectar ubicación.";
+                                  break;
+                              }
+
+                              setStatusMessage(`⚠️ ${errorMessage}`);
+                              setTimeout(() => setStatusMessage(""), 5000);
+                              setIsDetectingLocation(false);
+                            },
+                            {
+                              enableHighAccuracy: true,
+                              timeout: 10000,
+                              maximumAge: 0,
+                            }
+                          );
+                        } catch (error: any) {
+                          console.error("Error:", error);
+                          setStatusMessage(
+                            `Error: ${error.message || "Error desconocido"}`
+                          );
+                          setTimeout(() => setStatusMessage(""), 5000);
+                          setIsDetectingLocation(false);
+                        }
+                      }}
+                      disabled={isDetectingLocation || loading}
+                      className="px-4 py-2 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-700 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+                    >
+                      {isDetectingLocation ? (
+                        <>
+                          <FontAwesomeIcon
+                            icon={faSpinner}
+                            className="animate-spin"
+                          />
+                          <span>Detectando...</span>
+                        </>
+                      ) : (
+                        <>
+                          <FontAwesomeIcon icon={faMapMarkerAlt} />
+                          <span>Detectar mi ubicación</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
                   <input
                     type="text"
                     value={locationAddress}
@@ -1179,30 +1309,43 @@ export default function EditProfileModal({
                     <FontAwesomeIcon icon={faRocket} className="text-sm" />
                   </button>
                 ) : (
-                  <button
-                    type="submit"
-                    disabled={
-                      loading ||
-                      !formData.areas_servicio ||
-                      formData.areas_servicio.length === 0
-                    }
-                    className="px-8 py-3 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors duration-200 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center space-x-2"
-                  >
-                    {loading ? (
-                      <>
-                        <FontAwesomeIcon
-                          icon={faSpinner}
-                          className="animate-spin"
-                        />
-                        <span>Guardando...</span>
-                      </>
+                  <>
+                    {profileSaved ? (
+                      <button
+                        type="button"
+                        onClick={onClose}
+                        className="px-8 py-3 bg-gray-600 text-white rounded-xl hover:bg-gray-700 transition-colors duration-200 flex items-center space-x-2"
+                      >
+                        <FontAwesomeIcon icon={faTimes} />
+                        <span>Cerrar</span>
+                      </button>
                     ) : (
-                      <>
-                        <FontAwesomeIcon icon={faCheck} />
-                        <span>Guardar y Finalizar</span>
-                      </>
+                      <button
+                        type="submit"
+                        disabled={
+                          loading ||
+                          !formData.areas_servicio ||
+                          formData.areas_servicio.length === 0
+                        }
+                        className="px-8 py-3 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors duration-200 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center space-x-2"
+                      >
+                        {loading ? (
+                          <>
+                            <FontAwesomeIcon
+                              icon={faSpinner}
+                              className="animate-spin"
+                            />
+                            <span>Guardando...</span>
+                          </>
+                        ) : (
+                          <>
+                            <FontAwesomeIcon icon={faCheck} />
+                            <span>Guardar y Finalizar</span>
+                          </>
+                        )}
+                      </button>
                     )}
-                  </button>
+                  </>
                 )}
               </div>
             </div>
