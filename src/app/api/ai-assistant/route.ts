@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { detectTechnicalCategory, generateTechnicalResponse, TECHNICAL_PROMPTS } from '@/lib/ai/technical-prompts';
+import { generateAIConversation } from '@/lib/ai/gemini-agent';
 
 // Crear cliente de Supabase para el API route
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -46,6 +47,8 @@ interface AIResponse {
   };
   recommendations: ProfessionalRecommendation[];
   estimated_price_range: string;
+  requires_membership?: boolean;
+  ai_suggested_questions?: string[];
 }
 
 interface ServiceKnowledge {
@@ -202,6 +205,44 @@ export async function POST(request: NextRequest) {
 
     console.log('🔍 Procesando consulta técnica:', query);
 
+    // Verificar membresía del usuario
+    let hasPremiumMembership = false;
+    try {
+      const authHeader = request.headers.get('authorization');
+      if (authHeader) {
+        const token = authHeader.replace('Bearer ', '');
+        const { data: { user } } = await supabase.auth.getUser(token);
+        
+        if (user) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('membership_status')
+            .eq('user_id', user.id)
+            .single();
+          
+          hasPremiumMembership = profile?.membership_status === 'premium' || profile?.membership_status === 'basic';
+        }
+      } else {
+        // Intentar obtener usuario desde cookie/session
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('membership_status')
+            .eq('user_id', user.id)
+            .single();
+          
+          hasPremiumMembership = profile?.membership_status === 'premium' || profile?.membership_status === 'basic';
+        }
+      }
+    } catch (membershipError) {
+      console.warn('⚠️ Error al verificar membresía:', membershipError);
+      // Si hay error, asumir que no tiene membresía
+      hasPremiumMembership = false;
+    }
+
+    console.log('👤 Usuario tiene membresía premium:', hasPremiumMembership);
+
     // Detectar categoría técnica avanzada
     const technicalCategory = detectTechnicalCategory(query);
     console.log('📋 Categoría técnica detectada:', technicalCategory);
@@ -215,22 +256,64 @@ export async function POST(request: NextRequest) {
     const knowledge = serviceKnowledge[detectedService as keyof typeof serviceKnowledge];
     
     // Obtener profesionales recomendados
-    const professionals = await getTopProfessionals(detectedService, 5);
+    let professionals = await getTopProfessionals(detectedService, 5);
     console.log('👥 Profesionales encontrados:', professionals.length);
+
+    // Filtrar datos de contacto si el usuario no tiene membresía premium
+    if (!hasPremiumMembership) {
+      professionals = professionals.map(prof => ({
+        ...prof,
+        whatsapp: null, // Ocultar WhatsApp
+        numero_imss: null, // Ocultar IMSS
+        // Mantener otros datos públicos como nombre, calificación, etc.
+      }));
+      console.log('🔒 Datos de contacto ocultos para usuario sin membresía');
+    }
+
+    // Generar respuesta conversacional con Gemini (si está disponible)
+    let aiConversation = null;
+    try {
+      aiConversation = await generateAIConversation(query, {
+        serviceCategory: technicalDiagnosis.professionalType || knowledge?.category,
+        professionals: professionals.slice(0, 3).map(p => ({
+          name: p.full_name || 'Profesional',
+          profession: p.profession || 'Técnico',
+          rating: p.calificacion_promedio || 5,
+          specialties: p.areas_servicio || [],
+        })),
+        priceRange: technicalDiagnosis.costEstimate || knowledge?.price_range,
+        technicalInfo: {
+          diagnosis: technicalDiagnosis.diagnosis,
+          solutions: technicalDiagnosis.solutions,
+          warnings: technicalDiagnosis.warnings,
+        },
+      });
+      console.log('🤖 Respuesta de Gemini generada exitosamente');
+    } catch (geminiError) {
+      console.warn('⚠️ Error en Gemini, usando respuesta estándar:', geminiError);
+    }
+
+    // Usar respuesta de Gemini si está disponible, sino usar diagnóstico técnico
+    const description = aiConversation?.response || technicalDiagnosis.diagnosis;
 
     // Construir respuesta mejorada
     const response: AIResponse = {
       service_category: technicalDiagnosis.professionalType || knowledge?.category || 'Servicio General',
       technical_info: {
         title: `Diagnóstico Técnico: ${technicalDiagnosis.professionalType}`,
-        description: technicalDiagnosis.diagnosis,
+        description: description, // Respuesta conversacional de Gemini o fallback
         technologies: knowledge?.technologies || ['Análisis técnico especializado'],
         considerations: technicalDiagnosis.questions,
         kit_options: knowledge?.kit_options || []
       },
-      technical_diagnosis: technicalDiagnosis,
+      technical_diagnosis: {
+        ...technicalDiagnosis,
+        diagnosis: description, // Sobrescribir con respuesta de Gemini si está disponible
+      },
       recommendations: professionals,
-      estimated_price_range: technicalDiagnosis.costEstimate || knowledge?.price_range || 'Consulte precio con el técnico'
+      estimated_price_range: technicalDiagnosis.costEstimate || knowledge?.price_range || 'Consulte precio con el técnico',
+      requires_membership: !hasPremiumMembership, // Agregar flag para indicar que requiere membresía
+      ai_suggested_questions: aiConversation?.suggestedQuestions || [], // Preguntas sugeridas por IA
     };
 
     console.log('✅ Respuesta técnica generada exitosamente');

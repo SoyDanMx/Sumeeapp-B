@@ -3,10 +3,11 @@
 
 import React, { useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPaperPlane, faSpinner, faBrain, faCheckCircle, faLightbulb, faCog, faBox, faDollarSign, faRobot } from '@fortawesome/free-solid-svg-icons';
+import { faPaperPlane, faSpinner, faBrain, faCheckCircle, faLightbulb, faCog, faBox, faDollarSign, faRobot, faLock, faCrown, faArrowRight } from '@fortawesome/free-solid-svg-icons';
 import ProfessionalCard from './ProfessionalCard';
 import { AIDiagnosisChatbot } from './AIDiagnosisChatbot';
 import Link from 'next/link';
+import { useMembership } from '@/context/MembershipContext';
 
 interface AIResponse {
   service_category: string;
@@ -32,6 +33,7 @@ interface AIResponse {
     avatar_url: string | null;
   }>;
   estimated_price_range: string;
+  requires_membership?: boolean;
 }
 
 export const AIHelper = () => {
@@ -40,6 +42,7 @@ export const AIHelper = () => {
   const [response, setResponse] = useState<AIResponse | null>(null);
   const [error, setError] = useState('');
   const [isChatbotOpen, setIsChatbotOpen] = useState(false);
+  const { permissions, isFreeUser } = useMembership();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -267,28 +270,63 @@ export const AIHelper = () => {
                           )}
                         </div>
                         
-                        <div className="bg-gray-50 px-4 py-3 flex justify-between items-center">
-                          <div className="text-sm text-gray-600">
-                            {prof.numero_imss && <span>IMSS: {prof.numero_imss}</span>}
-                          </div>
-                          <div className="flex space-x-2">
-                            {prof.whatsapp && (
+                        <div className="bg-gray-50 px-4 py-3">
+                          {/* Información de contacto - Solo visible con membresía */}
+                          {permissions.canUseWhatsAppDirect && prof.numero_imss && (
+                            <div className="text-sm text-gray-600 mb-3">
+                              <span>IMSS: {prof.numero_imss}</span>
+                            </div>
+                          )}
+                          
+                          {/* Botones de acción */}
+                          <div className="flex flex-col space-y-2">
+                            {/* WhatsApp - Solo visible con membresía premium */}
+                            {permissions.canUseWhatsAppDirect && prof.whatsapp ? (
                               <a
                                 href={`https://wa.me/${prof.whatsapp.replace(/[^\d]/g, '')}`}
-                                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors text-center flex items-center justify-center space-x-2"
                                 target="_blank"
                                 rel="noopener noreferrer"
                               >
-                                WhatsApp
+                                <span>Contactar por WhatsApp</span>
                               </a>
+                            ) : (
+                              // CTA para obtener membresía si no tiene acceso
+                              <Link
+                                href="/membresia"
+                                className="bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-all shadow-lg hover:shadow-xl text-center flex items-center justify-center space-x-2"
+                              >
+                                <FontAwesomeIcon icon={faLock} />
+                                <span>Obtener Membresía para Contactar</span>
+                                <FontAwesomeIcon icon={faArrowRight} />
+                              </Link>
                             )}
+                            
+                            {/* Botón Ver Perfil - Siempre visible */}
                             <Link 
                               href={`/profesional/${prof.user_id}`}
-                              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors text-center"
                             >
-                              Ver Perfil
+                              Ver Perfil Completo
                             </Link>
                           </div>
+                          
+                          {/* Mensaje informativo si no tiene membresía */}
+                          {isFreeUser && (
+                            <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                              <div className="flex items-start space-x-2">
+                                <FontAwesomeIcon icon={faCrown} className="text-yellow-600 mt-0.5" />
+                                <div className="flex-1">
+                                  <p className="text-xs font-semibold text-yellow-800 mb-1">
+                                    🔒 Acceso Restringido
+                                  </p>
+                                  <p className="text-xs text-yellow-700">
+                                    Obtén una membresía premium para contactar directamente con los técnicos y ver sus datos de contacto completos.
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          )}
                         </div>
                       </div>
                     ))}
