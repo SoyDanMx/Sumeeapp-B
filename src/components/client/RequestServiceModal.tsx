@@ -346,10 +346,36 @@ export default function RequestServiceModal({
           "Error creating lead:",
           JSON.stringify(leadError, null, 2)
         );
-        const errorMessage =
-          leadError.message ||
-          leadError.details ||
-          "Error desconocido al crear la solicitud";
+
+        // Traducir errores técnicos a mensajes amigables
+        let errorMessage = "Error desconocido al crear la solicitud";
+
+        if (
+          leadError.message?.includes("row-level security") ||
+          leadError.message?.includes("RLS") ||
+          leadError.code === "42501"
+        ) {
+          errorMessage =
+            "No tienes permisos para crear solicitudes. Por favor, verifica tu sesión o contacta a soporte.";
+        } else if (
+          leadError.message?.includes("violates") ||
+          leadError.message?.includes("constraint")
+        ) {
+          errorMessage =
+            "Error en los datos proporcionados. Por favor, verifica que todos los campos sean correctos.";
+        } else if (
+          leadError.message?.includes("network") ||
+          leadError.message?.includes("fetch")
+        ) {
+          errorMessage =
+            "Problema de conexión. Verifica tu internet e intenta de nuevo.";
+        } else if (leadError.message) {
+          // Usar el mensaje original si es entendible
+          errorMessage = leadError.message;
+        } else if (leadError.details) {
+          errorMessage = leadError.details;
+        }
+
         throw new Error(errorMessage);
       }
 
@@ -369,7 +395,20 @@ export default function RequestServiceModal({
       onClose();
     } catch (err: any) {
       console.error("Error creating lead:", err);
-      setError(err.message || "Error al crear la solicitud");
+
+      // Asegurar que el error sea amigable
+      let errorMessage =
+        "Error al crear la solicitud. Por favor, intenta de nuevo.";
+
+      if (err?.message) {
+        // Si el mensaje ya es amigable (de nuestro código), usarlo
+        errorMessage = err.message;
+      } else if (err?.message?.includes("row-level security")) {
+        errorMessage =
+          "Problema de permisos. Por favor, contacta a soporte si el problema persiste.";
+      }
+
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -453,11 +492,35 @@ export default function RequestServiceModal({
           "🔍 handleFreeRequestSubmit - Error al crear lead:",
           JSON.stringify(leadError, null, 2)
         );
-        // Mejorar el mensaje de error
-        const errorMessage =
-          leadError.message ||
-          leadError.details ||
-          "Error desconocido al crear la solicitud";
+
+        // Traducir errores técnicos a mensajes amigables
+        let errorMessage = "Error desconocido al crear la solicitud";
+
+        if (
+          leadError.message?.includes("row-level security") ||
+          leadError.message?.includes("RLS") ||
+          leadError.code === "42501"
+        ) {
+          errorMessage =
+            "No tienes permisos para crear solicitudes. Por favor, verifica tu sesión o contacta a soporte.";
+        } else if (
+          leadError.message?.includes("violates") ||
+          leadError.message?.includes("constraint")
+        ) {
+          errorMessage =
+            "Error en los datos proporcionados. Por favor, verifica que todos los campos sean correctos.";
+        } else if (
+          leadError.message?.includes("network") ||
+          leadError.message?.includes("fetch")
+        ) {
+          errorMessage =
+            "Problema de conexión. Verifica tu internet e intenta de nuevo.";
+        } else if (leadError.message) {
+          errorMessage = leadError.message;
+        } else if (leadError.details) {
+          errorMessage = leadError.details;
+        }
+
         throw new Error(errorMessage);
       }
 
@@ -533,16 +596,19 @@ export default function RequestServiceModal({
       console.error("Error details:", JSON.stringify(err, null, 2));
 
       // Mejorar el mensaje de error para el usuario
-      let errorMessage = "Error al crear la solicitud gratuita";
+      let errorMessage =
+        "Error al crear la solicitud. Por favor, intenta de nuevo.";
 
       if (err?.message) {
+        // Si el mensaje ya es amigable (de nuestro código anterior), usarlo
         errorMessage = err.message;
       } else if (typeof err === "string") {
         errorMessage = err;
+      } else if (err?.message?.includes("row-level security")) {
+        errorMessage =
+          "Problema de permisos. Por favor, contacta a soporte si el problema persiste.";
       } else if (err?.code) {
-        errorMessage = `Error (${err.code}): ${
-          err.message || "Por favor intenta de nuevo"
-        }`;
+        errorMessage = `Error al procesar tu solicitud. Por favor intenta de nuevo o contacta a soporte.`;
       }
 
       setError(errorMessage);

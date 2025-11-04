@@ -19,24 +19,24 @@ interface ProfessionalCardProps {
   professional: Profesional;
 }
 
-// Componente para mostrar tags de especialidades
+// Componente para mostrar tags de especialidades (más compacto)
 const SpecialtiesTags = ({ specialties }: { specialties: string[] }) => {
-  const displaySpecialties = specialties.slice(0, 4);
-  const hasMore = specialties.length > 4;
+  const displaySpecialties = specialties.slice(0, 3);
+  const hasMore = specialties.length > 3;
 
   return (
-    <div className="flex flex-wrap gap-2">
+    <div className="flex flex-wrap gap-1.5">
       {displaySpecialties.map((specialty, index) => (
         <span
           key={index}
-          className="inline-block bg-blue-50 text-blue-700 text-xs font-medium px-2.5 py-1 rounded-full border border-blue-200"
+          className="inline-block bg-blue-50 text-blue-700 text-xs font-medium px-2 py-0.5 rounded-md border border-blue-200"
         >
           {specialty}
         </span>
       ))}
       {hasMore && (
-        <span className="inline-block bg-gray-50 text-gray-600 text-xs font-medium px-2.5 py-1 rounded-full border border-gray-200">
-          +{specialties.length - 4} más
+        <span className="inline-block bg-gray-50 text-gray-600 text-xs font-medium px-2 py-0.5 rounded-md border border-gray-200">
+          +{specialties.length - 3}
         </span>
       )}
     </div>
@@ -65,8 +65,8 @@ export default function ProfessionalCard({
   const specialties = areas_servicio || [];
   const reviewCount = review_count || 0;
   const experienceYears = años_experiencia_uber || 0;
-  const isVerified = true; // Asumimos que todos los profesionales en la plataforma están verificados
-  const isAvailable = true; // Por ahora, todos están disponibles
+  const isVerified = true;
+  const isAvailable = true;
 
   // Determinar el color del borde del avatar según disponibilidad
   const avatarBorderColor = isAvailable
@@ -74,159 +74,157 @@ export default function ProfessionalCard({
     : "border-gray-300";
 
   return (
-    <Link href={`/tecnico/${user_id}`} className="group">
-      <div className="bg-white rounded-xl shadow-md hover:shadow-xl border border-gray-200 transition-all duration-300 hover:border-blue-400 overflow-hidden h-full flex flex-col">
-        {/* Header con Avatar */}
-        <div className="relative bg-gradient-to-br from-blue-50 to-purple-50 p-6">
-          <div className="flex items-start space-x-4">
-            {/* Avatar Grande con Borde de Estado */}
+    <Link href={`/tecnico/${user_id}`} className="group block h-full">
+      <div className="bg-white rounded-lg shadow-sm hover:shadow-md border border-gray-200 transition-all duration-200 hover:border-blue-300 overflow-hidden h-full flex flex-col">
+        {/* Header más compacto */}
+        <div className="relative bg-gradient-to-br from-blue-50 to-purple-50 p-4">
+          <div className="flex items-start space-x-3">
+            {/* Avatar más pequeño */}
             <div className="relative flex-shrink-0">
               <div
-                className={`w-20 h-20 rounded-full overflow-hidden bg-white border-4 ${avatarBorderColor} shadow-lg`}
+                className={`w-14 h-14 sm:w-16 sm:h-16 rounded-full overflow-hidden bg-white border-2 ${avatarBorderColor} shadow-md`}
               >
                 {avatar_url ? (
                   <Image
                     src={avatar_url}
                     alt={full_name || "Profesional"}
-                    width={80}
-                    height={80}
+                    width={64}
+                    height={64}
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <div className="w-full h-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-2xl">
+                  <div className="w-full h-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-lg sm:text-xl">
                     {(full_name || "P").charAt(0).toUpperCase()}
                   </div>
                 )}
               </div>
 
-              {/* Badge de Disponibilidad */}
+              {/* Badge de Disponibilidad más pequeño */}
               {isAvailable && (
-                <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full border-2 border-white flex items-center justify-center">
-                  <div className="w-2 h-2 bg-white rounded-full"></div>
+                <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 sm:w-5 sm:h-5 bg-green-500 rounded-full border-2 border-white flex items-center justify-center">
+                  <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-white rounded-full"></div>
                 </div>
               )}
             </div>
 
-            {/* Info Principal */}
+            {/* Info Principal más compacta */}
             <div className="flex-1 min-w-0">
-              <div className="flex items-start justify-between mb-2">
+              <div className="flex items-start justify-between mb-1">
                 <div className="flex-1 min-w-0">
-                  <h3 className="text-xl font-bold text-gray-900 group-hover:text-blue-600 transition-colors truncate">
+                  <h3 className="text-base sm:text-lg font-bold text-gray-900 group-hover:text-blue-600 transition-colors truncate">
                     {full_name || "Profesional"}
                   </h3>
-                  <p className="text-sm text-gray-600 mt-1">
+                  <p className="text-xs sm:text-sm text-gray-600 mt-0.5 truncate">
                     {profession || "Técnico Especializado"}
                   </p>
                 </div>
 
-                {/* Badge de Verificación */}
+                {/* Badge de Verificación más pequeño */}
                 {isVerified && (
-                  <Link
-                    href="/verificacion"
-                    onClick={(e) => e.stopPropagation()}
-                    className="flex-shrink-0 ml-2 group"
+                  <div
+                    className="flex-shrink-0 ml-2"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      window.location.href = "/verificacion";
+                    }}
                   >
-                    <div className="bg-green-100 text-green-700 px-2 py-1 rounded-lg flex items-center text-xs font-semibold hover:bg-green-200 hover:text-green-800 transition-all duration-200 cursor-pointer">
-                      <FontAwesomeIcon
-                        icon={faShieldAlt}
-                        className="mr-1 group-hover:scale-110 transition-transform"
-                      />
+                    <div className="bg-green-100 text-green-700 px-1.5 py-0.5 rounded text-xs font-semibold hover:bg-green-200 transition-colors cursor-pointer">
+                      <FontAwesomeIcon icon={faShieldAlt} className="mr-1" />
                       Verificado
                     </div>
-                  </Link>
+                  </div>
                 )}
               </div>
 
-              {/* Calificación */}
-              <div className="mt-2">
+              {/* Calificación más compacta */}
+              <div className="mt-1.5">
                 <RatingDisplay
                   rating={rating}
                   reviewCount={reviewCount}
                   size="sm"
-                  showLabel={true}
+                  showLabel={false}
                 />
               </div>
             </div>
           </div>
         </div>
 
-        {/* Contenido Principal */}
-        <div className="p-6 flex-grow flex flex-col">
-          {/* Métricas Clave */}
-          <div className="grid grid-cols-2 gap-4 mb-4">
-            {experienceYears > 0 && (
-              <div className="flex items-center text-sm text-gray-700">
-                <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center mr-2">
-                  <FontAwesomeIcon
-                    icon={faBriefcase}
-                    className="text-blue-600"
-                  />
+        {/* Contenido Principal más compacto */}
+        <div className="p-4 flex-grow flex flex-col">
+          {/* Métricas Clave más compactas */}
+          {(experienceYears > 0 || reviewCount > 0) && (
+            <div className="grid grid-cols-2 gap-3 mb-3">
+              {experienceYears > 0 && (
+                <div className="flex items-center text-xs text-gray-700">
+                  <div className="w-7 h-7 bg-blue-100 rounded-lg flex items-center justify-center mr-2 flex-shrink-0">
+                    <FontAwesomeIcon
+                      icon={faBriefcase}
+                      className="text-blue-600 text-xs"
+                    />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="font-semibold text-gray-900 text-xs truncate">
+                      {experienceYears}+ años
+                    </p>
+                    <p className="text-xs text-gray-500 truncate">
+                      Experiencia
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <p className="font-semibold text-gray-900">
-                    {experienceYears}+ años
-                  </p>
-                  <p className="text-xs text-gray-500">Experiencia</p>
-                </div>
-              </div>
-            )}
+              )}
 
-            {reviewCount > 0 && (
-              <div className="flex items-center text-sm text-gray-700">
-                <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center mr-2">
-                  <FontAwesomeIcon
-                    icon={faCheckCircle}
-                    className="text-green-600"
-                  />
+              {reviewCount > 0 && (
+                <div className="flex items-center text-xs text-gray-700">
+                  <div className="w-7 h-7 bg-green-100 rounded-lg flex items-center justify-center mr-2 flex-shrink-0">
+                    <FontAwesomeIcon
+                      icon={faCheckCircle}
+                      className="text-green-600 text-xs"
+                    />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="font-semibold text-gray-900 text-xs truncate">
+                      {reviewCount} reseñas
+                    </p>
+                    <p className="text-xs text-gray-500 truncate">
+                      Calificadas
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <p className="font-semibold text-gray-900">
-                    +{reviewCount * 10} trabajos
-                  </p>
-                  <p className="text-xs text-gray-500">Completados</p>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Descripción Corta (si existe) */}
-          {descripcion_perfil && (
-            <p className="text-sm text-gray-600 mb-4 line-clamp-2">
-              {descripcion_perfil.substring(0, 100)}
-              {descripcion_perfil.length > 100 && "..."}
-            </p>
+              )}
+            </div>
           )}
 
           {/* Especialidades */}
           {specialties.length > 0 && (
-            <div className="mb-4">
+            <div className="mb-3">
               <SpecialtiesTags specialties={specialties} />
             </div>
           )}
 
-          {/* Ubicación */}
+          {/* Ubicación más compacta */}
           {ubicacion_lat && ubicacion_lng && (
-            <div className="flex items-center text-sm text-gray-600 mb-4">
+            <div className="flex items-center text-xs text-gray-600 mb-3">
               <FontAwesomeIcon
                 icon={faMapMarkerAlt}
-                className="mr-2 text-gray-400"
+                className="mr-1.5 text-gray-400 text-xs"
               />
-              <span>Servicio en zona</span>
+              <span className="truncate">Servicio en zona</span>
             </div>
           )}
 
-          {/* CTA Button */}
-          <div className="mt-auto pt-4 border-t border-gray-100">
-            <button className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white py-3 px-4 rounded-lg font-semibold transition-all duration-200 shadow-md hover:shadow-lg group-hover:shadow-xl flex items-center justify-center">
-              <FontAwesomeIcon icon={faEye} className="mr-2" />
-              Ver Perfil y Reseñas
-            </button>
+          {/* Indicador de Respuesta Rápida más compacto */}
+          <div className="mb-3 flex items-center justify-center text-xs text-green-600 font-medium">
+            <FontAwesomeIcon icon={faClock} className="mr-1 text-xs" />
+            <span>Respuesta rápida</span>
           </div>
 
-          {/* Indicador de Respuesta Rápida */}
-          <div className="mt-3 flex items-center justify-center text-xs text-green-600 font-medium">
-            <FontAwesomeIcon icon={faClock} className="mr-1" />
-            Respuesta en menos de 2 horas
+          {/* CTA Button más compacto */}
+          <div className="mt-auto pt-3 border-t border-gray-100">
+            <button className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white py-2 px-3 rounded-lg font-semibold text-sm transition-all duration-200 shadow-sm hover:shadow-md flex items-center justify-center">
+              <FontAwesomeIcon icon={faEye} className="mr-2 text-xs" />
+              Ver Perfil
+            </button>
           </div>
         </div>
       </div>

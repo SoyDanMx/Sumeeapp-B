@@ -59,9 +59,15 @@ WHERE tablename = 'leads'
 
 -- Paso 6: Verificar que RLS está habilitado
 SELECT 
+  schemaname,
   tablename,
-  rowsecurity
-FROM pg_tables
-WHERE tablename = 'leads'
-  AND schemaname = 'public';
+  CASE 
+    WHEN c.relrowsecurity THEN 'RLS Habilitado'
+    ELSE 'RLS Deshabilitado'
+  END as rls_status
+FROM pg_tables pt
+JOIN pg_class c ON c.relname = pt.tablename
+JOIN pg_namespace n ON n.oid = c.relnamespace AND n.nspname = pt.schemaname
+WHERE pt.tablename = 'leads'
+  AND pt.schemaname = 'public';
 
