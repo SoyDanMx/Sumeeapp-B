@@ -121,11 +121,15 @@ export default function OnlineToggle({
       // Si llegamos aquí, todo fue exitoso
       console.log("✅ Estado de disponibilidad actualizado exitosamente");
 
-      // Esperar un poco antes de permitir que el useEffect sincronice de nuevo
-      // Esto da tiempo a que refetchData() complete y actualice initialStatus
+      // IMPORTANTE: No revertir isManualChange inmediatamente
+      // Permitir que el padre refresque los datos primero
+      // El useEffect se encargará de sincronizar cuando initialStatus cambie
+      
+      // Dar tiempo suficiente para que el padre refresque los datos
       setTimeout(() => {
         setIsManualChange(false);
-      }, 1000);
+        console.log("🔄 Permitir sincronización de estado después de actualización");
+      }, 2000); // Aumentado a 2 segundos para dar más tiempo
     } catch (error: any) {
       console.error("❌ Error al cambiar estado:", error);
 

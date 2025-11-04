@@ -117,61 +117,104 @@ export async function updateUserProfileRPC(
     );
 
     if (rpcError) {
-      console.error("❌ Error de RPC update_profile:", rpcError);
-      console.error("❌ Detalles del error:", {
-        message: rpcError.message,
-        details: rpcError.details,
-        hint: rpcError.hint,
-        code: rpcError.code,
-      });
+      // Verificar si el error es un objeto vacío o tiene propiedades primero
+      const errorKeys = Object.keys(rpcError);
+      
+      // Determinar si este error puede ser manejado por el fallback
+      const isFallbackError = errorKeys.length === 0;
+
+      // Solo usar console.error para errores críticos que NO deben usar fallback
+      // Para errores manejables, usar console.warn
+      if (isFallbackError) {
+        console.warn("⚠️ Error de RPC (objeto vacío), se intentará fallback:", rpcError);
+        console.warn("⚠️ Tipo de error:", typeof rpcError);
+        console.warn("📝 Parámetros enviados a RPC:", {
+          user_id_in: userId,
+          updates: filteredUpdates,
+        });
+      } else {
+        console.error("❌ Error de RPC update_profile:", rpcError);
+        console.error("❌ Tipo de error:", typeof rpcError);
+        console.error(
+          "❌ Error completo (stringified):",
+          JSON.stringify(rpcError, null, 2)
+        );
+        console.error("❌ Detalles del error:", {
+          message: rpcError.message,
+          details: rpcError.details,
+          hint: rpcError.hint,
+          code: rpcError.code,
+          toString: rpcError.toString?.(),
+        });
+        console.error("❌ Claves del objeto error:", errorKeys);
+      }
+
+      if (errorKeys.length === 0) {
+        // Este es un error manejable por fallback, lanzar un error simple
+        // El catch en updateUserProfileWithFallback lo manejará
+        throw new Error("RPC_FALLBACK_NEEDED");
+      }
 
       // Si el error no tiene mensaje, intentar obtener más información
       const errorMessage =
         rpcError.message ||
         rpcError.details ||
         rpcError.hint ||
-        JSON.stringify(rpcError);
+        rpcError.code ||
+        (typeof rpcError === "string" ? rpcError : "") ||
+        (errorKeys.length > 0
+          ? `Error con código: ${JSON.stringify(rpcError)}`
+          : "Error desconocido");
 
-      // Manejo específico de errores
-      if (
-        errorMessage.includes("No tienes permisos") ||
-        errorMessage.includes("permission denied")
-      ) {
-        throw new Error("Error de permisos: No puedes actualizar este perfil.");
+      // Verificar si este error puede usar fallback
+      const canUseFallback = 
+        errorMessage.includes("function") ||
+        errorMessage.includes("does not exist") ||
+        errorMessage.includes("no existe") ||
+        errorMessage.includes("42883") ||
+        errorMessage.includes("42804");
+
+      if (canUseFallback) {
+        console.warn("⚠️ Error de RPC (función no existe), se intentará fallback:", errorMessage);
+        throw new Error("RPC_FALLBACK_NEEDED");
       }
 
-      if (
-        errorMessage.includes("Usuario no encontrado") ||
-        errorMessage.includes("not found")
-      ) {
-        throw new Error("Error: El usuario no existe en la base de datos.");
-      }
-
+      // Errores que NO deben usar fallback (errores de validación)
       if (
         errorMessage.includes("No hay campos válidos") ||
-        errorMessage.includes("no valid fields")
+        errorMessage.includes("no valid fields") ||
+        errorMessage.includes("No se proporcionaron campos válidos")
       ) {
+        console.error("❌ Error de validación, no se usará fallback:", errorMessage);
         throw new Error(
           "Error: No se proporcionaron campos válidos para actualizar."
         );
       }
 
-      // Si el error es que la función no existe
+      // Otros errores críticos
+      console.error("❌ Mensaje de error extraído:", errorMessage);
+
       if (
-        errorMessage.includes("function") &&
-        (errorMessage.includes("does not exist") ||
-          errorMessage.includes("no existe"))
+        errorMessage.includes("No tienes permisos") ||
+        errorMessage.includes("permission denied") ||
+        errorMessage.includes("42501")
       ) {
         throw new Error(
-          `La función RPC 'update_profile' no existe en la base de datos. Por favor, ejecuta el script SQL 'create-update-profile-rpc.sql' en Supabase.`
+          "Error de permisos: No puedes actualizar este perfil. Verifica tus permisos en Supabase."
         );
       }
 
-      throw new Error(
-        `Error al actualizar perfil vía RPC: ${
-          errorMessage || "Error desconocido"
-        }`
-      );
+      if (
+        errorMessage.includes("Usuario no encontrado") ||
+        errorMessage.includes("not found") ||
+        errorMessage.includes("PGRST116")
+      ) {
+        throw new Error("Error: El usuario no existe en la base de datos.");
+      }
+
+      // Si llegamos aquí, es un error desconocido pero manejable por fallback
+      console.warn("⚠️ Error desconocido de RPC, se intentará fallback:", errorMessage);
+      throw new Error("RPC_FALLBACK_NEEDED");
     }
 
     if (!updatedUserId) {
@@ -226,19 +269,64 @@ export async function updateUserProfileWithFallback(
     console.log("🔄 Intentando actualización vía RPC...");
     return await updateUserProfileRPC(userId, updates, locationAddress);
   } catch (rpcError: any) {
-    console.warn("⚠️ RPC falló, intentando UPDATE tradicional...", rpcError);
+    const errorMessage = rpcError?.message || String(rpcError) || "";
 
-    // Si RPC falla porque la función no existe, usar UPDATE tradicional
-    if (
-      rpcError.message.includes("function") ||
-      rpcError.message.includes("does not exist")
-    ) {
-      console.log("🔄 RPC no disponible, usando UPDATE tradicional...");
-      const { updateUserProfileSafe } = await import("./actions-alternative");
-      return await updateUserProfileSafe(userId, updates, locationAddress);
+    // Si el error es "RPC_FALLBACK_NEEDED", usar fallback automáticamente sin logs de error
+    if (errorMessage === "RPC_FALLBACK_NEEDED") {
+      console.log("🔄 RPC no disponible, usando UPDATE tradicional como fallback...");
+      try {
+        const { updateUserProfileSafe } = await import("./actions-alternative");
+        const result = await updateUserProfileSafe(
+          userId,
+          updates,
+          locationAddress
+        );
+        console.log(
+          "✅ Fallback exitoso, perfil actualizado vía UPDATE tradicional"
+        );
+        return result;
+      } catch (fallbackError: any) {
+        console.error("❌ Fallback también falló:", fallbackError);
+        throw new Error(
+          `No se pudo actualizar el perfil. RPC no disponible y fallback falló: ${
+            fallbackError?.message || "Error desconocido"
+          }`
+        );
+      }
     }
 
-    // Si es otro error, re-lanzarlo
-    throw rpcError;
+    // Errores de validación de datos (NO usar fallback)
+    const isValidationError =
+      errorMessage.includes("No hay campos válidos") ||
+      errorMessage.includes("no valid fields") ||
+      errorMessage.includes("No se proporcionaron campos válidos");
+
+    if (isValidationError) {
+      // Estos errores son del usuario, no del sistema, así que no usar fallback
+      throw rpcError;
+    }
+
+    // Para cualquier otro error, intentar fallback
+    console.warn("⚠️ RPC falló con error desconocido, intentando fallback...", rpcError);
+    try {
+      const { updateUserProfileSafe } = await import("./actions-alternative");
+      const result = await updateUserProfileSafe(
+        userId,
+        updates,
+        locationAddress
+      );
+      console.log(
+        "✅ Fallback exitoso, perfil actualizado vía UPDATE tradicional"
+      );
+      return result;
+    } catch (fallbackError: any) {
+      console.error("❌ Fallback también falló:", fallbackError);
+      throw new Error(
+        `No se pudo actualizar el perfil. RPC falló: ${errorMessage}. ` +
+          `Fallback también falló: ${
+            fallbackError?.message || "Error desconocido"
+          }`
+      );
+    }
   }
 }

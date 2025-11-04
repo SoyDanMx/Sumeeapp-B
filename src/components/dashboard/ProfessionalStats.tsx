@@ -76,8 +76,9 @@ export default function ProfessionalStats({
     const monthlyEarningsActual =
       completedThisMonth.length * averageEarningPerJob;
 
-    const rating = profesional.calificacion_promedio || 0;
-    const hasRating = rating > 0;
+    // Todos los profesionales parten con 5 estrellas por defecto
+    const rating = profesional.calificacion_promedio ?? 5;
+    const hasRating = true; // Todos tienen calificación (5 por defecto)
 
     return {
       totalLeads: allLeads.length,
@@ -152,10 +153,10 @@ export default function ProfessionalStats({
               <span className="text-yellow-400">★★★★★</span>
             </div>
             <div className="text-sm font-medium text-gray-500">
-              Aún sin calificar
+              5.0 / 5.0 (Por defecto)
             </div>
             <p className="text-xs text-gray-400 mt-2">
-              ⭐ Trabaja para obtener tus primeras reseñas
+              ⭐ Mantén tus reseñas positivas para conservar tu calificación
             </p>
           </div>
 
@@ -242,15 +243,11 @@ export default function ProfessionalStats({
     },
     {
       title: "Calificación Promedio",
-      value: stats.hasRating
-        ? `${stats.rating.toFixed(1)}/5.0`
-        : "Aún sin calificar",
+      value: `${stats.rating.toFixed(1)}/5.0`,
       icon: faStar,
       color: "yellow",
-      description: stats.hasRating
-        ? "Basada en reseñas"
-        : "Trabaja para obtener ratings",
-      showStars: !stats.hasRating,
+      description: "Basada en reseñas y acciones",
+      showStars: false, // Ya no necesitamos mostrar estrellas aquí porque siempre hay calificación
     },
     {
       title: "Tasa de Aceptación",
@@ -307,19 +304,10 @@ export default function ProfessionalStats({
             </p>
           </div>
           <div className="text-right">
-            {stats.hasRating ? (
-              <>
-                <div className="text-2xl font-bold">
-                  {stats.rating.toFixed(1)}
-                </div>
-                <div className="text-blue-100 text-sm">Calificación</div>
-              </>
-            ) : (
-              <>
-                <div className="text-lg font-bold text-yellow-300">★★★★★</div>
-                <div className="text-blue-100 text-sm">Aún sin calificar</div>
-              </>
-            )}
+            <div className="text-2xl font-bold">
+              {stats.rating.toFixed(1)}
+            </div>
+            <div className="text-blue-100 text-sm">Calificación</div>
           </div>
         </div>
       </div>
