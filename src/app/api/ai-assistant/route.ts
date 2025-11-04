@@ -194,16 +194,21 @@ async function getTopProfessionals(serviceArea: string, limit: number = 5): Prom
 
 export async function POST(request: NextRequest) {
   try {
-    const { query } = await request.json();
+    const { query, image } = await request.json();
 
-    if (!query || typeof query !== 'string') {
+    if (!query && !image) {
       return NextResponse.json(
-        { error: 'Query is required and must be a string' },
+        { error: 'Query or image is required' },
         { status: 400 }
       );
     }
 
-    console.log('🔍 Procesando consulta técnica:', query);
+    const userQuery = query || 'Analiza esta imagen y dime qué problema técnico tiene';
+
+    console.log('🔍 Procesando consulta técnica:', userQuery);
+    if (image) {
+      console.log('🖼️ Imagen recibida para análisis visual');
+    }
 
     // Verificar membresía del usuario
     let hasPremiumMembership = false;
@@ -244,15 +249,15 @@ export async function POST(request: NextRequest) {
     console.log('👤 Usuario tiene membresía premium:', hasPremiumMembership);
 
     // Detectar categoría técnica avanzada
-    const technicalCategory = detectTechnicalCategory(query);
+    const technicalCategory = detectTechnicalCategory(userQuery);
     console.log('📋 Categoría técnica detectada:', technicalCategory);
 
     // Generar diagnóstico técnico
-    const technicalDiagnosis = generateTechnicalResponse(technicalCategory, query);
+    const technicalDiagnosis = generateTechnicalResponse(technicalCategory, userQuery);
     console.log('🔧 Diagnóstico técnico generado:', technicalDiagnosis);
 
     // Detectar servicio tradicional (para compatibilidad)
-    const detectedService = detectServiceCategory(query);
+    const detectedService = detectServiceCategory(userQuery);
     const knowledge = serviceKnowledge[detectedService as keyof typeof serviceKnowledge];
     
     // Obtener profesionales recomendados
@@ -271,23 +276,28 @@ export async function POST(request: NextRequest) {
     }
 
     // Generar respuesta conversacional con Gemini (si está disponible)
+    // Incluir imagen si fue enviada
     let aiConversation = null;
     try {
-      aiConversation = await generateAIConversation(query, {
-        serviceCategory: technicalDiagnosis.professionalType || knowledge?.category,
-        professionals: professionals.slice(0, 3).map(p => ({
-          name: p.full_name || 'Profesional',
-          profession: p.profession || 'Técnico',
-          rating: p.calificacion_promedio || 5,
-          specialties: p.areas_servicio || [],
-        })),
-        priceRange: technicalDiagnosis.costEstimate || knowledge?.price_range,
-        technicalInfo: {
-          diagnosis: technicalDiagnosis.diagnosis,
-          solutions: technicalDiagnosis.solutions,
-          warnings: technicalDiagnosis.warnings,
+      aiConversation = await generateAIConversation(
+        userQuery,
+        {
+          serviceCategory: technicalDiagnosis.professionalType || knowledge?.category,
+          professionals: professionals.slice(0, 3).map(p => ({
+            name: p.full_name || 'Profesional',
+            profession: p.profession || 'Técnico',
+            rating: p.calificacion_promedio || 5,
+            specialties: p.areas_servicio || [],
+          })),
+          priceRange: technicalDiagnosis.costEstimate || knowledge?.price_range,
+          technicalInfo: {
+            diagnosis: technicalDiagnosis.diagnosis,
+            solutions: technicalDiagnosis.solutions,
+            warnings: technicalDiagnosis.warnings,
+          },
         },
-      });
+        image // Pasar imagen base64 si existe
+      );
       console.log('🤖 Respuesta de Gemini generada exitosamente');
     } catch (geminiError) {
       console.warn('⚠️ Error en Gemini, usando respuesta estándar:', geminiError);

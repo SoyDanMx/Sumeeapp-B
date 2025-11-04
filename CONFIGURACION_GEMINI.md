@@ -37,6 +37,7 @@ GOOGLE_GENERATIVE_AI_API_KEY=tu_api_key_aqui
 ### **2. Verificar configuración**
 
 El sistema funciona en **modo híbrido**:
+
 - ✅ **Con API Key**: Usa Gemini para respuestas conversacionales
 - ⚠️ **Sin API Key**: Usa fallback con respuestas estándar (sistema actual)
 
@@ -56,6 +57,7 @@ El sistema funciona en **modo híbrido**:
 - **$0.30 por 1M tokens de salida**
 
 **Ejemplo de costo:**
+
 - Consulta típica: ~500 tokens
 - 1,000 consultas = 500,000 tokens = **$0.0375 USD**
 
@@ -137,6 +139,7 @@ curl -X POST http://localhost:3000/api/ai-assistant \
 ```
 
 **Respuesta esperada con Gemini:**
+
 ```json
 {
   "service_category": "Plomería",

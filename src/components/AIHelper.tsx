@@ -1,347 +1,151 @@
 // src/components/AIHelper.tsx
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPaperPlane, faSpinner, faBrain, faCheckCircle, faLightbulb, faCog, faBox, faDollarSign, faRobot, faLock, faCrown, faArrowRight } from '@fortawesome/free-solid-svg-icons';
-import ProfessionalCard from './ProfessionalCard';
-import { AIDiagnosisChatbot } from './AIDiagnosisChatbot';
-import Link from 'next/link';
-import { useMembership } from '@/context/MembershipContext';
-
-interface AIResponse {
-  service_category: string;
-  technical_info: {
-    title: string;
-    description: string;
-    technologies: string[];
-    considerations: string[];
-    kit_options?: string[];
-  };
-  recommendations: Array<{
-    user_id: string;
-    full_name: string | null;
-    profession: string | null;
-    calificacion_promedio: number | null;
-    areas_servicio: string[] | null;
-    whatsapp: string | null;
-    numero_imss: string | null;
-    experiencia_uber: boolean;
-    años_experiencia_uber: number | null;
-    work_zones: string[] | null;
-    descripcion_perfil: string | null;
-    avatar_url: string | null;
-  }>;
-  estimated_price_range: string;
-  requires_membership?: boolean;
-}
+import React, { useState } from "react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+  faBrain,
+  faRobot,
+  faArrowRight,
+} from "@fortawesome/free-solid-svg-icons";
+import { AIDiagnosisChatbot } from "./AIDiagnosisChatbot";
 
 export const AIHelper = () => {
-  const [query, setQuery] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [response, setResponse] = useState<AIResponse | null>(null);
-  const [error, setError] = useState('');
   const [isChatbotOpen, setIsChatbotOpen] = useState(false);
-  const { permissions, isFreeUser } = useMembership();
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!query.trim()) return;
-
-    setLoading(true);
-    setResponse(null);
-    setError('');
-
-    try {
-      const res = await fetch('/api/ai-assistant', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ query }),
-      });
-
-      if (!res.ok) {
-        throw new Error('Error en la respuesta del servidor');
-      }
-
-      const data: AIResponse = await res.json();
-      setResponse(data);
-    } catch (err) {
-      console.error('Error calling AI assistant:', err);
-      setError('Error al procesar tu consulta. Por favor, inténtalo de nuevo.');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   return (
-    <section className="py-16 bg-gray-50" id="ai-helper">
-      <div className="container mx-auto px-4">
-        <div className="max-w-3xl mx-auto text-center mb-12">
-          <FontAwesomeIcon icon={faBrain} className="text-5xl text-blue-600 mb-4" />
-          <h2 className="text-4xl font-bold text-gray-900">¿No sabes a quién necesitas?</h2>
-          <p className="text-lg text-gray-600 mt-4">
-            Describe tu problema y deja que nuestra IA te guíe al profesional perfecto para el trabajo.
+    <section
+      className="py-20 bg-gradient-to-b from-gray-50 via-white to-gray-50 relative overflow-hidden"
+      id="ai-helper"
+    >
+      {/* Efectos de fondo futuristas */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-400 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob"></div>
+        <div className="absolute top-1/3 right-1/4 w-96 h-96 bg-purple-400 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-2000"></div>
+        <div className="absolute bottom-1/4 left-1/3 w-96 h-96 bg-indigo-400 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-4000"></div>
+      </div>
+
+      <div className="container mx-auto px-4 relative z-10">
+        <div className="max-w-4xl mx-auto text-center mb-16">
+          {/* Badge premium */}
+          <div className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600/10 to-purple-600/10 border border-blue-500/20 rounded-full px-4 py-2 mb-6 backdrop-blur-sm">
+            <div className="w-2 h-2 bg-gradient-to-r from-blue-400 to-purple-400 rounded-full animate-pulse"></div>
+            <span className="text-sm font-semibold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              POWERED BY GOOGLE GEMINI AI
+            </span>
+          </div>
+
+          <div className="relative inline-block mb-6">
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 rounded-full blur-2xl opacity-30 animate-pulse"></div>
+            <FontAwesomeIcon
+              icon={faBrain}
+              className="relative text-6xl md:text-7xl bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent filter drop-shadow-lg"
+            />
+          </div>
+
+          <h2 className="text-4xl md:text-5xl lg:text-6xl font-extrabold mb-6 bg-gradient-to-r from-gray-900 via-blue-900 to-gray-900 bg-clip-text text-transparent leading-tight">
+            ¿No sabes a quién necesitas?
+          </h2>
+          <p className="text-lg md:text-xl text-gray-600 max-w-2xl mx-auto leading-relaxed">
+            Describe tu problema y deja que nuestra{" "}
+            <span className="font-semibold text-blue-600">IA avanzada</span> te
+            guíe al profesional perfecto
           </p>
         </div>
 
-        {/* Botón principal para abrir el chatbot */}
-        <div className="max-w-2xl mx-auto bg-white p-8 rounded-xl shadow-lg text-center">
-          <div className="mb-6">
-            <FontAwesomeIcon icon={faRobot} className="text-4xl text-blue-600 mb-4" />
-            <h3 className="text-xl font-semibold text-gray-800 mb-2">Iniciar Diagnóstico AI</h3>
-            <p className="text-gray-600 mb-6">
-              Nuestro asistente inteligente analizará tu problema y te conectará con el técnico perfecto
-            </p>
-          </div>
-          
-          <button
-            onClick={() => setIsChatbotOpen(true)}
-            className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-8 py-4 rounded-lg font-semibold text-lg hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
-          >
-            <FontAwesomeIcon icon={faRobot} className="mr-2" />
-            Iniciar Diagnóstico AI
-          </button>
-        </div>
+        {/* Botón principal futurista para abrir el chatbot */}
+        <div className="max-w-3xl mx-auto">
+          <div className="relative group">
+            {/* Efecto de resplandor exterior */}
+            <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 rounded-2xl blur-lg opacity-50 group-hover:opacity-75 transition duration-1000 group-hover:duration-200 animate-pulse"></div>
 
-        {/* Mantener la sección original como alternativa */}
-        <div className="max-w-2xl mx-auto bg-gray-50 p-6 rounded-xl shadow-sm mt-8">
-          <form onSubmit={handleSubmit}>
-            <div className="flex items-center border border-gray-300 rounded-lg p-2 focus-within:ring-2 focus-within:ring-blue-500">
-              <input
-                type="text"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Ej: 'Deseo instalar un minisplit en mi domicilio...'"
-                className="w-full border-none focus:ring-0 text-gray-800 placeholder-gray-500"
-                disabled={loading}
-              />
-              <button
-                type="submit"
-                disabled={loading}
-                className="bg-blue-600 text-white rounded-md p-3 ml-2 disabled:bg-blue-400"
-              >
-                {loading ? <FontAwesomeIcon icon={faSpinner} spin /> : <FontAwesomeIcon icon={faPaperPlane} />}
-              </button>
+            {/* Contenedor principal con glassmorphism */}
+            <div className="relative bg-gradient-to-br from-white/90 via-blue-50/50 to-purple-50/30 backdrop-blur-xl border border-white/20 rounded-2xl p-8 md:p-12 shadow-2xl">
+              {/* Partículas decorativas */}
+              <div className="absolute top-4 right-4 w-2 h-2 bg-blue-400 rounded-full animate-ping"></div>
+              <div className="absolute bottom-6 left-6 w-1.5 h-1.5 bg-purple-400 rounded-full animate-pulse animation-delay-1000"></div>
+
+              <div className="text-center">
+                {/* Icono animado del robot */}
+                <div className="relative inline-block mb-6">
+                  <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full blur-xl opacity-50 animate-pulse"></div>
+                  <div className="relative bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl p-4 transform group-hover:scale-110 transition-transform duration-300">
+                    <FontAwesomeIcon
+                      icon={faRobot}
+                      className="text-4xl md:text-5xl text-white drop-shadow-lg animate-float"
+                    />
+                  </div>
+                </div>
+
+                <h3 className="text-2xl md:text-3xl font-bold mb-3 bg-gradient-to-r from-gray-900 via-blue-900 to-gray-900 bg-clip-text text-transparent">
+                  Iniciar Diagnóstico AI
+                </h3>
+                <p className="text-gray-600 mb-8 text-base md:text-lg max-w-xl mx-auto">
+                  Nuestro asistente inteligente analizará tu problema en
+                  segundos y te conectará con el técnico perfecto verificado
+                </p>
+
+                {/* Botón principal futurista */}
+                <button
+                  onClick={() => setIsChatbotOpen(true)}
+                  className="relative group/btn inline-flex items-center justify-center gap-3 px-8 md:px-12 py-4 md:py-5 text-base md:text-lg font-bold text-white rounded-xl overflow-hidden transition-all duration-300 transform hover:scale-105 active:scale-95 shadow-2xl"
+                  style={{
+                    background:
+                      "linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)",
+                    backgroundSize: "200% 200%",
+                    animation: "gradientShift 3s ease infinite",
+                  }}
+                >
+                  {/* Efecto de brillo animado */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent -translate-x-full group-hover/btn:translate-x-full transition-transform duration-1000"></div>
+
+                  {/* Contenido del botón */}
+                  <span className="relative flex items-center gap-3">
+                    <div className="relative">
+                      <FontAwesomeIcon
+                        icon={faRobot}
+                        className="text-xl md:text-2xl animate-pulse"
+                      />
+                      <div className="absolute inset-0 bg-white/50 rounded-full blur-md"></div>
+                    </div>
+                    <span className="relative z-10">
+                      Iniciar Diagnóstico AI
+                    </span>
+                    <FontAwesomeIcon
+                      icon={faArrowRight}
+                      className="relative z-10 transform group-hover/btn:translate-x-1 transition-transform"
+                    />
+                  </span>
+
+                  {/* Efecto de borde brillante */}
+                  <div className="absolute inset-0 rounded-xl border-2 border-white/30 opacity-0 group-hover/btn:opacity-100 transition-opacity"></div>
+                </button>
+
+                {/* Badges de características */}
+                <div className="flex flex-wrap items-center justify-center gap-4 mt-8 pt-8 border-t border-gray-200/50">
+                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                    <span>Respuesta instantánea</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                    <span>IA avanzada Gemini</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse"></div>
+                    <span>Técnicos verificados</span>
+                  </div>
+                </div>
+              </div>
             </div>
-          </form>
-
-          {/* Área de Resultados */}
-          <div className="mt-8">
-            {loading && (
-              <div className="text-center text-gray-600 py-8">
-                <FontAwesomeIcon icon={faSpinner} spin className="text-2xl mb-4" />
-                <p>Analizando tu consulta y buscando los mejores técnicos calificados...</p>
-              </div>
-            )}
-            {error && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-center">
-                <p className="text-red-600">{error}</p>
-              </div>
-            )}
-            {response && (
-              <div className="space-y-8">
-                {/* Resumen del servicio */}
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
-                  <h3 className="text-xl font-semibold text-gray-800 mb-2 flex items-center">
-                    <FontAwesomeIcon icon={faCheckCircle} className="text-blue-600 mr-2" />
-                    Te recomendamos un especialista en: <span className="text-blue-600 ml-1">{response.service_category}</span>
-                  </h3>
-                  <p className="text-gray-600">{response.technical_info.description}</p>
-                </div>
-
-                {/* Información Técnica */}
-                <div className="bg-white border border-gray-200 rounded-lg p-6">
-                  <h4 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                    <FontAwesomeIcon icon={faLightbulb} className="text-yellow-500 mr-2" />
-                    {response.technical_info.title}
-                  </h4>
-                  
-                  {/* Tecnologías */}
-                  <div className="mb-6">
-                    <h5 className="font-semibold text-gray-700 mb-3 flex items-center">
-                      <FontAwesomeIcon icon={faCog} className="text-gray-500 mr-2" />
-                      Tecnologías disponibles:
-                    </h5>
-                    <div className="flex flex-wrap gap-2">
-                      {response.technical_info.technologies.map((tech, index) => (
-                        <span key={index} className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm">
-                          {tech}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Consideraciones */}
-                  <div className="mb-6">
-                    <h5 className="font-semibold text-gray-700 mb-3">Consideraciones importantes:</h5>
-                    <ul className="space-y-2">
-                      {response.technical_info.considerations.map((consideration, index) => (
-                        <li key={index} className="flex items-start">
-                          <FontAwesomeIcon icon={faCheckCircle} className="text-green-500 mr-2 mt-1 flex-shrink-0" />
-                          <span className="text-gray-600">{consideration}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-
-                  {/* Kits disponibles */}
-                  {response.technical_info.kit_options && response.technical_info.kit_options.length > 0 && (
-                    <div className="mb-6">
-                      <h5 className="font-semibold text-gray-700 mb-3 flex items-center">
-                        <FontAwesomeIcon icon={faBox} className="text-gray-500 mr-2" />
-                        Kits completos disponibles:
-                      </h5>
-                      <ul className="space-y-2">
-                        {response.technical_info.kit_options.map((kit, index) => (
-                          <li key={index} className="flex items-start">
-                            <span className="bg-green-100 text-green-800 w-6 h-6 rounded-full flex items-center justify-center text-sm font-semibold mr-3 mt-0.5">
-                              {index + 1}
-                            </span>
-                            <span className="text-gray-600">{kit}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-
-                  {/* Rango de precios */}
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <h5 className="font-semibold text-gray-700 mb-2 flex items-center">
-                      <FontAwesomeIcon icon={faDollarSign} className="text-green-500 mr-2" />
-                      Rango de precios estimado:
-                    </h5>
-                    <p className="text-lg font-semibold text-green-600">{response.estimated_price_range}</p>
-                  </div>
-                </div>
-
-                {/* Recomendaciones de Profesionales */}
-                <div>
-                  <h4 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                    <FontAwesomeIcon icon={faCheckCircle} className="text-green-500 mr-2" />
-                    Los mejores técnicos calificados para tu proyecto:
-                  </h4>
-                  <div className="space-y-4">
-                    {response.recommendations.map((prof, index) => (
-                      <div key={prof.user_id} className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm">
-                        <div className="p-4">
-                          <div className="flex items-center justify-between mb-3">
-                            <div>
-                              <h5 className="text-lg font-semibold text-gray-800">
-                                #{index + 1} - {prof.full_name || 'Técnico'}
-                              </h5>
-                              <p className="text-blue-600 font-medium">{prof.profession}</p>
-                            </div>
-                            <div className="text-right">
-                              {prof.calificacion_promedio && (
-                                <div className="flex items-center space-x-1">
-                                  <span className="text-yellow-500">⭐</span>
-                                  <span className="font-semibold text-gray-800">
-                                    {prof.calificacion_promedio.toFixed(1)}/5.0
-                                  </span>
-                                </div>
-                              )}
-                              {prof.experiencia_uber && (
-                                <span className="inline-block bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded-full mt-1">
-                                  Uber Pro
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                          
-                          {prof.areas_servicio && prof.areas_servicio.length > 0 && (
-                            <div className="mb-3">
-                              <p className="text-sm text-gray-600 mb-2">Especialidades:</p>
-                              <div className="flex flex-wrap gap-1">
-                                {prof.areas_servicio.slice(0, 4).map((area, idx) => (
-                                  <span key={idx} className="bg-blue-50 text-blue-700 px-2 py-1 rounded text-xs">
-                                    {area}
-                                  </span>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-
-                          {prof.descripcion_perfil && (
-                            <p className="text-gray-600 text-sm mb-3 line-clamp-2">
-                              {prof.descripcion_perfil}
-                            </p>
-                          )}
-                        </div>
-                        
-                        <div className="bg-gray-50 px-4 py-3">
-                          {/* Información de contacto - Solo visible con membresía */}
-                          {permissions.canUseWhatsAppDirect && prof.numero_imss && (
-                            <div className="text-sm text-gray-600 mb-3">
-                              <span>IMSS: {prof.numero_imss}</span>
-                            </div>
-                          )}
-                          
-                          {/* Botones de acción */}
-                          <div className="flex flex-col space-y-2">
-                            {/* WhatsApp - Solo visible con membresía premium */}
-                            {permissions.canUseWhatsAppDirect && prof.whatsapp ? (
-                              <a
-                                href={`https://wa.me/${prof.whatsapp.replace(/[^\d]/g, '')}`}
-                                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors text-center flex items-center justify-center space-x-2"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                              >
-                                <span>Contactar por WhatsApp</span>
-                              </a>
-                            ) : (
-                              // CTA para obtener membresía si no tiene acceso
-                              <Link
-                                href="/membresia"
-                                className="bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-all shadow-lg hover:shadow-xl text-center flex items-center justify-center space-x-2"
-                              >
-                                <FontAwesomeIcon icon={faLock} />
-                                <span>Obtener Membresía para Contactar</span>
-                                <FontAwesomeIcon icon={faArrowRight} />
-                              </Link>
-                            )}
-                            
-                            {/* Botón Ver Perfil - Siempre visible */}
-                            <Link 
-                              href={`/profesional/${prof.user_id}`}
-                              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors text-center"
-                            >
-                              Ver Perfil Completo
-                            </Link>
-                          </div>
-                          
-                          {/* Mensaje informativo si no tiene membresía */}
-                          {isFreeUser && (
-                            <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                              <div className="flex items-start space-x-2">
-                                <FontAwesomeIcon icon={faCrown} className="text-yellow-600 mt-0.5" />
-                                <div className="flex-1">
-                                  <p className="text-xs font-semibold text-yellow-800 mb-1">
-                                    🔒 Acceso Restringido
-                                  </p>
-                                  <p className="text-xs text-yellow-700">
-                                    Obtén una membresía premium para contactar directamente con los técnicos y ver sus datos de contacto completos.
-                                  </p>
-                                </div>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
         </div>
       </div>
-      
+
       {/* Modal del Chatbot de Diagnóstico */}
-      <AIDiagnosisChatbot 
-        isOpen={isChatbotOpen} 
-        onClose={() => setIsChatbotOpen(false)} 
+      <AIDiagnosisChatbot
+        isOpen={isChatbotOpen}
+        onClose={() => setIsChatbotOpen(false)}
       />
     </section>
   );

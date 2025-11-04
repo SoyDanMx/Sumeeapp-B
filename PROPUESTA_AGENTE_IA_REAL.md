@@ -5,6 +5,7 @@
 **Recomendación: Google Gemini 2.5 Flash + RAG (Retrieval-Augmented Generation)**
 
 Implementar un agente de IA real que combine:
+
 - ✅ **Motor de IA**: Google Gemini 2.5 Flash (más económico y rápido que GPT-4)
 - ✅ **Base de Conocimiento**: Supabase + Embeddings de profesionales
 - ✅ **Aprendizaje**: RAG (Recupera información de profesionales, servicios, precios)
@@ -17,6 +18,7 @@ Implementar un agente de IA real que combine:
 ### **Opción 1: Google Gemini 2.5 Flash** ⭐ RECOMENDADA
 
 **Ventajas:**
+
 - ✅ **Gratis hasta 15 RPM** (requests por minuto) en tier gratuito
 - ✅ **Muy económico**: $0.075 por 1M tokens (vs GPT-4: $2.50 por 1M tokens)
 - ✅ **Ultra rápido**: ~500ms de latencia
@@ -25,11 +27,13 @@ Implementar un agente de IA real que combine:
 - ✅ **Buen español**: Optimizado para múltiples idiomas
 
 **Costos Estimados:**
+
 - Consultas simples (500 tokens): **$0.0000375** por consulta
 - 1,000 consultas/mes: **~$0.04 USD/mes**
 - 10,000 consultas/mes: **~$0.40 USD/mes**
 
 **Implementación:**
+
 ```bash
 npm install @google/generative-ai
 ```
@@ -39,15 +43,18 @@ npm install @google/generative-ai
 ### **Opción 2: OpenAI GPT-4 Turbo**
 
 **Ventajas:**
+
 - ✅ Excelente calidad de respuestas
 - ✅ Muy estable y confiable
 - ✅ Buen soporte
 
 **Desventajas:**
+
 - ❌ **Más caro**: $2.50 por 1M tokens (33x más caro que Gemini)
 - ❌ Latencia más alta (~1-2 segundos)
 
 **Costos Estimados:**
+
 - 1,000 consultas/mes: **~$1.25 USD/mes**
 - 10,000 consultas/mes: **~$12.50 USD/mes**
 
@@ -56,10 +63,12 @@ npm install @google/generative-ai
 ### **Opción 3: Anthropic Claude 3.5 Sonnet**
 
 **Ventajas:**
+
 - ✅ Excelente para razonamiento complejo
 - ✅ Muy bueno siguiendo instrucciones
 
 **Desventajas:**
+
 - ❌ **Muy caro**: $3 por 1M tokens
 - ❌ Latencia alta
 
@@ -68,11 +77,13 @@ npm install @google/generative-ai
 ### **Opción 4: Ollama (IA Local)**
 
 **Ventajas:**
+
 - ✅ **100% Gratis** (corres en tu servidor)
 - ✅ Sin límites de API
 - ✅ Privacidad total
 
 **Desventajas:**
+
 - ❌ Requiere servidor potente (GPU recomendada)
 - ❌ Latencia variable
 - ❌ Menor calidad que modelos cloud
@@ -102,16 +113,19 @@ Usuario → Consulta
 ### **Fase 1: Setup Básico (Día 1-2)**
 
 1. **Instalar dependencias**
+
 ```bash
 npm install @google/generative-ai
 ```
 
 2. **Crear servicio de Gemini**
+
 ```typescript
 // src/lib/ai/gemini-agent.ts
 ```
 
 3. **Configurar variables de entorno**
+
 ```env
 GOOGLE_GENERATIVE_AI_API_KEY=tu_api_key_aqui
 ```
@@ -145,11 +159,13 @@ GOOGLE_GENERATIVE_AI_API_KEY=tu_api_key_aqui
 ## 💰 Análisis de Costos
 
 ### **Escenario Conservador (1,000 usuarios/mes)**
+
 - Promedio: 2 consultas por usuario = **2,000 consultas/mes**
 - Costo con Gemini: **~$0.08 USD/mes** 💸
 - Costo con GPT-4: **~$2.50 USD/mes**
 
 ### **Escenario Optimista (10,000 usuarios/mes)**
+
 - Promedio: 2 consultas por usuario = **20,000 consultas/mes**
 - Costo con Gemini: **~$0.80 USD/mes** 💸
 - Costo con GPT-4: **~$25 USD/mes**
