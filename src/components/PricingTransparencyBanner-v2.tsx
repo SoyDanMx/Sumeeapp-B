@@ -5,8 +5,9 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCheckCircle } from "@fortawesome/free-solid-svg-icons";
 import { faWhatsapp as faWhatsappBrand } from "@fortawesome/free-brands-svg-icons";
 
-export const PricingTransparencyBanner = () => {
+export const PricingTransparencyBannerV2 = () => {
   const whatsappNumber = "525636741156"; // Número de WhatsApp de soporte
+  const whatsappDisplay = "56 3674 1156"; // Número para mostrar
   const whatsappMessage = encodeURIComponent(
     "Hola, tengo dudas sobre la tarifa de revisión y cómo funciona. ¿Podrían ayudarme?"
   );
@@ -21,27 +22,29 @@ export const PricingTransparencyBanner = () => {
             className="text-green-500 text-xl flex-shrink-0 mt-1"
           />
           <div className="flex-1">
-            <p className="text-gray-800 font-medium text-sm sm:text-base">
+            <p className="text-gray-800 font-medium text-sm sm:text-base leading-relaxed">
               <span className="font-semibold text-green-700">
-                Tarifa de Revisión desde $350 MXN
+                Precio claro desde el inicio:
               </span>{" "}
+              Tarifa de Revisión desde $350 MXN, incluida en tu presupuesto
+              final.{" "}
               <span className="text-gray-600">
-                - Se aplica al costo final de tu servicio. Sin sorpresas, precio
-                claro desde el inicio.
+                ¿Preguntas?{" "}
+                <a
+                  href={whatsappLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-green-600 hover:text-green-700 font-semibold underline transition-colors"
+                >
+                  Escríbenos al {whatsappDisplay}
+                  <FontAwesomeIcon
+                    icon={faWhatsappBrand}
+                    className="text-base ml-1"
+                  />
+                </a>
               </span>
             </p>
           </div>
-          <a
-            href={whatsappLink}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg font-medium text-sm sm:text-base transition-colors duration-200 shadow-md hover:shadow-lg active:scale-95 whitespace-nowrap touch-manipulation"
-            aria-label="Contactar por WhatsApp"
-          >
-            <FontAwesomeIcon icon={faWhatsappBrand} className="text-lg" />
-            <span className="hidden sm:inline">¿Dudas? Contáctanos</span>
-            <span className="sm:hidden">Contactar</span>
-          </a>
         </div>
       </div>
     </div>

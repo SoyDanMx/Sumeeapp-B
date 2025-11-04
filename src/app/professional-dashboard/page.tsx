@@ -4,6 +4,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { useProfesionalData } from "@/hooks/useProfesionalData";
 import { useGeolocation } from "@/hooks/useGeolocation";
+import { useNewLeadsSubscription } from "@/hooks/useNewLeadsSubscription";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faBars, faTimes } from "@fortawesome/free-solid-svg-icons";
 import ProfesionalHeader from "@/components/ProfesionalHeader";
@@ -13,6 +14,7 @@ import OnlineToggle from "@/components/dashboard/OnlineToggle";
 import ControlPanel from "@/components/dashboard/ControlPanel";
 import ProfessionalTabs from "@/components/dashboard/ProfessionalTabs";
 import MobileBottomNav from "@/components/dashboard/MobileBottomNav";
+import NewLeadAlertModal from "@/components/dashboard/NewLeadAlertModal";
 import { Profesional, Lead } from "@/types/supabase";
 
 export default function ProfesionalDashboardPage() {
@@ -30,6 +32,8 @@ export default function ProfesionalDashboardPage() {
     lat: number;
     lng: number;
   } | null>(null);
+  const [newLeadAlert, setNewLeadAlert] = useState<Lead | null>(null);
+  const [isNewLeadModalOpen, setIsNewLeadModalOpen] = useState(false);
 
   // Geolocalización en tiempo real cuando está online
   const {
@@ -56,6 +60,41 @@ export default function ProfesionalDashboardPage() {
 
   const handleLeadClick = useCallback((leadId: string) => {
     setSelectedLeadId(leadId);
+  }, []);
+
+  // Callback para cuando se recibe un lead nuevo en tiempo real
+  const handleNewLeadReceived = useCallback((lead: Lead) => {
+    console.log("🔔 Lead nuevo recibido, mostrando modal...", lead);
+    setNewLeadAlert(lead);
+    setIsNewLeadModalOpen(true);
+  }, []);
+
+  // Suscripción a leads nuevos en tiempo real
+  useNewLeadsSubscription({
+    isOnline,
+    profesional,
+    profesionalLat: currentLocation?.lat,
+    profesionalLng: currentLocation?.lng,
+    onNewLead: handleNewLeadReceived,
+  });
+
+  // Handler para aceptar lead desde el modal
+  const handleAcceptLeadFromModal = useCallback(
+    async (leadId: string) => {
+      // Refrescar datos para que el lead aparezca en la lista
+      await refetchData();
+      // Cerrar modal
+      setIsNewLeadModalOpen(false);
+      setNewLeadAlert(null);
+    },
+    [refetchData]
+  );
+
+  // Handler para rechazar lead desde el modal
+  const handleRejectLeadFromModal = useCallback(() => {
+    console.log("❌ Lead rechazado");
+    setIsNewLeadModalOpen(false);
+    setNewLeadAlert(null);
   }, []);
 
   // --- ESTADOS DE CARGA Y ERROR ---
@@ -180,6 +219,7 @@ export default function ProfesionalDashboardPage() {
               onLeadAccepted={refetchData}
               selectedLeadId={selectedLeadId}
               avatarUrl={profesional.avatar_url ?? null}
+              onEditProfileClick={() => setIsModalOpen(true)}
             />
           </div>
         ) : mobileActiveTab === "stats" ? (
@@ -208,7 +248,9 @@ export default function ProfesionalDashboardPage() {
         {/* En móvil: drawer lateral completo, en desktop: columna fija */}
         <div
           className={`fixed md:relative top-0 right-0 h-full w-full md:w-96 bg-white/95 md:bg-white/95 backdrop-blur-sm md:backdrop-blur-none shadow-xl border-l border-gray-200 overflow-y-auto z-40 transition-transform duration-300 ease-in-out ${
-            isSidebarOpen ? "translate-x-0" : "translate-x-full md:translate-x-0"
+            isSidebarOpen
+              ? "translate-x-0"
+              : "translate-x-full md:translate-x-0"
           }`}
         >
           {/* Botón de cerrar en móvil */}
@@ -266,7 +308,24 @@ export default function ProfesionalDashboardPage() {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onSuccess={handleProfileUpdateSuccess}
+        leads={leads}
       />
+
+      {/* Modal de Alerta de Lead Nuevo */}
+      {newLeadAlert && (
+        <NewLeadAlertModal
+          lead={newLeadAlert}
+          profesionalLat={currentLocation?.lat}
+          profesionalLng={currentLocation?.lng}
+          isOpen={isNewLeadModalOpen}
+          onAccept={handleAcceptLeadFromModal}
+          onReject={handleRejectLeadFromModal}
+          onClose={() => {
+            setIsNewLeadModalOpen(false);
+            setNewLeadAlert(null);
+          }}
+        />
+      )}
     </div>
   );
 }

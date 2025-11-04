@@ -91,9 +91,23 @@ export async function updateUserProfileRPC(
     // 4. Preparar datos para RPC como objeto JSONB
     // Supabase convierte automáticamente objetos JavaScript a JSONB en PostgreSQL
     console.log("📝 Datos para RPC:", filteredUpdates);
+    console.log(
+      "📝 Número de campos a actualizar:",
+      Object.keys(filteredUpdates).length
+    );
+
+    // Validar que hay campos para actualizar
+    if (Object.keys(filteredUpdates).length === 0) {
+      throw new Error("No hay campos válidos para actualizar en el perfil.");
+    }
 
     // 5. Llamar a la función RPC update_profile
     // Nota: Supabase convertirá automáticamente el objeto JavaScript a JSONB
+    console.log("🔄 Llamando a RPC update_profile con:", {
+      user_id_in: userId,
+      updates: filteredUpdates,
+    });
+
     const { data: updatedUserId, error: rpcError } = await supabase.rpc(
       "update_profile",
       {
@@ -104,24 +118,59 @@ export async function updateUserProfileRPC(
 
     if (rpcError) {
       console.error("❌ Error de RPC update_profile:", rpcError);
+      console.error("❌ Detalles del error:", {
+        message: rpcError.message,
+        details: rpcError.details,
+        hint: rpcError.hint,
+        code: rpcError.code,
+      });
+
+      // Si el error no tiene mensaje, intentar obtener más información
+      const errorMessage =
+        rpcError.message ||
+        rpcError.details ||
+        rpcError.hint ||
+        JSON.stringify(rpcError);
 
       // Manejo específico de errores
-      if (rpcError.message.includes("No tienes permisos")) {
+      if (
+        errorMessage.includes("No tienes permisos") ||
+        errorMessage.includes("permission denied")
+      ) {
         throw new Error("Error de permisos: No puedes actualizar este perfil.");
       }
 
-      if (rpcError.message.includes("Usuario no encontrado")) {
+      if (
+        errorMessage.includes("Usuario no encontrado") ||
+        errorMessage.includes("not found")
+      ) {
         throw new Error("Error: El usuario no existe en la base de datos.");
       }
 
-      if (rpcError.message.includes("No hay campos válidos")) {
+      if (
+        errorMessage.includes("No hay campos válidos") ||
+        errorMessage.includes("no valid fields")
+      ) {
         throw new Error(
           "Error: No se proporcionaron campos válidos para actualizar."
         );
       }
 
+      // Si el error es que la función no existe
+      if (
+        errorMessage.includes("function") &&
+        (errorMessage.includes("does not exist") ||
+          errorMessage.includes("no existe"))
+      ) {
+        throw new Error(
+          `La función RPC 'update_profile' no existe en la base de datos. Por favor, ejecuta el script SQL 'create-update-profile-rpc.sql' en Supabase.`
+        );
+      }
+
       throw new Error(
-        `Error al actualizar perfil vía RPC: ${rpcError.message}`
+        `Error al actualizar perfil vía RPC: ${
+          errorMessage || "Error desconocido"
+        }`
       );
     }
 

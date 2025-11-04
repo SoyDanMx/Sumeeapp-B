@@ -23,6 +23,11 @@ export default function OnlineToggle({
     "granted" | "denied" | "prompt" | null
   >(null);
 
+  // Sincronizar el estado interno con initialStatus cuando cambie
+  useEffect(() => {
+    setIsOnline(initialStatus);
+  }, [initialStatus]);
+
   useEffect(() => {
     // Verificar permisos de geolocalización
     if (navigator.permissions) {
@@ -41,11 +46,18 @@ export default function OnlineToggle({
     setIsUpdating(true);
     const newStatus = !isOnline;
 
+    // Actualizar el estado visual inmediatamente para mejor UX
+    setIsOnline(newStatus);
+    onStatusChange?.(newStatus);
+
     try {
       if (newStatus) {
         // Activar modo Online: obtener ubicación y actualizar perfil
         if (!navigator.geolocation) {
           alert("Tu navegador no soporta geolocalización");
+          // Revertir el estado si falla
+          setIsOnline(false);
+          onStatusChange?.(false);
           setIsUpdating(false);
           return;
         }
@@ -85,6 +97,9 @@ export default function OnlineToggle({
               updateError?.message ||
               "Error al actualizar tu ubicación. Inténtalo de nuevo.";
             alert(errorMessage);
+            // Revertir el estado si falla
+            setIsOnline(false);
+            onStatusChange?.(false);
             setIsUpdating(false);
             return;
           }
@@ -107,16 +122,22 @@ export default function OnlineToggle({
               updateError?.message ||
               "Error al actualizar tu estado. Inténtalo de nuevo.";
             alert(errorMessage);
+            // Revertir el estado si falla
+            setIsOnline(true);
+            onStatusChange?.(true);
             setIsUpdating(false);
             return;
           }
         }
       }
 
-      setIsOnline(newStatus);
-      onStatusChange?.(newStatus);
+      // Si llegamos aquí, todo fue exitoso, el estado ya está actualizado arriba
     } catch (error: any) {
       console.error("Error al cambiar estado:", error);
+      // Revertir el estado si hay un error
+      setIsOnline(!newStatus);
+      onStatusChange?.(!newStatus);
+
       if (error.code === 1) {
         alert(
           "Permiso de geolocalización denegado. Activa la ubicación en la configuración de tu navegador."
@@ -138,8 +159,12 @@ export default function OnlineToggle({
           isOnline
             ? "bg-green-500 hover:bg-green-600 active:scale-95"
             : "bg-gray-400 hover:bg-gray-500 active:scale-95"
-        } ${isUpdating ? "opacity-50 cursor-not-allowed" : "cursor-pointer"} touch-manipulation`}
-        aria-label={isOnline ? "Desactivar disponibilidad" : "Activar disponibilidad"}
+        } ${
+          isUpdating ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
+        } touch-manipulation`}
+        aria-label={
+          isOnline ? "Desactivar disponibilidad" : "Activar disponibilidad"
+        }
       >
         <div
           className={`absolute top-1 left-1 w-[72px] h-[72px] md:w-14 md:h-14 bg-white rounded-full shadow-lg transform transition-transform duration-300 flex items-center justify-center ${

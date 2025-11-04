@@ -15,6 +15,10 @@ import { faWhatsapp as faWhatsappBrand } from "@fortawesome/free-brands-svg-icon
 import { acceptLead } from "@/lib/supabase/data";
 import { supabase } from "@/lib/supabase/client";
 import { calculateDistance } from "@/lib/calculateDistance";
+import {
+  sendCredentialToClient,
+  openWhatsAppLink,
+} from "@/lib/supabase/credential-sender";
 
 interface LeadCardProps {
   lead: Lead;
@@ -65,6 +69,32 @@ export default function LeadCard({
 
       if (result.success) {
         setAccepted(true);
+
+        // Enviar credencial automáticamente al cliente
+        try {
+          const credentialResult = await sendCredentialToClient(
+            lead.id,
+            user.id
+          );
+          if (credentialResult.success && credentialResult.whatsappLink) {
+            // Abrir WhatsApp con el mensaje pre-cargado
+            openWhatsAppLink(credentialResult.whatsappLink);
+            console.log("✅ Credencial enviada automáticamente al cliente");
+          } else {
+            console.warn(
+              "⚠️ No se pudo enviar la credencial:",
+              credentialResult.error
+            );
+            // No bloqueamos el flujo si falla el envío de la credencial
+          }
+        } catch (credentialError) {
+          console.error(
+            "Error al enviar credencial (no crítico):",
+            credentialError
+          );
+          // No bloqueamos el flujo si falla el envío de la credencial
+        }
+
         // Llamar callback para refrescar datos
         if (onLeadAccepted) {
           onLeadAccepted();

@@ -40,19 +40,21 @@ import {
   faShieldAlt,
 } from "@fortawesome/free-solid-svg-icons";
 import Image from "next/image";
-import { PortfolioItem } from "@/types/supabase";
+import { PortfolioItem, Lead } from "@/types/supabase";
 import {
   uploadAvatar,
   uploadPortfolioItem,
   uploadCertificate,
   uploadBackgroundCheck,
 } from "@/lib/supabase/storage-helpers";
+import ProfessionalVerificationID from "@/components/ProfessionalVerificationID";
 
 interface EditProfileModalProps {
   profesional: Profesional;
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
+  leads?: Lead[]; // Leads para calcular tasa de aceptación en el Paso 5
 }
 
 const OFICIOS_OPTIONS = [
@@ -85,6 +87,7 @@ export default function EditProfileModal({
   isOpen,
   onClose,
   onSuccess,
+  leads = [],
 }: EditProfileModalProps) {
   // IMPORTANTE: Todos los hooks deben ejecutarse ANTES de cualquier early return
   // Esto evita el error "Expected static flag was missing"
@@ -128,7 +131,7 @@ export default function EditProfileModal({
   >(profesional.antecedentes_no_penales_url || null);
 
   const userId = profesional.user_id;
-  const totalSteps = 4;
+  const totalSteps = 5; // Agregamos el Paso 5: Credencial de Profesional Verificado
 
   // Reset modal state when opened/closed
   useEffect(() => {
@@ -1092,6 +1095,33 @@ export default function EditProfileModal({
               </div>
             )}
 
+            {/* Step 5: Credencial de Profesional Verificado */}
+            {currentStep === 5 && (
+              <div className="space-y-6 animate-in slide-in-from-right-4 duration-300">
+                <div className="text-center mb-8">
+                  <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <FontAwesomeIcon
+                      icon={faShieldAlt}
+                      className="text-2xl text-green-600"
+                    />
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-900 mb-2">
+                    Tu Credencial de Profesional Verificado
+                  </h3>
+                  <p className="text-gray-600">
+                    Esta credencial se enviará automáticamente a los clientes
+                    cuando aceptes un trabajo, dando certeza y seguridad.
+                  </p>
+                </div>
+
+                {/* Componente de credencial */}
+                <ProfessionalVerificationID
+                  profesional={profesional}
+                  leads={leads}
+                />
+              </div>
+            )}
+
             {/* Navigation */}
             <div className="flex justify-between items-center pt-8 border-t border-gray-200 mt-8">
               <div className="flex items-center space-x-4">
@@ -1169,7 +1199,7 @@ export default function EditProfileModal({
                     ) : (
                       <>
                         <FontAwesomeIcon icon={faCheck} />
-                        <span>Completar Perfil</span>
+                        <span>Guardar y Finalizar</span>
                       </>
                     )}
                   </button>

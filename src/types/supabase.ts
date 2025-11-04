@@ -138,11 +138,13 @@ export interface Lead {
   descripcion_proyecto: string;
   ubicacion_lat: number;
   ubicacion_lng: number;
+  ubicacion_direccion?: string | null;
   fecha_creacion: string;
   estado: LeadEstado;
   profesional_asignado_id?: string | null;
   imagen_url?: string | null;
   servicio_solicitado?: string | null;
+  servicio?: string | null; // Campo alternativo para servicio
   urgencia?: string | null;
   cliente_id?: string | null;
   // Propiedad para datos del profesional asignado (obtenida via JOIN)

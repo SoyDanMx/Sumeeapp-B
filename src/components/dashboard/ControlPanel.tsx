@@ -198,7 +198,7 @@ export default function ControlPanel({
           {/* Checklist de Perfil */}
           <ProfileChecklist
             profesional={profesional}
-            onEditClick={onEditClick}
+            onEditClick={(section) => onEditClick()}
           />
 
           {/* Estadísticas Rápidas */}

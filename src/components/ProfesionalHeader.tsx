@@ -1,6 +1,11 @@
 import React from "react";
 import Image from "next/image";
 import { Profesional } from "@/types/supabase";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+  faExclamationTriangle,
+  faRocket,
+} from "@fortawesome/free-solid-svg-icons";
 
 interface Props {
   profesional: Profesional;
@@ -15,6 +20,43 @@ export default function ProfesionalHeader({ profesional, onEditClick }: Props) {
     5
   );
   const starCount = Math.round(rating); // Redondeo para mostrar estrellas
+
+  // Función para determinar si un campo está completo
+  const isFieldComplete = (value: any): boolean => {
+    if (Array.isArray(value)) {
+      return value.length > 0 && value[0] !== "Sin definir";
+    }
+    return (
+      value &&
+      value !== "N/A" &&
+      value !== "" &&
+      value !== null &&
+      value !== undefined
+    );
+  };
+
+  // Verificar campos críticos
+  const hasAvatar = isFieldComplete(profesional.avatar_url);
+  const hasSpecialties = Boolean(
+    profesional.areas_servicio &&
+      profesional.areas_servicio.length > 0 &&
+      profesional.areas_servicio[0] !== "Sin definir"
+  );
+  const hasWorkZones = Boolean(
+    isFieldComplete(profesional.work_zones) &&
+      profesional.work_zones &&
+      profesional.work_zones.length > 0
+  );
+  const hasWhatsApp = isFieldComplete(profesional.whatsapp);
+
+  // Calcular si el perfil está incompleto (al menos un campo crítico faltante)
+  const isIncomplete = !hasAvatar || !hasSpecialties || !hasWorkZones || !hasWhatsApp;
+  const criticalMissingCount = [
+    !hasAvatar,
+    !hasSpecialties,
+    !hasWorkZones,
+    !hasWhatsApp,
+  ].filter(Boolean).length;
 
   return (
     <header className="bg-white shadow-md p-2 md:p-4 lg:p-6 border-t-4 border-indigo-600">
@@ -112,11 +154,27 @@ export default function ProfesionalHeader({ profesional, onEditClick }: Props) {
         <div className="hidden sm:flex flex-col lg:flex-col items-center lg:items-end space-y-3 lg:space-y-3 lg:ml-4 lg:w-auto">
           <button
             onClick={onEditClick} // Llama a la función para abrir el modal
-            className="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg transition-colors shadow-lg shadow-indigo-200 text-sm sm:text-base touch-manipulation active:scale-95"
+            className={`w-full sm:w-auto ${
+              isIncomplete
+                ? "bg-gradient-to-r from-orange-500 via-red-500 to-pink-600 hover:from-orange-600 hover:via-red-600 hover:to-pink-700 animate-pulse shadow-2xl"
+                : "bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 shadow-lg shadow-indigo-200"
+            } text-white px-5 py-3 rounded-xl transition-all duration-300 text-sm sm:text-base font-bold touch-manipulation active:scale-95 transform hover:scale-105 flex items-center justify-center gap-2`}
           >
-            📝{" "}
-            <span className="hidden sm:inline">Editar Perfil (Enriquecer)</span>
-            <span className="sm:hidden">Editar Perfil</span>
+            {isIncomplete && (
+              <FontAwesomeIcon
+                icon={faExclamationTriangle}
+                className="text-lg sm:text-xl animate-bounce"
+              />
+            )}
+            {!isIncomplete && (
+              <FontAwesomeIcon icon={faRocket} className="text-base sm:text-lg" />
+            )}
+            <span className="hidden sm:inline">
+              {isIncomplete && criticalMissingCount > 0
+                ? `Optimizar Perfil (${criticalMissingCount} faltantes)`
+                : "Optimizar Perfil"}
+            </span>
+            <span className="sm:hidden">Optimizar</span>
           </button>
 
           {/* Datos de contacto clave para referencia rápida */}
