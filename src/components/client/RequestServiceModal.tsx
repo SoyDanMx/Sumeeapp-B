@@ -421,11 +421,29 @@ export default function RequestServiceModal({
       "🔍 handleFreeRequestSubmit - user:",
       user?.id || "No hay usuario"
     );
+    console.log(
+      "🔍 handleFreeRequestSubmit - isAuthenticated:",
+      isAuthenticated
+    );
+    console.log("🔍 handleFreeRequestSubmit - profile:", profile);
     console.log("🔍 handleFreeRequestSubmit - formData:", formData);
 
-    if (!user) {
-      console.log("🔍 handleFreeRequestSubmit - Error: No hay usuario");
-      setError("Debes estar logueado para solicitar un servicio");
+    if (!user || !isAuthenticated) {
+      console.log(
+        "🔍 handleFreeRequestSubmit - Error: No hay usuario autenticado"
+      );
+      setError(
+        "Debes estar logueado para solicitar un servicio. Por favor, inicia sesión e intenta de nuevo."
+      );
+      return;
+    }
+
+    // Verificar que el usuario tenga un ID válido
+    if (!user.id) {
+      console.log("🔍 handleFreeRequestSubmit - Error: Usuario sin ID");
+      setError(
+        "Error de autenticación: Usuario sin ID válido. Por favor, cierra sesión y vuelve a iniciar sesión."
+      );
       return;
     }
 
