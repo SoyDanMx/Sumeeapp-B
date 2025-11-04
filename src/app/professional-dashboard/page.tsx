@@ -270,15 +270,19 @@ export default function ProfesionalDashboardPage() {
               </h3>
               <OnlineToggle
                 initialStatus={profesional.disponibilidad === "disponible"}
-                onStatusChange={(online) => {
+                onStatusChange={async (online) => {
                   setIsOnline(online);
                   if (online) {
                     updateLocation(); // Actualizar ubicación inmediatamente
                   }
+                  // IMPORTANTE: Refrescar datos del profesional después de cambiar disponibilidad
+                  // Esto asegura que el estado del profesional se actualice en el componente
+                  await refetchData();
                 }}
                 onLocationUpdate={(lat, lng) => {
                   setCurrentLocation({ lat, lng });
-                  refetchData(); // Refrescar datos del profesional
+                  // Refrescar datos del profesional cuando se actualiza la ubicación
+                  refetchData();
                 }}
               />
             </div>
