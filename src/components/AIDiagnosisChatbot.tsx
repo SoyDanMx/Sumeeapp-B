@@ -14,6 +14,10 @@ import {
   faWrench,
   faQuestionCircle,
   faShieldAlt,
+  faImage,
+  faVolumeUp,
+  faVolumeMute,
+  faX,
 } from "@fortawesome/free-solid-svg-icons";
 
 interface AIResponse {
@@ -45,16 +49,117 @@ export const AIDiagnosisChatbot: React.FC<AIDiagnosisChatbotProps> = ({
   const [loading, setLoading] = useState(false);
   const [response, setResponse] = useState<AIResponse | null>(null);
   const [error, setError] = useState("");
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [isVoiceEnabled, setIsVoiceEnabled] = useState(false); // Desactivado por defecto
 
-  // Función mejorada para llamar al API real
-  const callAIAssistant = async (description: string): Promise<AIResponse> => {
+  // Función para convertir texto a voz (voz de mujer)
+  const speakText = (text: string) => {
+    if (!isVoiceEnabled) return;
+
+    // Detener cualquier audio anterior
+    window.speechSynthesis.cancel();
+
+    const utterance = new SpeechSynthesisUtterance(text);
+
+    // Configurar voz de mujer en español
+    const voices = window.speechSynthesis.getVoices();
+    const womanVoice =
+      voices.find(
+        (voice) =>
+          voice.lang.includes("es") &&
+          (voice.name.toLowerCase().includes("female") ||
+            voice.name.toLowerCase().includes("mujer") ||
+            voice.name.toLowerCase().includes("zira") ||
+            voice.name.toLowerCase().includes("helena"))
+      ) ||
+      voices.find((voice) => voice.lang.includes("es-ES")) ||
+      voices[0];
+
+    utterance.voice = womanVoice;
+    utterance.lang = "es-MX";
+    utterance.rate = 0.95; // Velocidad natural
+    utterance.pitch = 1.1; // Tono ligeramente más alto (más femenino)
+    utterance.volume = 1;
+
+    utterance.onstart = () => setIsSpeaking(true);
+    utterance.onend = () => setIsSpeaking(false);
+    utterance.onerror = () => setIsSpeaking(false);
+
+    window.speechSynthesis.speak(utterance);
+  };
+
+  // Cargar voces cuando estén disponibles
+  React.useEffect(() => {
+    const loadVoices = () => {
+      window.speechSynthesis.getVoices();
+    };
+    loadVoices();
+    if (window.speechSynthesis.onvoiceschanged !== undefined) {
+      window.speechSynthesis.onvoiceschanged = loadVoices;
+    }
+  }, []);
+
+  // Manejar selección de imagen
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Validar tipo de archivo
+      if (!file.type.startsWith("image/")) {
+        setError("Por favor selecciona una imagen válida");
+        return;
+      }
+
+      // Validar tamaño (máximo 10MB)
+      if (file.size > 10 * 1024 * 1024) {
+        setError("La imagen no debe exceder 10MB");
+        return;
+      }
+
+      setSelectedImage(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+      setError("");
+    }
+  };
+
+  const removeImage = () => {
+    setSelectedImage(null);
+    setImagePreview(null);
+  };
+
+  // Convertir imagen a base64
+  const imageToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64String = (reader.result as string).split(",")[1];
+        resolve(base64String);
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  };
+
+  // Función mejorada para llamar al API real con soporte de imágenes
+  const callAIAssistant = async (
+    description: string,
+    imageBase64?: string
+  ): Promise<AIResponse> => {
     try {
       const response = await fetch("/api/ai-assistant", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ query: description }),
+        body: JSON.stringify({
+          query: description,
+          image: imageBase64, // Enviar imagen si existe
+        }),
       });
 
       if (!response.ok) {
@@ -90,15 +195,37 @@ export const AIDiagnosisChatbot: React.FC<AIDiagnosisChatbotProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!userInput.trim()) return;
+    if (!userInput.trim() && !selectedImage) {
+      setError("Por favor describe tu problema o sube una imagen");
+      return;
+    }
 
     setLoading(true);
     setResponse(null);
     setError("");
 
     try {
-      const aiResponse = await callAIAssistant(userInput);
+      let imageBase64: string | undefined;
+      if (selectedImage) {
+        imageBase64 = await imageToBase64(selectedImage);
+      }
+
+      const aiResponse = await callAIAssistant(
+        userInput.trim() ||
+          "Analiza esta imagen y dime qué problema técnico tiene",
+        imageBase64
+      );
+
       setResponse(aiResponse);
+
+      // Voz desactivada - solo texto
+      // if (isVoiceEnabled && aiResponse.diagnosis_summary) {
+      //   speakText(aiResponse.diagnosis_summary);
+      // }
+
+      // Limpiar imagen después de enviar
+      setSelectedImage(null);
+      setImagePreview(null);
     } catch (err) {
       setError("Error al procesar tu consulta. Por favor, inténtalo de nuevo.");
     } finally {
@@ -110,7 +237,19 @@ export const AIDiagnosisChatbot: React.FC<AIDiagnosisChatbotProps> = ({
     setUserInput("");
     setResponse(null);
     setError("");
+    setSelectedImage(null);
+    setImagePreview(null);
+    window.speechSynthesis.cancel(); // Detener cualquier audio
+    setIsSpeaking(false);
     onClose();
+  };
+
+  const toggleVoice = () => {
+    setIsVoiceEnabled(!isVoiceEnabled);
+    if (isSpeaking) {
+      window.speechSynthesis.cancel();
+      setIsSpeaking(false);
+    }
   };
 
   if (!isOpen) return null;
@@ -125,16 +264,33 @@ export const AIDiagnosisChatbot: React.FC<AIDiagnosisChatbotProps> = ({
             <div>
               <h2 className="text-xl font-bold">SumeeBot</h2>
               <p className="text-blue-100 text-sm">
-                Asistente de Diagnóstico IA
+                Asistente de Diagnóstico IA con Visión
               </p>
             </div>
           </div>
-          <button
-            onClick={handleClose}
-            className="text-white hover:text-blue-200 transition-colors"
-          >
-            <FontAwesomeIcon icon={faTimes} className="text-xl" />
-          </button>
+          <div className="flex items-center gap-3">
+            {/* Botón de voz - oculto/deshabilitado */}
+            {/* <button
+              onClick={toggleVoice}
+              className={`p-2 rounded-lg transition-colors ${
+                isVoiceEnabled 
+                  ? 'bg-white/20 hover:bg-white/30' 
+                  : 'bg-white/10 hover:bg-white/20 opacity-50'
+              }`}
+              title={isVoiceEnabled ? 'Desactivar voz' : 'Activar voz'}
+            >
+              <FontAwesomeIcon 
+                icon={isVoiceEnabled ? faVolumeUp : faVolumeMute} 
+                className="text-lg" 
+              />
+            </button> */}
+            <button
+              onClick={handleClose}
+              className="text-white hover:text-blue-200 transition-colors"
+            >
+              <FontAwesomeIcon icon={faTimes} className="text-xl" />
+            </button>
+          </div>
         </div>
 
         {/* Chat Content */}
@@ -161,22 +317,59 @@ export const AIDiagnosisChatbot: React.FC<AIDiagnosisChatbotProps> = ({
             </div>
           </div>
 
+          {/* Vista previa de imagen */}
+          {imagePreview && (
+            <div className="mb-4 relative inline-block">
+              <div className="relative rounded-lg overflow-hidden border-2 border-blue-200 shadow-md">
+                <img
+                  src={imagePreview}
+                  alt="Vista previa"
+                  className="max-w-xs max-h-48 object-contain"
+                />
+                <button
+                  onClick={removeImage}
+                  className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
+                  type="button"
+                >
+                  <FontAwesomeIcon icon={faX} className="text-xs" />
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* User Input Form */}
           {!response && (
             <form onSubmit={handleSubmit} className="mb-6">
               <div className="flex items-center border border-gray-300 rounded-lg p-3 focus-within:ring-2 focus-within:ring-blue-500">
+                {/* Botón para subir imagen */}
+                <label className="cursor-pointer p-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-md transition-colors">
+                  <FontAwesomeIcon icon={faImage} className="text-lg" />
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageSelect}
+                    className="hidden"
+                    disabled={loading}
+                  />
+                </label>
+
                 <input
                   type="text"
                   value={userInput}
                   onChange={(e) => setUserInput(e.target.value)}
-                  placeholder="Describe tu problema aquí..."
-                  className="w-full border-none focus:ring-0 text-gray-800 placeholder-gray-500"
+                  placeholder={
+                    selectedImage
+                      ? "Describe el problema o deja que la IA analice la imagen..."
+                      : "Describe tu problema aquí..."
+                  }
+                  className="flex-1 border-none focus:ring-0 text-gray-800 placeholder-gray-500"
                   disabled={loading}
                 />
+
                 <button
                   type="submit"
-                  disabled={loading || !userInput.trim()}
-                  className="bg-blue-600 text-white rounded-md p-2 ml-2 disabled:bg-blue-400 disabled:cursor-not-allowed transition-colors"
+                  disabled={loading || (!userInput.trim() && !selectedImage)}
+                  className="bg-blue-600 text-white rounded-md p-2 ml-2 disabled:bg-blue-400 disabled:cursor-not-allowed transition-colors hover:bg-blue-700"
                 >
                   {loading ? (
                     <FontAwesomeIcon icon={faSpinner} spin />
@@ -185,6 +378,12 @@ export const AIDiagnosisChatbot: React.FC<AIDiagnosisChatbotProps> = ({
                   )}
                 </button>
               </div>
+              {selectedImage && (
+                <p className="text-xs text-gray-500 mt-2">
+                  📸 Imagen seleccionada. La IA analizará la imagen
+                  automáticamente.
+                </p>
+              )}
             </form>
           )}
 
@@ -227,9 +426,26 @@ export const AIDiagnosisChatbot: React.FC<AIDiagnosisChatbotProps> = ({
                   />
                 </div>
                 <div className="bg-white border-2 border-blue-100 rounded-xl p-5 max-w-[85%] shadow-lg">
-                  <h3 className="font-bold text-gray-900 mb-3 text-lg">
-                    {response.service_name}
-                  </h3>
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="font-bold text-gray-900 text-lg">
+                      {response.service_name}
+                    </h3>
+                    {/* Botón de voz deshabilitado - solo texto */}
+                    {/* {isVoiceEnabled && !isSpeaking && (
+                      <button
+                        onClick={() => speakText(response.diagnosis_summary)}
+                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                        title="Escuchar respuesta"
+                      >
+                        <FontAwesomeIcon icon={faVolumeUp} className="text-sm" />
+                      </button>
+                    )}
+                    {isSpeaking && (
+                      <div className="p-2 text-blue-600">
+                        <FontAwesomeIcon icon={faVolumeUp} className="text-sm animate-pulse" />
+                      </div>
+                    )} */}
+                  </div>
 
                   {/* Diagnóstico mejorado con formato */}
                   <div className="prose prose-sm max-w-none mb-4">
@@ -372,17 +588,23 @@ export const AIDiagnosisChatbot: React.FC<AIDiagnosisChatbotProps> = ({
           <div className="bg-gradient-to-r from-gray-50 to-blue-50 px-6 py-5 border-t border-gray-200">
             <div className="mb-4 p-4 bg-white rounded-xl border-2 border-blue-200 shadow-sm">
               <div className="flex items-start space-x-3">
-                <FontAwesomeIcon icon={faShieldAlt} className="text-blue-600 text-xl mt-1" />
+                <FontAwesomeIcon
+                  icon={faShieldAlt}
+                  className="text-blue-600 text-xl mt-1"
+                />
                 <div className="flex-1">
-                  <h4 className="font-bold text-gray-900 mb-1">✅ Garantía de Calidad Sumee</h4>
+                  <h4 className="font-bold text-gray-900 mb-1">
+                    ✅ Garantía de Calidad Sumee
+                  </h4>
                   <p className="text-sm text-gray-600">
-                    Conecta con técnicos verificados y certificados. Todos nuestros profesionales están 
-                    asegurados y ofrecen garantía en sus trabajos.
+                    Conecta con técnicos verificados y certificados. Todos
+                    nuestros profesionales están asegurados y ofrecen garantía
+                    en sus trabajos.
                   </p>
                 </div>
               </div>
             </div>
-            
+
             <button
               onClick={() => {
                 // Navegar al flujo de contratación o página de técnicos
@@ -394,7 +616,7 @@ export const AIDiagnosisChatbot: React.FC<AIDiagnosisChatbotProps> = ({
               <span>{response.next_step_cta}</span>
               <FontAwesomeIcon icon={faArrowRight} />
             </button>
-            
+
             <p className="text-center text-xs text-gray-500 mt-3">
               ⚡ Respuesta garantizada en menos de 2 horas
             </p>
