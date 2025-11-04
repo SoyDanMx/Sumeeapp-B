@@ -22,11 +22,16 @@ export default function OnlineToggle({
   const [locationPermission, setLocationPermission] = useState<
     "granted" | "denied" | "prompt" | null
   >(null);
+  const [isManualChange, setIsManualChange] = useState(false);
 
   // Sincronizar el estado interno con initialStatus cuando cambie
+  // PERO solo si NO es un cambio manual (para evitar revertir mientras se actualiza)
   useEffect(() => {
-    setIsOnline(initialStatus);
-  }, [initialStatus]);
+    // Si no estamos actualizando y no fue un cambio manual reciente, sincronizar
+    if (!isUpdating && !isManualChange) {
+      setIsOnline(initialStatus);
+    }
+  }, [initialStatus, isUpdating, isManualChange]);
 
   useEffect(() => {
     // Verificar permisos de geolocalización
@@ -44,6 +49,7 @@ export default function OnlineToggle({
     if (isUpdating) return;
 
     setIsUpdating(true);
+    setIsManualChange(true); // Marcar que es un cambio manual
     const newStatus = !isOnline;
 
     // Actualizar el estado visual inmediatamente para mejor UX
@@ -51,6 +57,14 @@ export default function OnlineToggle({
     onStatusChange?.(newStatus);
 
     try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) {
+        throw new Error("Usuario no autenticado");
+      }
+
       if (newStatus) {
         // Activar modo Online: obtener ubicación y actualizar perfil
         if (!navigator.geolocation) {
@@ -76,75 +90,61 @@ export default function OnlineToggle({
         const { latitude, longitude } = position.coords;
 
         // Actualizar ubicación en el perfil
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
+        // Usar RPC para actualizar ubicación (más robusto)
+        console.log("🔄 Actualizando perfil a ONLINE con ubicación...");
+        const updatedProfile = await updateUserProfileRPC(user.id, {
+          ubicacion_lat: latitude,
+          ubicacion_lng: longitude,
+          disponibilidad: "disponible",
+        });
 
-        if (user) {
-          // Usar RPC para actualizar ubicación (más robusto)
-          try {
-            await updateUserProfileRPC(user.id, {
-              ubicacion_lat: latitude,
-              ubicacion_lng: longitude,
-              disponibilidad: "disponible",
-            });
+        console.log("✅ Perfil actualizado a ONLINE:", updatedProfile);
 
-            // Llamar callback de actualización de ubicación
-            onLocationUpdate?.(latitude, longitude);
-          } catch (updateError: any) {
-            console.error("Error al actualizar ubicación:", updateError);
-            const errorMessage =
-              updateError?.message ||
-              "Error al actualizar tu ubicación. Inténtalo de nuevo.";
-            alert(errorMessage);
-            // Revertir el estado si falla
-            setIsOnline(false);
-            onStatusChange?.(false);
-            setIsUpdating(false);
-            return;
-          }
-        }
+        // Llamar callback de actualización de ubicación
+        onLocationUpdate?.(latitude, longitude);
+
+        // IMPORTANTE: Llamar onStatusChange para refrescar el estado del padre
+        onStatusChange?.(true);
       } else {
         // Desactivar modo Online: actualizar disponibilidad
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
+        console.log("🔄 Actualizando perfil a OFFLINE...");
+        const updatedProfile = await updateUserProfileRPC(user.id, {
+          disponibilidad: "no_disponible",
+        });
 
-        if (user) {
-          // Usar RPC para actualizar disponibilidad (más robusto)
-          try {
-            await updateUserProfileRPC(user.id, {
-              disponibilidad: "no_disponible",
-            });
-          } catch (updateError: any) {
-            console.error("Error al actualizar disponibilidad:", updateError);
-            const errorMessage =
-              updateError?.message ||
-              "Error al actualizar tu estado. Inténtalo de nuevo.";
-            alert(errorMessage);
-            // Revertir el estado si falla
-            setIsOnline(true);
-            onStatusChange?.(true);
-            setIsUpdating(false);
-            return;
-          }
-        }
+        console.log("✅ Perfil actualizado a OFFLINE:", updatedProfile);
+
+        // IMPORTANTE: Llamar onStatusChange para refrescar el estado del padre
+        onStatusChange?.(false);
       }
 
-      // Si llegamos aquí, todo fue exitoso, el estado ya está actualizado arriba
+      // Si llegamos aquí, todo fue exitoso
+      console.log("✅ Estado de disponibilidad actualizado exitosamente");
+
+      // Esperar un poco antes de permitir que el useEffect sincronice de nuevo
+      // Esto da tiempo a que refetchData() complete y actualice initialStatus
+      setTimeout(() => {
+        setIsManualChange(false);
+      }, 1000);
     } catch (error: any) {
-      console.error("Error al cambiar estado:", error);
-      // Revertir el estado si hay un error
-      setIsOnline(!newStatus);
-      onStatusChange?.(!newStatus);
+      console.error("❌ Error al cambiar estado:", error);
 
-      if (error.code === 1) {
-        alert(
-          "Permiso de geolocalización denegado. Activa la ubicación en la configuración de tu navegador."
-        );
-      } else {
-        alert("Error al cambiar tu estado. Inténtalo de nuevo.");
+      // Revertir el estado si hay un error (volver al estado anterior)
+      const previousStatus = !newStatus;
+      setIsOnline(previousStatus);
+      onStatusChange?.(previousStatus);
+      setIsManualChange(false); // Permitir sincronización de nuevo
+
+      let errorMessage = "Error al cambiar tu estado. Inténtalo de nuevo.";
+
+      if (error.code === 1 || error.code === "PERMISSION_DENIED") {
+        errorMessage =
+          "Permiso de geolocalización denegado. Activa la ubicación en la configuración de tu navegador.";
+      } else if (error.message) {
+        errorMessage = error.message;
       }
+
+      alert(errorMessage);
     } finally {
       setIsUpdating(false);
     }
