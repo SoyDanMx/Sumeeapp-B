@@ -150,7 +150,7 @@ function buildUserMessage(userQuery: string, context: any): string {
 
   if (context.professionals?.length) {
     message += `PROFESIONALES DISPONIBLES:\n`;
-    context.professionals.forEach((prof, idx) => {
+    context.professionals.forEach((prof: { name: string; profession: string; rating: number; specialties: string[] }, idx: number) => {
       message += `${idx + 1}. ${prof.name} - ${prof.profession} (⭐ ${prof.rating}/5)\n`;
       if (prof.specialties?.length) {
         message += `   Especialidades: ${prof.specialties.slice(0, 3).join(', ')}\n`;
