@@ -1,18 +1,18 @@
 // src/components/BlogSection.tsx
-'use client';
+"use client";
 
-import React from 'react';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { 
-  faPen, 
-  faCalendarAlt, 
-  faUser, 
+import React from "react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+  faPen,
+  faCalendarAlt,
+  faUser,
   faArrowRight,
   faClock,
   faHashtag,
-  faEye
-} from '@fortawesome/free-solid-svg-icons';
-import Link from 'next/link';
+  faEye,
+} from "@fortawesome/free-solid-svg-icons";
+import Link from "next/link";
 
 // 🎯 Tipos para las entradas de blog
 interface BlogPost {
@@ -32,102 +32,149 @@ interface BlogPost {
 // 🎯 Datos de ejemplo - En producción vendrían de CMS/API
 const blogPosts: BlogPost[] = [
   {
-    id: '1',
-    title: '10 Consejos para Mantener tu Hogar en Excelente Estado',
-    excerpt: 'Descubre las mejores prácticas y consejos profesionales para mantener tu hogar en perfecto estado durante todo el año.',
-    author: 'Equipo Sumee',
-    publishDate: '2024-01-15',
-    readTime: '5 min',
-    category: 'Mantenimiento',
-    image: 'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=400&h=250&fit=crop',
-    slug: 'consejos-mantener-hogar-excelente-estado',
+    id: "1",
+    title: "10 Consejos para Mantener tu Hogar en Excelente Estado",
+    excerpt:
+      "Descubre las mejores prácticas y consejos profesionales para mantener tu hogar en perfecto estado durante todo el año.",
+    author: "Equipo Sumee",
+    publishDate: "2024-01-15",
+    readTime: "5 min",
+    category: "Mantenimiento",
+    image:
+      "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=400&h=250&fit=crop",
+    slug: "consejos-mantener-hogar-excelente-estado",
     views: 1250,
-    featured: true
+    featured: true,
   },
   {
-    id: '2',
-    title: 'Cómo Elegir el Profesional Perfecto para tu Proyecto',
-    excerpt: 'Aprende a identificar las cualidades clave que debes buscar al contratar un profesional para tu hogar.',
-    author: 'María González',
-    publishDate: '2024-01-10',
-    readTime: '4 min',
-    category: 'Consejos',
-    image: 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=400&h=250&fit=crop',
-    slug: 'elegir-profesional-perfecto-proyecto',
+    id: "2",
+    title: "Cómo Elegir el Profesional Perfecto para tu Proyecto",
+    excerpt:
+      "Aprende a identificar las cualidades clave que debes buscar al contratar un profesional para tu hogar.",
+    author: "María González",
+    publishDate: "2024-01-10",
+    readTime: "4 min",
+    category: "Consejos",
+    image:
+      "https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=400&h=250&fit=crop",
+    slug: "elegir-profesional-perfecto-proyecto",
     views: 892,
-    featured: false
+    featured: false,
   },
   {
-    id: '3',
-    title: 'Actualizaciones de Seguridad en el Hogar 2024',
-    excerpt: 'Las últimas tendencias y tecnologías para mantener tu hogar seguro y protegido este año.',
-    author: 'Carlos Mendoza',
-    publishDate: '2024-01-08',
-    readTime: '6 min',
-    category: 'Seguridad',
-    image: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=250&fit=crop',
-    slug: 'actualizaciones-seguridad-hogar-2024',
+    id: "3",
+    title: "Actualizaciones de Seguridad en el Hogar 2024",
+    excerpt:
+      "Las últimas tendencias y tecnologías para mantener tu hogar seguro y protegido este año.",
+    author: "Carlos Mendoza",
+    publishDate: "2024-01-08",
+    readTime: "6 min",
+    category: "Seguridad",
+    image:
+      "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=250&fit=crop",
+    slug: "actualizaciones-seguridad-hogar-2024",
     views: 2103,
-    featured: true
+    featured: true,
   },
   {
-    id: '4',
-    title: 'Instalación de Bomba de Agua en CDMX: Solución al Suministro Irregular',
-    excerpt: 'Descubre cómo una bomba de agua puede solucionar los problemas de suministro irregular en la Ciudad de México y qué debes considerar antes de instalarla.',
-    author: 'Ing. Luis Rodríguez',
-    publishDate: '2024-01-20',
-    readTime: '7 min',
-    category: 'Plomería',
-    image: 'https://images.pexels.com/photos/259239/pexels-photo-259239.jpeg?auto=compress&cs=tinysrgb&w=400&h=250&fit=crop',
-    slug: 'instalacion-bomba-agua-cdmx',
+    id: "4",
+    title:
+      "Instalación de Bomba de Agua en CDMX: Solución al Suministro Irregular",
+    excerpt:
+      "Descubre cómo una bomba de agua puede solucionar los problemas de suministro irregular en la Ciudad de México y qué debes considerar antes de instalarla.",
+    author: "Ing. Luis Rodríguez",
+    publishDate: "2024-01-20",
+    readTime: "7 min",
+    category: "Plomería",
+    image:
+      "https://images.pexels.com/photos/259239/pexels-photo-259239.jpeg?auto=compress&cs=tinysrgb&w=400&h=250&fit=crop",
+    slug: "instalacion-bomba-agua-cdmx",
     views: 1567,
-    featured: true
+    featured: true,
   },
   {
-    id: '5',
-    title: 'Instalaciones Eléctricas Fuera de Norma: Peligros Mortales que Debes Conocer',
-    excerpt: 'Conoce los riesgos mortales de las instalaciones eléctricas improvisadas y por qué es crucial contratar electricistas certificados para proteger tu hogar.',
-    author: 'Ing. Ana Herrera',
-    publishDate: '2024-01-22',
-    readTime: '8 min',
-    category: 'Electricidad',
-    image: 'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=400&h=250&fit=crop',
-    slug: 'instalaciones-electricas-riesgos-cdmx',
+    id: "5",
+    title:
+      "Instalaciones Eléctricas Fuera de Norma: Peligros Mortales que Debes Conocer",
+    excerpt:
+      "Conoce los riesgos mortales de las instalaciones eléctricas improvisadas y por qué es crucial contratar electricistas certificados para proteger tu hogar.",
+    author: "Ing. Ana Herrera",
+    publishDate: "2024-01-22",
+    readTime: "8 min",
+    category: "Electricidad",
+    image:
+      "https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=400&h=250&fit=crop",
+    slug: "instalaciones-electricas-riesgos-cdmx",
     views: 1823,
-    featured: false
-  }
+    featured: false,
+  },
+  {
+    id: "6",
+    title:
+      "💡 ¿Millonarios sin Título Universitario? La Sorprendente Profecía del CEO de Nvidia",
+    excerpt:
+      "Jensen Huang predice que los próximos millonarios serán electricistas, fontaneros y albañiles debido al boom de los centros de datos. Descubre por qué los oficios técnicos están en auge en la era de la IA.",
+    author: "Equipo Sumee",
+    publishDate: "2025-11-04",
+    readTime: "8 min",
+    category: "Tecnología",
+    image:
+      "https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=400&h=250&fit=crop",
+    slug: "millonarios-sin-titulo-universitario-profecia-nvidia",
+    views: 0,
+    featured: true,
+  },
 ];
 
-const categories = ['Todos', 'Mantenimiento', 'Consejos', 'Seguridad', 'Tecnología', 'Plomería', 'Electricidad'];
+const categories = [
+  "Todos",
+  "Mantenimiento",
+  "Consejos",
+  "Seguridad",
+  "Tecnología",
+  "Plomería",
+  "Electricidad",
+];
 
 interface BlogSectionProps {
   showAllPosts?: boolean;
 }
 
-export const BlogSection: React.FC<BlogSectionProps> = ({ showAllPosts = false }) => {
+export const BlogSection: React.FC<BlogSectionProps> = ({
+  showAllPosts = false,
+}) => {
   const displayedPosts = showAllPosts ? blogPosts : blogPosts.slice(0, 3);
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('es-MX', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
+    return new Date(dateString).toLocaleDateString("es-MX", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
     });
   };
 
   return (
-    <section className="py-16 bg-gradient-to-br from-gray-50 to-blue-50" id="blog">
+    <section
+      className="py-16 bg-gradient-to-br from-gray-50 to-blue-50"
+      id="blog"
+    >
       <div className="container mx-auto px-4">
         {/* 🎯 Header de la sección */}
         <div className="text-center mb-12">
           <div className="flex items-center justify-center space-x-3 mb-4">
             <div className="w-12 h-12 bg-indigo-100 rounded-xl flex items-center justify-center">
-              <FontAwesomeIcon icon={faPen} className="text-indigo-600 text-xl" />
+              <FontAwesomeIcon
+                icon={faPen}
+                className="text-indigo-600 text-xl"
+              />
             </div>
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900">Blog Sumee</h2>
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900">
+              Blog Sumee
+            </h2>
           </div>
           <p className="text-lg text-gray-600 max-w-3xl mx-auto">
-            Consejos, tendencias y guías expertas para mantener tu hogar en perfecto estado
+            Consejos, tendencias y guías expertas para mantener tu hogar en
+            perfecto estado
           </p>
         </div>
 
@@ -147,11 +194,11 @@ export const BlogSection: React.FC<BlogSectionProps> = ({ showAllPosts = false }
         {/* 🎯 Grid de posts */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
           {displayedPosts.map((post, index) => (
-            <article 
-              key={post.id} 
+            <article
+              key={post.id}
               className={`group bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-100 ${
-                post.featured ? 'ring-2 ring-indigo-200' : ''
-              } ${index === 0 ? 'md:col-span-2 lg:col-span-1' : ''}`}
+                post.featured ? "ring-2 ring-indigo-200" : ""
+              } ${index === 0 ? "md:col-span-2 lg:col-span-1" : ""}`}
             >
               {/* 🎯 Imagen del post */}
               <div className="relative h-48 overflow-hidden">
@@ -206,22 +253,33 @@ export const BlogSection: React.FC<BlogSectionProps> = ({ showAllPosts = false }
                 <div className="flex items-center justify-between pt-4 border-t border-gray-100">
                   <div className="flex items-center space-x-3">
                     <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
-                      <FontAwesomeIcon icon={faUser} className="text-gray-600 text-sm" />
+                      <FontAwesomeIcon
+                        icon={faUser}
+                        className="text-gray-600 text-sm"
+                      />
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-gray-900">{post.author}</p>
+                      <p className="text-sm font-medium text-gray-900">
+                        {post.author}
+                      </p>
                       <p className="text-xs text-gray-500 flex items-center">
-                        <FontAwesomeIcon icon={faCalendarAlt} className="mr-1" />
+                        <FontAwesomeIcon
+                          icon={faCalendarAlt}
+                          className="mr-1"
+                        />
                         {formatDate(post.publishDate)}
                       </p>
                     </div>
                   </div>
-                  <Link 
+                  <Link
                     href={`/blog/${post.slug}`}
                     className="inline-flex items-center text-indigo-600 hover:text-indigo-700 font-medium text-sm transition-colors duration-200"
                   >
                     Leer más
-                    <FontAwesomeIcon icon={faArrowRight} className="ml-1 text-xs group-hover:translate-x-1 transition-transform duration-200" />
+                    <FontAwesomeIcon
+                      icon={faArrowRight}
+                      className="ml-1 text-xs group-hover:translate-x-1 transition-transform duration-200"
+                    />
                   </Link>
                 </div>
               </div>

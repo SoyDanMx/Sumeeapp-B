@@ -1,20 +1,9 @@
 // src/app/blog/[slug]/page.tsx
-'use client';
-
-import React from 'react';
-import { useParams } from 'next/navigation';
-import { Header } from '@/components/Header';
-import { Footer } from '@/components/Footer';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { 
-  faUser, 
-  faCalendarAlt, 
-  faClock, 
-  faArrowLeft,
-  faShare,
-  faEye,
-  faHashtag
-} from '@fortawesome/free-solid-svg-icons';
+import React from "react";
+import { Metadata } from "next";
+import { Header } from "@/components/Header";
+import { Footer } from "@/components/Footer";
+import { BlogPostContent } from "@/components/blog/BlogPostContent";
 
 interface BlogPost {
   id: string;
@@ -32,9 +21,9 @@ interface BlogPost {
 
 // Datos de ejemplo - En producción vendrían de CMS/API
 const blogPosts: Record<string, BlogPost> = {
-  'consejos-mantener-hogar-excelente-estado': {
-    id: '1',
-    title: '10 Consejos para Mantener tu Hogar en Excelente Estado',
+  "consejos-mantener-hogar-excelente-estado": {
+    id: "1",
+    title: "10 Consejos para Mantener tu Hogar en Excelente Estado",
     content: `
       <p>Mantener tu hogar en excelente estado no es solo cuestión de estética, es una inversión en tu calidad de vida y en el valor de tu propiedad. Aquí te presentamos 10 consejos profesionales que puedes implementar de manera sencilla:</p>
       
@@ -55,18 +44,19 @@ const blogPosts: Record<string, BlogPost> = {
       
       <p>Implementar estos consejos de manera regular te ayudará a mantener tu hogar en excelente estado, creando un ambiente más saludable y agradable para toda tu familia.</p>
     `,
-    author: 'Equipo Sumee',
-    publishDate: '2024-01-15',
-    readTime: '5 min',
-    category: 'Mantenimiento',
-    image: 'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=800&h=400&fit=crop',
-    slug: 'consejos-mantener-hogar-excelente-estado',
+    author: "Equipo Sumee",
+    publishDate: "2024-01-15",
+    readTime: "5 min",
+    category: "Mantenimiento",
+    image:
+      "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=800&h=400&fit=crop",
+    slug: "consejos-mantener-hogar-excelente-estado",
     views: 1250,
-    tags: ['mantenimiento', 'hogar', 'consejos', 'limpieza']
+    tags: ["mantenimiento", "hogar", "consejos", "limpieza"],
   },
-  'elegir-profesional-perfecto-proyecto': {
-    id: '2',
-    title: 'Cómo Elegir el Profesional Perfecto para tu Proyecto',
+  "elegir-profesional-perfecto-proyecto": {
+    id: "2",
+    title: "Cómo Elegir el Profesional Perfecto para tu Proyecto",
     content: `
       <p><strong>Aprende a identificar las cualidades clave que debes buscar al contratar un profesional para tu hogar.</strong></p>
       
@@ -138,18 +128,113 @@ const blogPosts: Record<string, BlogPost> = {
         <p style="font-weight: 600; font-size: 1.1rem;">No pierdas tiempo buscando. Ve a la fuente de técnicos verificados y transparentes.</p>
       </div>
     `,
-    author: 'Equipo Sumee',
-    publishDate: '2024-01-20',
-    readTime: '5 min',
-    category: 'Guía de Contratación',
-    image: 'https://images.unsplash.com/photo-1600880292203-757bb62b4baf?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=400&q=80',
-    slug: 'elegir-profesional-perfecto-proyecto',
+    author: "Equipo Sumee",
+    publishDate: "2024-01-20",
+    readTime: "5 min",
+    category: "Guía de Contratación",
+    image:
+      "https://images.unsplash.com/photo-1600880292203-757bb62b4baf?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=400&q=80",
+    slug: "elegir-profesional-perfecto-proyecto",
     views: 890,
-    tags: ['profesional', 'contratación', 'calidad', 'verificación']
+    tags: ["profesional", "contratación", "calidad", "verificación"],
   },
-  'actualizaciones-seguridad-hogar-2024': {
-    id: '3',
-    title: 'Actualizaciones de Seguridad en el Hogar: Tendencias 2024',
+  "millonarios-sin-titulo-universitario-profecia-nvidia": {
+    id: "6",
+    title:
+      "💡 ¿Millonarios sin Título Universitario? La Sorprendente Profecía del CEO de Nvidia",
+    content: `
+       <p>El boom de la Inteligencia Artificial (IA) ha capturado la atención del mundo, centrándose en chips, software y algoritmos. Sin embargo, <strong>Jensen Huang</strong>, el visionario CEO de Nvidia (la empresa líder en hardware de IA), ha lanzado una predicción que cambia por completo el juego: <strong>los próximos millonarios no serán necesariamente programadores, sino electricistas, fontaneros y albañiles.</strong></p>
+ 
+       <div style="text-align: center; margin: 2rem 0;">
+         <img src="https://images.unsplash.com/photo-1519389950473-47ba0277781c?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=500&q=80" alt="Jensen Huang, CEO de Nvidia y líder en tecnología de IA" style="width: 100%; max-width: 700px; height: 400px; object-fit: cover; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.15);">
+         <p style="color: #666; font-size: 0.9rem; margin-top: 0.5rem; font-style: italic;">Jensen Huang, CEO de Nvidia, anticipó que aumentará la necesidad de electricistas, fontaneros y carpinteros por el auge en la construcción de centros de datos. Fuente: <a href="https://www.infobae.com/tecno/2025/10/03/jensen-huang-afirma-que-el-boom-de-los-centros-de-datos-disparara-la-demanda-de-electricistas-fontaneros-y-carpinteros/" target="_blank" rel="noopener noreferrer" style="color: #3b82f6;">Infobae</a></p>
+       </div>
+ 
+       <h2 style="color: #1e40af; font-size: 2rem; margin-top: 3rem; margin-bottom: 1.5rem; font-weight: 700;">El Factor Olvidado: La Infraestructura Física de la IA</h2>
+       
+       <p>La IA vive en la nube, pero la nube está hecha de ladrillos, concreto, tuberías y una inmensa cantidad de cableado. La predicción de Huang se basa en un hecho fundamental y a menudo ignorado: <strong>el crecimiento explosivo de los centros de datos.</strong></p>
+       
+       <p>Cada avance en IA requiere más potencia de cómputo, y eso se traduce en la construcción de gigantescas "fábricas de inteligencia artificial".</p>
+ 
+       <div style="background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); border-left: 4px solid #3b82f6; padding: 2rem; margin: 2.5rem 0; border-radius: 0.5rem;">
+         <h3 style="color: #1e40af; font-size: 1.5rem; margin-bottom: 1rem; font-weight: 600;">⚡ Electricistas: La Alimentación de la Era Digital</h3>
+         <p style="color: #1e3a8a; margin-bottom: 1rem;">La alimentación y, sobre todo, la refrigeración de miles de servidores de alta potencia es una tarea monumental. Se necesitan expertos en electricidad industrial para diseñar, instalar y mantener sistemas que eviten el colapso por el calor.</p>
+         <p style="color: #1e3a8a;">Sin electricistas especializados, los centros de datos simplemente no pueden operar. Son el corazón que mantiene latiendo la infraestructura digital.</p>
+       </div>
+ 
+       <div style="background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%); border-left: 4px solid #10b981; padding: 2rem; margin: 2.5rem 0; border-radius: 0.5rem;">
+         <h3 style="color: #15803d; font-size: 1.5rem; margin-bottom: 1rem; font-weight: 600;">🔧 Fontaneros/Plomeros: Los Sistemas de Refrigeración Críticos</h3>
+         <p style="color: #065f46; margin-bottom: 1rem;">Aunque suene contraintuitivo, los sistemas de refrigeración de los centros de datos (que a menudo usan circuitos de agua fría para absorber el calor de los chips) requieren plomeros altamente cualificados. Son esenciales para el flujo de trabajo de la IA.</p>
+         <p style="color: #065f46;">Un fontanero especializado en sistemas industriales de refrigeración es tan valioso como un ingeniero de software en la era de la IA.</p>
+       </div>
+ 
+       <div style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-left: 4px solid #f59e0b; padding: 2rem; margin: 2.5rem 0; border-radius: 0.5rem;">
+         <h3 style="color: #92400e; font-size: 1.5rem; margin-bottom: 1rem; font-weight: 600;">🏗️ Albañiles y Carpinteros: La Construcción Física del Futuro</h3>
+         <p style="color: #78350f; margin-bottom: 1rem;">La construcción física de estos centros, edificios que superan los 23,000 metros cuadrados y necesitan cimientos e instalaciones muy específicas, demanda miles de trabajadores de la construcción.</p>
+         <p style="color: #78350f;">Cada nuevo centro de datos de 23,200 metros cuadrados requiere hasta 1,500 trabajadores en obra. Tras su finalización, emplea aproximadamente 50 personas de manera permanente para el mantenimiento.</p>
+       </div>
+ 
+       <div style="text-align: center; margin: 3rem 0;">
+         <img src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&h=600&q=80" alt="Centro de datos moderno con servidores y sistemas de refrigeración" style="width: 100%; max-width: 900px; height: 500px; object-fit: cover; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.15);">
+         <p style="color: #666; font-size: 0.9rem; margin-top: 0.5rem; font-style: italic;">La construcción de centros de datos requiere miles de profesionales especializados en construcción, electricidad y plomería. Cada centro de datos de 23,200 m² necesita hasta 1,500 trabajadores durante su construcción.</p>
+       </div>
+ 
+       <h2 style="color: #1e40af; font-size: 2rem; margin-top: 3rem; margin-bottom: 1.5rem; font-weight: 700;">El Argumento de la Escasez y el Salario</h2>
+       
+       <p>Huang no solo predice la demanda, sino también el impacto económico para estos profesionales. Mientras la IA comienza a automatizar tareas de codificación (el propio CEO afirmó que la programación ya no será una habilidad imprescindible), la necesidad de trabajadores que operen en el mundo físico está en auge.</p>
+       
+       <div style="background: linear-gradient(135deg, #ede9fe 0%, #ddd6fe 100%); border: 2px solid #8b5cf6; padding: 2rem; margin: 2.5rem 0; border-radius: 1rem; text-align: center;">
+         <h3 style="color: #5b21b6; font-size: 1.8rem; margin-bottom: 1rem; font-weight: 700;">💰 Salarios que Superan los USD 100,000</h3>
+         <p style="color: #6d28d9; font-size: 1.2rem; margin-bottom: 1rem; line-height: 1.8;">Esta escasez de talento cualificado en oficios esenciales para la infraestructura tecnológica elevará sus salarios, hasta el punto de que muchos de ellos podrían <strong>superar los USD 100,000 al año</strong> sin requerir el alto costo y el tiempo de una educación universitaria tradicional.</p>
+         <p style="color: #5b21b6; font-size: 1.1rem; font-weight: 600;">El sector de oficios cualificados necesitará <strong>duplicar su fuerza laboral cada año</strong> para satisfacer la demanda.</p>
+       </div>
+ 
+       <p>La IA está creando una bifurcación: por un lado, se automatizan los trabajos de oficina y software; por otro, se disparan los sueldos de aquellos que construyen y mantienen la base física de esa automatización.</p>
+ 
+       <div style="background: #f0fdf4; border-left: 4px solid #10b981; padding: 1.5rem; margin: 2rem 0; border-radius: 0.5rem;">
+         <h3 style="color: #15803d; margin-bottom: 1rem; font-size: 1.3rem;">📊 Los Números no Mienten</h3>
+         <ul style="color: #065f46; padding-left: 1.5rem; line-height: 2;">
+           <li><strong>1,500 trabajadores</strong> necesarios durante la construcción de un centro de datos</li>
+           <li><strong>50 empleos permanentes</strong> para mantenimiento tras la finalización</li>
+           <li><strong>23,000+ metros cuadrados</strong> por centro de datos</li>
+           <li><strong>Duplicación anual</strong> de la demanda de trabajadores cualificados</li>
+         </ul>
+       </div>
+ 
+       <h2 style="color: #1e40af; font-size: 2rem; margin-top: 3rem; margin-bottom: 1.5rem; font-weight: 700;">Conclusión: El Verdadero Poder de las Manos Calificadas</h2>
+       
+       <p>La profecía de Jensen Huang es una llamada de atención. El futuro económico no está solo en las pantallas y los algoritmos, sino en la infraestructura del mundo real. Los oficios tradicionales, armados con habilidades especializadas y una demanda insaciable, están posicionados para ser la vía más segura y rentable hacia la prosperidad. Es hora de dejar de ver las carreras técnicas como opciones de "segunda" y reconocer su valor estratégico en la era de la IA.</p>
+ 
+       <div style="background: #f9fafb; border: 1px solid #e5e7eb; padding: 1.5rem; margin: 2rem 0; border-radius: 0.5rem; border-left: 4px solid #6b7280;">
+         <p style="color: #4b5563; font-size: 0.9rem; margin: 0;">
+           <strong>Fuente:</strong> 
+           <a href="https://www.infobae.com/tecno/2025/10/03/jensen-huang-afirma-que-el-boom-de-los-centros-de-datos-disparara-la-demanda-de-electricistas-fontaneros-y-carpinteros/" target="_blank" rel="noopener noreferrer" style="color: #3b82f6; text-decoration: underline;">
+             Infobae - Jensen Huang afirma que el boom de los centros de datos disparará la demanda de electricistas, fontaneros y carpinteros
+           </a>
+         </p>
+       </div>
+     `,
+    author: "Equipo Sumee",
+    publishDate: "2025-11-04",
+    readTime: "8 min",
+    category: "Tecnología",
+    image:
+      "https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=800&h=400&fit=crop",
+    slug: "millonarios-sin-titulo-universitario-profecia-nvidia",
+    views: 0,
+    tags: [
+      "tecnología",
+      "IA",
+      "trabajo",
+      "futuro",
+      "oficios",
+      "nvidia",
+      "jensen huang",
+    ],
+  },
+  "actualizaciones-seguridad-hogar-2024": {
+    id: "3",
+    title: "Actualizaciones de Seguridad en el Hogar: Tendencias 2024",
     content: `
       <p><strong>Mantener tu hogar seguro ya no se trata solo de cerraduras robustas. El año 2024 trae consigo avances tecnológicos que integran la seguridad con la eficiencia y la inteligencia artificial (IA).</strong></p>
       
@@ -244,18 +329,20 @@ const blogPosts: Record<string, BlogPost> = {
         </div>
       </div>
     `,
-    author: 'Equipo Sumee',
-    publishDate: '2024-01-25',
-    readTime: '6 min',
-    category: 'Seguridad',
-    image: 'https://images.unsplash.com/photo-1581578731548-c6a0c3f2f2c4?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=400&q=80',
-    slug: 'actualizaciones-seguridad-hogar-2024',
+    author: "Equipo Sumee",
+    publishDate: "2024-01-25",
+    readTime: "6 min",
+    category: "Seguridad",
+    image:
+      "https://images.unsplash.com/photo-1581578731548-c6a0c3f2f2c4?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=400&q=80",
+    slug: "actualizaciones-seguridad-hogar-2024",
     views: 1240,
-    tags: ['seguridad', 'tecnología', 'hogar inteligente', 'IA', '2024']
+    tags: ["seguridad", "tecnología", "hogar inteligente", "IA", "2024"],
   },
-  'instalacion-bomba-agua-cdmx': {
-    id: '4',
-    title: 'Instalación de Bomba de Agua en CDMX: Solución al Suministro Irregular',
+  "instalacion-bomba-agua-cdmx": {
+    id: "4",
+    title:
+      "Instalación de Bomba de Agua en CDMX: Solución al Suministro Irregular",
     content: `
       <p><strong>La escasez de agua en la Ciudad de México es una realidad que todos conocemos. Las instalaciones de bombas de agua se han vuelto una necesidad esencial para mantener el suministro constante en el hogar.</strong></p>
       
@@ -355,18 +442,26 @@ const blogPosts: Record<string, BlogPost> = {
         </div>
       </div>
     `,
-    author: 'Equipo Sumee',
-    publishDate: '2024-01-30',
-    readTime: '7 min',
-    category: 'Plomería',
-    image: 'https://images.pexels.com/photos/259239/pexels-photo-259239.jpeg?auto=compress&cs=tinysrgb&w=800&h=400&fit=crop',
-    slug: 'instalacion-bomba-agua-cdmx',
+    author: "Equipo Sumee",
+    publishDate: "2024-01-30",
+    readTime: "7 min",
+    category: "Plomería",
+    image:
+      "https://images.pexels.com/photos/259239/pexels-photo-259239.jpeg?auto=compress&cs=tinysrgb&w=800&h=400&fit=crop",
+    slug: "instalacion-bomba-agua-cdmx",
     views: 1850,
-    tags: ['plomería', 'bomba de agua', 'CDMX', 'suministro agua', 'instalación']
+    tags: [
+      "plomería",
+      "bomba de agua",
+      "CDMX",
+      "suministro agua",
+      "instalación",
+    ],
   },
-  'instalaciones-electricas-riesgos-cdmx': {
-    id: '5',
-    title: 'Instalaciones Eléctricas Fuera de Norma: Peligros Mortales que Debes Conocer',
+  "instalaciones-electricas-riesgos-cdmx": {
+    id: "5",
+    title:
+      "Instalaciones Eléctricas Fuera de Norma: Peligros Mortales que Debes Conocer",
     content: `
       <p><strong>Las instalaciones eléctricas improvisadas en CDMX no son solo un problema estético: son un riesgo mortal para tu familia y tu patrimonio.</strong></p>
       
@@ -481,21 +576,161 @@ const blogPosts: Record<string, BlogPost> = {
         </div>
       </div>
     `,
-    author: 'Equipo Sumee',
-    publishDate: '2024-02-05',
-    readTime: '8 min',
-    category: 'Electricidad',
-    image: 'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=400&q=80',
-    slug: 'instalaciones-electricas-riesgos-cdmx',
+    author: "Equipo Sumee",
+    publishDate: "2024-02-05",
+    readTime: "8 min",
+    category: "Electricidad",
+    image:
+      "https://images.unsplash.com/photo-1621905251189-08b45d6a269e?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=400&q=80",
+    slug: "instalaciones-electricas-riesgos-cdmx",
     views: 2150,
-    tags: ['electricidad', 'instalaciones eléctricas', 'seguridad', 'CFE', 'riesgos', 'CDMX']
-  }
+    tags: [
+      "electricidad",
+      "instalaciones eléctricas",
+      "seguridad",
+      "CFE",
+      "riesgos",
+      "CDMX",
+    ],
+  },
   // Más posts se agregarían aquí...
 };
 
-export default function BlogPostPage() {
-  const params = useParams();
-  const slug = params.slug as string;
+// Generar metadata dinámica para SEO
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const post = blogPosts[slug];
+
+  if (!post) {
+    return {
+      title: "Artículo no encontrado | Sumee App",
+      description: "El artículo que buscas no existe o ha sido movido.",
+    };
+  }
+
+  // Extraer excerpt del contenido HTML (primeros 160 caracteres)
+  const plainTextExcerpt =
+    post.content
+      .replace(/<[^>]*>/g, "")
+      .substring(0, 160)
+      .trim() + "...";
+
+  const baseUrl = "https://www.sumeeapp.com";
+  const url = `${baseUrl}/blog/${slug}`;
+  const title = `${post.title
+    .replace(/💡|🛠️|⚡|🔥|✅|⚠️/g, "")
+    .trim()} | Sumee App`;
+  const description =
+    plainTextExcerpt ||
+    `Lee nuestro artículo sobre ${post.title.toLowerCase()}`;
+
+  return {
+    title,
+    description,
+    keywords: [
+      ...post.tags,
+      post.category.toLowerCase(),
+      "blog sumee",
+      "consejos técnicos",
+      "servicios profesionales CDMX",
+      "técnicos verificados",
+    ],
+    authors: [{ name: post.author }],
+    openGraph: {
+      title,
+      description,
+      url,
+      siteName: "Sumee App",
+      images: [
+        {
+          url: post.image,
+          width: 1200,
+          height: 630,
+          alt: post.title,
+        },
+      ],
+      locale: "es_MX",
+      type: "article",
+      publishedTime: new Date(post.publishDate).toISOString(),
+      authors: [post.author],
+      section: post.category,
+      tags: post.tags,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: [post.image],
+      creator: "@sumeeapp",
+      site: "@sumeeapp",
+    },
+    alternates: {
+      canonical: url,
+    },
+    other: {
+      "article:published_time": new Date(post.publishDate).toISOString(),
+      "article:author": post.author,
+      "article:section": post.category,
+      "article:tag": post.tags.join(", "),
+    },
+  };
+}
+
+// Generar rutas estáticas en build time para mejor SEO
+export async function generateStaticParams() {
+  return Object.keys(blogPosts).map((slug) => ({
+    slug: slug,
+  }));
+}
+
+// Generar structured data JSON-LD para Google
+function generateStructuredData(post: BlogPost) {
+  const baseUrl = "https://www.sumeeapp.com";
+  const url = `${baseUrl}/blog/${post.slug}`;
+
+  return {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    headline: post.title.replace(/💡|🛠️|⚡|🔥|✅|⚠️/g, "").trim(),
+    image: [post.image],
+    datePublished: new Date(post.publishDate).toISOString(),
+    dateModified: new Date(post.publishDate).toISOString(),
+    author: {
+      "@type": "Organization",
+      name: post.author,
+      url: baseUrl,
+    },
+    publisher: {
+      "@type": "Organization",
+      name: "Sumee App",
+      logo: {
+        "@type": "ImageObject",
+        url: `${baseUrl}/logo.png`,
+      },
+    },
+    mainEntityOfPage: {
+      "@type": "WebPage",
+      "@id": url,
+    },
+    description: post.content.replace(/<[^>]*>/g, "").substring(0, 160) + "...",
+    articleSection: post.category,
+    keywords: post.tags.join(", "),
+    wordCount: post.content.replace(/<[^>]*>/g, "").split(/\s+/).length,
+    timeRequired: post.readTime,
+    url,
+  };
+}
+
+interface BlogPostPageProps {
+  params: Promise<{ slug: string }>;
+}
+
+export default async function BlogPostPage({ params }: BlogPostPageProps) {
+  const { slug } = await params;
   const post = blogPosts[slug];
 
   if (!post) {
@@ -504,13 +739,29 @@ export default function BlogPostPage() {
         <Header />
         <main className="flex-grow pt-24 flex items-center justify-center">
           <div className="text-center">
-            <h1 className="text-2xl font-bold text-gray-900 mb-4">Artículo no encontrado</h1>
-            <p className="text-gray-600 mb-8">El artículo que buscas no existe o ha sido movido.</p>
-            <a 
-              href="/blog" 
+            <h1 className="text-2xl font-bold text-gray-900 mb-4">
+              Artículo no encontrado
+            </h1>
+            <p className="text-gray-600 mb-8">
+              El artículo que buscas no existe o ha sido movido.
+            </p>
+            <a
+              href="/blog"
               className="inline-flex items-center text-indigo-600 hover:text-indigo-700 font-medium"
             >
-              <FontAwesomeIcon icon={faArrowLeft} className="mr-2" />
+              <svg
+                className="mr-2 w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M10 19l-7-7m0 0l7-7m-7 7h18"
+                />
+              </svg>
               Volver al Blog
             </a>
           </div>
@@ -520,256 +771,21 @@ export default function BlogPostPage() {
     );
   }
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('es-MX', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
-  };
+  const structuredData = generateStructuredData(post);
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50">
-      <Header />
-      
-      <main className="flex-grow pt-24">
-        {/* Hero del artículo */}
-        <article className="pb-16">
-          <div className="container mx-auto px-4">
-            {/* Breadcrumb */}
-            <nav className="flex items-center space-x-2 text-sm text-gray-600 mb-8">
-              <a href="/" className="hover:text-indigo-600">Inicio</a>
-              <span>/</span>
-              <a href="/blog" className="hover:text-indigo-600">Blog</a>
-              <span>/</span>
-              <span className="text-gray-900">{post.title}</span>
-            </nav>
+    <>
+      {/* Structured Data JSON-LD */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+      />
 
-            {/* Imagen principal */}
-            <div className="relative h-64 md:h-96 mb-8 rounded-2xl overflow-hidden shadow-lg">
-              <img
-                src={post.image}
-                alt={post.title}
-                className="w-full h-full object-cover"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
-              
-              {/* Categoría */}
-              <div className="absolute top-6 left-6">
-                <span className="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-full text-sm font-semibold">
-                  <FontAwesomeIcon icon={faHashtag} className="mr-2 text-xs" />
-                  {post.category}
-                </span>
-              </div>
-            </div>
-
-            {/* Contenido principal */}
-            <div className="max-w-4xl mx-auto">
-              {/* Header del artículo */}
-              <header className="mb-8">
-                <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4 leading-tight">
-                  {post.title}
-                </h1>
-                
-                {/* Metadata */}
-                <div className="flex flex-wrap items-center justify-between gap-4 py-6 border-t border-b border-gray-200">
-                  <div className="flex items-center space-x-6">
-                    <div className="flex items-center space-x-2">
-                      <FontAwesomeIcon icon={faUser} className="text-gray-500" />
-                      <span className="text-gray-700">{post.author}</span>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <FontAwesomeIcon icon={faCalendarAlt} className="text-gray-500" />
-                      <span className="text-gray-700">{formatDate(post.publishDate)}</span>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <FontAwesomeIcon icon={faClock} className="text-gray-500" />
-                      <span className="text-gray-700">{post.readTime} de lectura</span>
-                    </div>
-                    {post.views && (
-                      <div className="flex items-center space-x-2">
-                        <FontAwesomeIcon icon={faEye} className="text-gray-500" />
-                        <span className="text-gray-700">{post.views.toLocaleString()} vistas</span>
-                      </div>
-                    )}
-                  </div>
-                  
-                  {/* Botón compartir */}
-                  <button className="flex items-center space-x-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors duration-200">
-                    <FontAwesomeIcon icon={faShare} />
-                    <span>Compartir</span>
-                  </button>
-                </div>
-              </header>
-
-              {/* Contenido del artículo */}
-              <div 
-                className="prose prose-lg max-w-none mb-12"
-                dangerouslySetInnerHTML={{ __html: post.content }}
-              />
-
-              {/* CTA para el artículo de profesionales */}
-              {post.slug === 'elegir-profesional-perfecto-proyecto' && (
-                <div className="bg-gradient-to-r from-green-500 to-emerald-600 rounded-2xl p-8 text-white shadow-2xl text-center mb-12">
-                  <h2 className="text-3xl font-bold mb-4">
-                    ¡Conviértete en Miembro y Encuentra a tu Próximo Pro!
-                  </h2>
-                  <p className="text-xl text-green-100 mb-8 leading-relaxed">
-                    Solicita tu proyecto hoy mismo y recibe cotizaciones de profesionales que cumplen con todos estos estándares.
-                  </p>
-                  
-                  <a 
-                    href="/membresia"
-                    className="inline-flex items-center bg-white text-green-600 hover:text-green-700 font-bold text-lg px-8 py-4 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200"
-                  >
-                    <span className="mr-3">🚀</span>
-                    ¡Quiero un Técnico Verificado Ahora Mismo!
-                  </a>
-                  
-                  <div className="mt-6 flex flex-wrap justify-center items-center gap-4 text-green-100">
-                    <span className="flex items-center text-sm">
-                      <FontAwesomeIcon icon={faUser} className="mr-2" />
-                      Técnicos Verificados
-                    </span>
-                    <span className="flex items-center text-sm">
-                      <FontAwesomeIcon icon={faHashtag} className="mr-2" />
-                      Seguro y Confiable
-                    </span>
-                    <span className="flex items-center text-sm">
-                      <FontAwesomeIcon icon={faCalendarAlt} className="mr-2" />
-                      Mejores Calificaciones
-                    </span>
-                  </div>
-                </div>
-              )}
-
-              {/* CTA para el artículo de seguridad */}
-              {post.slug === 'actualizaciones-seguridad-hogar-2024' && (
-                <div className="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-2xl p-8 text-white shadow-2xl text-center mb-12">
-                  <h2 className="text-3xl font-bold mb-4">
-                    🛡️ ¡Protege tu Hogar con los Mejores Profesionales!
-                  </h2>
-                  <p className="text-xl text-blue-100 mb-8 leading-relaxed">
-                    No dejes la seguridad de tu hogar al azar. Conecta con técnicos especializados en instalación de sistemas de seguridad y automatización del hogar.
-                  </p>
-                  
-                  <a 
-                    href="/membresia"
-                    className="inline-flex items-center bg-white text-blue-600 hover:text-blue-700 font-bold text-lg px-8 py-4 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200"
-                  >
-                    <span className="mr-3">🔒</span>
-                    ¡Instalar Sistema de Seguridad Ahora!
-                  </a>
-                  
-                  <div className="mt-6 flex flex-wrap justify-center items-center gap-4 text-blue-100">
-                    <span className="flex items-center text-sm">
-                      <FontAwesomeIcon icon={faUser} className="mr-2" />
-                      Especialistas en Seguridad
-                    </span>
-                    <span className="flex items-center text-sm">
-                      <FontAwesomeIcon icon={faHashtag} className="mr-2" />
-                      Tecnología 2024
-                    </span>
-                    <span className="flex items-center text-sm">
-                      <FontAwesomeIcon icon={faCalendarAlt} className="mr-2" />
-                      Instalación Profesional
-                    </span>
-                  </div>
-                </div>
-              )}
-
-              {/* CTA para el artículo de bomba de agua */}
-              {post.slug === 'instalacion-bomba-agua-cdmx' && (
-                <div className="bg-gradient-to-r from-cyan-500 to-blue-600 rounded-2xl p-8 text-white shadow-2xl text-center mb-12">
-                  <h2 className="text-3xl font-bold mb-4">
-                    💧 ¡Soluciona tu Problema de Agua con Profesionales!
-                  </h2>
-                  <p className="text-xl text-cyan-100 mb-8 leading-relaxed">
-                    No más cortes de agua ni baja presión. Conecta con plomeros certificados especializados en instalación de bombas de agua para CDMX.
-                  </p>
-                  
-                  <a 
-                    href="/membresia"
-                    className="inline-flex items-center bg-white text-cyan-600 hover:text-cyan-700 font-bold text-lg px-8 py-4 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200"
-                  >
-                    <span className="mr-3">💧</span>
-                    ¡Instalar Bomba de Agua Ahora!
-                  </a>
-                  
-                  <div className="mt-6 flex flex-wrap justify-center items-center gap-4 text-cyan-100">
-                    <span className="flex items-center text-sm">
-                      <FontAwesomeIcon icon={faUser} className="mr-2" />
-                      Plomeros Certificados
-                    </span>
-                    <span className="flex items-center text-sm">
-                      <FontAwesomeIcon icon={faHashtag} className="mr-2" />
-                      Suministro Garantizado
-                    </span>
-                    <span className="flex items-center text-sm">
-                      <FontAwesomeIcon icon={faCalendarAlt} className="mr-2" />
-                      Instalación Profesional
-                    </span>
-                  </div>
-                </div>
-              )}
-
-              {/* CTA para el artículo de instalaciones eléctricas */}
-              {post.slug === 'instalaciones-electricas-riesgos-cdmx' && (
-                <div className="bg-gradient-to-r from-red-500 to-orange-600 rounded-2xl p-8 text-white shadow-2xl text-center mb-12">
-                  <h2 className="text-3xl font-bold mb-4">
-                    ⚡ ¡Salva tu Hogar: Contrata Solo Electricistas Certificados!
-                  </h2>
-                  <p className="text-xl text-red-100 mb-8 leading-relaxed">
-                    Tu familia está en riesgo. No esperes más. Conecta con electricistas certificados por CFE que instalan según las normas de seguridad más estrictas.
-                  </p>
-                  
-                  <a 
-                    href="/membresia"
-                    className="inline-flex items-center bg-white text-red-600 hover:text-red-700 font-bold text-lg px-8 py-4 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200"
-                  >
-                    <span className="mr-3">⚡</span>
-                    ¡Revisar Instalación Eléctrica Ya!
-                  </a>
-                  
-                  <div className="mt-6 flex flex-wrap justify-center items-center gap-4 text-red-100">
-                    <span className="flex items-center text-sm">
-                      <FontAwesomeIcon icon={faUser} className="mr-2" />
-                      Electricistas CFE
-                    </span>
-                    <span className="flex items-center text-sm">
-                      <FontAwesomeIcon icon={faHashtag} className="mr-2" />
-                      Seguridad Garantizada
-                    </span>
-                    <span className="flex items-center text-sm">
-                      <FontAwesomeIcon icon={faCalendarAlt} className="mr-2" />
-                      Inspección Profesional
-                    </span>
-                  </div>
-                </div>
-              )}
-
-              {/* Tags */}
-              {post.tags && post.tags.length > 0 && (
-                <div className="border-t border-gray-200 pt-8 mb-12">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Etiquetas:</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {post.tags.map((tag) => (
-                      <span 
-                        key={tag}
-                        className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm hover:bg-indigo-100 hover:text-indigo-700 transition-colors duration-200 cursor-pointer"
-                      >
-                        #{tag}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        </article>
-      </main>
-
-      <Footer />
-    </div>
+      <div className="flex flex-col min-h-screen bg-gray-50">
+        <Header />
+        <BlogPostContent post={post} />
+        <Footer />
+      </div>
+    </>
   );
 }
