@@ -145,9 +145,7 @@ export default function ControlPanel({
               <div className="flex items-center space-x-2">
                 <FontAwesomeIcon icon={faStar} className="text-yellow-400" />
                 <span className="text-sm font-medium text-gray-700">
-                  {profesional.calificacion_promedio
-                    ? `${profesional.calificacion_promedio.toFixed(1)}/5.0`
-                    : "5.0/5.0"}
+                  {(profesional.calificacion_promedio ?? 5).toFixed(1)}/5.0
                 </span>
               </div>
             </div>

@@ -25,6 +25,15 @@ export default function ProfesionalDashboardPage() {
   const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
   const [isOnline, setIsOnline] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  
+  // Sincronizar isOnline con el estado del profesional cuando cambia
+  useEffect(() => {
+    if (profesional?.disponibilidad === "disponible") {
+      setIsOnline(true);
+    } else {
+      setIsOnline(false);
+    }
+  }, [profesional?.disponibilidad]);
   const [mobileActiveTab, setMobileActiveTab] = useState<
     "home" | "leads" | "profile" | "stats"
   >("home");
@@ -269,15 +278,19 @@ export default function ProfesionalDashboardPage() {
                 Estado de Disponibilidad
               </h3>
               <OnlineToggle
-                initialStatus={profesional.disponibilidad === "disponible"}
+                initialStatus={isOnline}
                 onStatusChange={async (online) => {
+                  console.log("🔄 onStatusChange llamado con:", online);
                   setIsOnline(online);
                   if (online) {
                     updateLocation(); // Actualizar ubicación inmediatamente
                   }
                   // IMPORTANTE: Refrescar datos del profesional después de cambiar disponibilidad
-                  // Esto asegura que el estado del profesional se actualice en el componente
-                  await refetchData();
+                  // Esperar un poco para asegurar que la BD se haya actualizado
+                  setTimeout(async () => {
+                    await refetchData();
+                    console.log("✅ Datos refrescados después de cambio de disponibilidad");
+                  }, 500);
                 }}
                 onLocationUpdate={(lat, lng) => {
                   setCurrentLocation({ lat, lng });

@@ -79,25 +79,51 @@ export function useProfesionalData(): UseProfesionalDataReturn {
 
   useEffect(() => {
     console.log('🚀 Iniciando useProfesionalData hook');
+    let isMounted = true;
+    let authListener: { subscription: { unsubscribe: () => void } } | null = null;
+    let timeoutId: NodeJS.Timeout | null = null;
+    
+    // Timeout de seguridad para evitar que se quede cargando indefinidamente
+    timeoutId = setTimeout(() => {
+      if (isMounted) {
+        console.warn('⚠️ Timeout: El hook lleva mucho tiempo cargando, estableciendo isLoading = false');
+        setIsLoading(false);
+        setError('Tiempo de espera agotado. Por favor, recarga la página.');
+      }
+    }, 10000); // 10 segundos máximo
     
     // Obtener sesión inicial
     supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (!isMounted) return;
+      
+      if (timeoutId) clearTimeout(timeoutId);
+      
       const currentUser = session?.user ?? null;
+      console.log('🔍 Sesión obtenida:', currentUser ? `Usuario: ${currentUser.id}` : 'Sin sesión');
       setUser(currentUser);
       
       if (currentUser) {
         console.log('👤 Usuario encontrado en sesión inicial:', currentUser.id);
-        fetchData(currentUser.id);
+        await fetchData(currentUser.id);
       } else {
-        console.log('❌ No hay usuario en sesión inicial');
+        console.log('❌ No hay usuario en sesión inicial - finalizando carga');
         setProfesional(null);
         setLeads([]);
         setIsLoading(false);
       }
+    }).catch((error) => {
+      console.error('❌ Error obteniendo sesión:', error);
+      if (isMounted) {
+        setError('Error al obtener la sesión de usuario');
+        setIsLoading(false);
+      }
+      if (timeoutId) clearTimeout(timeoutId);
     });
 
     // Escuchar cambios de autenticación
-    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
+    const { data: listener } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (!isMounted) return;
+      
       console.log('🔄 Auth state change:', event, session?.user?.id);
       
       const currentUser = session?.user ?? null;
@@ -105,7 +131,7 @@ export function useProfesionalData(): UseProfesionalDataReturn {
 
       if (currentUser) {
         console.log('👤 Usuario autenticado, obteniendo datos...');
-        fetchData(currentUser.id);
+        await fetchData(currentUser.id);
       } else {
         console.log('🚪 Usuario desautenticado, limpiando datos...');
         setProfesional(null);
@@ -113,12 +139,19 @@ export function useProfesionalData(): UseProfesionalDataReturn {
         setIsLoading(false);
       }
     });
+    
+    authListener = listener;
 
     return () => {
       console.log('🧹 Limpiando auth listener');
-      authListener.subscription.unsubscribe();
+      isMounted = false;
+      if (timeoutId) clearTimeout(timeoutId);
+      if (authListener) {
+        authListener.subscription.unsubscribe();
+      }
     };
-  }, [fetchData]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Array vacío - solo ejecutar una vez al montar
 
   return { profesional, leads, isLoading, error, refetchData };
 }
