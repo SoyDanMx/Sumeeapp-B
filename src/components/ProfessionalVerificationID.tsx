@@ -1,7 +1,7 @@
 // src/components/ProfessionalVerificationID.tsx
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import Image from "next/image";
 import QRCodeSVG from "react-qr-code";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -17,6 +17,8 @@ import {
   faQrcode,
   faPalette,
   faFilePdf,
+  faPercent,
+  faMap,
 } from "@fortawesome/free-solid-svg-icons";
 import { Profesional, Lead } from "@/types/supabase";
 
@@ -80,8 +82,13 @@ export default function ProfessionalVerificationID({
 }: ProfessionalVerificationIDProps) {
   const [selectedStyle, setSelectedStyle] =
     useState<CredentialStyle>("classic");
+  const [isDownloading, setIsDownloading] = useState<"image" | "pdf" | null>(
+    null
+  );
+  const credentialRef = useRef<HTMLDivElement>(null);
 
   // Calcular tasa de aceptación
+  // La tasa de aceptación se calcula como: (leads aceptados / leads disponibles) * 100
   const acceptedLeads = leads.filter(
     (lead) => lead.profesional_asignado_id === profesional.user_id
   );
@@ -91,13 +98,17 @@ export default function ProfessionalVerificationID({
       ? Math.round((acceptedLeads.length / totalLeadsAvailable) * 100)
       : 0;
 
-  // Calificar estrellas
+  // Calificar estrellas - SIEMPRE mostrar 5 estrellas
   const rating = profesional.calificacion_promedio || 0;
   const fullStars = Math.floor(rating);
   const hasHalfStar = rating % 1 >= 0.5;
+  // Siempre mostramos 5 estrellas, rellenas según la calificación
 
   // Obtener áreas de servicio
   const areasServicio = profesional.areas_servicio || [];
+
+  // Obtener zonas de trabajo
+  const workZones = profesional.work_zones || [];
 
   // Número de trabajos completados
   const completedLeads = leads.filter(
@@ -107,59 +118,132 @@ export default function ProfessionalVerificationID({
   ).length;
 
   // URL de la página del profesional
-  const professionalUrl = `${window.location.origin}/profesional/${profesional.user_id}`;
+  const professionalUrl =
+    typeof window !== "undefined"
+      ? `${window.location.origin}/profesional/${profesional.user_id}`
+      : "";
 
   // Obtener configuración de estilo actual
   const styleConfig = STYLE_CONFIGS[selectedStyle];
 
-  // Función para descargar la credencial como imagen (usando html2canvas)
+  // Función mejorada para descargar la credencial como imagen
   const handleDownloadImage = async () => {
-    try {
-      const html2canvas = (await import("html2canvas")).default;
-      const element = document.getElementById("professional-credential");
-      if (!element) return;
+    if (!credentialRef.current) {
+      alert("Error: No se pudo encontrar la credencial.");
+      return;
+    }
 
-      const canvas = await html2canvas(element, {
+    setIsDownloading("image");
+    try {
+      // Importar html2canvas dinámicamente
+      const html2canvas = (await import("html2canvas")).default;
+
+      // Esperar un momento para asegurar que todo esté renderizado
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
+      // Configuración mejorada para html2canvas
+      const canvas = await html2canvas(credentialRef.current, {
         backgroundColor: "#ffffff",
-        scale: 2,
+        scale: 3, // Mayor resolución para mejor calidad
         logging: false,
+        useCORS: true, // Permitir imágenes de otros dominios
+        allowTaint: false,
+        removeContainer: true,
+        imageTimeout: 15000, // Timeout más largo para imágenes
+        onclone: (clonedDoc) => {
+          // Asegurar que las imágenes se carguen en el documento clonado
+          const clonedElement = clonedDoc.getElementById(
+            "professional-credential"
+          );
+          if (clonedElement) {
+            // Forzar carga de imágenes
+            const images = clonedElement.getElementsByTagName("img");
+            Array.from(images).forEach((img) => {
+              if (!img.complete) {
+                img.crossOrigin = "anonymous";
+              }
+            });
+          }
+        },
       });
 
-      const link = document.createElement("a");
-      link.download = `credencial-${
-        profesional.full_name || "profesional"
-      }.png`;
-      link.href = canvas.toDataURL("image/png");
-      link.click();
-    } catch (error) {
+      // Convertir canvas a blob para mejor compatibilidad
+      canvas.toBlob((blob) => {
+        if (!blob) {
+          alert("Error al generar la imagen. Intenta de nuevo.");
+          setIsDownloading(null);
+          return;
+        }
+
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.download = `credencial-${
+          profesional.full_name?.replace(/\s+/g, "-") || "profesional"
+        }.png`;
+        link.href = url;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        setIsDownloading(null);
+      }, "image/png");
+    } catch (error: any) {
       console.error("Error al descargar credencial:", error);
-      alert("Error al descargar la credencial. Intenta de nuevo.");
+      alert(
+        `Error al descargar la credencial: ${
+          error.message || "Intenta de nuevo."
+        }`
+      );
+      setIsDownloading(null);
     }
   };
 
-  // Función para descargar la credencial como PDF
+  // Función mejorada para descargar la credencial como PDF
   const handleDownloadPDF = async () => {
-    try {
-      const html2pdf = (await import("html2pdf.js")).default;
-      const element = document.getElementById("professional-credential");
-      if (!element) return;
+    if (!credentialRef.current) {
+      alert("Error: No se pudo encontrar la credencial.");
+      return;
+    }
 
+    setIsDownloading("pdf");
+    try {
+      // Importar html2pdf dinámicamente
+      const html2pdf = (await import("html2pdf.js")).default;
+
+      // Esperar un momento para asegurar que todo esté renderizado
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
+      // Configuración mejorada para html2pdf
       const opt = {
-        margin: [10, 10, 10, 10] as [number, number, number, number],
-        filename: `credencial-${profesional.full_name || "profesional"}.pdf`,
-        image: { type: "jpeg" as const, quality: 0.98 },
-        html2canvas: { scale: 2, logging: false },
+        margin: [5, 5, 5, 5] as [number, number, number, number],
+        filename: `credencial-${
+          profesional.full_name?.replace(/\s+/g, "-") || "profesional"
+        }.pdf`,
+        image: { type: "jpeg" as const, quality: 0.95 },
+        html2canvas: {
+          scale: 2,
+          logging: false,
+          useCORS: true,
+          allowTaint: false,
+          imageTimeout: 15000,
+        },
         jsPDF: {
           unit: "mm" as const,
-          format: "a4" as const,
+          format: [210, 297] as [number, number], // A4
           orientation: "portrait" as const,
+          compress: true,
         },
+        pagebreak: { mode: ["avoid-all", "css", "legacy"] },
       };
 
-      await html2pdf().set(opt).from(element).save();
-    } catch (error) {
+      await html2pdf().set(opt).from(credentialRef.current).save();
+      setIsDownloading(null);
+    } catch (error: any) {
       console.error("Error al descargar PDF:", error);
-      alert("Error al descargar el PDF. Intenta de nuevo.");
+      alert(
+        `Error al descargar el PDF: ${error.message || "Intenta de nuevo."}`
+      );
+      setIsDownloading(null);
     }
   };
 
@@ -225,50 +309,58 @@ export default function ProfessionalVerificationID({
         </div>
       )}
 
-      {/* Credencial */}
+      {/* Credencial - Diseño mejorado con UX/UI profesional */}
       <div
+        ref={credentialRef}
         id="professional-credential"
-        className={`relative bg-gradient-to-br ${styleConfig.backgroundGradient} rounded-2xl shadow-2xl p-8 border-4 ${styleConfig.borderColor} max-w-2xl mx-auto`}
+        className={`relative bg-gradient-to-br ${styleConfig.backgroundGradient} rounded-3xl shadow-2xl overflow-hidden border-4 ${styleConfig.borderColor} max-w-2xl mx-auto`}
       >
-        {/* Header con logo y verificación */}
+        {/* Header con logo y verificación - Diseño mejorado */}
         <div
-          className={`flex items-center justify-between mb-6 pb-6 border-b-2 ${styleConfig.borderColor}`}
+          className={`relative px-8 pt-8 pb-6 border-b-2 ${styleConfig.borderColor} bg-white/80 backdrop-blur-sm`}
         >
-          <div className="flex items-center space-x-4">
-            <div className="relative w-16 h-16">
-              <Image
-                src="/logo.png"
-                alt="Sumee Logo"
-                fill
-                className="object-contain"
-                priority
-              />
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <div className="relative w-20 h-20 flex-shrink-0">
+                <Image
+                  src="/logo.png"
+                  alt="Sumee Logo"
+                  fill
+                  className="object-contain"
+                  priority
+                  unoptimized
+                />
+              </div>
+              <div>
+                <h3
+                  className="text-3xl font-black tracking-tight"
+                  style={{ color: styleConfig.primaryColor }}
+                >
+                  Sumee
+                </h3>
+                <p className="text-xs text-gray-600 font-medium">
+                  Plataforma de Servicios Profesionales
+                </p>
+              </div>
             </div>
-            <div>
-              <h3
-                className="text-2xl font-bold"
-                style={{ color: styleConfig.primaryColor }}
-              >
-                Sumee
-              </h3>
-              <p className="text-sm text-gray-600">Plataforma de Servicios</p>
+            <div
+              className="flex items-center space-x-2 text-white px-5 py-2.5 rounded-full shadow-lg font-bold text-sm"
+              style={{
+                background: `linear-gradient(135deg, ${styleConfig.accentColor}, ${styleConfig.primaryColor})`,
+              }}
+            >
+              <FontAwesomeIcon icon={faShieldAlt} className="text-lg" />
+              <span>Verificado</span>
             </div>
-          </div>
-          <div
-            className="flex items-center space-x-2 text-white px-4 py-2 rounded-full shadow-lg"
-            style={{ backgroundColor: styleConfig.accentColor }}
-          >
-            <FontAwesomeIcon icon={faShieldAlt} className="text-lg" />
-            <span className="font-bold text-sm">Profesional Verificado</span>
           </div>
         </div>
 
-        {/* Información del profesional */}
-        <div className="space-y-6">
-          {/* Foto y nombre */}
-          <div className="flex items-center space-x-6">
+        {/* Contenido principal - Diseño mejorado */}
+        <div className="p-8 space-y-6">
+          {/* Foto y nombre - Diseño mejorado */}
+          <div className="flex items-start space-x-6">
             <div
-              className="relative w-32 h-32 rounded-full overflow-hidden border-4 shadow-xl"
+              className="relative w-36 h-36 rounded-2xl overflow-hidden border-4 shadow-xl flex-shrink-0"
               style={{ borderColor: styleConfig.primaryColor }}
             >
               {profesional.avatar_url ? (
@@ -277,10 +369,11 @@ export default function ProfessionalVerificationID({
                   alt={profesional.full_name || "Profesional"}
                   fill
                   className="object-cover"
+                  unoptimized
                 />
               ) : (
                 <div
-                  className="w-full h-full flex items-center justify-center text-white text-4xl font-bold"
+                  className="w-full h-full flex items-center justify-center text-white text-5xl font-black"
                   style={{
                     background: `linear-gradient(135deg, ${styleConfig.primaryColor}, ${styleConfig.secondaryColor})`,
                   }}
@@ -289,134 +382,197 @@ export default function ProfessionalVerificationID({
                 </div>
               )}
             </div>
-            <div className="flex-1">
-              <h2 className="text-3xl font-bold text-gray-900 mb-2">
+            <div className="flex-1 min-w-0">
+              <h2 className="text-3xl font-black text-gray-900 mb-3 leading-tight">
                 {profesional.full_name || "Nombre no disponible"}
               </h2>
-              <div className="flex items-center space-x-4 text-gray-600">
-                {profesional.numero_imss && (
-                  <div className="flex items-center space-x-2">
-                    <FontAwesomeIcon
-                      icon={faIdCard}
-                      style={{ color: styleConfig.primaryColor }}
-                    />
-                    <span className="text-sm">
-                      IMSS: {profesional.numero_imss}
-                    </span>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Calificación */}
-          <div className="bg-white rounded-xl p-4 border-2 border-yellow-200 shadow-md">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-semibold text-gray-600 mb-1">
-                  Calificación Promedio
-                </p>
-                <div className="flex items-center space-x-2">
-                  {Array.from({ length: 5 }, (_, i) => (
-                    <FontAwesomeIcon
-                      key={i}
-                      icon={faStar}
-                      className={`text-xl ${
-                        i < fullStars
-                          ? "text-yellow-400"
-                          : i === fullStars && hasHalfStar
-                          ? "text-yellow-300"
-                          : "text-gray-300"
-                      }`}
-                    />
-                  ))}
-                  <span className="font-semibold text-gray-700 ml-2">
-                    {rating > 0 ? rating.toFixed(1) : "Sin calificar"}
+              {profesional.numero_imss && (
+                <div className="flex items-center space-x-2 text-gray-600 mb-2">
+                  <FontAwesomeIcon
+                    icon={faIdCard}
+                    className="text-sm"
+                    style={{ color: styleConfig.primaryColor }}
+                  />
+                  <span className="text-sm font-medium">
+                    IMSS: {profesional.numero_imss}
                   </span>
                 </div>
-              </div>
+              )}
               {completedLeads > 0 && (
-                <div className="text-right">
-                  <p className="text-xs text-gray-500">Trabajos completados</p>
-                  <p
-                    className="text-2xl font-bold"
+                <div className="flex items-center space-x-2 text-gray-600">
+                  <FontAwesomeIcon
+                    icon={faBriefcase}
+                    className="text-sm"
                     style={{ color: styleConfig.primaryColor }}
-                  >
-                    {completedLeads}
-                  </p>
+                  />
+                  <span className="text-sm font-semibold">
+                    {completedLeads} trabajo{completedLeads !== 1 ? "s" : ""}{" "}
+                    completado{completedLeads !== 1 ? "s" : ""}
+                  </span>
                 </div>
               )}
             </div>
           </div>
 
-          {/* Tasa de aceptación */}
-          {totalLeadsAvailable > 0 && (
-            <div className="bg-white rounded-xl p-4 border-2 border-green-200 shadow-md">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-semibold text-gray-600 mb-1">
-                    Tasa de Aceptación
-                  </p>
-                  <p className="text-3xl font-bold text-green-600">
-                    {acceptanceRate}%
-                  </p>
-                  {acceptedLeads.length > 0 && (
+          {/* Grid de métricas - Calificación y Tasa de Aceptación */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Calificación Promedio - SIEMPRE 5 estrellas */}
+            <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-5 border-2 border-yellow-200 shadow-lg">
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-xs font-bold text-gray-600 uppercase tracking-wide">
+                  Calificación
+                </p>
+                <FontAwesomeIcon
+                  icon={faStar}
+                  className="text-yellow-400 text-lg"
+                />
+              </div>
+              <div className="flex items-center space-x-2 mb-2">
+                {/* SIEMPRE mostrar 5 estrellas */}
+                {Array.from({ length: 5 }, (_, i) => (
+                  <FontAwesomeIcon
+                    key={i}
+                    icon={faStar}
+                    className={`text-2xl ${
+                      i < fullStars
+                        ? "text-yellow-400"
+                        : i === fullStars && hasHalfStar
+                        ? "text-yellow-300"
+                        : "text-gray-300"
+                    }`}
+                  />
+                ))}
+              </div>
+              <p className="text-2xl font-black text-gray-900">
+                {rating > 0 ? rating.toFixed(1) : "0.0"}{" "}
+                <span className="text-sm font-normal text-gray-500">/ 5.0</span>
+              </p>
+              {rating === 0 && (
+                <p className="text-xs text-gray-500 mt-1">Sin calificar aún</p>
+              )}
+            </div>
+
+            {/* Tasa de Aceptación - Nuevo diseño mejorado */}
+            <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-5 border-2 border-green-200 shadow-lg">
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-xs font-bold text-gray-600 uppercase tracking-wide">
+                  Tasa de Aceptación
+                </p>
+                <FontAwesomeIcon
+                  icon={faPercent}
+                  className="text-green-500 text-lg"
+                />
+              </div>
+              <div className="flex items-center space-x-3 mb-2">
+                <p
+                  className="text-4xl font-black"
+                  style={{ color: styleConfig.accentColor }}
+                >
+                  {acceptanceRate}%
+                </p>
+                {totalLeadsAvailable > 0 && (
+                  <div className="flex-1">
+                    <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                      <div
+                        className="h-full rounded-full transition-all duration-500"
+                        style={{
+                          width: `${acceptanceRate}%`,
+                          backgroundColor: styleConfig.accentColor,
+                        }}
+                      />
+                    </div>
                     <p className="text-xs text-gray-500 mt-1">
                       {acceptedLeads.length} de {totalLeadsAvailable} leads
                     </p>
-                  )}
-                </div>
+                  </div>
+                )}
+              </div>
+              {totalLeadsAvailable === 0 && (
+                <p className="text-xs text-gray-500">Aún no hay datos</p>
+              )}
+            </div>
+          </div>
+
+          {/* Especialidades - CON "Especialista en" */}
+          {areasServicio.length > 0 && (
+            <div
+              className="bg-white/90 backdrop-blur-sm rounded-2xl p-5 border-2 shadow-lg"
+              style={{ borderColor: styleConfig.primaryColor }}
+            >
+              <div className="flex items-center space-x-3 mb-4">
                 <FontAwesomeIcon
-                  icon={faCheckCircle}
-                  className="text-4xl text-green-400"
+                  icon={faBriefcase}
+                  className="text-xl"
+                  style={{ color: styleConfig.primaryColor }}
                 />
+                <div>
+                  <p className="text-sm font-bold text-gray-700">
+                    Especialista en
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    Áreas de servicio y especialidades
+                  </p>
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-2.5">
+                {areasServicio.map((area, index) => (
+                  <span
+                    key={index}
+                    className="px-4 py-2 rounded-xl text-sm font-bold text-white shadow-md"
+                    style={{
+                      background: `linear-gradient(135deg, ${styleConfig.primaryColor}, ${styleConfig.secondaryColor})`,
+                    }}
+                  >
+                    {area}
+                  </span>
+                ))}
               </div>
             </div>
           )}
 
-          {/* Área de servicio y oficios */}
-          <div
-            className="bg-white rounded-xl p-4 border-2 shadow-md"
-            style={{ borderColor: styleConfig.primaryColor }}
-          >
-            <div className="flex items-start space-x-3 mb-3">
-              <FontAwesomeIcon
-                icon={faMapMarkerAlt}
-                className="text-xl mt-1"
-                style={{ color: styleConfig.primaryColor }}
-              />
-              <div className="flex-1">
-                <p className="text-sm font-semibold text-gray-600 mb-2">
-                  Áreas de Servicio
-                </p>
-                {areasServicio.length > 0 ? (
-                  <div className="flex flex-wrap gap-2">
-                    {areasServicio.map((area, index) => (
-                      <span
-                        key={index}
-                        className="px-3 py-1 rounded-full text-sm font-medium text-white"
-                        style={{ backgroundColor: styleConfig.primaryColor }}
-                      >
-                        {area}
-                      </span>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-sm text-gray-500 italic">
-                    No se han definido áreas de servicio
+          {/* Zonas de Trabajo - NUEVO */}
+          {workZones.length > 0 && (
+            <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-5 border-2 border-blue-200 shadow-lg">
+              <div className="flex items-center space-x-3 mb-4">
+                <FontAwesomeIcon
+                  icon={faMap}
+                  className="text-xl text-blue-600"
+                />
+                <div>
+                  <p className="text-sm font-bold text-gray-700">
+                    Zonas de Trabajo
                   </p>
-                )}
+                  <p className="text-xs text-gray-500">
+                    Ubicaciones donde presto servicios
+                  </p>
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-2.5">
+                {workZones.map((zone, index) => (
+                  <span
+                    key={index}
+                    className="px-4 py-2 rounded-xl text-sm font-semibold bg-blue-50 text-blue-700 border-2 border-blue-200"
+                  >
+                    <FontAwesomeIcon
+                      icon={faMapMarkerAlt}
+                      className="mr-2 text-blue-500"
+                    />
+                    {zone}
+                  </span>
+                ))}
               </div>
             </div>
-          </div>
+          )}
 
-          {/* QR Code y fecha */}
+          {/* QR Code y fecha - Diseño mejorado */}
           <div
-            className={`flex items-center justify-between pt-4 border-t-2 ${styleConfig.borderColor}`}
+            className={`flex items-center justify-between pt-6 border-t-2 ${styleConfig.borderColor}`}
           >
-            <div className="text-xs text-gray-500">
-              <p>Fecha de verificación:</p>
-              <p className="font-semibold">
+            <div className="text-sm">
+              <p className="text-gray-500 font-medium mb-1">
+                Fecha de verificación:
+              </p>
+              <p className="font-black text-gray-900">
                 {new Date().toLocaleDateString("es-MX", {
                   year: "numeric",
                   month: "long",
@@ -425,10 +581,10 @@ export default function ProfessionalVerificationID({
               </p>
             </div>
             <div className="flex flex-col items-center space-y-2">
-              <div className="bg-white p-2 rounded-lg shadow-md">
+              <div className="bg-white p-3 rounded-xl shadow-lg border-2 border-gray-200">
                 <QRCodeSVG
                   value={professionalUrl}
-                  size={80}
+                  size={100}
                   level="H"
                   bgColor="#FFFFFF"
                   fgColor={styleConfig.primaryColor}
@@ -438,10 +594,10 @@ export default function ProfessionalVerificationID({
                 className="flex items-center space-x-2"
                 style={{ color: styleConfig.primaryColor }}
               >
-                <FontAwesomeIcon icon={faQrcode} className="text-sm" />
-                <span className="text-xs font-medium">Código QR</span>
+                <FontAwesomeIcon icon={faQrcode} className="text-base" />
+                <span className="text-xs font-bold">Código QR</span>
               </div>
-              <p className="text-xs text-gray-500 text-center max-w-[80px]">
+              <p className="text-xs text-gray-500 text-center max-w-[100px] font-medium">
                 Escanea para verificar
               </p>
             </div>
@@ -449,40 +605,74 @@ export default function ProfessionalVerificationID({
         </div>
       </div>
 
-      {/* Botones de acción */}
-      <div className="flex flex-wrap items-center justify-center gap-3">
+      {/* Botones de acción - Diseño mejorado */}
+      <div className="flex flex-wrap items-center justify-center gap-4">
         <button
           onClick={handleDownloadImage}
-          className="flex items-center space-x-2 px-6 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors duration-200 shadow-lg hover:shadow-xl"
+          disabled={isDownloading !== null}
+          className={`flex items-center space-x-3 px-6 py-3.5 bg-gradient-to-r from-indigo-600 to-blue-600 text-white rounded-xl hover:from-indigo-700 hover:to-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed font-bold ${
+            isDownloading === "image" ? "animate-pulse" : ""
+          }`}
         >
-          <FontAwesomeIcon icon={faDownload} />
-          <span>Descargar Imagen</span>
+          {isDownloading === "image" ? (
+            <>
+              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+              <span>Generando...</span>
+            </>
+          ) : (
+            <>
+              <FontAwesomeIcon icon={faDownload} />
+              <span>Descargar Imagen</span>
+            </>
+          )}
         </button>
         <button
           onClick={handleDownloadPDF}
-          className="flex items-center space-x-2 px-6 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 transition-colors duration-200 shadow-lg hover:shadow-xl"
+          disabled={isDownloading !== null}
+          className={`flex items-center space-x-3 px-6 py-3.5 bg-gradient-to-r from-red-600 to-pink-600 text-white rounded-xl hover:from-red-700 hover:to-pink-700 transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed font-bold ${
+            isDownloading === "pdf" ? "animate-pulse" : ""
+          }`}
         >
-          <FontAwesomeIcon icon={faFilePdf} />
-          <span>Descargar PDF</span>
+          {isDownloading === "pdf" ? (
+            <>
+              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+              <span>Generando PDF...</span>
+            </>
+          ) : (
+            <>
+              <FontAwesomeIcon icon={faFilePdf} />
+              <span>Descargar PDF</span>
+            </>
+          )}
         </button>
         <button
           onClick={handleShare}
-          className="flex items-center space-x-2 px-6 py-3 bg-white border-2 border-indigo-300 text-indigo-600 rounded-xl hover:bg-indigo-50 transition-colors duration-200"
+          disabled={isDownloading !== null}
+          className="flex items-center space-x-3 px-6 py-3.5 bg-white border-2 border-indigo-300 text-indigo-600 rounded-xl hover:bg-indigo-50 transition-all duration-200 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed font-bold"
         >
           <FontAwesomeIcon icon={faShare} />
           <span>Compartir</span>
         </button>
       </div>
 
-      {/* Mensaje informativo */}
-      <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
-        <div className="flex items-start space-x-3">
-          <FontAwesomeIcon icon={faBriefcase} className="text-blue-500 mt-1" />
+      {/* Mensaje informativo - Diseño mejorado */}
+      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-2xl p-5 shadow-md">
+        <div className="flex items-start space-x-4">
+          <div
+            className="flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center"
+            style={{ backgroundColor: styleConfig.primaryColor + "20" }}
+          >
+            <FontAwesomeIcon
+              icon={faBriefcase}
+              style={{ color: styleConfig.primaryColor }}
+              className="text-xl"
+            />
+          </div>
           <div>
-            <p className="font-semibold text-blue-900 mb-1">
+            <p className="font-bold text-gray-900 mb-2 text-lg">
               ¿Qué es esta credencial?
             </p>
-            <p className="text-sm text-blue-700">
+            <p className="text-sm text-gray-700 leading-relaxed">
               Esta credencial se enviará automáticamente a los clientes cuando
               aceptes un trabajo. Les da certeza y seguridad de que eres un
               profesional verificado por Sumee. El código QR permite verificar
@@ -523,46 +713,75 @@ export function generateCredentialHTML(
       lead.estado === "completado"
   ).length;
 
+  // Obtener zonas de trabajo
+  const workZones = profesional.work_zones || [];
+  const areasServicio = profesional.areas_servicio || [];
+  const rating = profesional.calificacion_promedio || 0;
+
   return `
-    <div style="max-width: 600px; margin: 0 auto; background: white; border-radius: 16px; padding: 32px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-      <div style="text-align: center; margin-bottom: 24px;">
-        <h2 style="color: ${styleConfig.primaryColor}; margin: 0;">Sumee</h2>
-        <p style="color: #666; margin: 4px 0 0 0;">Plataforma de Servicios</p>
-        <div style="display: inline-block; background: ${
+    <div style="max-width: 600px; margin: 0 auto; background: white; border-radius: 24px; padding: 32px; box-shadow: 0 8px 16px rgba(0,0,0,0.1);">
+      <div style="text-align: center; margin-bottom: 24px; padding-bottom: 24px; border-bottom: 2px solid #e5e7eb;">
+        <h2 style="color: ${
+          styleConfig.primaryColor
+        }; margin: 0; font-size: 28px; font-weight: 900;">Sumee</h2>
+        <p style="color: #666; margin: 4px 0 0 0; font-size: 12px;">Plataforma de Servicios Profesionales</p>
+        <div style="display: inline-block; background: linear-gradient(135deg, ${
           styleConfig.accentColor
-        }; color: white; padding: 8px 16px; border-radius: 20px; margin-top: 8px;">
+        }, ${
+    styleConfig.primaryColor
+  }); color: white; padding: 10px 20px; border-radius: 25px; margin-top: 12px; font-weight: 700;">
           ✓ Profesional Verificado
         </div>
       </div>
       <div style="text-align: center; margin-bottom: 24px;">
-        <h3 style="color: #1f2937; margin: 0 0 8px 0;">${
+        <h3 style="color: #1f2937; margin: 0 0 8px 0; font-size: 24px; font-weight: 900;">${
           profesional.full_name || "Profesional"
         }</h3>
         ${
           profesional.numero_imss
-            ? `<p style="color: #666; margin: 4px 0;">IMSS: ${profesional.numero_imss}</p>`
+            ? `<p style="color: #666; margin: 4px 0; font-size: 14px;">IMSS: ${profesional.numero_imss}</p>`
             : ""
         }
       </div>
-      <div style="background: #f9fafb; border-radius: 12px; padding: 16px; margin-bottom: 16px;">
-        <p style="color: #374151; margin: 0 0 8px 0; font-weight: 600;">Calificación: ${
-          profesional.calificacion_promedio
-            ? profesional.calificacion_promedio.toFixed(1)
-            : "Sin calificar"
-        }/5.0</p>
-        <p style="color: #374151; margin: 0 0 8px 0;">Trabajos completados: ${completedLeads}</p>
-        ${
-          totalLeadsAvailable > 0
-            ? `<p style="color: #374151; margin: 0;">Tasa de aceptación: ${acceptanceRate}%</p>`
-            : ""
-        }
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
+        <div style="background: #fef3c7; border-radius: 16px; padding: 16px; border: 2px solid #fde68a;">
+          <p style="color: #374151; margin: 0 0 8px 0; font-weight: 700; font-size: 11px; text-transform: uppercase;">Calificación</p>
+          <p style="color: #1f2937; margin: 0; font-size: 24px; font-weight: 900;">${
+            rating > 0 ? rating.toFixed(1) : "0.0"
+          } <span style="font-size: 14px; font-weight: 400; color: #6b7280;">/ 5.0</span></p>
+        </div>
+        <div style="background: #d1fae5; border-radius: 16px; padding: 16px; border: 2px solid #a7f3d0;">
+          <p style="color: #374151; margin: 0 0 8px 0; font-weight: 700; font-size: 11px; text-transform: uppercase;">Tasa de Aceptación</p>
+          <p style="color: ${
+            styleConfig.accentColor
+          }; margin: 0; font-size: 24px; font-weight: 900;">${acceptanceRate}%</p>
+          ${
+            totalLeadsAvailable > 0
+              ? `<p style="color: #6b7280; margin: 4px 0 0 0; font-size: 12px;">${acceptedLeads.length} de ${totalLeadsAvailable} leads</p>`
+              : '<p style="color: #6b7280; margin: 4px 0 0 0; font-size: 12px;">Aún no hay datos</p>'
+          }
+        </div>
       </div>
       ${
-        profesional.areas_servicio && profesional.areas_servicio.length > 0
+        areasServicio.length > 0
           ? `
-        <div style="margin-bottom: 16px;">
-          <p style="color: #374151; margin: 0 0 8px 0; font-weight: 600;">Áreas de Servicio:</p>
-          <p style="color: #666; margin: 0;">${profesional.areas_servicio.join(
+        <div style="background: #f9fafb; border-radius: 16px; padding: 16px; margin-bottom: 16px; border: 2px solid ${
+          styleConfig.primaryColor
+        }40;">
+          <p style="color: #374151; margin: 0 0 12px 0; font-weight: 700; font-size: 14px;">Especialista en</p>
+          <p style="color: #666; margin: 0; font-size: 14px; line-height: 1.8;">${areasServicio.join(
+            ", "
+          )}</p>
+        </div>
+      `
+          : ""
+      }
+      ${
+        workZones.length > 0
+          ? `
+        <div style="background: #eff6ff; border-radius: 16px; padding: 16px; margin-bottom: 16px; border: 2px solid #bfdbfe;">
+          <p style="color: #374151; margin: 0 0 12px 0; font-weight: 700; font-size: 14px;">📍 Zonas de Trabajo</p>
+          <p style="color: #1e40af; margin: 0; font-size: 14px; line-height: 1.8;">${workZones.join(
             ", "
           )}</p>
         </div>
@@ -570,10 +789,10 @@ export function generateCredentialHTML(
           : ""
       }
       <div style="text-align: center; margin-top: 24px; padding-top: 24px; border-top: 2px solid #e5e7eb;">
-        <p style="color: #666; font-size: 12px; margin: 0;">Verifica esta credencial en:</p>
+        <p style="color: #666; font-size: 12px; margin: 0 0 8px 0;">Verifica esta credencial en:</p>
         <a href="${professionalUrl}" style="color: ${
     styleConfig.primaryColor
-  }; text-decoration: none; font-weight: 600;">${professionalUrl}</a>
+  }; text-decoration: none; font-weight: 700; font-size: 14px;">${professionalUrl}</a>
       </div>
     </div>
   `;
