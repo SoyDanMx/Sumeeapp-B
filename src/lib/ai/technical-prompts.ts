@@ -10,6 +10,12 @@ export interface TechnicalPrompt {
   safetyWarnings: string[];
   costFactors: string[];
   professionalRequirements: string[];
+  // Nuevos campos para mejorar respuestas
+  urgency: 'baja' | 'media' | 'alta' | 'crítica';
+  estimatedTime: string;
+  valuePropositions: string[];
+  actionSteps: string[];
+  membershipBenefits: string[];
 }
 
 export const TECHNICAL_PROMPTS: Record<string, TechnicalPrompt> = {
@@ -46,6 +52,26 @@ export const TECHNICAL_PROMPTS: Record<string, TechnicalPrompt> = {
       'Conocimiento de diferentes marcas y modelos',
       'Herramientas especializadas (extractores, llaves)',
       'Disponibilidad de repuestos'
+    ],
+    urgency: 'baja',
+    estimatedTime: '1-2 horas',
+    valuePropositions: [
+      'Reparaciones rápidas y efectivas',
+      'Mantenimiento preventivo',
+      'Ahorro de agua',
+      'Prevención de daños mayores'
+    ],
+    actionSteps: [
+      'Identificar la fuente de la fuga',
+      'Reemplazar el componente dañado',
+      'Ajustar la presión de la válvula',
+      'Limpieza de la conexión'
+    ],
+    membershipBenefits: [
+      'Asistencia 24/7',
+      'Descuentos en repuestos',
+      'Prioridad en atención',
+      'Garantía de 30 días'
     ]
   },
 
@@ -82,6 +108,26 @@ export const TECHNICAL_PROMPTS: Record<string, TechnicalPrompt> = {
       'Equipo de localización por ultrasonido',
       'Conocimiento de códigos de construcción',
       'Disponibilidad 24/7 para emergencias'
+    ],
+    urgency: 'alta',
+    estimatedTime: '2-4 horas',
+    valuePropositions: [
+      'Prevención de daños mayores',
+      'Mantenimiento de la integridad de la tubería',
+      'Ahorro de agua',
+      'Prevención de daños estructurales'
+    ],
+    actionSteps: [
+      'Identificar la fuente de la fuga',
+      'Aislar el área afectada',
+      'Reparar la fuga',
+      'Reemplazar el tramo dañado'
+    ],
+    membershipBenefits: [
+      'Asistencia 24/7',
+      'Descuentos en repuestos',
+      'Prioridad en atención',
+      'Garantía de 30 días'
     ]
   },
 
@@ -119,6 +165,26 @@ export const TECHNICAL_PROMPTS: Record<string, TechnicalPrompt> = {
       'Conocimiento de NOM-001-SEDE',
       'Equipo de medición y prueba',
       'Seguro de responsabilidad civil'
+    ],
+    urgency: 'crítica',
+    estimatedTime: '1-2 horas',
+    valuePropositions: [
+      'Prevención de incendios',
+      'Protección de equipos',
+      'Ahorro de energía',
+      'Seguridad de la instalación'
+    ],
+    actionSteps: [
+      'Identificar la fuente del cortocircuito',
+      'Aislar el área afectada',
+      'Reparar el cortocircuito',
+      'Reemplazar el cableado dañado'
+    ],
+    membershipBenefits: [
+      'Asistencia 24/7',
+      'Descuentos en repuestos',
+      'Prioridad en atención',
+      'Garantía de 30 días'
     ]
   },
 
@@ -155,6 +221,26 @@ export const TECHNICAL_PROMPTS: Record<string, TechnicalPrompt> = {
       'Experiencia en instalaciones LED',
       'Herramientas de medición eléctrica',
       'Disponibilidad de repuestos'
+    ],
+    urgency: 'baja',
+    estimatedTime: '1-2 horas',
+    valuePropositions: [
+      'Ahorro de energía',
+      'Mejor iluminación',
+      'Ahorro en repuestos',
+      'Prevención de averías'
+    ],
+    actionSteps: [
+      'Identificar la causa del problema',
+      'Reemplazar la bombilla defectuosa',
+      'Ajustar la conexión',
+      'Verificar el interruptor'
+    ],
+    membershipBenefits: [
+      'Asistencia 24/7',
+      'Descuentos en repuestos',
+      'Prioridad en atención',
+      'Garantía de 30 días'
     ]
   },
 
@@ -192,6 +278,26 @@ export const TECHNICAL_PROMPTS: Record<string, TechnicalPrompt> = {
       'Equipo de medición de presión',
       'Herramientas para manejo de refrigerantes',
       'Conocimiento de diferentes marcas'
+    ],
+    urgency: 'media',
+    estimatedTime: '2-4 horas',
+    valuePropositions: [
+      'Ahorro de energía',
+      'Mejor confort térmico',
+      'Prevención de averías',
+      'Ahorro en mantenimiento'
+    ],
+    actionSteps: [
+      'Identificar la causa del problema',
+      'Limpieza de filtros y serpentines',
+      'Recarga de gas refrigerante',
+      'Limpieza de unidad exterior'
+    ],
+    membershipBenefits: [
+      'Asistencia 24/7',
+      'Descuentos en repuestos',
+      'Prioridad en atención',
+      'Garantía de 30 días'
     ]
   },
 
@@ -229,6 +335,26 @@ export const TECHNICAL_PROMPTS: Record<string, TechnicalPrompt> = {
       'Conocimiento de redes IP',
       'Herramientas de cableado especializado',
       'Certificación en videovigilancia'
+    ],
+    urgency: 'baja',
+    estimatedTime: '1-2 horas',
+    valuePropositions: [
+      'Prevención de robos',
+      'Seguridad de la propiedad',
+      'Monitoreo en tiempo real',
+      'Prueba de intrusión'
+    ],
+    actionSteps: [
+      'Planificar la cobertura',
+      'Instalar cámaras',
+      'Configurar DVR/NVR',
+      'Prueba de funcionamiento'
+    ],
+    membershipBenefits: [
+      'Asistencia 24/7',
+      'Descuentos en repuestos',
+      'Prioridad en atención',
+      'Garantía de 30 días'
     ]
   }
 };
@@ -257,41 +383,105 @@ export function generateTechnicalResponse(category: string, userQuery: string): 
   warnings: string[];
   costEstimate: string;
   professionalType: string;
+  urgency?: string;
+  estimatedTime?: string;
+  valuePropositions?: string[];
+  actionSteps?: string[];
+  membershipBenefits?: string[];
 } {
   const prompt = TECHNICAL_PROMPTS[category];
   
   if (!prompt) {
+    // Respuesta mejorada para casos generales
     return {
-      diagnosis: 'Requiere evaluación técnica presencial para determinar el alcance del problema.',
-      questions: ['¿Podrías describir más detalles del problema?'],
-      solutions: ['Consulta con un técnico especializado'],
-      warnings: ['No intentes reparaciones sin conocimiento técnico'],
-      costEstimate: 'Consulta precio con el técnico',
-      professionalType: 'Técnico General'
+      diagnosis: `Entiendo tu problema. Para darte una solución precisa y personalizada, necesito conectar contigo con uno de nuestros técnicos verificados que podrá evaluar tu situación específica.`,
+      questions: [
+        '¿Podrías describir más detalles del problema?',
+        '¿Cuándo empezó a ocurrir?',
+        '¿Es algo urgente o puede esperar?'
+      ],
+      solutions: [
+        'Consulta diagnóstica con técnico especializado',
+        'Evaluación presencial del problema',
+        'Presupuesto sin compromiso'
+      ],
+      warnings: ['No intentes reparaciones sin conocimiento técnico para evitar daños mayores'],
+      costEstimate: '$350 - $500 MXN (Tarifa de revisión inicial, deducible del servicio)',
+      professionalType: 'Técnico Especializado',
+      urgency: 'media',
+      estimatedTime: '2-4 horas',
+      valuePropositions: [
+        'Profesionales verificados y certificados',
+        'Garantía de 30 días en todos los trabajos',
+        'Respuesta en menos de 2 horas',
+        'Precios transparentes sin sorpresas'
+      ],
+      actionSteps: [
+        'Conecta con un técnico verificado',
+        'Agenda tu servicio',
+        'Recibe diagnóstico y presupuesto',
+        'Aprueba el trabajo y recibe garantía'
+      ],
+      membershipBenefits: [
+        'Contacto directo con técnicos',
+        'Respuesta prioritaria',
+        'Descuentos exclusivos',
+        'Seguimiento completo del servicio'
+      ]
     };
   }
 
+  // Generar diagnóstico más conversacional y valioso
+  const personalizedDiagnosis = generatePersonalizedDiagnosis(prompt, userQuery);
+  
   return {
-    diagnosis: `${prompt.technicalContext} Basado en tu descripción, el problema parece estar relacionado con ${prompt.category.toLowerCase()}.`,
+    diagnosis: personalizedDiagnosis,
     questions: prompt.diagnosticQuestions,
     solutions: prompt.commonSolutions,
     warnings: prompt.safetyWarnings,
-    costEstimate: generateCostEstimate(prompt.costFactors),
-    professionalType: prompt.professionalRequirements[0] || 'Técnico Especializado'
+    costEstimate: generateCostEstimate(prompt.costFactors, category),
+    professionalType: prompt.professionalRequirements[0] || 'Técnico Especializado',
+    urgency: prompt.urgency,
+    estimatedTime: prompt.estimatedTime,
+    valuePropositions: prompt.valuePropositions,
+    actionSteps: prompt.actionSteps,
+    membershipBenefits: prompt.membershipBenefits
   };
 }
 
-function generateCostEstimate(factors: string[]): string {
-  // Lógica para generar estimaciones de costo basadas en factores
-  const baseCosts = {
-    'plomeria_fuga_grifo': { min: 300, max: 800 },
+function generatePersonalizedDiagnosis(prompt: TechnicalPrompt, userQuery: string): string {
+  const urgencyEmoji = {
+    'baja': '📅',
+    'media': '⚠️',
+    'alta': '🔴',
+    'crítica': '🚨'
+  };
+  
+  return `${urgencyEmoji[prompt.urgency]} **Diagnóstico:** ${prompt.technicalContext}
+
+Basado en tu descripción "${userQuery.substring(0, 100)}...", el problema está relacionado con **${prompt.category}**.
+
+**⏱️ Tiempo estimado de solución:** ${prompt.estimatedTime}
+**💰 Rango de inversión:** ${generateCostEstimate(prompt.costFactors, '')}
+
+**🎯 Nuestros técnicos verificados pueden:**
+${prompt.valuePropositions.map(vp => `✅ ${vp}`).join('\n')}
+
+**📋 Próximos pasos:**
+${prompt.actionSteps.map((step, idx) => `${idx + 1}. ${step}`).join('\n')}`;
+}
+
+function generateCostEstimate(factors: string[], category: string): string {
+  const baseCosts: Record<string, { min: number; max: number }> = {
+    'plomeria_fuga_grifo': { min: 350, max: 650 },
     'plomeria_fuga_tuberia': { min: 800, max: 2500 },
     'electricidad_cortocircuito': { min: 1200, max: 4000 },
-    'electricidad_iluminacion': { min: 200, max: 600 },
+    'electricidad_iluminacion': { min: 350, max: 800 },
     'hvac_aire_no_enfría': { min: 800, max: 2000 },
     'seguridad_camaras': { min: 2000, max: 8000 }
   };
   
-  // Por ahora retornamos rangos fijos, pero esto se puede hacer más dinámico
-  return 'Consulta precio específico con el técnico';
+  const costs = baseCosts[category] || { min: 350, max: 800 };
+  
+  return `$${costs.min.toLocaleString()} - $${costs.max.toLocaleString()} MXN\n💡 La tarifa de revisión ($350-$450) es deducible del servicio final.`;
 }

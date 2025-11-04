@@ -1,8 +1,20 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faTimes, faPaperPlane, faSpinner, faRobot, faCheckCircle, faDollarSign, faArrowRight, faExclamationTriangle, faWrench, faQuestionCircle, faShieldAlt } from '@fortawesome/free-solid-svg-icons';
+import React, { useState } from "react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+  faTimes,
+  faPaperPlane,
+  faSpinner,
+  faRobot,
+  faCheckCircle,
+  faDollarSign,
+  faArrowRight,
+  faExclamationTriangle,
+  faWrench,
+  faQuestionCircle,
+  faShieldAlt,
+} from "@fortawesome/free-solid-svg-icons";
 
 interface AIResponse {
   service_id: string;
@@ -25,47 +37,53 @@ interface AIDiagnosisChatbotProps {
   onClose: () => void;
 }
 
-export const AIDiagnosisChatbot: React.FC<AIDiagnosisChatbotProps> = ({ isOpen, onClose }) => {
-  const [userInput, setUserInput] = useState('');
+export const AIDiagnosisChatbot: React.FC<AIDiagnosisChatbotProps> = ({
+  isOpen,
+  onClose,
+}) => {
+  const [userInput, setUserInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [response, setResponse] = useState<AIResponse | null>(null);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   // Función mejorada para llamar al API real
   const callAIAssistant = async (description: string): Promise<AIResponse> => {
     try {
-      const response = await fetch('/api/ai-assistant', {
-        method: 'POST',
+      const response = await fetch("/api/ai-assistant", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({ query: description }),
       });
 
       if (!response.ok) {
-        throw new Error('Error en la respuesta del servidor');
+        throw new Error("Error en la respuesta del servidor");
       }
 
       const data = await response.json();
-      
+
       // Convertir respuesta del API a formato del chatbot
       return {
-        service_id: data.service_category.replace(/\s+/g, '_').toUpperCase() + '_001',
+        service_id:
+          data.service_category.replace(/\s+/g, "_").toUpperCase() + "_001",
         service_name: data.technical_info.title,
         diagnosis_summary: data.technical_diagnosis.diagnosis,
         cost_estimate_range: data.technical_diagnosis.costEstimate,
         next_step_cta: `Ver ${data.technical_diagnosis.professionalType}s Verificados`,
-        technical_diagnosis: data.technical_diagnosis
+        technical_diagnosis: data.technical_diagnosis,
       };
     } catch (error) {
-      console.error('Error calling AI assistant:', error);
+      console.error("Error calling AI assistant:", error);
       // Fallback a respuesta básica si falla el API
       return {
         service_id: "GENERAL_001",
         service_name: "Servicio General de Mantenimiento",
-        diagnosis_summary: "Requiere evaluación técnica presencial para determinar el alcance exacto del problema y solución más adecuada.",
-        cost_estimate_range: "$300 MXN - $1,000 MXN (Consulta inicial y evaluación)",
-        next_step_cta: "Ver Técnicos Verificados para este Servicio"
+        diagnosis_summary:
+          "Requiere evaluación técnica presencial para determinar el alcance exacto del problema y solución más adecuada.",
+        cost_estimate_range:
+          "$300 MXN - $1,000 MXN (Consulta inicial y evaluación)",
+        next_step_cta: "Ver Técnicos Verificados para este Servicio",
       };
     }
   };
@@ -76,22 +94,22 @@ export const AIDiagnosisChatbot: React.FC<AIDiagnosisChatbotProps> = ({ isOpen, 
 
     setLoading(true);
     setResponse(null);
-    setError('');
+    setError("");
 
     try {
       const aiResponse = await callAIAssistant(userInput);
       setResponse(aiResponse);
     } catch (err) {
-      setError('Error al procesar tu consulta. Por favor, inténtalo de nuevo.');
+      setError("Error al procesar tu consulta. Por favor, inténtalo de nuevo.");
     } finally {
       setLoading(false);
     }
   };
 
   const handleClose = () => {
-    setUserInput('');
+    setUserInput("");
     setResponse(null);
-    setError('');
+    setError("");
     onClose();
   };
 
@@ -106,7 +124,9 @@ export const AIDiagnosisChatbot: React.FC<AIDiagnosisChatbotProps> = ({ isOpen, 
             <FontAwesomeIcon icon={faRobot} className="text-2xl" />
             <div>
               <h2 className="text-xl font-bold">SumeeBot</h2>
-              <p className="text-blue-100 text-sm">Asistente de Diagnóstico IA</p>
+              <p className="text-blue-100 text-sm">
+                Asistente de Diagnóstico IA
+              </p>
             </div>
           </div>
           <button
@@ -123,11 +143,15 @@ export const AIDiagnosisChatbot: React.FC<AIDiagnosisChatbotProps> = ({ isOpen, 
           <div className="mb-6">
             <div className="flex items-start space-x-3">
               <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-                <FontAwesomeIcon icon={faRobot} className="text-blue-600 text-sm" />
+                <FontAwesomeIcon
+                  icon={faRobot}
+                  className="text-blue-600 text-sm"
+                />
               </div>
               <div className="bg-gray-50 rounded-lg p-4 max-w-[80%]">
                 <p className="text-gray-800">
-                  ¡Hola! Soy SumeeBot. Para ayudarte a encontrar al mejor profesional, cuéntame: 
+                  ¡Hola! Soy SumeeBot. Para ayudarte a encontrar al mejor
+                  profesional, cuéntame:
                   <strong> ¿Cuál es exactamente el problema?</strong>
                 </p>
                 <p className="text-sm text-gray-600 mt-2 italic">
@@ -169,10 +193,16 @@ export const AIDiagnosisChatbot: React.FC<AIDiagnosisChatbotProps> = ({ isOpen, 
             <div className="mb-6">
               <div className="flex items-start space-x-3">
                 <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-                  <FontAwesomeIcon icon={faSpinner} spin className="text-blue-600 text-sm" />
+                  <FontAwesomeIcon
+                    icon={faSpinner}
+                    spin
+                    className="text-blue-600 text-sm"
+                  />
                 </div>
                 <div className="bg-gray-50 rounded-lg p-4 max-w-[80%]">
-                  <p className="text-gray-800">Analizando tu problema y buscando la mejor solución...</p>
+                  <p className="text-gray-800">
+                    Analizando tu problema y buscando la mejor solución...
+                  </p>
                 </div>
               </div>
             </div>
@@ -188,21 +218,43 @@ export const AIDiagnosisChatbot: React.FC<AIDiagnosisChatbotProps> = ({ isOpen, 
           {/* AI Response */}
           {response && (
             <div className="space-y-4">
-              {/* Bot Response */}
+              {/* Bot Response Mejorado */}
               <div className="flex items-start space-x-3">
-                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-                  <FontAwesomeIcon icon={faCheckCircle} className="text-blue-600 text-sm" />
+                <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center flex-shrink-0 shadow-md">
+                  <FontAwesomeIcon
+                    icon={faCheckCircle}
+                    className="text-white text-sm"
+                  />
                 </div>
-                <div className="bg-white border border-gray-200 rounded-lg p-4 max-w-[80%] shadow-sm">
-                  <h3 className="font-semibold text-gray-800 mb-2">{response.service_name}</h3>
-                  <p className="text-gray-600 mb-3">{response.diagnosis_summary}</p>
-                  
-                  <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-4">
-                    <div className="flex items-center space-x-2 mb-2">
-                      <FontAwesomeIcon icon={faDollarSign} className="text-green-600" />
-                      <span className="font-semibold text-green-800">Estimación de Costo:</span>
+                <div className="bg-white border-2 border-blue-100 rounded-xl p-5 max-w-[85%] shadow-lg">
+                  <h3 className="font-bold text-gray-900 mb-3 text-lg">
+                    {response.service_name}
+                  </h3>
+
+                  {/* Diagnóstico mejorado con formato */}
+                  <div className="prose prose-sm max-w-none mb-4">
+                    <div className="whitespace-pre-line text-gray-700 leading-relaxed">
+                      {response.diagnosis_summary}
                     </div>
-                    <p className="text-green-700 font-medium">{response.cost_estimate_range}</p>
+                  </div>
+
+                  {/* Información de Costo Mejorada */}
+                  <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-xl p-4 mb-4">
+                    <div className="flex items-center space-x-2 mb-2">
+                      <FontAwesomeIcon
+                        icon={faDollarSign}
+                        className="text-green-600 text-lg"
+                      />
+                      <span className="font-bold text-green-800 text-base">
+                        💵 Inversión Estimada:
+                      </span>
+                    </div>
+                    <p className="text-green-700 font-semibold text-base leading-relaxed whitespace-pre-line">
+                      {response.cost_estimate_range}
+                    </p>
+                    <p className="text-green-600 text-xs mt-2">
+                      💡 La tarifa de revisión es deducible del servicio final
+                    </p>
                   </div>
                 </div>
               </div>
@@ -214,16 +266,26 @@ export const AIDiagnosisChatbot: React.FC<AIDiagnosisChatbotProps> = ({ isOpen, 
                   {response.technical_diagnosis.questions.length > 0 && (
                     <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                       <div className="flex items-center space-x-2 mb-3">
-                        <FontAwesomeIcon icon={faQuestionCircle} className="text-blue-600" />
-                        <span className="font-semibold text-blue-800">Preguntas de Diagnóstico:</span>
+                        <FontAwesomeIcon
+                          icon={faQuestionCircle}
+                          className="text-blue-600"
+                        />
+                        <span className="font-semibold text-blue-800">
+                          Preguntas de Diagnóstico:
+                        </span>
                       </div>
                       <ul className="space-y-2">
-                        {response.technical_diagnosis.questions.map((question, index) => (
-                          <li key={index} className="text-blue-700 text-sm flex items-start space-x-2">
-                            <span className="text-blue-500 mt-1">•</span>
-                            <span>{question}</span>
-                          </li>
-                        ))}
+                        {response.technical_diagnosis.questions.map(
+                          (question, index) => (
+                            <li
+                              key={index}
+                              className="text-blue-700 text-sm flex items-start space-x-2"
+                            >
+                              <span className="text-blue-500 mt-1">•</span>
+                              <span>{question}</span>
+                            </li>
+                          )
+                        )}
                       </ul>
                     </div>
                   )}
@@ -232,16 +294,26 @@ export const AIDiagnosisChatbot: React.FC<AIDiagnosisChatbotProps> = ({ isOpen, 
                   {response.technical_diagnosis.solutions.length > 0 && (
                     <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-4">
                       <div className="flex items-center space-x-2 mb-3">
-                        <FontAwesomeIcon icon={faWrench} className="text-indigo-600" />
-                        <span className="font-semibold text-indigo-800">Soluciones Técnicas:</span>
+                        <FontAwesomeIcon
+                          icon={faWrench}
+                          className="text-indigo-600"
+                        />
+                        <span className="font-semibold text-indigo-800">
+                          Soluciones Técnicas:
+                        </span>
                       </div>
                       <ul className="space-y-2">
-                        {response.technical_diagnosis.solutions.map((solution, index) => (
-                          <li key={index} className="text-indigo-700 text-sm flex items-start space-x-2">
-                            <span className="text-indigo-500 mt-1">•</span>
-                            <span>{solution}</span>
-                          </li>
-                        ))}
+                        {response.technical_diagnosis.solutions.map(
+                          (solution, index) => (
+                            <li
+                              key={index}
+                              className="text-indigo-700 text-sm flex items-start space-x-2"
+                            >
+                              <span className="text-indigo-500 mt-1">•</span>
+                              <span>{solution}</span>
+                            </li>
+                          )
+                        )}
                       </ul>
                     </div>
                   )}
@@ -250,16 +322,26 @@ export const AIDiagnosisChatbot: React.FC<AIDiagnosisChatbotProps> = ({ isOpen, 
                   {response.technical_diagnosis.warnings.length > 0 && (
                     <div className="bg-red-50 border border-red-200 rounded-lg p-4">
                       <div className="flex items-center space-x-2 mb-3">
-                        <FontAwesomeIcon icon={faExclamationTriangle} className="text-red-600" />
-                        <span className="font-semibold text-red-800">⚠️ Advertencias de Seguridad:</span>
+                        <FontAwesomeIcon
+                          icon={faExclamationTriangle}
+                          className="text-red-600"
+                        />
+                        <span className="font-semibold text-red-800">
+                          ⚠️ Advertencias de Seguridad:
+                        </span>
                       </div>
                       <ul className="space-y-2">
-                        {response.technical_diagnosis.warnings.map((warning, index) => (
-                          <li key={index} className="text-red-700 text-sm flex items-start space-x-2">
-                            <span className="text-red-500 mt-1">•</span>
-                            <span className="font-medium">{warning}</span>
-                          </li>
-                        ))}
+                        {response.technical_diagnosis.warnings.map(
+                          (warning, index) => (
+                            <li
+                              key={index}
+                              className="text-red-700 text-sm flex items-start space-x-2"
+                            >
+                              <span className="text-red-500 mt-1">•</span>
+                              <span className="font-medium">{warning}</span>
+                            </li>
+                          )
+                        )}
                       </ul>
                     </div>
                   )}
@@ -267,10 +349,17 @@ export const AIDiagnosisChatbot: React.FC<AIDiagnosisChatbotProps> = ({ isOpen, 
                   {/* Tipo de Profesional Requerido */}
                   <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
                     <div className="flex items-center space-x-2 mb-2">
-                      <FontAwesomeIcon icon={faShieldAlt} className="text-gray-600" />
-                      <span className="font-semibold text-gray-800">Profesional Recomendado:</span>
+                      <FontAwesomeIcon
+                        icon={faShieldAlt}
+                        className="text-gray-600"
+                      />
+                      <span className="font-semibold text-gray-800">
+                        Profesional Recomendado:
+                      </span>
                     </div>
-                    <p className="text-gray-700 text-sm">{response.technical_diagnosis.professionalType}</p>
+                    <p className="text-gray-700 text-sm">
+                      {response.technical_diagnosis.professionalType}
+                    </p>
                   </div>
                 </div>
               )}
@@ -278,19 +367,37 @@ export const AIDiagnosisChatbot: React.FC<AIDiagnosisChatbotProps> = ({ isOpen, 
           )}
         </div>
 
-        {/* Footer */}
+        {/* Footer Mejorado con CTA más convincente */}
         {response && (
-          <div className="bg-gray-50 px-6 py-4 border-t">
+          <div className="bg-gradient-to-r from-gray-50 to-blue-50 px-6 py-5 border-t border-gray-200">
+            <div className="mb-4 p-4 bg-white rounded-xl border-2 border-blue-200 shadow-sm">
+              <div className="flex items-start space-x-3">
+                <FontAwesomeIcon icon={faShieldAlt} className="text-blue-600 text-xl mt-1" />
+                <div className="flex-1">
+                  <h4 className="font-bold text-gray-900 mb-1">✅ Garantía de Calidad Sumee</h4>
+                  <p className="text-sm text-gray-600">
+                    Conecta con técnicos verificados y certificados. Todos nuestros profesionales están 
+                    asegurados y ofrecen garantía en sus trabajos.
+                  </p>
+                </div>
+              </div>
+            </div>
+            
             <button
               onClick={() => {
-                // Aquí se integrará la navegación al flujo de contratación
+                // Navegar al flujo de contratación o página de técnicos
                 window.location.href = `/servicios?service_id=${response.service_id}`;
               }}
-              className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3 px-6 rounded-lg font-semibold hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 flex items-center justify-center space-x-2 shadow-lg"
+              className="w-full bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 text-white py-4 px-6 rounded-xl font-bold text-lg hover:from-blue-700 hover:via-purple-700 hover:to-pink-700 transition-all duration-300 flex items-center justify-center space-x-3 shadow-xl hover:shadow-2xl transform hover:-translate-y-0.5 hover:scale-[1.02]"
             >
+              <FontAwesomeIcon icon={faCheckCircle} />
               <span>{response.next_step_cta}</span>
               <FontAwesomeIcon icon={faArrowRight} />
             </button>
+            
+            <p className="text-center text-xs text-gray-500 mt-3">
+              ⚡ Respuesta garantizada en menos de 2 horas
+            </p>
           </div>
         )}
       </div>
