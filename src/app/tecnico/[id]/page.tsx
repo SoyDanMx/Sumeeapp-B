@@ -1,27 +1,33 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
-import { supabase } from '@/lib/supabase/client';
-import { Profesional } from '@/types/supabase';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { 
-  faStar, 
-  faCheckCircle, 
-  faMapMarkerAlt, 
+import React, { useState, useEffect } from "react";
+import { useParams } from "next/navigation";
+import { supabase } from "@/lib/supabase/client";
+import { Profesional } from "@/types/supabase";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+  faStar,
+  faCheckCircle,
+  faMapMarkerAlt,
   faPhone,
   faClock,
   faShieldAlt,
   faUsers,
   faCamera,
-  faArrowLeft
-} from '@fortawesome/free-solid-svg-icons';
-import { faWhatsapp as faWhatsappBrand } from '@fortawesome/free-brands-svg-icons';
-import Link from 'next/link';
-import Image from 'next/image';
+  faArrowLeft,
+} from "@fortawesome/free-solid-svg-icons";
+import { faWhatsapp as faWhatsappBrand } from "@fortawesome/free-brands-svg-icons";
+import Link from "next/link";
+import Image from "next/image";
 
 // Componente para mostrar estrellas
-const StarRating = ({ rating, reviewCount }: { rating: number; reviewCount?: number }) => {
+const StarRating = ({
+  rating,
+  reviewCount,
+}: {
+  rating: number;
+  reviewCount?: number;
+}) => {
   const fullStars = Math.floor(rating);
   const hasHalfStar = rating % 1 !== 0;
   const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
@@ -30,21 +36,30 @@ const StarRating = ({ rating, reviewCount }: { rating: number; reviewCount?: num
     <div className="flex items-center space-x-2">
       <div className="flex">
         {[...Array(fullStars)].map((_, i) => (
-          <FontAwesomeIcon key={i} icon={faStar} className="text-yellow-400 text-lg" />
+          <FontAwesomeIcon
+            key={i}
+            icon={faStar}
+            className="text-yellow-400 text-lg"
+          />
         ))}
         {hasHalfStar && (
-          <FontAwesomeIcon icon={faStar} className="text-yellow-400 text-lg opacity-50" />
+          <FontAwesomeIcon
+            icon={faStar}
+            className="text-yellow-400 text-lg opacity-50"
+          />
         )}
         {[...Array(emptyStars)].map((_, i) => (
-          <FontAwesomeIcon key={i} icon={faStar} className="text-gray-300 text-lg" />
+          <FontAwesomeIcon
+            key={i}
+            icon={faStar}
+            className="text-gray-300 text-lg"
+          />
         ))}
       </div>
       <span className="text-lg font-semibold text-gray-900">
         {rating.toFixed(1)}
       </span>
-      <span className="text-gray-600">
-        ({reviewCount || 0} reseñas)
-      </span>
+      <span className="text-gray-600">({reviewCount || 0} reseñas)</span>
     </div>
   );
 };
@@ -73,8 +88,13 @@ const ReviewsSection = ({ reviews }: { reviews: any[] }) => {
   if (!reviews || reviews.length === 0) {
     return (
       <div className="bg-gray-50 rounded-lg p-6 text-center">
-        <FontAwesomeIcon icon={faStar} className="text-4xl text-gray-300 mb-4" />
-        <p className="text-gray-600">Aún no hay reseñas para este profesional</p>
+        <FontAwesomeIcon
+          icon={faStar}
+          className="text-4xl text-gray-300 mb-4"
+        />
+        <p className="text-gray-600">
+          Aún no hay reseñas para este profesional
+        </p>
       </div>
     );
   }
@@ -87,11 +107,11 @@ const ReviewsSection = ({ reviews }: { reviews: any[] }) => {
             <div className="flex items-center space-x-2">
               <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
                 <span className="text-sm font-semibold text-gray-600">
-                  {review.client_name?.charAt(0) || 'C'}
+                  {review.client_name?.charAt(0) || "C"}
                 </span>
               </div>
               <span className="font-medium text-gray-900">
-                {review.client_name || 'Cliente'}
+                {review.client_name || "Cliente"}
               </span>
             </div>
             <div className="flex">
@@ -100,7 +120,9 @@ const ReviewsSection = ({ reviews }: { reviews: any[] }) => {
                   key={i}
                   icon={faStar}
                   className={`text-sm ${
-                    i < (review.rating || 0) ? 'text-yellow-400' : 'text-gray-300'
+                    i < (review.rating || 0)
+                      ? "text-yellow-400"
+                      : "text-gray-300"
                   }`}
                 />
               ))}
@@ -108,7 +130,7 @@ const ReviewsSection = ({ reviews }: { reviews: any[] }) => {
           </div>
           <p className="text-gray-700">{review.comment}</p>
           <p className="text-sm text-gray-500 mt-2">
-            {new Date(review.created_at).toLocaleDateString('es-MX')}
+            {new Date(review.created_at).toLocaleDateString("es-MX")}
           </p>
         </div>
       ))}
@@ -127,16 +149,16 @@ export default function TecnicoProfilePage() {
       try {
         setIsLoading(true);
         // Usar el cliente de Supabase directamente
-        
+
         const { data, error } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('user_id', params.id)
-          .eq('role', 'profesional')
+          .from("profiles")
+          .select("*")
+          .eq("user_id", params.id)
+          .eq("role", "profesional")
           .single();
 
         if (error) {
-          console.error('Error fetching professional:', error);
+          console.error("Error fetching professional:", error);
           return;
         }
 
@@ -146,7 +168,7 @@ export default function TecnicoProfilePage() {
         // En una implementación real, esto vendría de una tabla de reviews
         setReviews([]);
       } catch (error) {
-        console.error('Error in fetchProfessional:', error);
+        console.error("Error in fetchProfessional:", error);
       } finally {
         setIsLoading(false);
       }
@@ -172,9 +194,13 @@ export default function TecnicoProfilePage() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Profesional no encontrado</h1>
-          <p className="text-gray-600 mb-6">El profesional que buscas no existe o no está disponible.</p>
-          <Link 
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">
+            Profesional no encontrado
+          </h1>
+          <p className="text-gray-600 mb-6">
+            El profesional que buscas no existe o no está disponible.
+          </p>
+          <Link
             href="/tecnicos"
             className="inline-flex items-center px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
           >
@@ -191,10 +217,10 @@ export default function TecnicoProfilePage() {
     profession,
     avatar_url,
     calificacion_promedio,
-    areas_servicio
+    areas_servicio,
   } = professional;
 
-  const rating = calificacion_promedio || 0;
+  const rating = calificacion_promedio || 5;
   const specialties = areas_servicio || [];
 
   return (
@@ -202,7 +228,7 @@ export default function TecnicoProfilePage() {
       {/* Header */}
       <div className="bg-white shadow-sm border-b">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <Link 
+          <Link
             href="/tecnicos"
             className="inline-flex items-center text-blue-600 hover:text-blue-700 transition-colors mb-4"
           >
@@ -224,14 +250,14 @@ export default function TecnicoProfilePage() {
                     {avatar_url ? (
                       <Image
                         src={avatar_url}
-                        alt={full_name || 'Profesional'}
+                        alt={full_name || "Profesional"}
                         width={96}
                         height={96}
                         className="w-full h-full object-cover"
                       />
                     ) : (
                       <div className="w-full h-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold text-2xl">
-                        {(full_name || 'P').charAt(0).toUpperCase()}
+                        {(full_name || "P").charAt(0).toUpperCase()}
                       </div>
                     )}
                   </div>
@@ -241,11 +267,11 @@ export default function TecnicoProfilePage() {
                     </div>
                   )} */}
                 </div>
-                
+
                 <div className="flex-1">
                   <div className="flex items-center space-x-3 mb-2">
                     <h1 className="text-2xl font-bold text-gray-900">
-                      {full_name || 'Profesional'}
+                      {full_name || "Profesional"}
                     </h1>
                     {/* {is_verified && (
                       <span className="bg-green-100 text-green-800 text-sm px-3 py-1 rounded-full font-medium">
@@ -253,13 +279,13 @@ export default function TecnicoProfilePage() {
                       </span>
                     )} */}
                   </div>
-                  
+
                   <p className="text-lg text-gray-600 mb-4">
-                    {profession || 'Técnico Especializado'}
+                    {profession || "Técnico Especializado"}
                   </p>
-                  
+
                   <StarRating rating={rating} reviewCount={0} />
-                  
+
                   {/* {codigo_postal && (
                     <div className="flex items-center text-gray-600 mt-2">
                       <FontAwesomeIcon icon={faMapMarkerAlt} className="mr-2" />
@@ -287,7 +313,9 @@ export default function TecnicoProfilePage() {
 
             {/* Reseñas */}
             <div className="bg-white rounded-lg shadow-sm border p-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-6">Reseñas de Clientes</h2>
+              <h2 className="text-xl font-semibold text-gray-900 mb-6">
+                Reseñas de Clientes
+              </h2>
               <ReviewsSection reviews={reviews} />
             </div>
           </div>
@@ -300,9 +328,10 @@ export default function TecnicoProfilePage() {
                 ¿Necesitas este servicio?
               </h3>
               <p className="text-gray-600 mb-6">
-                Contacta directamente con {full_name} para solicitar un presupuesto.
+                Contacta directamente con {full_name} para solicitar un
+                presupuesto.
               </p>
-              
+
               <div className="space-y-3">
                 <Link
                   href="/dashboard/client"
@@ -316,32 +345,46 @@ export default function TecnicoProfilePage() {
 
             {/* Información de Contacto */}
             <div className="bg-white rounded-lg shadow-sm border p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Información de Contacto</h3>
-              
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                Información de Contacto
+              </h3>
+
               <div className="space-y-3">
                 <p className="text-gray-600">
-                  Para contactar con este profesional, solicita un servicio a través de la plataforma.
+                  Para contactar con este profesional, solicita un servicio a
+                  través de la plataforma.
                 </p>
               </div>
             </div>
 
             {/* Garantías */}
             <div className="bg-white rounded-lg shadow-sm border p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Garantías</h3>
-              
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                Garantías
+              </h3>
+
               <div className="space-y-3">
                 <div className="flex items-center text-gray-700">
-                  <FontAwesomeIcon icon={faShieldAlt} className="mr-3 text-blue-600" />
+                  <FontAwesomeIcon
+                    icon={faShieldAlt}
+                    className="mr-3 text-blue-600"
+                  />
                   <span>Garantía Sumee de 30 días</span>
                 </div>
-                
+
                 <div className="flex items-center text-gray-700">
-                  <FontAwesomeIcon icon={faCheckCircle} className="mr-3 text-green-600" />
+                  <FontAwesomeIcon
+                    icon={faCheckCircle}
+                    className="mr-3 text-green-600"
+                  />
                   <span>Profesional verificado</span>
                 </div>
-                
+
                 <div className="flex items-center text-gray-700">
-                  <FontAwesomeIcon icon={faClock} className="mr-3 text-orange-600" />
+                  <FontAwesomeIcon
+                    icon={faClock}
+                    className="mr-3 text-orange-600"
+                  />
                   <span>Respuesta en menos de 2 horas</span>
                 </div>
               </div>

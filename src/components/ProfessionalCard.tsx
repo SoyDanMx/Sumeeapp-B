@@ -83,7 +83,7 @@ export default function ProfessionalCard({ professional }: ProfessionalCardProps
     // whatsapp
   } = professional;
 
-  const rating = calificacion_promedio || 0;
+  const rating = calificacion_promedio || 5;
   const specialties = areas_servicio || [];
   const hasContactInfo = false; // telefono || whatsapp;
 

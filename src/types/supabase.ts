@@ -109,6 +109,7 @@ export interface Profile {
     | "pending_review"
     | "waitlist_other_city"
     | "rejected";
+  disponibilidad?: "disponible" | "no_disponible" | "ocupado" | null;
 }
 
 // =========================================================================
@@ -169,7 +170,8 @@ export interface ProfesionalCompleto extends Profile {
   whatsapp?: string | null;
   descripcion_perfil?: string | null;
   certificaciones: string[];
-  disponibilidad: string;
+  // disponibilidad ya está definido en Profile, pero lo overrideamos aquí si es necesario
+  disponibilidad?: "disponible" | "no_disponible" | "ocupado" | null;
 }
 
 // =========================================================================

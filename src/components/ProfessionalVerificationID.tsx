@@ -138,7 +138,7 @@ export default function ProfessionalVerificationID({
                       key={i}
                       icon={faStar} 
                       className={`text-sm transition-colors duration-200 ${
-                        i < Math.floor(profesional.calificacion_promedio || 0) 
+                        i < Math.floor(profesional.calificacion_promedio || 5) 
                           ? 'text-yellow-400 drop-shadow-sm' 
                           : 'text-gray-200'
                       }`} 

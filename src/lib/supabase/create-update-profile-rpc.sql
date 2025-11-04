@@ -91,8 +91,16 @@ BEGIN
     RAISE EXCEPTION 'No hay campos válidos para actualizar';
   END IF;
 
-  -- Añadir updated_at siempre
-  set_parts := array_append(set_parts, 'updated_at = NOW()');
+  -- Añadir updated_at solo si la columna existe
+  IF EXISTS (
+    SELECT 1 
+    FROM information_schema.columns 
+    WHERE table_schema = 'public' 
+    AND table_name = 'profiles' 
+    AND column_name = 'updated_at'
+  ) THEN
+    set_parts := array_append(set_parts, 'updated_at = NOW()');
+  END IF;
 
   -- Construir la consulta UPDATE
   update_sql := format(
@@ -149,5 +157,5 @@ GRANT EXECUTE ON FUNCTION public.update_profile(UUID, JSONB) TO anon;
 -- 3. La función valida que user_id_in = auth.uid() para seguridad
 -- 4. Solo actualiza columnas que existen en la tabla profiles
 -- 5. Maneja diferentes tipos de datos (string, number, boolean, array, null)
--- 6. Actualiza automáticamente updated_at
+-- 6. Actualiza automáticamente updated_at solo si la columna existe
 
