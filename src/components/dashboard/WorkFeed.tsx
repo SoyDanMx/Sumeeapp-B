@@ -41,6 +41,7 @@ interface WorkFeedProps {
   onLeadAccepted?: () => void;
   selectedLeadId?: string | null;
   avatarUrl?: string | null; // URL del avatar del profesional
+  onEditProfileClick?: () => void; // Función para abrir el modal de edición de perfil
 }
 
 type TabType = "nuevos" | "en_progreso";
@@ -56,6 +57,7 @@ export default function WorkFeed({
   onLeadAccepted,
   selectedLeadId,
   avatarUrl,
+  onEditProfileClick,
 }: WorkFeedProps) {
   const [activeTab, setActiveTab] = useState<TabType>("nuevos");
   // Por defecto: split en desktop, lista en móvil
@@ -94,23 +96,36 @@ export default function WorkFeed({
         <div className="space-y-4 text-left max-w-md mx-auto">
           {isNewLeads ? (
             <>
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <div className="flex items-start">
+              <button
+                onClick={onEditProfileClick}
+                disabled={!onEditProfileClick}
+                className={`w-full bg-gradient-to-r from-orange-500 via-red-500 to-pink-600 hover:from-orange-600 hover:via-red-600 hover:to-pink-700 text-white border-2 border-transparent hover:border-white rounded-lg p-4 transition-all duration-300 transform hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl animate-pulse cursor-pointer group ${
+                  !onEditProfileClick ? "opacity-50 cursor-not-allowed" : ""
+                }`}
+              >
+                <div className="flex items-start text-left">
                   <FontAwesomeIcon
                     icon={faLightbulb}
-                    className="text-blue-500 mt-1 mr-3 flex-shrink-0"
+                    className="text-yellow-300 mt-1 mr-3 flex-shrink-0 text-xl group-hover:animate-bounce"
                   />
-                  <div>
-                    <h4 className="font-medium text-blue-900 mb-1">
-                      ¡Optimiza tu perfil!
+                  <div className="flex-1">
+                    <h4 className="font-bold text-white mb-1 text-base flex items-center gap-2">
+                      <span>¡Optimiza tu perfil!</span>
+                      <FontAwesomeIcon
+                        icon={faExclamationTriangle}
+                        className="text-yellow-300 animate-bounce text-sm"
+                      />
                     </h4>
-                    <p className="text-sm text-blue-700">
+                    <p className="text-sm text-white/90">
                       Los profesionales con perfiles completos tienen 3x más
                       probabilidades de recibir trabajos.
                     </p>
+                    <div className="mt-2 text-xs text-white/80 font-medium">
+                      👆 Haz clic para optimizar →
+                    </div>
                   </div>
                 </div>
-              </div>
+              </button>
 
               <div className="bg-green-50 border border-green-200 rounded-lg p-4">
                 <div className="flex items-start">
@@ -211,7 +226,10 @@ export default function WorkFeed({
             }`}
           >
             <div className="flex items-center justify-center space-x-1 md:space-x-2">
-              <FontAwesomeIcon icon={faBriefcase} className="text-xs md:text-sm" />
+              <FontAwesomeIcon
+                icon={faBriefcase}
+                className="text-xs md:text-sm"
+              />
               <span className="hidden sm:inline">Nuevos Leads</span>
               <span className="sm:hidden">Nuevos</span>
               {leads.filter((lead) => lead.estado === "nuevo").length > 0 && (
@@ -252,53 +270,59 @@ export default function WorkFeed({
           </button>
         </div>
 
-                {/* Toggle de vista Mapa/Lista/Split */}
-                {activeTab === "nuevos" && (
-                  <div className="flex justify-end px-3 md:px-4 py-2.5 md:py-2 border-t border-gray-100">
-                    <div className="flex gap-2 md:gap-2">
-                      <button
-                        onClick={() => setViewType("mapa")}
-                        className={`px-3 md:px-3 py-2 md:py-1.5 text-sm md:text-xs font-semibold md:font-medium rounded-lg transition-colors active:scale-95 touch-manipulation ${
-                          viewType === "mapa"
-                            ? "bg-blue-600 text-white shadow-md"
-                            : "bg-gray-100 text-gray-600 hover:bg-gray-200 active:bg-gray-300"
-                        }`}
-                        title="Vista Mapa"
-                        aria-label="Vista Mapa"
-                      >
-                        <FontAwesomeIcon icon={faMap} className="text-sm md:text-xs" />
-                        <span className="hidden sm:inline ml-1">Mapa</span>
-                      </button>
-                      <button
-                        onClick={() => setViewType("split")}
-                        className={`px-3 md:px-3 py-2 md:py-1.5 text-sm md:text-xs font-semibold md:font-medium rounded-lg transition-colors active:scale-95 touch-manipulation ${
-                          viewType === "split"
-                            ? "bg-blue-600 text-white shadow-md"
-                            : "bg-gray-100 text-gray-600 hover:bg-gray-200 active:bg-gray-300"
-                        }`}
-                        title="Vista Split (Mapa + Lista)"
-                        aria-label="Vista Split"
-                      >
-                        <FontAwesomeIcon icon={faMap} className="text-sm md:text-xs mr-1" />
-                        <FontAwesomeIcon icon={faList} className="text-sm md:text-xs mr-1" />
-                        <span className="hidden sm:inline">Split</span>
-                      </button>
-                      <button
-                        onClick={() => setViewType("lista")}
-                        className={`px-3 md:px-3 py-2 md:py-1.5 text-sm md:text-xs font-semibold md:font-medium rounded-lg transition-colors active:scale-95 touch-manipulation ${
-                          viewType === "lista"
-                            ? "bg-blue-600 text-white shadow-md"
-                            : "bg-gray-100 text-gray-600 hover:bg-gray-200 active:bg-gray-300"
-                        }`}
-                        title="Vista Lista"
-                        aria-label="Vista Lista"
-                      >
-                        <FontAwesomeIcon icon={faList} className="text-sm md:text-xs" />
-                        <span className="hidden sm:inline ml-1">Lista</span>
-                      </button>
-                    </div>
-                  </div>
-                )}
+        {/* Toggle de vista Mapa/Lista/Split */}
+        {activeTab === "nuevos" && (
+          <div className="flex justify-end px-3 md:px-4 py-2.5 md:py-2 border-t border-gray-100">
+            <div className="flex gap-2 md:gap-2">
+              <button
+                onClick={() => setViewType("mapa")}
+                className={`px-3 md:px-3 py-2 md:py-1.5 text-sm md:text-xs font-semibold md:font-medium rounded-lg transition-colors active:scale-95 touch-manipulation ${
+                  viewType === "mapa"
+                    ? "bg-blue-600 text-white shadow-md"
+                    : "bg-gray-100 text-gray-600 hover:bg-gray-200 active:bg-gray-300"
+                }`}
+                title="Vista Mapa"
+                aria-label="Vista Mapa"
+              >
+                <FontAwesomeIcon icon={faMap} className="text-sm md:text-xs" />
+                <span className="hidden sm:inline ml-1">Mapa</span>
+              </button>
+              <button
+                onClick={() => setViewType("split")}
+                className={`px-3 md:px-3 py-2 md:py-1.5 text-sm md:text-xs font-semibold md:font-medium rounded-lg transition-colors active:scale-95 touch-manipulation ${
+                  viewType === "split"
+                    ? "bg-blue-600 text-white shadow-md"
+                    : "bg-gray-100 text-gray-600 hover:bg-gray-200 active:bg-gray-300"
+                }`}
+                title="Vista Split (Mapa + Lista)"
+                aria-label="Vista Split"
+              >
+                <FontAwesomeIcon
+                  icon={faMap}
+                  className="text-sm md:text-xs mr-1"
+                />
+                <FontAwesomeIcon
+                  icon={faList}
+                  className="text-sm md:text-xs mr-1"
+                />
+                <span className="hidden sm:inline">Split</span>
+              </button>
+              <button
+                onClick={() => setViewType("lista")}
+                className={`px-3 md:px-3 py-2 md:py-1.5 text-sm md:text-xs font-semibold md:font-medium rounded-lg transition-colors active:scale-95 touch-manipulation ${
+                  viewType === "lista"
+                    ? "bg-blue-600 text-white shadow-md"
+                    : "bg-gray-100 text-gray-600 hover:bg-gray-200 active:bg-gray-300"
+                }`}
+                title="Vista Lista"
+                aria-label="Vista Lista"
+              >
+                <FontAwesomeIcon icon={faList} className="text-sm md:text-xs" />
+                <span className="hidden sm:inline ml-1">Lista</span>
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Contenido: Mapa, Lista o Split según viewType */}

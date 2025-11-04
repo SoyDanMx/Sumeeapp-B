@@ -40,9 +40,118 @@ function MapCenter({
   zoom: number;
 }) {
   const map = useMap();
+  const [isMapReady, setIsMapReady] = useState(false);
+
   useEffect(() => {
-    map.setView(center, zoom);
-  }, [map, center, zoom]);
+    // Esperar a que el mapa esté completamente inicializado usando whenReady
+    if (!map) {
+      return;
+    }
+
+    let cleanupTimer: NodeJS.Timeout | null = null;
+
+    const checkMapReady = () => {
+      try {
+        // Verificar que el contenedor tenga dimensiones válidas
+        const container = map.getContainer();
+        if (
+          !container ||
+          container.offsetWidth === 0 ||
+          container.offsetHeight === 0
+        ) {
+          // Si el contenedor no tiene dimensiones, esperar un poco más
+          cleanupTimer = setTimeout(() => {
+            const container = map.getContainer();
+            if (
+              container &&
+              container.offsetWidth > 0 &&
+              container.offsetHeight > 0
+            ) {
+              setIsMapReady(true);
+            }
+          }, 100);
+          return;
+        }
+
+        setIsMapReady(true);
+      } catch (error) {
+        console.warn("Error verificando estado del mapa:", error);
+      }
+    };
+
+    // Usar whenReady si está disponible, sino esperar un poco
+    if (map.whenReady) {
+      map.whenReady(checkMapReady);
+    } else {
+      cleanupTimer = setTimeout(checkMapReady, 100);
+    }
+
+    // Cleanup function
+    return () => {
+      if (cleanupTimer) {
+        clearTimeout(cleanupTimer);
+      }
+    };
+  }, [map]);
+
+  useEffect(() => {
+    // Solo intentar cambiar la vista cuando el mapa esté listo
+    if (!isMapReady || !map) {
+      return;
+    }
+
+    // Usar un pequeño delay para asegurar que el mapa esté completamente renderizado
+    const timer = setTimeout(() => {
+      try {
+        // Verificar múltiples veces que el mapa esté listo
+        if (!map || !map.getContainer) {
+          return;
+        }
+
+        const container = map.getContainer();
+        if (
+          !container ||
+          !container.parentElement ||
+          container.offsetWidth === 0 ||
+          container.offsetHeight === 0
+        ) {
+          return;
+        }
+
+        // Verificar que el mapa tenga las propiedades internas necesarias
+        // Intentar acceder a getCenter puede fallar si el mapa no está completamente inicializado
+        let currentCenter, currentZoom;
+        try {
+          currentCenter = map.getCenter();
+          currentZoom = map.getZoom();
+        } catch (e) {
+          // Si no puede obtener el centro, el mapa no está listo
+          return;
+        }
+
+        // Solo cambiar la vista si el centro o zoom han cambiado significativamente
+        const centerChanged =
+          Math.abs(currentCenter.lat - center[0]) > 0.0001 ||
+          Math.abs(currentCenter.lng - center[1]) > 0.0001;
+        const zoomChanged = Math.abs(currentZoom - zoom) > 0.5;
+
+        if (centerChanged || zoomChanged) {
+          map.setView(center, zoom, { animate: true });
+        }
+      } catch (error) {
+        // Silenciar errores de inicialización, son esperados durante la carga
+        if (process.env.NODE_ENV === "development") {
+          console.warn(
+            "Error al cambiar la vista del mapa (puede ser normal durante la inicialización):",
+            error
+          );
+        }
+      }
+    }, 50);
+
+    return () => clearTimeout(timer);
+  }, [map, center, zoom, isMapReady]);
+
   return null;
 }
 
@@ -55,7 +164,7 @@ const createProfessionalIcon = (avatarUrl: string | null | undefined) => {
       .replace(/'/g, "&#39;")
       .replace(/"/g, "&quot;")
       .replace(/`/g, "&#96;");
-    
+
     return L.divIcon({
       html: `
         <div style="
