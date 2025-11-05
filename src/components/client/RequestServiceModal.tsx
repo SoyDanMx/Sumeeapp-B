@@ -459,6 +459,53 @@ export default function RequestServiceModal({
       return;
     }
 
+    // Verificar la sesión de Supabase antes de intentar crear el lead
+    try {
+      const {
+        data: { session },
+        error: sessionError,
+      } = await supabase.auth.getSession();
+
+      console.log("🔍 handleFreeRequestSubmit - Sesión de Supabase:", {
+        hasSession: !!session,
+        userId: session?.user?.id,
+        contextUserId: user.id,
+        match: session?.user?.id === user.id,
+        sessionError: sessionError
+          ? JSON.stringify(sessionError, null, 2)
+          : null,
+      });
+
+      if (sessionError || !session) {
+        console.error("❌ Error al obtener sesión de Supabase:", sessionError);
+        setError(
+          "Error de autenticación. Por favor, cierra sesión y vuelve a iniciar sesión."
+        );
+        return;
+      }
+
+      if (session.user.id !== user.id) {
+        console.error("❌ ID de usuario no coincide con la sesión", {
+          sessionUserId: session.user.id,
+          contextUserId: user.id,
+        });
+        setError(
+          "Error de autenticación: ID de usuario no coincide. Por favor, cierra sesión y vuelve a iniciar sesión."
+        );
+        return;
+      }
+
+      // Usar el user.id de la sesión para asegurar consistencia
+      const currentUserId = session.user.id;
+      console.log("🔍 handleFreeRequestSubmit - Usando userId:", currentUserId);
+    } catch (sessionCheckError) {
+      console.error("❌ Error al verificar sesión:", sessionCheckError);
+      setError(
+        "Error al verificar tu sesión. Por favor, intenta de nuevo o contacta a soporte."
+      );
+      return;
+    }
+
     // Verificar si ya usó su solicitud gratuita este mes
     // TODO: Implementar lógica de verificación de límite mensual
     // Por ahora, permitimos la solicitud
@@ -487,41 +534,122 @@ export default function RequestServiceModal({
         imagenUrl = publicUrl;
       }
 
-      // Crear el lead
-      console.log("🔍 handleFreeRequestSubmit - Creando lead con datos:", {
-        nombre_cliente: user.user_metadata?.full_name || "Cliente",
-        whatsapp: user.user_metadata?.phone || null,
-        descripcion_proyecto: formData.descripcion,
-        ubicacion_lat: 19.4326,
-        ubicacion_lng: -99.1332,
-        estado: "buscando",
-        servicio_solicitado: formData.servicio,
-        imagen_url: imagenUrl,
-        urgencia: formData.urgencia,
-        cliente_id: user.id,
+      // Obtener la sesión actual de Supabase para usar el user.id correcto
+      const {
+        data: { session: currentSession },
+      } = await supabase.auth.getSession();
+
+      if (!currentSession?.user?.id) {
+        throw new Error("No se pudo obtener la sesión de autenticación");
+      }
+
+      const currentUserId = currentSession.user.id;
+
+      // Verificar el token de acceso para debugging
+      const accessToken = currentSession.access_token;
+      console.log("🔍 handleFreeRequestSubmit - Token de acceso:", {
+        hasToken: !!accessToken,
+        tokenLength: accessToken?.length,
+        userId: currentUserId,
+        userIdString: String(currentUserId),
+        tokenType: typeof currentUserId,
       });
 
-      const { data: leadData, error: leadError } = await supabase
-        .from("leads")
-        .insert({
-          nombre_cliente: user.user_metadata?.full_name || "Cliente",
-          whatsapp: user.user_metadata?.phone || null,
-          descripcion_proyecto: formData.descripcion || "Sin descripción",
-          ubicacion_lat: 19.4326, // CDMX por defecto - se puede mejorar con geocoding
-          ubicacion_lng: -99.1332,
-          estado: "nuevo", // Usar 'nuevo' según el schema
-          servicio: formData.servicio, // Campo correcto según schema: 'servicio' no 'servicio_solicitado'
-          ubicacion_direccion: formData.ubicacion || null,
-          cliente_id: user.id,
-        })
-        .select()
-        .single();
+      // INTENTAR PRIMERO: Usar función RPC si existe (bypass de RLS)
+      console.log(
+        "🔍 handleFreeRequestSubmit - Intentando crear lead via RPC..."
+      );
+      const { data: rpcData, error: rpcError } = await supabase.rpc(
+        "create_lead",
+        {
+          nombre_cliente_in: user.user_metadata?.full_name || "Cliente",
+          whatsapp_in: user.user_metadata?.phone || null,
+          descripcion_proyecto_in: formData.descripcion || "Sin descripción",
+          servicio_in: formData.servicio,
+          ubicacion_lat_in: 19.4326,
+          ubicacion_lng_in: -99.1332,
+          ubicacion_direccion_in: formData.ubicacion || null,
+        }
+      );
+
+      let leadData = null;
+      let leadError = null;
+
+      if (rpcError) {
+        console.warn(
+          "⚠️ handleFreeRequestSubmit - RPC falló, intentando INSERT directo:",
+          rpcError.message
+        );
+
+        // FALLBACK: Intentar INSERT directo
+        console.log(
+          "🔍 handleFreeRequestSubmit - Creando lead con INSERT directo:",
+          {
+            nombre_cliente: user.user_metadata?.full_name || "Cliente",
+            whatsapp: user.user_metadata?.phone || null,
+            descripcion_proyecto: formData.descripcion,
+            ubicacion_lat: 19.4326,
+            ubicacion_lng: -99.1332,
+            estado: "nuevo",
+            servicio: formData.servicio,
+            cliente_id: currentUserId,
+            cliente_id_type: typeof currentUserId,
+            cliente_id_string: String(currentUserId),
+            auth_uid_check:
+              "Usando currentSession.user.id para coincidir con auth.uid()",
+          }
+        );
+
+        const insertResult = await supabase
+          .from("leads")
+          .insert({
+            nombre_cliente: user.user_metadata?.full_name || "Cliente",
+            whatsapp: user.user_metadata?.phone || null,
+            descripcion_proyecto: formData.descripcion || "Sin descripción",
+            ubicacion_lat: 19.4326,
+            ubicacion_lng: -99.1332,
+            estado: "nuevo",
+            servicio: formData.servicio,
+            ubicacion_direccion: formData.ubicacion || null,
+            cliente_id: currentUserId,
+          })
+          .select()
+          .single();
+
+        leadData = insertResult.data;
+        leadError = insertResult.error;
+      } else {
+        // RPC exitoso, obtener el lead creado
+        console.log(
+          "✅ handleFreeRequestSubmit - Lead creado via RPC, ID:",
+          rpcData
+        );
+        const { data: fetchedLead, error: fetchError } = await supabase
+          .from("leads")
+          .select("*")
+          .eq("id", rpcData)
+          .single();
+
+        leadData = fetchedLead;
+        leadError = fetchError;
+      }
 
       if (leadError) {
         console.error(
           "🔍 handleFreeRequestSubmit - Error al crear lead:",
           JSON.stringify(leadError, null, 2)
         );
+        console.error("🔍 handleFreeRequestSubmit - Error details:", {
+          code: leadError.code,
+          message: leadError.message,
+          details: leadError.details,
+          hint: leadError.hint,
+          errorContext: {
+            userId: currentUserId,
+            hasSession: !!currentSession,
+            hasAccessToken: !!accessToken,
+          },
+        });
 
         // Traducir errores técnicos a mensajes amigables
         let errorMessage = "Error desconocido al crear la solicitud";
@@ -533,6 +661,16 @@ export default function RequestServiceModal({
         ) {
           errorMessage =
             "No tienes permisos para crear solicitudes. Por favor, verifica tu sesión o contacta a soporte.";
+          console.error(
+            "🔍 handleFreeRequestSubmit - RLS Error detected. Verificando políticas...",
+            {
+              policyCheck:
+                "Verifica que las políticas 'authenticated_users_can_create_leads_v3' y 'anonymous_users_can_create_leads_v3' existan en Supabase.",
+              currentUserId: currentUserId,
+              suggestion:
+                "Si el problema persiste, ejecuta el script: fix-leads-rls-simplified-v3.sql en Supabase SQL Editor.",
+            }
+          );
         } else if (
           leadError.message?.includes("violates") ||
           leadError.message?.includes("constraint")

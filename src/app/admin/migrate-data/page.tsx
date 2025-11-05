@@ -5,9 +5,15 @@ import { supabase } from '@/lib/supabase/client';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSpinner, faCheckCircle, faExclamationTriangle, faDatabase, faUsers, faWrench } from '@fortawesome/free-solid-svg-icons';
 
+interface ResultItem {
+  type: 'success' | 'error' | 'info';
+  message: string;
+  timestamp: string;
+}
+
 export default function MigrateDataPage() {
   const [loading, setLoading] = useState(false);
-  const [results, setResults] = useState<any[]>([]);
+  const [results, setResults] = useState<ResultItem[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   const addResult = (type: 'success' | 'error' | 'info', message: string) => {
@@ -108,17 +114,21 @@ export default function MigrateDataPage() {
             addResult('info', `ℹ️ ${user.full_name} ya tiene datos profesionales`);
           }
 
-        } catch (userError: any) {
-          addResult('error', `Error procesando ${user.full_name}: ${userError.message}`);
+        } catch (userError) {
+          const errorMessage = userError instanceof Error 
+            ? userError.message 
+            : 'Error desconocido';
+          addResult('error', `Error procesando ${user.full_name}: ${errorMessage}`);
         }
       }
 
       addResult('success', '🎉 Migración completada');
 
-    } catch (err: any) {
+    } catch (err) {
       console.error('Migration error:', err);
-      setError(err.message);
-      addResult('error', `Error general: ${err.message}`);
+      const errorMessage = err instanceof Error ? err.message : 'Error desconocido';
+      setError(errorMessage);
+      addResult('error', `Error general: ${errorMessage}`);
     } finally {
       setLoading(false);
     }
@@ -150,10 +160,11 @@ export default function MigrateDataPage() {
 
       addResult('success', '✅ Todos los roles reseteados a "client"');
 
-    } catch (err: any) {
+    } catch (err) {
       console.error('Reset error:', err);
-      setError(err.message);
-      addResult('error', `Error: ${err.message}`);
+      const errorMessage = err instanceof Error ? err.message : 'Error desconocido';
+      setError(errorMessage);
+      addResult('error', `Error: ${errorMessage}`);
     } finally {
       setLoading(false);
     }
@@ -212,7 +223,7 @@ export default function MigrateDataPage() {
               </h2>
             </div>
             <p className="text-gray-600 mb-4">
-              ⚠️ Cambia TODOS los usuarios a rol "client". Usar con precaución.
+              ⚠️ Cambia TODOS los usuarios a rol &quot;client&quot;. Usar con precaución.
             </p>
             <button
               onClick={resetAllRoles}
