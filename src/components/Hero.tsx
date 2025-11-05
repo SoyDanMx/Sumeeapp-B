@@ -190,7 +190,7 @@ export const Hero = () => {
   };
 
   return (
-    <section className="relative min-h-[100vh] md:min-h-[85vh] flex items-center overflow-hidden pt-16 md:pt-20">
+    <section className="relative min-h-[100vh] md:min-h-[85vh] flex items-center overflow-hidden pt-0">
       {/* Imagen optimizada para LCP */}
       <div className="absolute inset-0">
         <Image
@@ -227,16 +227,16 @@ export const Hero = () => {
                   </span>
                 </Link>
 
-                {/* Mensaje principal */}
-                <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-3 md:mb-4 leading-tight text-white">
+                {/* Mensaje principal - Tamaños mejorados para móviles */}
+                <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-4 sm:mb-5 md:mb-6 leading-tight text-white drop-shadow-2xl">
                   <span className="text-orange-400">La Solución Confiable</span>
                   <br />
                   <span className="text-white">para tu Hogar.</span>
                 </h1>
 
-                <p className="text-base md:text-lg text-blue-200 mb-6 md:mb-8">
+                <p className="text-lg sm:text-xl md:text-2xl lg:text-2xl text-blue-100 mb-6 sm:mb-7 md:mb-8 leading-relaxed drop-shadow-lg">
                   Deja de buscar. Encuentra al técnico perfecto.
-                  <span className="block mt-2 text-green-300 font-semibold">
+                  <span className="block mt-3 sm:mt-4 text-green-300 font-semibold text-xl sm:text-2xl md:text-2xl">
                     Tu primera visita de revisión es gratis.
                   </span>
                 </p>
@@ -293,7 +293,7 @@ export const Hero = () => {
                       type="text"
                       inputMode="numeric"
                       maxLength={5}
-                      className="w-full pl-10 md:pl-12 pr-4 py-3 md:py-4 text-base md:text-lg border-2 border-white/40 rounded-lg md:rounded-xl text-gray-900 bg-white/95 backdrop-blur-sm focus:ring-4 focus:ring-blue-500/50 focus:border-blue-500 transition-all placeholder-gray-500 font-medium"
+                      className="w-full pl-10 sm:pl-12 pr-4 py-3.5 sm:py-4 text-base sm:text-lg md:text-xl border-2 border-white/40 rounded-lg md:rounded-xl text-gray-900 bg-white/95 backdrop-blur-sm focus:ring-4 focus:ring-blue-500/50 focus:border-blue-500 transition-all placeholder-gray-500 font-medium"
                       placeholder="03100"
                       value={postalCode}
                       onChange={handlePostalCodeChange}
@@ -304,7 +304,7 @@ export const Hero = () => {
                   <button
                     onClick={handleUseCurrentLocation}
                     disabled={isUsingCurrentLocation}
-                    className="w-full bg-white/25 hover:bg-white/35 disabled:bg-white/15 disabled:cursor-not-allowed text-white px-3 md:px-4 py-2.5 md:py-3 rounded-lg md:rounded-xl font-semibold transition-all flex items-center justify-center border border-white/40 text-sm md:text-base"
+                    className="w-full bg-white/25 hover:bg-white/35 disabled:bg-white/15 disabled:cursor-not-allowed text-white px-4 sm:px-5 py-3 sm:py-3.5 rounded-lg md:rounded-xl font-semibold transition-all flex items-center justify-center border border-white/40 text-base sm:text-lg md:text-xl"
                   >
                     <FontAwesomeIcon
                       icon={isUsingCurrentLocation ? faSpinner : faLocationDot}
@@ -320,7 +320,7 @@ export const Hero = () => {
                   {/* CTA Button principal */}
                   <button
                     onClick={handlePostalCodeSubmit}
-                    className="w-full bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed text-white px-4 md:px-6 py-3 md:py-4 rounded-lg md:rounded-xl font-bold text-base md:text-lg transition-all transform hover:scale-105 flex items-center justify-center shadow-xl"
+                    className="w-full bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed text-white px-5 sm:px-6 md:px-8 py-4 sm:py-4.5 md:py-5 rounded-lg md:rounded-xl font-bold text-lg sm:text-xl md:text-2xl transition-all transform hover:scale-105 flex items-center justify-center shadow-xl"
                     disabled={!isPostalCodeValid || isLoadingUser}
                   >
                     {isLoadingUser ? (
@@ -337,36 +337,36 @@ export const Hero = () => {
                   <div className="text-center pt-1 md:pt-2">
                     <Link
                       href="/servicios"
-                      className="text-blue-200 hover:text-white transition-colors text-xs md:text-sm underline"
+                      className="text-blue-200 hover:text-white transition-colors text-sm sm:text-base md:text-lg underline"
                     >
                       O explora todos nuestros servicios
                     </Link>
                   </div>
                 </div>
 
-                {/* Trust Bar - Estadísticas compactas */}
-                <div className="grid grid-cols-3 gap-2 md:gap-4 mt-6 md:mt-8 pt-4 md:pt-6 border-t border-white/20">
+                {/* Trust Bar - Estadísticas mejoradas para móviles */}
+                <div className="grid grid-cols-3 gap-3 sm:gap-4 md:gap-6 mt-6 sm:mt-8 md:mt-10 pt-5 sm:pt-6 md:pt-8 border-t border-white/20">
                   <div className="text-center">
-                    <div className="text-lg md:text-2xl font-bold text-yellow-400 mb-1">
+                    <div className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-yellow-400 mb-1.5 sm:mb-2 drop-shadow-lg">
                       50,000+
                     </div>
-                    <div className="text-xs text-blue-200 font-medium">
+                    <div className="text-xs sm:text-sm md:text-base text-blue-100 font-medium">
                       Servicios
                     </div>
                   </div>
                   <div className="text-center">
-                    <div className="text-lg md:text-2xl font-bold text-green-400 mb-1">
+                    <div className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-green-400 mb-1.5 sm:mb-2 drop-shadow-lg">
                       2h
                     </div>
-                    <div className="text-xs text-blue-200 font-medium">
+                    <div className="text-xs sm:text-sm md:text-base text-blue-100 font-medium">
                       Tiempo Promedio
                     </div>
                   </div>
                   <div className="text-center">
-                    <div className="text-lg md:text-2xl font-bold text-purple-400 mb-1">
+                    <div className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-purple-400 mb-1.5 sm:mb-2 drop-shadow-lg">
                       4.8
                     </div>
-                    <div className="text-xs text-blue-200 font-medium">
+                    <div className="text-xs sm:text-sm md:text-base text-blue-100 font-medium">
                       Calificación
                     </div>
                   </div>

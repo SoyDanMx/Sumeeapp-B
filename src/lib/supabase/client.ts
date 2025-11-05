@@ -54,24 +54,79 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
 
 // Manejo global de errores de refresh token (solo en el navegador)
 if (typeof window !== "undefined") {
-  // Listener para errores de autenticación
-  supabase.auth.onAuthStateChange((event, session) => {
-    // Si la sesión es null después de un TOKEN_REFRESHED, podría indicar un error
-    if (event === "TOKEN_REFRESHED" && !session) {
-      console.warn(
-        "Token refresh resulted in null session, clearing auth data"
-      );
-      // Limpiar datos de autenticación
-      if (typeof window !== "undefined") {
-        Object.keys(localStorage).forEach((key) => {
-          if (
+  // Limpiar tokens inválidos al iniciar si no hay sesión válida
+  supabase.auth
+    .getSession()
+    .then(({ data: { session }, error }) => {
+      if (error || !session) {
+        // Limpiar tokens residuales si no hay sesión válida
+        const authKeys = Object.keys(localStorage).filter(
+          (key) =>
             key.includes("supabase") ||
             key.includes("sb-") ||
             key.includes("auth-token")
-          ) {
-            localStorage.removeItem(key);
-          }
-        });
+        );
+        if (authKeys.length > 0) {
+          authKeys.forEach((key) => localStorage.removeItem(key));
+        }
+      }
+    })
+    .catch(() => {
+      // Ignorar errores en getSession inicial
+    });
+
+  // Interceptar errores no capturados relacionados con refresh token
+  window.addEventListener("unhandledrejection", (event) => {
+    const errorMessage =
+      event.reason?.message || event.reason?.toString() || "";
+    if (
+      typeof errorMessage === "string" &&
+      (errorMessage.includes("Invalid Refresh Token") ||
+        errorMessage.includes("Refresh Token Not Found") ||
+        errorMessage.includes("refresh_token_not_found"))
+    ) {
+      // Prevenir que el error se muestre en la consola
+      event.preventDefault();
+      // Limpiar tokens inválidos automáticamente
+      const authKeys = Object.keys(localStorage).filter(
+        (key) =>
+          key.includes("supabase") ||
+          key.includes("sb-") ||
+          key.includes("auth-token")
+      );
+      if (authKeys.length > 0) {
+        authKeys.forEach((key) => localStorage.removeItem(key));
+      }
+    }
+  });
+
+  // Listener para errores de autenticación
+  supabase.auth.onAuthStateChange(async (event, session) => {
+    // Si la sesión es null después de un TOKEN_REFRESHED, podría indicar un error
+    if (event === "TOKEN_REFRESHED" && !session) {
+      // Limpiar datos de autenticación silenciosamente
+      const authKeys = Object.keys(localStorage).filter(
+        (key) =>
+          key.includes("supabase") ||
+          key.includes("sb-") ||
+          key.includes("auth-token")
+      );
+      if (authKeys.length > 0) {
+        authKeys.forEach((key) => localStorage.removeItem(key));
+      }
+    }
+
+    // Manejar errores de refresh token en eventos de error
+    if (event === "SIGNED_OUT" || (!session && event !== "INITIAL_SESSION")) {
+      // Limpiar tokens residuales
+      const authKeys = Object.keys(localStorage).filter(
+        (key) =>
+          key.includes("supabase") ||
+          key.includes("sb-") ||
+          key.includes("auth-token")
+      );
+      if (authKeys.length > 0) {
+        authKeys.forEach((key) => localStorage.removeItem(key));
       }
     }
   });
@@ -93,21 +148,25 @@ if (typeof window !== "undefined") {
           if (
             errorData?.message &&
             (errorData.message.includes("Invalid Refresh Token") ||
-              errorData.message.includes("Refresh Token Not Found"))
+              errorData.message.includes("Refresh Token Not Found") ||
+              errorData.message.includes("refresh_token_not_found"))
           ) {
-            console.warn("Refresh token error detected, clearing session");
-            // Limpiar sesión
-            await supabase.auth.signOut();
+            // Limpiar sesión silenciosamente
+            try {
+              await supabase.auth.signOut();
+            } catch (e) {
+              // Ignorar errores al hacer signOut
+            }
             // Limpiar localStorage
-            Object.keys(localStorage).forEach((key) => {
-              if (
+            const authKeys = Object.keys(localStorage).filter(
+              (key) =>
                 key.includes("supabase") ||
                 key.includes("sb-") ||
                 key.includes("auth-token")
-              ) {
-                localStorage.removeItem(key);
-              }
-            });
+            );
+            authKeys.forEach((key) => localStorage.removeItem(key));
+            // No propagar el error - es esperado cuando no hay sesión válida
+            return response;
           }
         } catch (e) {
           // Si no se puede parsear como JSON, ignorar
@@ -116,25 +175,30 @@ if (typeof window !== "undefined") {
 
       return response;
     } catch (error: any) {
-      // Si el error contiene información de refresh token, limpiar sesión
+      // Si el error contiene información de refresh token, limpiar sesión silenciosamente
       if (
         error?.message &&
         (error.message.includes("Invalid Refresh Token") ||
-          error.message.includes("Refresh Token Not Found"))
+          error.message.includes("Refresh Token Not Found") ||
+          error.message.includes("refresh_token_not_found"))
       ) {
-        console.warn("Refresh token error in fetch, clearing session");
-        await supabase.auth.signOut();
-        if (typeof window !== "undefined") {
-          Object.keys(localStorage).forEach((key) => {
-            if (
-              key.includes("supabase") ||
-              key.includes("sb-") ||
-              key.includes("auth-token")
-            ) {
-              localStorage.removeItem(key);
-            }
-          });
+        try {
+          await supabase.auth.signOut();
+        } catch (e) {
+          // Ignorar errores al hacer signOut
         }
+        const authKeys = Object.keys(localStorage).filter(
+          (key) =>
+            key.includes("supabase") ||
+            key.includes("sb-") ||
+            key.includes("auth-token")
+        );
+        authKeys.forEach((key) => localStorage.removeItem(key));
+        // No propagar el error - crear una respuesta vacía en su lugar
+        return new Response(JSON.stringify({ error: "Session expired" }), {
+          status: 401,
+          headers: { "Content-Type": "application/json" },
+        });
       }
       throw error;
     }
