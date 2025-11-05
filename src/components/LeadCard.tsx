@@ -100,9 +100,13 @@ export default function LeadCard({
           onLeadAccepted();
         }
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error al aceptar el lead:", error);
-      alert("Error al aceptar el proyecto. Por favor, inténtalo de nuevo.");
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Error al aceptar el proyecto. Por favor, inténtalo de nuevo.";
+      alert(errorMessage);
     } finally {
       setIsAccepting(false);
     }

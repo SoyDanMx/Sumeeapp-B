@@ -280,15 +280,15 @@ export default function JoinAsPro() {
           "El usuario se creó pero no se recibió confirmación. Por favor, verifica tu correo electrónico."
         );
       }
-    } catch (err: any) {
+    } catch (err) {
       console.error("❌ Error en registro profesional:", err);
-      console.error("❌ Stack trace:", err.stack);
+      console.error("❌ Stack trace:", err instanceof Error ? err.stack : 'No stack trace available');
 
       // En caso de error, mostrarlo al usuario
-      setError(
-        err.message ||
-          "Hubo un problema al procesar tu registro. Por favor, inténtalo de nuevo."
-      );
+      const errorMessage = err instanceof Error 
+        ? err.message 
+        : "Hubo un problema al procesar tu registro. Por favor, inténtalo de nuevo.";
+      setError(errorMessage);
     } finally {
       // Al finalizar, establecer el estado de carga (loading) a false
       setLoading(false);
