@@ -1,6 +1,7 @@
 // src/app/blog/[slug]/page.tsx
 import React from "react";
 import { Metadata } from "next";
+import Link from "next/link";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { BlogPostContent } from "@/components/blog/BlogPostContent";
@@ -745,7 +746,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
             <p className="text-gray-600 mb-8">
               El artículo que buscas no existe o ha sido movido.
             </p>
-            <a
+            <Link
               href="/blog"
               className="inline-flex items-center text-indigo-600 hover:text-indigo-700 font-medium"
             >
@@ -763,7 +764,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
                 />
               </svg>
               Volver al Blog
-            </a>
+            </Link>
           </div>
         </main>
         <Footer />
