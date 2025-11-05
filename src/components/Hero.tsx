@@ -202,8 +202,17 @@ export const Hero = () => {
           className="-z-10 object-cover"
           sizes="100vw"
         />
-        {/* Overlay responsivo para mantener la imagen visible */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/60 md:bg-gradient-to-r md:from-black/40 md:via-transparent md:to-transparent"></div>
+        {/* Overlay mejorado - Más sutil para mejor visibilidad de la imagen */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/20 via-black/10 to-transparent md:bg-gradient-to-r md:from-black/30 md:via-black/10 md:to-transparent"></div>
+
+        {/* Overlay radial adicional para mejorar contraste en el panel */}
+        <div
+          className="absolute inset-0 bg-radial-gradient from-transparent via-black/5 to-black/20 pointer-events-none"
+          style={{
+            background:
+              "radial-gradient(ellipse at 30% 50%, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.3) 50%, transparent 100%)",
+          }}
+        ></div>
       </div>
 
       <div className="container mx-auto px-4 sm:px-6 relative z-20">
@@ -212,7 +221,13 @@ export const Hero = () => {
           <div className="flex flex-col lg:flex-row items-center min-h-[calc(100vh-4rem)] md:min-h-[calc(85vh-5rem)]">
             {/* Panel de Control - 100% móvil, 40% desktop */}
             <div className="w-full lg:w-2/5 lg:pr-8 mb-8 lg:mb-0">
-              <div className="bg-black/20 backdrop-blur-sm rounded-2xl md:rounded-3xl p-6 md:p-8 border border-white/20 shadow-2xl">
+              <div
+                className="bg-black/25 backdrop-blur-[20px] backdrop-saturate-[180%] rounded-2xl md:rounded-3xl p-6 md:p-8 border border-white/30 shadow-2xl"
+                style={{
+                  boxShadow:
+                    "0 8px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.2)",
+                }}
+              >
                 {/* Badge de confianza */}
                 <Link
                   href="/verificacion"
@@ -241,16 +256,71 @@ export const Hero = () => {
                   </span>
                 </p>
 
-                {/* Tarjetas de Actividad Recientes - Solo visible en desktop */}
-                <div className="hidden lg:block mb-8">
-                  <h4 className="text-white font-semibold text-lg mb-4 flex items-center">
+                {/* Tarjetas de Actividad Recientes - Versión completa en desktop, compacta en móvil */}
+                <div className="mb-6 md:mb-8">
+                  <h4 className="text-white font-semibold text-base md:text-lg mb-3 md:mb-4 flex items-center">
                     <FontAwesomeIcon
                       icon={faUsers}
                       className="mr-2 text-blue-400"
                     />
-                    Recientemente completado:
+                    <span className="hidden sm:inline">
+                      Recientemente completado:
+                    </span>
+                    <span className="sm:hidden">Recientes:</span>
                   </h4>
-                  <div className="space-y-3">
+                  {/* Versión compacta para móvil - Grid horizontal */}
+                  <div className="grid grid-cols-3 gap-2 md:hidden">
+                    <div className="bg-white/10 backdrop-blur-sm rounded-lg p-2 text-center border border-white/20">
+                      <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-1 text-white font-bold text-sm">
+                        C
+                      </div>
+                      <p className="text-xs text-white font-semibold truncate">
+                        Carlos
+                      </p>
+                      <p className="text-xs text-white/80">Electricista</p>
+                      <div className="flex items-center justify-center mt-1">
+                        <FontAwesomeIcon
+                          icon={faStar}
+                          className="text-yellow-400 text-xs"
+                        />
+                        <span className="text-xs text-white ml-1">5.0</span>
+                      </div>
+                    </div>
+                    <div className="bg-white/10 backdrop-blur-sm rounded-lg p-2 text-center border border-white/20">
+                      <div className="w-10 h-10 bg-gradient-to-r from-pink-500 to-red-600 rounded-full flex items-center justify-center mx-auto mb-1 text-white font-bold text-sm">
+                        A
+                      </div>
+                      <p className="text-xs text-white font-semibold truncate">
+                        Ana
+                      </p>
+                      <p className="text-xs text-white/80">Plomera</p>
+                      <div className="flex items-center justify-center mt-1">
+                        <FontAwesomeIcon
+                          icon={faStar}
+                          className="text-yellow-400 text-xs"
+                        />
+                        <span className="text-xs text-white ml-1">5.0</span>
+                      </div>
+                    </div>
+                    <div className="bg-white/10 backdrop-blur-sm rounded-lg p-2 text-center border border-white/20">
+                      <div className="w-10 h-10 bg-gradient-to-r from-green-500 to-teal-600 rounded-full flex items-center justify-center mx-auto mb-1 text-white font-bold text-sm">
+                        M
+                      </div>
+                      <p className="text-xs text-white font-semibold truncate">
+                        Miguel
+                      </p>
+                      <p className="text-xs text-white/80">Constructor</p>
+                      <div className="flex items-center justify-center mt-1">
+                        <FontAwesomeIcon
+                          icon={faStar}
+                          className="text-yellow-400 text-xs"
+                        />
+                        <span className="text-xs text-white ml-1">5.0</span>
+                      </div>
+                    </div>
+                  </div>
+                  {/* Versión completa para desktop */}
+                  <div className="hidden md:block space-y-3">
                     <ActivityCard
                       name="Carlos"
                       profession="Electricista"
@@ -280,8 +350,9 @@ export const Hero = () => {
 
                 {/* CTA Principal - Formulario de búsqueda */}
                 <div className="space-y-3 md:space-y-4">
-                  {/* Campo de código postal */}
+                  {/* Campo de código postal - Versión optimizada para móvil */}
                   <div className="relative">
+                    {/* Icono de ubicación a la izquierda */}
                     <div className="absolute inset-y-0 left-0 pl-3 md:pl-4 flex items-center pointer-events-none z-10">
                       <FontAwesomeIcon
                         icon={faMapMarkerAlt}
@@ -293,18 +364,35 @@ export const Hero = () => {
                       type="text"
                       inputMode="numeric"
                       maxLength={5}
-                      className="w-full pl-10 sm:pl-12 pr-4 py-3.5 sm:py-4 text-base sm:text-lg md:text-xl border-2 border-white/40 rounded-lg md:rounded-xl text-gray-900 bg-white/95 backdrop-blur-sm focus:ring-4 focus:ring-blue-500/50 focus:border-blue-500 transition-all placeholder-gray-500 font-medium"
+                      className="w-full pl-10 sm:pl-12 pr-12 md:pr-4 py-3.5 sm:py-4 text-base sm:text-lg md:text-xl border-2 border-white/40 rounded-lg md:rounded-xl text-gray-900 bg-white/95 backdrop-blur-sm focus:ring-4 focus:ring-blue-500/50 focus:border-blue-500 transition-all placeholder-gray-500 font-medium"
                       placeholder="03100"
                       value={postalCode}
                       onChange={handlePostalCodeChange}
                     />
+                    {/* Botón de ubicación dentro del input - Solo visible en móvil */}
+                    <button
+                      onClick={handleUseCurrentLocation}
+                      disabled={isUsingCurrentLocation}
+                      className="absolute inset-y-0 right-0 pr-3 md:hidden flex items-center justify-center text-blue-600 hover:text-blue-700 disabled:text-gray-400 disabled:cursor-not-allowed transition-colors"
+                      aria-label="Usar mi ubicación actual"
+                      title="Usar mi ubicación actual"
+                    >
+                      <FontAwesomeIcon
+                        icon={
+                          isUsingCurrentLocation ? faSpinner : faLocationDot
+                        }
+                        className={`text-lg ${
+                          isUsingCurrentLocation ? "animate-spin" : ""
+                        }`}
+                      />
+                    </button>
                   </div>
 
-                  {/* Botón Usar mi Ubicación Actual */}
+                  {/* Botón Usar mi Ubicación Actual - Solo visible en desktop */}
                   <button
                     onClick={handleUseCurrentLocation}
                     disabled={isUsingCurrentLocation}
-                    className="w-full bg-white/25 hover:bg-white/35 disabled:bg-white/15 disabled:cursor-not-allowed text-white px-4 sm:px-5 py-3 sm:py-3.5 rounded-lg md:rounded-xl font-semibold transition-all flex items-center justify-center border border-white/40 text-base sm:text-lg md:text-xl"
+                    className="hidden md:flex w-full bg-white/25 hover:bg-white/35 disabled:bg-white/15 disabled:cursor-not-allowed text-white px-4 sm:px-5 py-3 sm:py-3.5 rounded-lg md:rounded-xl font-semibold transition-all items-center justify-center border border-white/40 text-base sm:text-lg md:text-xl"
                   >
                     <FontAwesomeIcon
                       icon={isUsingCurrentLocation ? faSpinner : faLocationDot}
@@ -320,7 +408,7 @@ export const Hero = () => {
                   {/* CTA Button principal */}
                   <button
                     onClick={handlePostalCodeSubmit}
-                    className="w-full bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed text-white px-5 sm:px-6 md:px-8 py-4 sm:py-4.5 md:py-5 rounded-lg md:rounded-xl font-bold text-lg sm:text-xl md:text-2xl transition-all transform hover:scale-105 flex items-center justify-center shadow-xl"
+                    className="w-full bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed text-white px-5 sm:px-6 md:px-8 py-4 sm:py-4.5 md:py-5 rounded-lg md:rounded-xl font-bold text-lg sm:text-xl md:text-2xl transition-smooth btn-hover-lift button-ripple flex items-center justify-center shadow-xl"
                     disabled={!isPostalCodeValid || isLoadingUser}
                   >
                     {isLoadingUser ? (

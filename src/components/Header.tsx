@@ -33,6 +33,7 @@ const ButtonSkeleton = () => (
 export const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
 
   const { location, setLocation } = useLocation();
   const { user, profile, isLoading, isAuthenticated } = useAuth();
@@ -42,6 +43,25 @@ export const Header = () => {
     setIsMenuOpen(false);
     setIsLocationModalOpen(false);
   };
+
+  // Detectar scroll para cambiar el estilo del header
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollPosition = window.scrollY;
+      // Cambiar estado cuando el scroll sea mayor a 50px
+      setIsScrolled(scrollPosition > 50);
+    };
+
+    // Ejecutar una vez al montar para verificar posición inicial
+    handleScroll();
+
+    // Agregar listener de scroll
+    window.addEventListener("scroll", handleScroll, { passive: true });
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+    };
+  }, []);
 
   // Cerrar menú móvil al hacer clic fuera
   useEffect(() => {
@@ -63,16 +83,25 @@ export const Header = () => {
 
   return (
     <>
-      {/* Header Transparente - Diseño Moderno */}
+      {/* Header Transparente - Diseño Moderno con Scroll Behavior */}
       <header
-        className="fixed top-0 left-0 right-0 z-50 transition-all duration-300"
+        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+          isScrolled
+            ? "bg-white/95 dark:bg-gray-900/95 shadow-lg"
+            : "bg-transparent"
+        }`}
         style={{
-          background:
-            "linear-gradient(to bottom, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.1) 50%, transparent 100%)",
+          background: isScrolled
+            ? "rgba(255, 255, 255, 0.95)"
+            : "linear-gradient(to bottom, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.1) 50%, transparent 100%)",
           backdropFilter: "blur(8px)",
         }}
       >
-        <div className="container mx-auto px-4 sm:px-6 py-3 sm:py-4">
+        <div
+          className={`container mx-auto px-4 sm:px-6 transition-all duration-300 ${
+            isScrolled ? "py-2 sm:py-2.5" : "py-3 sm:py-4"
+          }`}
+        >
           {/* Layout principal - Una sola línea */}
           <div className="flex items-center justify-between">
             {/* Logo - Versión Blanca */}
@@ -87,9 +116,13 @@ export const Header = () => {
                   alt="Logo de Sumee"
                   width={90}
                   height={24}
-                  className="md:w-[120px] md:h-[32px] brightness-0 invert"
+                  className={`md:w-[120px] md:h-[32px] transition-all duration-300 ${
+                    isScrolled ? "brightness-0 invert-0" : "brightness-0 invert"
+                  }`}
                   priority
-                  style={{ filter: "brightness(0) invert(1)" }}
+                  style={{
+                    filter: isScrolled ? "none" : "brightness(0) invert(1)",
+                  }}
                 />
               </Link>
 
@@ -100,7 +133,11 @@ export const Header = () => {
                   <Link
                     href="/registro-cliente"
                     onClick={closeAllModals}
-                    className="hidden lg:flex items-center bg-white/20 hover:bg-white/30 backdrop-blur-sm border border-white/30 text-white px-4 py-2 rounded-full text-xs sm:text-sm font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 cursor-pointer group"
+                    className={`hidden lg:flex items-center backdrop-blur-sm px-4 py-2 rounded-full text-xs sm:text-sm font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 cursor-pointer group ${
+                      isScrolled
+                        ? "bg-blue-600 hover:bg-blue-700 border border-blue-700 text-white"
+                        : "bg-white/20 hover:bg-white/30 border border-white/30 text-white"
+                    }`}
                     title="Regístrate ahora y obtén tu primera revisión gratis"
                   >
                     <span className="whitespace-nowrap flex items-center">
@@ -117,7 +154,11 @@ export const Header = () => {
 
                 {/* Ubicación - Visible en desktop junto al badge, también en móvil */}
                 <div
-                  className="flex items-center cursor-pointer text-white/90 hover:text-white transition-colors duration-200 group"
+                  className={`flex items-center cursor-pointer transition-colors duration-200 group ${
+                    isScrolled
+                      ? "text-gray-700 hover:text-blue-600"
+                      : "text-white/90 hover:text-white"
+                  }`}
                   onClick={() => setIsLocationModalOpen(true)}
                 >
                   <FontAwesomeIcon
@@ -144,13 +185,20 @@ export const Header = () => {
                 <div className="h-9 w-24 bg-white/20 rounded-lg animate-pulse"></div>
               ) : isAuthenticated && user ? (
                 // Usuario logueado: mostrar dropdown "Mi Panel"
-                <UserPanelMenu onClose={closeAllModals} />
+                <UserPanelMenu
+                  onClose={closeAllModals}
+                  isScrolled={isScrolled}
+                />
               ) : (
                 <>
                   {/* Botón "Iniciar Sesión" */}
                   <Link
                     href="/login"
-                    className="bg-white/20 hover:bg-white/30 backdrop-blur-sm border border-white/30 text-white px-3 sm:px-4 md:px-5 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm md:text-base font-semibold transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 whitespace-nowrap"
+                    className={`backdrop-blur-sm px-3 sm:px-4 md:px-5 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm md:text-base font-semibold transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 whitespace-nowrap ${
+                      isScrolled
+                        ? "bg-gray-100 hover:bg-gray-200 border border-gray-300 text-gray-800"
+                        : "bg-white/20 hover:bg-white/30 border border-white/30 text-white"
+                    }`}
                   >
                     Iniciar Sesión
                   </Link>
@@ -158,7 +206,11 @@ export const Header = () => {
                   {/* Botón "Únete como Profesional" - Solo visible en desktop, junto a Iniciar Sesión */}
                   <Link
                     href="/join-as-pro"
-                    className="hidden md:flex bg-white/20 hover:bg-white/30 backdrop-blur-sm border border-white/30 text-white px-3 lg:px-4 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm lg:text-base font-semibold transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 whitespace-nowrap"
+                    className={`hidden md:flex backdrop-blur-sm px-3 lg:px-4 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm lg:text-base font-semibold transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 whitespace-nowrap ${
+                      isScrolled
+                        ? "bg-blue-600 hover:bg-blue-700 border border-blue-700 text-white"
+                        : "bg-white/20 hover:bg-white/30 border border-white/30 text-white"
+                    }`}
                   >
                     Únete como Profesional
                   </Link>
@@ -169,7 +221,11 @@ export const Header = () => {
               <button
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
                 aria-label="Abrir menú"
-                className="md:hidden p-2 menu-button text-white hover:bg-white/20 rounded-lg transition-colors"
+                className={`md:hidden p-2 menu-button rounded-lg transition-all duration-300 ${
+                  isScrolled
+                    ? "text-gray-700 hover:bg-gray-100"
+                    : "text-white hover:bg-white/20"
+                }`}
               >
                 <FontAwesomeIcon icon={faBars} className="text-lg sm:text-xl" />
               </button>
