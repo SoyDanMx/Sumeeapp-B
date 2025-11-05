@@ -4,6 +4,7 @@
 import React from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSearch, faUserCheck, faCalendarAlt, faSmile } from '@fortawesome/free-solid-svg-icons';
+import { ScrollReveal } from './ScrollReveal';
 
 // Datos para los pasos del proceso - Simplificado a 3 pasos enfocados en confianza.
 const steps = [
@@ -29,18 +30,26 @@ const steps = [
 
 export const HowItWorks = () => {
   return (
-    <section className="py-16 bg-white" id="como-funciona">
-      <div className="container mx-auto px-4">
-        {/* Título de la sección */}
-        <div className="text-center mb-16">
-          <h2 className="text-3xl font-bold text-gray-900 mb-4">Cómo Funciona</h2>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">Encontrar un profesional confiable nunca ha sido tan fácil</p>
-        </div>
-        
-        {/* Grilla de Pasos */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-x-8 gap-y-12">
-          {steps.map((step, index) => (
-            <div key={index} className="text-center relative">
+    <ScrollReveal variant="slide-up">
+      <section className="py-16 bg-white" id="como-funciona">
+        <div className="container mx-auto px-4">
+          {/* Título de la sección */}
+          <ScrollReveal variant="fade" delay={0}>
+            <div className="text-center mb-16">
+              <h2 className="text-3xl font-bold text-gray-900 mb-4">Cómo Funciona</h2>
+              <p className="text-lg text-gray-600 max-w-2xl mx-auto">Encontrar un profesional confiable nunca ha sido tan fácil</p>
+            </div>
+          </ScrollReveal>
+          
+          {/* Grilla de Pasos */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-x-8 gap-y-12">
+            {steps.map((step, index) => (
+              <ScrollReveal 
+                key={index} 
+                variant="slide-up" 
+                delay={index * 150}
+              >
+                <div className="text-center relative">
               {/* Línea punteada de conexión (solo en escritorio) */}
               {index < steps.length - 1 && (
                 <div className="hidden md:block absolute top-10 left-[55%] w-[90%] border-t-2 border-dashed border-blue-300"></div>
@@ -51,12 +60,14 @@ export const HowItWorks = () => {
                 <FontAwesomeIcon icon={step.icon} className="text-3xl text-blue-600" />
               </div>
               
-              <h3 className="text-xl font-semibold text-gray-900 mb-3">{step.title}</h3>
-              <p className="text-gray-600">{step.description}</p>
-            </div>
-          ))}
+                  <h3 className="text-xl font-semibold text-gray-900 mb-3">{step.title}</h3>
+                  <p className="text-gray-600">{step.description}</p>
+                </div>
+              </ScrollReveal>
+            ))}
+          </div>
         </div>
-      </div>
-    </section>
+      </section>
+    </ScrollReveal>
   );
 }
