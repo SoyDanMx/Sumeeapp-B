@@ -25,7 +25,7 @@ export default function ProfesionalDashboardPage() {
   const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
   const [isOnline, setIsOnline] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  
+
   // Sincronizar isOnline con el estado del profesional cuando cambia
   useEffect(() => {
     if (profesional?.disponibilidad === "disponible") {
@@ -220,14 +220,14 @@ export default function ProfesionalDashboardPage() {
           <div className="flex-1 min-w-0 p-2 md:p-3 md:p-6 overflow-hidden w-full">
             <WorkFeed
               leads={leads}
-              profesionalLat={profesional.ubicacion_lat ?? undefined}
-              profesionalLng={profesional.ubicacion_lng ?? undefined}
+              profesionalLat={profesional?.ubicacion_lat ?? undefined}
+              profesionalLng={profesional?.ubicacion_lng ?? undefined}
               currentLat={currentLocation?.lat}
               currentLng={currentLocation?.lng}
               onLeadClick={handleLeadClick}
               onLeadAccepted={refetchData}
               selectedLeadId={selectedLeadId}
-              avatarUrl={profesional.avatar_url ?? null}
+              avatarUrl={profesional?.avatar_url ?? null}
               onEditProfileClick={() => setIsModalOpen(true)}
             />
           </div>
@@ -289,7 +289,9 @@ export default function ProfesionalDashboardPage() {
                   // Esperar un poco para asegurar que la BD se haya actualizado
                   setTimeout(async () => {
                     await refetchData();
-                    console.log("✅ Datos refrescados después de cambio de disponibilidad");
+                    console.log(
+                      "✅ Datos refrescados después de cambio de disponibilidad"
+                    );
                   }, 500);
                 }}
                 onLocationUpdate={(lat, lng) => {

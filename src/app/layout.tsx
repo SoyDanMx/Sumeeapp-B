@@ -2,42 +2,36 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import "leaflet/dist/leaflet.css"; // 1. Importamos los estilos de Leaflet aquí
-
-// --- IMPORTS ADICIONALES NECESARIOS ---
-import { Header } from "../components/Header"; // Importa tu componente Header
-import { LocationProvider } from "../context/LocationContext"; // Importa el LocationProvider
-import { AuthProvider } from "../context/AuthContext"; // Importa el AuthProvider centralizado
-import { UserProvider } from "../context/UserContext"; // Importa el UserProvider (legacy)
-import { MembershipProvider } from "../context/MembershipContext"; // Importa el MembershipProvider
-// --- FIN IMPORTS ADICIONALES ---
-
+import "leaflet/dist/leaflet.css";
 import { SkipLinks } from "@/components/UX/AccessibilityHelpers";
 import CriticalCSS from "@/components/Performance/CriticalCSS";
 import ResourceHints from "@/components/Performance/ResourceHints";
 import ClientAnalytics from "@/components/ClientAnalytics";
 import ClientWhatsAppWidget from "@/components/ClientWhatsAppWidget";
+import { Header } from "@/components/Header";
+import { LocationProvider } from "@/context/LocationContext";
+import { AuthProvider } from "@/context/AuthContext";
+import { UserProvider } from "@/context/UserContext";
+import { MembershipProvider } from "@/context/MembershipContext";
 
 // Fuente optimizada para CLS - auto-hospedada con next/font
 const inter = Inter({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
-  display: "swap", // Reduce CLS mostrando texto con fuente de sistema mientras carga
-  variable: "--font-inter", // Variable CSS para uso en Tailwind
-  preload: true, // Preload de la fuente para mejor rendimiento
+  display: "swap",
+  variable: "--font-inter",
+  preload: true,
 });
 
 // Metadata optimizada para SEO y conversión
 export const metadata: Metadata = {
   metadataBase: new URL("https://www.sumeeapp.com"),
-
   title: {
     default: "Plomeros, Electricistas y Más Verificados en CDMX | Sumee App",
     template: `%s | Sumee App CDMX`,
   },
   description:
     "Encuentra técnicos profesionales de confianza para tu hogar en Ciudad de México. Servicios 100% verificados con garantía de satisfacción. ¡Cotiza fácil y rápido!",
-
   keywords: [
     "plomeros CDMX",
     "electricistas CDMX",
@@ -48,7 +42,6 @@ export const metadata: Metadata = {
     "Sumee App",
     "servicios profesionales CDMX",
   ],
-
   openGraph: {
     title: "Plomeros, Electricistas y Más Verificados en CDMX | Sumee App",
     description:
@@ -69,39 +62,24 @@ export default function RootLayout({
   return (
     <html lang="es">
       <head>
-        {/* Resource Hints para performance */}
         <ResourceHints />
-
-        {/* Critical CSS inline */}
         <CriticalCSS />
       </head>
       <body className={inter.className}>
-        {/* Skip Links para accesibilidad */}
         <SkipLinks />
-
-        {/* Analytics y Performance con carga diferida */}
         <ClientAnalytics />
-
-        {/*
-          ENVOLVEMOS EL HEADER Y EL CONTENIDO PRINCIPAL (children)
-          CON EL LOCATIONPROVIDER PARA QUE TODOS TENGAN ACCESO AL CONTEXTO DE UBICACIÓN.
-        */}
         <LocationProvider>
           <AuthProvider>
             <UserProvider>
               <MembershipProvider>
-                <Header /> {/* El Header ahora forma parte del layout */}
+                <Header />
                 <main id="main-content" className="pt-20">
-                  {" "}
-                  {/* Añadimos padding-top para que el contenido no quede bajo el fixed header */}
-                  {children}{" "}
-                  {/* Aquí se renderiza el contenido de cada página */}
+                  {children}
                 </main>
               </MembershipProvider>
             </UserProvider>
           </AuthProvider>
         </LocationProvider>
-
         <ClientWhatsAppWidget />
       </body>
     </html>

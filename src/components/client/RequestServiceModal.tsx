@@ -266,21 +266,30 @@ export default function RequestServiceModal({
           );
         }
       }
-    } catch (err: any) {
+    } catch (err) {
       console.error("❌ Error en geolocalización:", err);
-      if (err.code === 1) {
-        setError(
-          "Permiso de ubicación denegado. Por favor, ingresa la dirección manualmente."
-        );
-      } else if (err.code === 2) {
-        setError(
-          "Ubicación no disponible. Por favor, ingresa la dirección manualmente."
-        );
-      } else if (err.code === 3) {
-        setError(
-          "Tiempo de espera agotado. Por favor, ingresa la dirección manualmente."
-        );
-      } else if (err.name === "NetworkError") {
+      // GeolocationPositionError no es accesible directamente en TypeScript
+      // Verificamos por propiedades específicas
+      if (err && typeof err === "object" && "code" in err) {
+        const geoError = err as { code: number; message?: string };
+        if (geoError.code === 1) {
+          setError(
+            "Permiso de ubicación denegado. Por favor, ingresa la dirección manualmente."
+          );
+        } else if (geoError.code === 2) {
+          setError(
+            "Ubicación no disponible. Por favor, ingresa la dirección manualmente."
+          );
+        } else if (geoError.code === 3) {
+          setError(
+            "Tiempo de espera agotado. Por favor, ingresa la dirección manualmente."
+          );
+        } else {
+          setError(
+            "Error al obtener la ubicación. Por favor, ingresa la dirección manualmente."
+          );
+        }
+      } else if (err instanceof Error && err.name === "NetworkError") {
         setError(
           "Error de conexión. Por favor, verifica tu internet e intenta de nuevo."
         );
@@ -393,19 +402,22 @@ export default function RequestServiceModal({
       const whatsappUrl = `https://wa.me/${whatsappPhone}?text=${message}`;
       window.open(whatsappUrl, "_blank");
       onClose();
-    } catch (err: any) {
+    } catch (err) {
       console.error("Error creating lead:", err);
 
       // Asegurar que el error sea amigable
       let errorMessage =
         "Error al crear la solicitud. Por favor, intenta de nuevo.";
 
-      if (err?.message) {
+      if (err instanceof Error) {
         // Si el mensaje ya es amigable (de nuestro código), usarlo
         errorMessage = err.message;
-      } else if (err?.message?.includes("row-level security")) {
-        errorMessage =
-          "Problema de permisos. Por favor, contacta a soporte si el problema persiste.";
+        if (err.message.includes("row-level security")) {
+          errorMessage =
+            "Problema de permisos. Por favor, contacta a soporte si el problema persiste.";
+        }
+      } else if (typeof err === "string") {
+        errorMessage = err;
       }
 
       setError(errorMessage);
@@ -609,24 +621,28 @@ export default function RequestServiceModal({
       );
       router.push(`/solicitudes/${leadData.id}`);
       onClose();
-    } catch (err: any) {
+    } catch (err) {
       console.error("Error creating free lead:", err);
-      console.error("Error details:", JSON.stringify(err, null, 2));
+      console.error(
+        "Error details:",
+        err instanceof Error
+          ? JSON.stringify(err, Object.getOwnPropertyNames(err))
+          : String(err)
+      );
 
       // Mejorar el mensaje de error para el usuario
       let errorMessage =
         "Error al crear la solicitud. Por favor, intenta de nuevo.";
 
-      if (err?.message) {
+      if (err instanceof Error) {
         // Si el mensaje ya es amigable (de nuestro código anterior), usarlo
         errorMessage = err.message;
+        if (err.message.includes("row-level security")) {
+          errorMessage =
+            "Problema de permisos. Por favor, contacta a soporte si el problema persiste.";
+        }
       } else if (typeof err === "string") {
         errorMessage = err;
-      } else if (err?.message?.includes("row-level security")) {
-        errorMessage =
-          "Problema de permisos. Por favor, contacta a soporte si el problema persiste.";
-      } else if (err?.code) {
-        errorMessage = `Error al procesar tu solicitud. Por favor intenta de nuevo o contacta a soporte.`;
       }
 
       setError(errorMessage);
