@@ -70,14 +70,14 @@ export default function UserPanelMenu({ onClose }: UserPanelMenuProps) {
 
   return (
     <div className="relative" ref={dropdownRef}>
-      {/* Botón del menú */}
+      {/* Botón del menú - Estilo blanco para header transparente */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-3 py-1.5 rounded text-xs font-medium transition flex items-center space-x-2 md:px-4 md:py-2 md:text-sm"
+        className="bg-white/20 hover:bg-white/30 backdrop-blur-sm border border-white/30 text-white px-4 sm:px-5 py-2 sm:py-2.5 rounded-lg text-sm sm:text-base font-semibold transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 flex items-center space-x-2"
         aria-label="Abrir menú de usuario"
         aria-expanded={isOpen}
       >
-        <FontAwesomeIcon icon={faUser} className="text-xs md:text-sm" />
+        <FontAwesomeIcon icon={faUser} className="text-sm sm:text-base" />
         <span className="hidden sm:inline">Mi Panel</span>
         <FontAwesomeIcon icon={faChevronDown} className="text-xs" />
       </button>

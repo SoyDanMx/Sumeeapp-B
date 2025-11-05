@@ -73,7 +73,7 @@ export default function RootLayout({
             <UserProvider>
               <MembershipProvider>
                 <Header />
-                <main id="main-content" className="pt-20">
+                <main id="main-content" className="pt-0">
                   {children}
                 </main>
               </MembershipProvider>

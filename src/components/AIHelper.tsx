@@ -10,6 +10,147 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { AIDiagnosisChatbot } from "./AIDiagnosisChatbot";
 
+// Componente de Burbuja de Chat con IA (Diseño Optimizado UX/UI)
+// Basado en principios: Claridad visual, Jerarquía, Feedback, Accesibilidad
+const AIChatBubbleIcon = ({
+  className = "w-16 h-16",
+  variant = "default", // "default" | "compact" para diferentes contextos
+}: {
+  className?: string;
+  variant?: "default" | "compact";
+}) => {
+  const isCompact = variant === "compact";
+  const chatBubbleId = `chatGradient-${variant}`;
+  const starId = `starGlow-${variant}`;
+
+  return (
+    <svg
+      viewBox="0 0 100 100"
+      className={className}
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      role="img"
+      aria-label="Asistente de IA"
+    >
+      <defs>
+        {/* Gradiente principal optimizado para contraste y legibilidad */}
+        <linearGradient id={chatBubbleId} x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#3B82F6" stopOpacity="1" />
+          <stop offset="50%" stopColor="#6366F1" stopOpacity="1" />
+          <stop offset="100%" stopColor="#8B5CF6" stopOpacity="1" />
+        </linearGradient>
+
+        {/* Resplandor para la estrella (efecto de profundidad) */}
+        <radialGradient id={starId} cx="50%" cy="50%">
+          <stop offset="0%" stopColor="#FFD700" stopOpacity="0.8" />
+          <stop offset="70%" stopColor="#FFA500" stopOpacity="0.4" />
+          <stop offset="100%" stopColor="#FF6347" stopOpacity="0" />
+        </radialGradient>
+
+        {/* Sombra suave para profundidad (principio de elevación) */}
+        <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur in="SourceAlpha" stdDeviation="2" />
+          <feOffset dx="0" dy="2" result="offsetblur" />
+          <feComponentTransfer>
+            <feFuncA type="linear" slope="0.3" />
+          </feComponentTransfer>
+          <feMerge>
+            <feMergeNode />
+            <feMergeNode in="SourceGraphic" />
+          </feMerge>
+        </filter>
+      </defs>
+
+      {/* Burbuja de chat principal con esquinas más suaves (mejor percepción visual) */}
+      <path
+        d="M 20 15 Q 15 15 15 20 L 15 60 Q 15 65 20 65 L 40 65 L 50 75 L 60 65 L 80 65 Q 85 65 85 60 L 85 20 Q 85 15 80 15 Z"
+        fill={`url(#${chatBubbleId})`}
+        filter="url(#shadow)"
+        className="transition-all duration-300"
+      />
+
+      {/* Líneas de texto con variación de longitud (principio de naturalidad) */}
+      {/* Línea 1 - Corta */}
+      <rect
+        x="25"
+        y="28"
+        width="28"
+        height="3.5"
+        rx="1.75"
+        fill="white"
+        opacity="0.95"
+        className="transition-opacity duration-300"
+      />
+      {/* Línea 2 - Larga (acento visual) */}
+      <rect
+        x="25"
+        y="38"
+        width="42"
+        height="3.5"
+        rx="1.75"
+        fill="white"
+        opacity="0.95"
+        className="transition-opacity duration-300"
+      />
+      {/* Línea 3 - Media */}
+      <rect
+        x="25"
+        y="48"
+        width="32"
+        height="3.5"
+        rx="1.75"
+        fill="white"
+        opacity="0.85"
+        className="transition-opacity duration-300"
+      />
+
+      {/* Estrella/Brillo mejorado (indicador de inteligencia IA) */}
+      <g transform="translate(68, 32)">
+        {/* Resplandor de fondo */}
+        <circle cx="0" cy="0" r="8" fill={`url(#${starId})`} opacity="0.6" />
+
+        {/* Estrella principal con mejor definición */}
+        <path
+          d="M 0 -7 L 1.5 -2 L 6.5 -2 L 2.5 1 L 4.5 6 L 0 3.5 L -4.5 6 L -2.5 1 L -6.5 -2 L -1.5 -2 Z"
+          fill="#FFD700"
+          stroke="#FFA500"
+          strokeWidth="0.5"
+          opacity="1"
+        />
+
+        {/* Punto central brillante */}
+        <circle cx="0" cy="0" r="1.5" fill="#FFF" opacity="0.9" />
+      </g>
+
+      {/* Punto de conexión inferior mejorado (cola de la burbuja) */}
+      <path
+        d="M 48 73 Q 50 75 52 73 L 50 78 Z"
+        fill={`url(#${chatBubbleId})`}
+        opacity="0.9"
+      />
+
+      {/* Indicador de actividad (punto pulsante) - Feedback visual */}
+      {!isCompact && (
+        <circle
+          cx="75"
+          cy="25"
+          r="3"
+          fill="#10B981"
+          opacity="0.8"
+          className="animate-pulse"
+        >
+          <animate
+            attributeName="opacity"
+            values="0.8;0.3;0.8"
+            dur="2s"
+            repeatCount="indefinite"
+          />
+        </circle>
+      )}
+    </svg>
+  );
+};
+
 export const AIHelper = () => {
   const [isChatbotOpen, setIsChatbotOpen] = useState(false);
 
@@ -66,14 +207,27 @@ export const AIHelper = () => {
               <div className="absolute bottom-6 left-6 w-1.5 h-1.5 bg-purple-400 rounded-full animate-pulse animation-delay-1000"></div>
 
               <div className="text-center">
-                {/* Icono animado del robot */}
+                {/* Icono animado de burbuja de chat con IA - Optimizado UX/UI */}
                 <div className="relative inline-block mb-6">
-                  <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full blur-xl opacity-50 animate-pulse"></div>
-                  <div className="relative bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl p-4 transform group-hover:scale-110 transition-transform duration-300">
-                    <FontAwesomeIcon
-                      icon={faRobot}
-                      className="text-4xl md:text-5xl text-white drop-shadow-lg animate-float"
-                    />
+                  {/* Resplandor de fondo (principio de jerarquía visual) */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-blue-500 via-purple-500 to-indigo-500 rounded-full blur-2xl opacity-40 group-hover:opacity-60 transition-opacity duration-500 animate-pulse"></div>
+
+                  {/* Contenedor principal con glassmorphism mejorado */}
+                  <div className="relative bg-gradient-to-br from-white/95 via-blue-50/90 to-purple-50/85 backdrop-blur-xl rounded-2xl p-5 md:p-6 transform group-hover:scale-105 transition-all duration-300 shadow-xl border border-white/30">
+                    {/* Efecto de brillo sutil al hover */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-transparent rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+
+                    {/* Icono con animación flotante suave */}
+                    <div className="relative drop-shadow-xl animate-float">
+                      <AIChatBubbleIcon
+                        className="w-16 h-16 md:w-20 md:h-20"
+                        variant="default"
+                      />
+                    </div>
+
+                    {/* Partículas decorativas (microinteracciones) */}
+                    <div className="absolute -top-1 -right-1 w-2 h-2 bg-blue-400 rounded-full animate-ping opacity-75"></div>
+                    <div className="absolute -bottom-1 -left-1 w-1.5 h-1.5 bg-purple-400 rounded-full animate-pulse opacity-60"></div>
                   </div>
                 </div>
 
@@ -99,21 +253,29 @@ export const AIHelper = () => {
                   {/* Efecto de brillo animado */}
                   <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent -translate-x-full group-hover/btn:translate-x-full transition-transform duration-1000"></div>
 
-                  {/* Contenido del botón */}
+                  {/* Contenido del botón - Mejorado para accesibilidad y feedback */}
                   <span className="relative flex items-center gap-3">
-                    <div className="relative">
-                      <FontAwesomeIcon
-                        icon={faRobot}
-                        className="text-xl md:text-2xl animate-pulse"
-                      />
-                      <div className="absolute inset-0 bg-white/50 rounded-full blur-md"></div>
+                    {/* Icono compacto con feedback visual */}
+                    <div className="relative w-6 h-6 md:w-7 md:h-7 flex-shrink-0">
+                      <div className="transform group-hover/btn:scale-110 transition-transform duration-300">
+                        <AIChatBubbleIcon
+                          className="w-full h-full"
+                          variant="compact"
+                        />
+                      </div>
+                      {/* Resplandor sutil al hover */}
+                      <div className="absolute inset-0 bg-white/40 rounded-full blur-sm opacity-0 group-hover/btn:opacity-100 transition-opacity duration-300"></div>
                     </div>
-                    <span className="relative z-10">
+
+                    {/* Texto con mejor contraste */}
+                    <span className="relative z-10 font-semibold text-base md:text-lg">
                       Iniciar Diagnóstico AI
                     </span>
+
+                    {/* Flecha con animación mejorada (principio de affordance) */}
                     <FontAwesomeIcon
                       icon={faArrowRight}
-                      className="relative z-10 transform group-hover/btn:translate-x-1 transition-transform"
+                      className="relative z-10 transform group-hover/btn:translate-x-2 transition-all duration-300 opacity-90 group-hover/btn:opacity-100"
                     />
                   </span>
 

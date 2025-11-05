@@ -63,117 +63,124 @@ export const Header = () => {
 
   return (
     <>
-      {/* Header Compacto - Mobile First */}
-      <header className="fixed top-0 left-0 right-0 bg-white shadow-sm z-50">
-        <div className="container mx-auto px-4 py-2">
+      {/* Header Transparente - Diseño Moderno */}
+      <header
+        className="fixed top-0 left-0 right-0 z-50 transition-all duration-300"
+        style={{
+          background:
+            "linear-gradient(to bottom, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.1) 50%, transparent 100%)",
+          backdropFilter: "blur(8px)",
+        }}
+      >
+        <div className="container mx-auto px-4 sm:px-6 py-3 sm:py-4">
           {/* Layout principal - Una sola línea */}
           <div className="flex items-center justify-between">
-            {/* Logo - Compacto */}
-            <div className="flex-shrink-0 flex items-center space-x-2">
-              <Link href="/" onClick={closeAllModals}>
+            {/* Logo - Versión Blanca */}
+            <div className="flex-shrink-0 flex items-center space-x-2 sm:space-x-3 md:space-x-4">
+              <Link
+                href="/"
+                onClick={closeAllModals}
+                className="flex items-center"
+              >
                 <Image
                   src="/logo.png"
                   alt="Logo de Sumee"
-                  width={80}
-                  height={20}
-                  className="md:w-[100px] md:h-[25px]"
+                  width={90}
+                  height={24}
+                  className="md:w-[120px] md:h-[32px] brightness-0 invert"
                   priority
+                  style={{ filter: "brightness(0) invert(1)" }}
                 />
               </Link>
-              {/* Badge "Tu Primera Revisión es Gratis" - CTA accionable para usuarios no autenticados */}
-              {!isAuthenticated && !isLoading && (
-                <Link
-                  href="/registro-cliente"
-                  onClick={closeAllModals}
-                  className="hidden md:flex items-center bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white px-3 py-1.5 rounded-full text-[10px] font-bold shadow-md hover:shadow-lg transition-all duration-300 transform hover:scale-105 cursor-pointer group"
-                  title="Regístrate ahora y obtén tu primera revisión gratis"
-                >
-                  <span className="whitespace-nowrap flex items-center">
-                    <span className="mr-1 group-hover:animate-bounce">✨</span>
-                    Tu Primera Revisión es Gratis
-                    <span className="ml-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      →
+
+              {/* Badge "Tu Primera Revisión es Gratis" y Ubicación en la misma línea */}
+              <div className="flex items-center space-x-2 sm:space-x-3">
+                {/* Badge "Tu Primera Revisión es Gratis" - Versión Blanca para Header Transparente */}
+                {!isAuthenticated && !isLoading && (
+                  <Link
+                    href="/registro-cliente"
+                    onClick={closeAllModals}
+                    className="hidden lg:flex items-center bg-white/20 hover:bg-white/30 backdrop-blur-sm border border-white/30 text-white px-4 py-2 rounded-full text-xs sm:text-sm font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 cursor-pointer group"
+                    title="Regístrate ahora y obtén tu primera revisión gratis"
+                  >
+                    <span className="whitespace-nowrap flex items-center">
+                      <span className="mr-2 group-hover:animate-bounce">
+                        ✨
+                      </span>
+                      Tu Primera Revisión es Gratis
+                      <span className="ml-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        →
+                      </span>
                     </span>
+                  </Link>
+                )}
+
+                {/* Ubicación - Visible en desktop junto al badge, también en móvil */}
+                <div
+                  className="flex items-center cursor-pointer text-white/90 hover:text-white transition-colors duration-200 group"
+                  onClick={() => setIsLocationModalOpen(true)}
+                >
+                  <FontAwesomeIcon
+                    icon={faMapMarkerAlt}
+                    className="mr-1.5 sm:mr-2 text-sm sm:text-base group-hover:scale-110 transition-transform"
+                  />
+                  <span className="font-medium text-xs sm:text-sm md:text-base whitespace-nowrap overflow-hidden text-ellipsis max-w-[80px] sm:max-w-[120px] md:max-w-[180px] lg:max-w-[200px] drop-shadow-md">
+                    {location
+                      ? location.address.split(",")[0].trim()
+                      : "Ubicación"}
                   </span>
-                </Link>
-              )}
+                  <FontAwesomeIcon
+                    icon={faChevronDown}
+                    className="ml-1 sm:ml-2 text-xs opacity-70 group-hover:opacity-100 group-hover:translate-y-0.5 transition-all hidden sm:inline"
+                  />
+                </div>
+              </div>
             </div>
 
-            {/* Ubicación - Solo visible en móvil */}
-            <div
-              className="flex items-center cursor-pointer text-gray-700 hover:text-blue-600 transition-colors duration-200 md:hidden"
-              onClick={() => setIsLocationModalOpen(true)}
-            >
-              <FontAwesomeIcon icon={faMapMarkerAlt} className="mr-1 text-xs" />
-              <span className="font-medium text-xs whitespace-nowrap overflow-hidden text-ellipsis max-w-[60px]">
-                {location ? location.address.split(",")[0].trim() : "Ubicación"}
-              </span>
-            </div>
-
-            {/* CTA Principal - Con skeleton durante carga */}
-            <div className="flex items-center space-x-2">
+            {/* CTA Principal - Versión Blanca para Header Transparente */}
+            <div className="flex items-center space-x-2 sm:space-x-3">
               {isLoading ? (
-                // Estado de carga: mostrar skeleton
-                <ButtonSkeleton />
+                // Estado de carga: mostrar skeleton con fondo transparente
+                <div className="h-9 w-24 bg-white/20 rounded-lg animate-pulse"></div>
               ) : isAuthenticated && user ? (
                 // Usuario logueado: mostrar dropdown "Mi Panel"
                 <UserPanelMenu onClose={closeAllModals} />
               ) : (
-                // Visitante anónimo: mostrar botón "Iniciar Sesión"
-                <Link
-                  href="/login"
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded text-xs font-medium transition md:px-3 md:py-1.5 md:text-sm"
-                >
-                  Iniciar Sesión
-                </Link>
+                <>
+                  {/* Botón "Iniciar Sesión" */}
+                  <Link
+                    href="/login"
+                    className="bg-white/20 hover:bg-white/30 backdrop-blur-sm border border-white/30 text-white px-3 sm:px-4 md:px-5 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm md:text-base font-semibold transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 whitespace-nowrap"
+                  >
+                    Iniciar Sesión
+                  </Link>
+
+                  {/* Botón "Únete como Profesional" - Solo visible en desktop, junto a Iniciar Sesión */}
+                  <Link
+                    href="/join-as-pro"
+                    className="hidden md:flex bg-white/20 hover:bg-white/30 backdrop-blur-sm border border-white/30 text-white px-3 lg:px-4 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm lg:text-base font-semibold transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 whitespace-nowrap"
+                  >
+                    Únete como Profesional
+                  </Link>
+                </>
               )}
 
-              {/* Botón hamburguesa - Solo móvil */}
+              {/* Botón hamburguesa - Solo móvil - Icono Blanco */}
               <button
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
                 aria-label="Abrir menú"
-                className="md:hidden p-1 menu-button"
+                className="md:hidden p-2 menu-button text-white hover:bg-white/20 rounded-lg transition-colors"
               >
-                <FontAwesomeIcon
-                  icon={faBars}
-                  className="text-sm text-gray-800"
-                />
+                <FontAwesomeIcon icon={faBars} className="text-lg sm:text-xl" />
               </button>
             </div>
-          </div>
-
-          {/* Ubicación y navegación desktop - En una sola línea */}
-          <div className="hidden md:flex items-center justify-between mt-1">
-            {/* Ubicación desktop */}
-            <div
-              className="flex items-center cursor-pointer text-gray-700 hover:text-blue-600 transition-colors duration-200"
-              onClick={() => setIsLocationModalOpen(true)}
-            >
-              <FontAwesomeIcon icon={faMapMarkerAlt} className="mr-1 text-sm" />
-              <span className="font-medium text-sm whitespace-nowrap overflow-hidden text-ellipsis max-w-[180px]">
-                {location
-                  ? location.address.split(",")[0].trim()
-                  : "Seleccionar Ubicación"}
-              </span>
-              <FontAwesomeIcon icon={faChevronDown} className="ml-1 text-xs" />
-            </div>
-
-            {/* Navegación desktop - Siempre visible */}
-            <nav className="flex items-center space-x-3">
-              <Link
-                href="/join-as-pro"
-                className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded text-sm font-medium transition-colors"
-              >
-                Únete como Profesional
-              </Link>
-            </nav>
           </div>
         </div>
       </header>
 
-      {/* Menú móvil - Panel lateral */}
+      {/* Menú móvil - Panel lateral con fondo sólido para contraste */}
       <div
-        className={`fixed top-0 right-0 h-full w-80 bg-white dark:bg-gray-900 shadow-lg z-50 transform transition-transform duration-300 ease-in-out ${
+        className={`fixed top-0 right-0 h-full w-80 sm:w-96 bg-white dark:bg-gray-900 shadow-2xl z-50 transform transition-transform duration-300 ease-in-out ${
           isMenuOpen ? "translate-x-0" : "translate-x-full"
         } md:hidden mobile-menu`}
       >
