@@ -22,22 +22,7 @@ import {
   ProfesionalRegistrationData,
   ValidationErrors,
 } from "@/types/supabase";
-
-const PROFESSIONS = [
-  "Electricista",
-  "Plomero",
-  "Carpintero",
-  "Pintor",
-  "Albañil",
-  "Técnico en Refrigeración",
-  "Técnico en Aire Acondicionado",
-  "Soldador",
-  "Herrero",
-  "Técnico en Seguridad",
-  "Instalador de Pisos",
-  "Técnico en Gas",
-  "Otro",
-];
+import { PROFESSIONAL_PROFESSIONS } from "@/constants/professions";
 
 const WORK_ZONES = [
   "Álvaro Obregón",
@@ -165,10 +150,14 @@ export default function JoinAsPro() {
     try {
       // Añadir console.log para depuración en el navegador
       console.log("🚀 INICIANDO REGISTRO PROFESIONAL...");
+      const sanitizedPhone = formData.phone.replace(/[^\\d+]/g, "");
+      const normalizedPhone = sanitizedPhone || formData.phone.trim();
+
       console.log("📋 Datos del formulario:", {
         fullName: formData.fullName,
         profession: formData.profession,
         phone: formData.phone,
+        phone_normalized: normalizedPhone,
         email: formData.email,
         registration_type: "profesional",
         city: formData.city,
@@ -189,11 +178,15 @@ export default function JoinAsPro() {
           ? otherCityInput.trim() || "Ciudad de México" // Si seleccionó "Otra", usar lo que escribió
           : formData.city || "Ciudad de México";
 
-      const userMetadata: any = {
+      const userMetadata: Record<string, any> = {
         full_name: formData.fullName?.trim() || "Nuevo Usuario",
         profession: formData.profession,
         city: realCity,
         bio: formData.bio || "",
+        phone: normalizedPhone,
+        whatsapp: normalizedPhone,
+        phone_original: formData.phone,
+        registration_type: "professional",
       };
 
       // Añadir work_zones según la ciudad seleccionada
@@ -367,7 +360,7 @@ export default function JoinAsPro() {
                 }`}
               >
                 <option value="">Selecciona tu profesión</option>
-                {PROFESSIONS.map((prof) => (
+                {PROFESSIONAL_PROFESSIONS.map((prof) => (
                   <option key={prof} value={prof}>
                     {prof}
                   </option>
