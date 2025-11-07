@@ -1,7 +1,7 @@
 // src/components/Header.tsx
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useAuth } from "@/context/AuthContext";
@@ -34,6 +34,7 @@ export const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const headerRef = useRef<HTMLElement | null>(null);
 
   const { location, setLocation } = useLocation();
   const { user, profile, isLoading, isAuthenticated } = useAuth();
@@ -63,6 +64,24 @@ export const Header = () => {
     };
   }, []);
 
+  // Actualizar variable CSS con la altura real del header
+  useEffect(() => {
+    const updateHeaderOffset = () => {
+      const height = headerRef.current?.offsetHeight ?? 0;
+      document.documentElement.style.setProperty(
+        "--header-offset",
+        `${height}px`
+      );
+    };
+
+    updateHeaderOffset();
+    window.addEventListener("resize", updateHeaderOffset);
+
+    return () => {
+      window.removeEventListener("resize", updateHeaderOffset);
+    };
+  }, []);
+
   // Cerrar menú móvil al hacer clic fuera
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -85,6 +104,7 @@ export const Header = () => {
     <>
       {/* Header Transparente - Diseño Moderno con Scroll Behavior */}
       <header
+        ref={headerRef}
         className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
           isScrolled
             ? "bg-white/95 dark:bg-gray-900/95 shadow-lg"

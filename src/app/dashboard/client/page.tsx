@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { getClientLeads } from "@/lib/supabase/data";
+import { supabase } from "@/lib/supabase/client";
 import { Lead } from "@/types/supabase";
 import { useAuth } from "@/context/AuthContext";
 import { useMembership } from "@/context/MembershipContext";
@@ -32,6 +33,11 @@ export default function ClientDashboardPage() {
   const [error, setError] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedService, setSelectedService] = useState<string | null>(null);
+  const [leadDetails, setLeadDetails] = useState<Lead | null>(null);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   // Función para refrescar los leads
   const refreshLeads = async () => {
@@ -91,6 +97,126 @@ export default function ClientDashboardPage() {
     setSelectedService(null);
   };
 
+  const handleViewLead = (lead: Lead) => {
+    setLeadDetails(lead);
+    setIsDetailsOpen(true);
+    setActionError(null);
+  };
+
+  const handleCloseDetails = () => {
+    setIsDetailsOpen(false);
+    setLeadDetails(null);
+    setActionError(null);
+  };
+
+  const handleDeleteLead = async (lead: Lead) => {
+    if (!user) return;
+    const confirmed = window.confirm(
+      "¿Deseas eliminar esta solicitud? Esta acción no se puede deshacer."
+    );
+
+    if (!confirmed) return;
+
+    try {
+      setIsDeleting(true);
+      setActionError(null);
+      const { error } = await supabase
+        .from("leads")
+        .delete()
+        .eq("id", lead.id)
+        .eq("cliente_id", user.id);
+
+      if (error) {
+        console.error("Error deleting lead:", error);
+        if (error.code === "42501") {
+          setActionError(
+            "No tienes permisos para eliminar esta solicitud. Verifica las políticas RLS o contacta a soporte."
+          );
+        } else {
+          setActionError(
+            "No pudimos eliminar la solicitud. Intenta nuevamente o contacta a soporte."
+          );
+        }
+        return;
+      }
+
+      await refreshLeads();
+      // Si se estaba viendo el detalle, cerrarlo
+      if (leadDetails?.id === lead.id) {
+        handleCloseDetails();
+      }
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const handleUpdateLead = async (leadId: string, data: LeadUpdatePayload) => {
+    if (!user) return;
+
+    try {
+      setIsUpdating(true);
+      setActionError(null);
+      const updatePayload = {
+        servicio_solicitado: data.service.trim() || null,
+        descripcion_proyecto: data.description.trim() || null,
+        ubicacion_direccion: data.address?.trim() || null,
+        photos_urls: data.photos.length > 0 ? data.photos : null,
+      };
+
+      const { error } = await supabase
+        .from("leads")
+        .update(updatePayload)
+        .eq("id", leadId)
+        .eq("cliente_id", user.id)
+        .select("id")
+        .single();
+
+      if (error) {
+        console.error("Error updating lead:", error);
+        console.error("Error details:", {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code,
+        });
+        if (error.code === "42501") {
+          console.warn("Falling back to RPC update_lead_details due to RLS.");
+          const { error: rpcError } = await supabase.rpc(
+            "update_lead_details",
+            {
+              lead_id: leadId,
+              servicio_solicitado_in: updatePayload.servicio_solicitado,
+              descripcion_proyecto_in: updatePayload.descripcion_proyecto,
+              ubicacion_direccion_in: updatePayload.ubicacion_direccion,
+              photos_urls_in: updatePayload.photos_urls,
+            }
+          );
+
+          if (rpcError) {
+            console.error("RPC update_lead_details failed:", rpcError);
+            setActionError(
+              rpcError.message ||
+                "No pudimos guardar los cambios (RPC). Verifica las políticas RLS."
+            );
+            return;
+          }
+        } else {
+          setActionError(
+            error.message
+              ? `No pudimos guardar los cambios. Detalle: ${error.message}`
+              : "No pudimos guardar los cambios. Intenta nuevamente."
+          );
+          return;
+        }
+      }
+
+      await refreshLeads();
+      handleCloseDetails();
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
   // Obtener el próximo servicio (el más reciente no completado)
   const getUpcomingService = (): Lead | null => {
     const incompleteLeads = leads.filter(
@@ -107,7 +233,7 @@ export default function ClientDashboardPage() {
   // Loading State
   if (userLoading || loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center pt-20">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center pt-[calc(var(--header-offset,72px)+2rem)]">
         <div className="text-center">
           <FontAwesomeIcon
             icon={faSpinner}
@@ -123,7 +249,7 @@ export default function ClientDashboardPage() {
   // Error State
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center pt-20">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center pt-[calc(var(--header-offset,72px)+2rem)]">
         <div className="text-center">
           <FontAwesomeIcon
             icon={faExclamationTriangle}
@@ -153,7 +279,7 @@ export default function ClientDashboardPage() {
   const recentCompleted = getRecentCompleted();
 
   return (
-    <div className="min-h-screen bg-gray-50 pt-20">
+    <div className="min-h-screen bg-gray-50 pt-[calc(var(--header-offset,72px)+2rem)]">
       {/* Header con Hero Section */}
       <div className="bg-gradient-to-r from-blue-600 via-blue-700 to-purple-700 text-white shadow-lg">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -269,11 +395,15 @@ export default function ClientDashboardPage() {
               Todas tus Solicitudes
             </h2>
             <div className="space-y-4">
+              {actionError && (
+                <div className="rounded-lg border border-red-200 bg-red-50 text-red-700 px-4 py-3 text-sm">
+                  {actionError}
+                </div>
+              )}
               {leads.map((lead) => (
-                <Link
+                <div
                   key={lead.id}
-                  href={`/solicitudes/${lead.id}`}
-                  className="block p-4 rounded-lg border border-gray-200 hover:border-blue-300 hover:bg-blue-50 transition-all"
+                  className="p-4 rounded-lg border border-gray-200 hover:border-blue-300 hover:bg-blue-50 transition-all"
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
@@ -308,12 +438,23 @@ export default function ClientDashboardPage() {
                         )}
                       </p>
                     </div>
-                    <FontAwesomeIcon
-                      icon={faPlus}
-                      className="text-gray-400 transform rotate-45 ml-4"
-                    />
+                    <div className="flex flex-col gap-2 ml-4">
+                      <button
+                        onClick={() => handleViewLead(lead)}
+                        className="px-3 py-1.5 text-sm rounded-lg bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors"
+                      >
+                        Ver detalles
+                      </button>
+                      <button
+                        onClick={() => handleDeleteLead(lead)}
+                        className="px-3 py-1.5 text-sm rounded-lg bg-red-100 text-red-700 hover:bg-red-200 transition-colors disabled:opacity-50"
+                        disabled={isDeleting}
+                      >
+                        {isDeleting ? "Eliminando..." : "Eliminar"}
+                      </button>
+                    </div>
                   </div>
-                </Link>
+                </div>
               ))}
             </div>
           </div>
@@ -349,6 +490,286 @@ export default function ClientDashboardPage() {
         onClose={handleModalClose}
         onLeadCreated={refreshLeads}
       />
+      {isDetailsOpen && leadDetails && (
+        <LeadDetailsModal
+          lead={leadDetails}
+          onClose={handleCloseDetails}
+          onDelete={() => handleDeleteLead(leadDetails)}
+          onUpdate={(data) => handleUpdateLead(leadDetails.id, data)}
+          isDeleting={isDeleting}
+          isUpdating={isUpdating}
+        />
+      )}
+    </div>
+  );
+}
+
+interface LeadUpdatePayload {
+  service: string;
+  description: string;
+  address?: string;
+  photos: string[];
+}
+
+interface LeadDetailsModalProps {
+  lead: Lead;
+  onClose: () => void;
+  onDelete: () => void;
+  onUpdate: (data: LeadUpdatePayload) => void;
+  isDeleting: boolean;
+  isUpdating: boolean;
+}
+
+function LeadDetailsModal({
+  lead,
+  onClose,
+  onDelete,
+  onUpdate,
+  isDeleting,
+  isUpdating,
+}: LeadDetailsModalProps) {
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [service, setService] = useState(lead.servicio_solicitado || "");
+  const [description, setDescription] = useState(
+    lead.descripcion_proyecto || ""
+  );
+  const [address, setAddress] = useState(lead.ubicacion_direccion || "");
+  const [photos, setPhotos] = useState<string[]>(lead.photos_urls || []);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setService(lead.servicio_solicitado || "");
+    setDescription(lead.descripcion_proyecto || "");
+    setAddress(lead.ubicacion_direccion || "");
+    setPhotos(lead.photos_urls || []);
+  }, [lead]);
+
+  const handleSubmit = (event: React.FormEvent) => {
+    event.preventDefault();
+    onUpdate({ service, description, address, photos });
+  };
+
+  const handleUploadClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const files = event.target.files;
+    if (!files || files.length === 0) {
+      return;
+    }
+
+    setIsUploading(true);
+    setUploadError(null);
+
+    const newUrls: string[] = [];
+
+    try {
+      for (const file of Array.from(files)) {
+        const sanitizedName = file.name.replace(/\s+/g, "-");
+        const fileExt = sanitizedName.split(".").pop();
+        const filePath = `${lead.id}/${Date.now()}-${Math.random()
+          .toString(36)
+          .slice(2)}.${fileExt}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from("lead-photos")
+          .upload(filePath, file, {
+            cacheControl: "3600",
+            upsert: false,
+            contentType: file.type,
+          });
+
+        if (uploadError) {
+          throw uploadError;
+        }
+
+        const {
+          data: { publicUrl },
+        } = supabase.storage.from("lead-photos").getPublicUrl(filePath);
+
+        newUrls.push(publicUrl);
+      }
+
+      setPhotos((prev) => [...prev, ...newUrls]);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    } catch (error: any) {
+      console.error("Error uploading lead photos:", error);
+      setUploadError(
+        "No pudimos subir una o más imágenes. Verifica que el bucket 'lead-photos' exista y que tengas permisos."
+      );
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleRemovePhoto = async (url: string) => {
+    const confirmRemoval = window.confirm(
+      "¿Deseas eliminar esta foto? Esta acción no se puede deshacer."
+    );
+
+    if (!confirmRemoval) return;
+
+    try {
+      const path = url.split("/lead-photos/")[1];
+      if (path) {
+        const { error } = await supabase.storage
+          .from("lead-photos")
+          .remove([path]);
+        if (error) {
+          throw error;
+        }
+      }
+      setPhotos((prev) => prev.filter((photo) => photo !== url));
+    } catch (error: any) {
+      console.error("Error removing lead photo:", error);
+      setUploadError(
+        "No pudimos eliminar la foto. Verifica tus permisos en el bucket de almacenamiento."
+      );
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden">
+        <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-4 flex justify-between items-center">
+          <h3 className="text-lg font-bold">Detalle de la Solicitud</h3>
+          <button
+            onClick={onClose}
+            className="text-white/80 hover:text-white transition-colors"
+            aria-label="Cerrar"
+          >
+            ×
+          </button>
+        </div>
+        <form className="p-6 space-y-4" onSubmit={handleSubmit}>
+          <div>
+            <label className="text-sm font-semibold text-gray-500 block mb-1">
+              Servicio
+            </label>
+            <input
+              type="text"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+              value={service}
+              onChange={(event) => setService(event.target.value)}
+              placeholder="Servicio Profesional"
+            />
+          </div>
+          <div>
+            <label className="text-sm font-semibold text-gray-500 block mb-1">
+              Descripción
+            </label>
+            <textarea
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 h-32 resize-y focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+              value={description}
+              onChange={(event) => setDescription(event.target.value)}
+              placeholder="Describe el servicio que necesitas"
+            />
+          </div>
+          <div>
+            <label className="text-sm font-semibold text-gray-500 block mb-2">
+              Galería de fotos (opcional)
+            </label>
+            <p className="text-xs text-gray-500 mb-3">
+              Sube evidencia del problema o avances del servicio (máximo 10MB
+              por archivo).
+            </p>
+            <div className="flex flex-col gap-3">
+              <div className="flex flex-wrap gap-3">
+                {photos.map((url) => (
+                  <div
+                    key={url}
+                    className="relative w-24 h-24 rounded-lg overflow-hidden border border-gray-200"
+                  >
+                    <img
+                      src={url}
+                      alt="Evidencia del servicio"
+                      className="w-full h-full object-cover"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleRemovePhoto(url)}
+                      className="absolute top-1 right-1 bg-black/60 text-white text-xs rounded-full px-1.5 py-0.5 hover:bg-black/80"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ))}
+              </div>
+              <div className="flex items-center gap-3">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  className="hidden"
+                  onChange={handleFileChange}
+                />
+                <button
+                  type="button"
+                  onClick={handleUploadClick}
+                  className="px-4 py-2 rounded-lg border border-dashed border-blue-400 text-blue-600 hover:bg-blue-50 disabled:opacity-50"
+                  disabled={isUploading || isUpdating}
+                >
+                  {isUploading ? "Subiendo..." : "Agregar fotos"}
+                </button>
+              </div>
+              {uploadError && (
+                <p className="text-sm text-red-600">{uploadError}</p>
+              )}
+            </div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <h4 className="text-sm font-semibold text-gray-500">Estado</h4>
+              <span className="inline-flex px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-700">
+                {lead.estado || "Nuevo"}
+              </span>
+            </div>
+            <div>
+              <h4 className="text-sm font-semibold text-gray-500">Fecha</h4>
+              <p className="text-gray-700">
+                {new Date(lead.fecha_creacion).toLocaleString("es-MX", {
+                  day: "numeric",
+                  month: "long",
+                  year: "numeric",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
+              </p>
+            </div>
+          </div>
+          <div className="bg-gray-50 -mx-6 -mb-6 px-6 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-end gap-3 border-t border-gray-100">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100"
+            >
+              Cerrar
+            </button>
+            <button
+              type="button"
+              onClick={onDelete}
+              className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-50"
+              disabled={isDeleting}
+            >
+              {isDeleting ? "Eliminando..." : "Eliminar"}
+            </button>
+            <button
+              type="submit"
+              className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
+              disabled={isUpdating || isUploading}
+            >
+              {isUpdating ? "Guardando..." : "Guardar cambios"}
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }

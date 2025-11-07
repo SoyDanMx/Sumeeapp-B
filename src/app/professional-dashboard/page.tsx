@@ -6,16 +6,22 @@ import { useProfesionalData } from "@/hooks/useProfesionalData";
 import { useGeolocation } from "@/hooks/useGeolocation";
 import { useNewLeadsSubscription } from "@/hooks/useNewLeadsSubscription";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faBars, faTimes } from "@fortawesome/free-solid-svg-icons";
+import {
+  faBars,
+  faTimes,
+  faBolt,
+  faRoute,
+} from "@fortawesome/free-solid-svg-icons";
 import ProfesionalHeader from "@/components/ProfesionalHeader";
 import EditProfileModal from "@/components/EditProfileModal";
 import WorkFeed from "@/components/dashboard/WorkFeed";
-import OnlineToggle from "@/components/dashboard/OnlineToggle";
 import ControlPanel from "@/components/dashboard/ControlPanel";
 import ProfessionalTabs from "@/components/dashboard/ProfessionalTabs";
 import MobileBottomNav from "@/components/dashboard/MobileBottomNav";
 import NewLeadAlertModal from "@/components/dashboard/NewLeadAlertModal";
 import { Profesional, Lead } from "@/types/supabase";
+import ProfessionalVerificationID from "@/components/ProfessionalVerificationID";
+import { useRouter } from "next/navigation";
 
 export default function ProfesionalDashboardPage() {
   // --- HOOKS Y ESTADO ---
@@ -23,17 +29,13 @@ export default function ProfesionalDashboardPage() {
     useProfesionalData();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
-  const [isOnline, setIsOnline] = useState(false);
+  const [isOnline] = useState(true);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-
-  // Sincronizar isOnline con el estado del profesional cuando cambia
-  useEffect(() => {
-    if (profesional?.disponibilidad === "disponible") {
-      setIsOnline(true);
-    } else {
-      setIsOnline(false);
-    }
-  }, [profesional?.disponibilidad]);
+  const [leadViewType, setLeadViewType] = useState<"mapa" | "lista">("mapa");
+  const [leadTab, setLeadTab] = useState<"nuevos" | "en_progreso">("nuevos");
+  const [showCredential, setShowCredential] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  const router = useRouter();
   const [mobileActiveTab, setMobileActiveTab] = useState<
     "home" | "leads" | "profile" | "stats"
   >("home");
@@ -44,14 +46,14 @@ export default function ProfesionalDashboardPage() {
   const [newLeadAlert, setNewLeadAlert] = useState<Lead | null>(null);
   const [isNewLeadModalOpen, setIsNewLeadModalOpen] = useState(false);
 
-  // Geolocalización en tiempo real cuando está online
+  // Geolocalización en tiempo real (siempre activa para ofrecer experiencias tipo Uber)
   const {
     lat: geoLat,
     lng: geoLng,
     updateLocation,
   } = useGeolocation({
-    watch: isOnline, // Solo actualizar cuando está online
-    updateInterval: 30000, // Cada 30 segundos
+    watch: true,
+    updateInterval: 30000,
   });
 
   // Actualizar ubicación actual cuando cambia la geolocalización
@@ -60,6 +62,11 @@ export default function ProfesionalDashboardPage() {
       setCurrentLocation({ lat: geoLat, lng: geoLng });
     }
   }, [geoLat, geoLng]);
+
+  // Forzar una lectura de ubicación al iniciar sesión
+  useEffect(() => {
+    updateLocation();
+  }, [updateLocation]);
 
   // --- FUNCIONES HANDLER ---
   const handleProfileUpdateSuccess = useCallback(() => {
@@ -105,6 +112,135 @@ export default function ProfesionalDashboardPage() {
     setIsNewLeadModalOpen(false);
     setNewLeadAlert(null);
   }, []);
+
+  const showLeadsList = () => {
+    setLeadTab("nuevos");
+    setLeadViewType("lista");
+    setMobileActiveTab("leads");
+    setIsSidebarOpen(false);
+  };
+
+  const showLeadsMap = () => {
+    setLeadTab("nuevos");
+    setLeadViewType("mapa");
+    setMobileActiveTab("leads");
+    setIsSidebarOpen(false);
+  };
+
+  const openCredential = () => setShowCredential(true);
+  const closeCredential = () => setShowCredential(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  const handleTabNavigation = (tab: "profile" | "leads" | "help" | "logout") => {
+    switch (tab) {
+      case "profile":
+        setIsModalOpen(true);
+        break;
+      case "leads":
+        setMobileActiveTab("leads");
+        setLeadViewType("lista");
+        break;
+      case "help":
+        router.push("/help");
+        break;
+      default:
+        break;
+    }
+  };
+
+  const handleMobileBottomNavChange = (tab: typeof mobileActiveTab) => {
+    if (tab === "profile") {
+      setIsModalOpen(true);
+      setMobileActiveTab("home");
+      return;
+    }
+    setMobileActiveTab(tab);
+    if (tab === "leads") {
+      setLeadViewType("lista");
+    }
+  };
+
+  const renderMobileContent = () => {
+    switch (mobileActiveTab) {
+      case "home":
+        return (
+          <ProfessionalTabs
+            profesional={profesional as Profesional}
+            onShowLeadsList={() => {
+              setMobileActiveTab("leads");
+              setLeadViewType("lista");
+            }}
+            onShowLeadsMap={() => {
+              setMobileActiveTab("leads");
+              setLeadViewType("mapa");
+            }}
+            onShowCredential={openCredential}
+            onNavigate={handleTabNavigation}
+            isMobile
+          />
+        );
+      case "leads":
+        return (
+          <div className="flex flex-col gap-4">
+            <div className="flex items-center justify-between">
+              <button
+                onClick={() => setMobileActiveTab("home")}
+                className="inline-flex items-center gap-2 text-indigo-600 font-semibold"
+              >
+                <span className="text-lg">←</span>
+                Volver
+              </button>
+              <div className="inline-flex items-center gap-2 bg-indigo-50 text-indigo-600 text-xs font-semibold px-3 py-1 rounded-full">
+                {leadViewType === "lista" ? "Lista" : "Mapa"}
+              </div>
+            </div>
+            <WorkFeed
+              leads={leads}
+              profesionalLat={profesional?.ubicacion_lat ?? undefined}
+              profesionalLng={profesional?.ubicacion_lng ?? undefined}
+              currentLat={currentLocation?.lat}
+              currentLng={currentLocation?.lng}
+              onLeadClick={handleLeadClick}
+              onLeadAccepted={refetchData}
+              selectedLeadId={selectedLeadId}
+              avatarUrl={profesional?.avatar_url ?? null}
+              onEditProfileClick={() => setIsModalOpen(true)}
+              forcedViewType={leadViewType}
+              onViewTypeChange={setLeadViewType}
+              forcedTab="nuevos"
+            />
+          </div>
+        );
+      case "stats":
+        return (
+          <div className="flex flex-col gap-4">
+            <button
+              onClick={() => setMobileActiveTab("home")}
+              className="inline-flex items-center gap-2 text-indigo-600 font-semibold"
+            >
+              <span className="text-lg">←</span>
+              Volver
+            </button>
+            <ControlPanel
+              profesional={profesional as Profesional}
+              leads={leads}
+              onEditClick={() => setIsModalOpen(true)}
+              onLeadClick={handleLeadClick}
+              selectedLeadId={selectedLeadId}
+            />
+          </div>
+        );
+      default:
+        return null;
+    }
+  };
 
   // --- ESTADOS DE CARGA Y ERROR ---
   if (isLoading) {
@@ -173,9 +309,65 @@ export default function ProfesionalDashboardPage() {
     );
   }
 
+  if (isMobile) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-50 pt-[calc(var(--header-offset,72px)+1.5rem)] pb-20">
+        <div className="px-4 space-y-6">
+          {renderMobileContent()}
+        </div>
+
+        <MobileBottomNav
+          activeTab={mobileActiveTab}
+          onTabChange={handleMobileBottomNavChange}
+          newLeadsCount={leads.filter((lead) => lead.estado === "nuevo").length}
+        />
+
+        {/* Modal de Edición de Perfil */}
+        <EditProfileModal
+          profesional={profesional as Profesional}
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          onSuccess={handleProfileUpdateSuccess}
+          leads={leads}
+        />
+
+        {/* Modal de Alerta de Lead Nuevo */}
+        {newLeadAlert && (
+          <NewLeadAlertModal
+            lead={newLeadAlert}
+            profesionalLat={currentLocation?.lat}
+            profesionalLng={currentLocation?.lng}
+            isOpen={isNewLeadModalOpen}
+            onAccept={handleAcceptLeadFromModal}
+            onReject={handleRejectLeadFromModal}
+            onClose={() => {
+              setIsNewLeadModalOpen(false);
+              setNewLeadAlert(null);
+            }}
+          />
+        )}
+
+        {showCredential && profesional && (
+          <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+            <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden relative">
+              <button
+                onClick={closeCredential}
+                className="absolute top-3 right-3 bg-gray-900/70 text-white rounded-full w-8 h-8 flex items-center justify-center hover:bg-gray-900 transition"
+                aria-label="Cerrar credencial"
+              >
+                ×
+              </button>
+              <ProfessionalVerificationID profesional={profesional as Profesional} />
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
   // --- LAYOUT PRINCIPAL: 2 COLUMNAS ---
   return (
-    <div className="flex flex-col h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-50 overflow-hidden">
+    <div className="flex flex-col h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-50 overflow-hidden pt-[calc(var(--header-offset,72px)+1.5rem)]">
       {/* Header - Más compacto en móvil */}
       <div className="md:hidden">
         <ProfesionalHeader
@@ -229,6 +421,10 @@ export default function ProfesionalDashboardPage() {
               selectedLeadId={selectedLeadId}
               avatarUrl={profesional?.avatar_url ?? null}
               onEditProfileClick={() => setIsModalOpen(true)}
+              forcedViewType={leadViewType}
+              onViewTypeChange={setLeadViewType}
+              forcedTab={leadTab}
+              onTabChange={setLeadTab}
             />
           </div>
         ) : mobileActiveTab === "stats" ? (
@@ -249,6 +445,9 @@ export default function ProfesionalDashboardPage() {
                 setIsModalOpen(false);
                 setIsSidebarOpen(false);
               }}
+              onShowLeadsList={showLeadsList}
+              onShowLeadsMap={showLeadsMap}
+              onShowCredential={openCredential}
             />
           </div>
         )}
@@ -272,36 +471,6 @@ export default function ProfesionalDashboardPage() {
           </button>
 
           <div className="p-4 md:p-6 space-y-4 md:space-y-6 pt-16 md:pt-6">
-            {/* Toggle Online/Offline */}
-            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-4 md:p-6 border border-blue-200">
-              <h3 className="text-base md:text-sm font-semibold text-gray-700 mb-4 text-center">
-                Estado de Disponibilidad
-              </h3>
-              <OnlineToggle
-                initialStatus={isOnline}
-                onStatusChange={async (online) => {
-                  console.log("🔄 onStatusChange llamado con:", online);
-                  setIsOnline(online);
-                  if (online) {
-                    updateLocation(); // Actualizar ubicación inmediatamente
-                  }
-                  // IMPORTANTE: Refrescar datos del profesional después de cambiar disponibilidad
-                  // Esperar un poco para asegurar que la BD se haya actualizado
-                  setTimeout(async () => {
-                    await refetchData();
-                    console.log(
-                      "✅ Datos refrescados después de cambio de disponibilidad"
-                    );
-                  }, 500);
-                }}
-                onLocationUpdate={(lat, lng) => {
-                  setCurrentLocation({ lat, lng });
-                  // Refrescar datos del profesional cuando se actualiza la ubicación
-                  refetchData();
-                }}
-              />
-            </div>
-
             {/* Pestañas Profesionales */}
             <ProfessionalTabs
               profesional={profesional}
@@ -309,6 +478,9 @@ export default function ProfesionalDashboardPage() {
                 setIsModalOpen(false);
                 setIsSidebarOpen(false); // Cerrar sidebar en móvil al abrir modal
               }}
+              onShowLeadsList={showLeadsList}
+              onShowLeadsMap={showLeadsMap}
+              onShowCredential={openCredential}
             />
           </div>
         </div>
@@ -344,6 +516,23 @@ export default function ProfesionalDashboardPage() {
             setNewLeadAlert(null);
           }}
         />
+      )}
+
+      {showCredential && profesional && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden relative">
+            <button
+              onClick={closeCredential}
+              className="absolute top-3 right-3 bg-gray-900/70 text-white rounded-full w-8 h-8 flex items-center justify-center hover:bg-gray-900 transition"
+              aria-label="Cerrar credencial"
+            >
+              ×
+            </button>
+            <ProfessionalVerificationID
+              profesional={profesional as Profesional}
+            />
+          </div>
+        </div>
       )}
     </div>
   );

@@ -215,7 +215,7 @@ export default function TecnicosPage() {
   const resultCount = filteredProfessionals.length;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 pt-[calc(var(--header-offset,72px)+1.5rem)]">
       {/* Hero Section más compacto */}
       <div className="bg-gradient-to-r from-blue-600 via-blue-700 to-purple-700 text-white py-8 sm:py-12">
         <div className="container mx-auto px-4">

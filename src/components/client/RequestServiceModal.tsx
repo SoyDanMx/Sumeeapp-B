@@ -348,7 +348,7 @@ export default function RequestServiceModal({
           cliente_id: user.id,
         })
         .select()
-        .single();
+        .maybeSingle();
 
       if (leadError) {
         console.error(
@@ -614,10 +614,20 @@ export default function RequestServiceModal({
             cliente_id: currentUserId,
           })
           .select()
-          .single();
+          .maybeSingle();
 
         leadData = insertResult.data;
         leadError = insertResult.error;
+        if (!leadError && !leadData) {
+          leadError = {
+            message:
+              "No se pudo recuperar la solicitud creada. Intenta nuevamente.",
+            code: "NO_DATA",
+            details: null,
+            hint: null,
+            name: "PostgrestError",
+          } as any;
+        }
       } else {
         // RPC exitoso, obtener el lead creado
         console.log(
@@ -628,10 +638,20 @@ export default function RequestServiceModal({
           .from("leads")
           .select("*")
           .eq("id", rpcData)
-          .single();
+          .maybeSingle();
 
         leadData = fetchedLead;
         leadError = fetchError;
+        if (!leadError && !leadData) {
+          leadError = {
+            message:
+              "No se pudo recuperar la solicitud creada. Intenta nuevamente.",
+            code: "NO_DATA",
+            details: null,
+            hint: null,
+            name: "PostgrestError",
+          } as any;
+        }
       }
 
       if (leadError) {
@@ -822,7 +842,7 @@ export default function RequestServiceModal({
 
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex justify-center items-center p-2 md:p-4 z-50 overflow-y-auto">
-      <div className="bg-white rounded-xl md:rounded-2xl shadow-2xl w-full max-w-4xl max-h-[98vh] md:max-h-[95vh] overflow-hidden my-auto">
+      <div className="bg-white rounded-xl md:rounded-2xl shadow-2xl w-full max-w-4xl max-h-[98vh] md:max-h-[95vh] overflow-hidden my-auto flex flex-col">
         {/* Header */}
         <div className="bg-gradient-to-r from-blue-600 to-purple-700 text-white p-3 md:p-6 sticky top-0 z-10">
           <div className="flex items-center justify-between">
@@ -863,7 +883,7 @@ export default function RequestServiceModal({
         </div>
 
         {/* Content */}
-        <div className="p-3 md:p-8">
+        <div className="p-3 md:p-8 flex-1 overflow-y-auto">
           {currentStep === 1 && (
             <div className="space-y-3 md:space-y-6">
               <div className="text-center">

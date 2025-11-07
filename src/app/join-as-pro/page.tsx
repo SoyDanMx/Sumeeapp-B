@@ -257,10 +257,11 @@ export default function JoinAsPro() {
         );
 
         // Mensaje de éxito positivo e inclusivo para todas las ciudades
-        const successMessage = realCity === "Ciudad de México"
-          ? "¡Excelente! Revisa tu correo electrónico para confirmar tu cuenta y acceder a tu dashboard profesional."
-          : "¡Bienvenido a Sumee App! Tu registro ha sido recibido exitosamente. Revisa tu correo electrónico para confirmar tu cuenta. Estamos expandiendo nuestro servicio y te notificaremos cuando estemos disponibles en tu ciudad.";
-        
+        const successMessage =
+          realCity === "Ciudad de México"
+            ? "¡Excelente! Revisa tu correo electrónico para confirmar tu cuenta y acceder a tu dashboard profesional."
+            : "¡Bienvenido a Sumee App! Tu registro ha sido recibido exitosamente. Revisa tu correo electrónico para confirmar tu cuenta. Estamos expandiendo nuestro servicio y te notificaremos cuando estemos disponibles en tu ciudad.";
+
         setSuccess(successMessage);
 
         // Redirigir después de 3 segundos
@@ -275,12 +276,16 @@ export default function JoinAsPro() {
       }
     } catch (err) {
       console.error("❌ Error en registro profesional:", err);
-      console.error("❌ Stack trace:", err instanceof Error ? err.stack : 'No stack trace available');
+      console.error(
+        "❌ Stack trace:",
+        err instanceof Error ? err.stack : "No stack trace available"
+      );
 
       // En caso de error, mostrarlo al usuario
-      const errorMessage = err instanceof Error 
-        ? err.message 
-        : "Hubo un problema al procesar tu registro. Por favor, inténtalo de nuevo.";
+      const errorMessage =
+        err instanceof Error
+          ? err.message
+          : "Hubo un problema al procesar tu registro. Por favor, inténtalo de nuevo.";
       setError(errorMessage);
     } finally {
       // Al finalizar, establecer el estado de carga (loading) a false
@@ -298,7 +303,7 @@ export default function JoinAsPro() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-12">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 pt-28 md:pt-32 pb-12">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="text-center mb-8">
@@ -306,7 +311,8 @@ export default function JoinAsPro() {
             Únete como Profesional
           </h1>
           <p className="text-xl text-gray-600">
-            Conecta con clientes y haz crecer tu negocio. Disponible en toda México.
+            Conecta con clientes y haz crecer tu negocio. Disponible en toda
+            México.
           </p>
         </div>
 
@@ -489,8 +495,9 @@ export default function JoinAsPro() {
                 Tu Ciudad Principal *
               </label>
               <p className="text-xs text-gray-500 mb-2">
-                Actualmente operamos en Ciudad de México. Si vives en otra ciudad, 
-                te agregaremos a nuestra lista de espera y te notificaremos cuando expandamos a tu área.
+                Actualmente operamos en Ciudad de México. Si vives en otra
+                ciudad, te agregaremos a nuestra lista de espera y te
+                notificaremos cuando expandamos a tu área.
               </p>
               <select
                 value={

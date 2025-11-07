@@ -3,6 +3,7 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --header-offset: 72px;
 }
 
 /* 🎯 WhatsApp Widget Animations */
