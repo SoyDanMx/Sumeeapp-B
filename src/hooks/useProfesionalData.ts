@@ -71,12 +71,15 @@ export function useProfesionalData(): UseProfesionalDataReturn {
         }
 
         if (profesionalData?.disponibilidad !== "disponible") {
-          supabase
-            .from("profiles")
-            .update({ disponibilidad: "disponible" })
-            .eq("user_id", currentUserId)
-            .throwOnError()
-            .catch(() => undefined);
+          try {
+            await supabase
+              .from("profiles")
+              .update({ disponibilidad: "disponible" })
+              .eq("user_id", currentUserId)
+              .throwOnError();
+          } catch {
+            /* ignore availability updates that fail */
+          }
         }
       } catch (err) {
         const errorMessage =
