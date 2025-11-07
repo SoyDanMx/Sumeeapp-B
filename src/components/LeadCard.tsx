@@ -25,7 +25,7 @@ interface LeadCardProps {
   profesionalLng: number;
   isSelected: boolean;
   onSelect: () => void;
-  onLeadAccepted?: () => void; // Callback para refrescar datos cuando se acepta un lead
+  onLeadAccepted?: (lead: Lead) => void; // Callback con el lead actualizado
 }
 
 export default function LeadCard({
@@ -37,7 +37,11 @@ export default function LeadCard({
   onLeadAccepted,
 }: LeadCardProps) {
   const [isAccepting, setIsAccepting] = useState(false);
-  const [accepted, setAccepted] = useState(false);
+  const [accepted, setAccepted] = useState(
+    ["contactado", "en_progreso", "completado"].includes(
+      (lead.estado || "").toLowerCase()
+    )
+  );
 
   const normalizedClientWhatsapp = React.useMemo(() => {
     if (!lead.whatsapp) return null;
@@ -92,6 +96,12 @@ export default function LeadCard({
       const result = await acceptLead(lead.id, user.id);
 
       if (result.success) {
+        const updatedLead: Lead = {
+          ...lead,
+          estado: "contactado",
+          profesional_asignado_id: user.id,
+        };
+
         setAccepted(true);
 
         // Enviar credencial automáticamente al cliente
@@ -118,9 +128,9 @@ export default function LeadCard({
           // No bloqueamos el flujo si falla el envío de la credencial
         }
 
-        // Llamar callback para refrescar datos
+        // Llamar callback para refrescar datos optimistas
         if (onLeadAccepted) {
-          onLeadAccepted();
+          onLeadAccepted(updatedLead);
         }
       }
     } catch (error) {
@@ -264,7 +274,10 @@ export default function LeadCard({
                   }}
                   className="bg-green-500 hover:bg-green-600 text-white py-3 md:py-2 px-2 md:px-3 rounded-lg text-sm md:text-xs font-semibold md:font-medium transition-colors flex items-center justify-center space-x-1 touch-manipulation active:scale-95"
                 >
-                  <FontAwesomeIcon icon={faWhatsappBrand} className="text-sm" />
+                  <FontAwesomeIcon
+                    icon={faWhatsappBrand}
+                    className="text-sm"
+                  />
                   <span className="hidden sm:inline">WhatsApp cliente</span>
                   <span className="sm:hidden">💬</span>
                 </button>
@@ -287,15 +300,88 @@ export default function LeadCard({
           </div>
         )}
 
-      {/* Estado de aceptado */}
-      {accepted && (
+      {(accepted ||
+        lead.estado?.toLowerCase() === "contactado" ||
+        lead.estado?.toLowerCase() === "en_progreso" ||
+        lead.estado?.toLowerCase() === "completado") && (
         <div className="mt-3 pt-3 border-t border-gray-200">
-          <div className="flex items-center justify-center space-x-2 text-green-600 text-sm font-medium">
-            <FontAwesomeIcon icon={faCheck} />
-            <span>¡Proyecto Aceptado!</span>
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center justify-between text-sm text-green-700 bg-green-50 border border-green-200 rounded-lg px-3 py-2">
+              <div className="flex items-center gap-2 font-semibold">
+                <FontAwesomeIcon icon={faCheck} />
+                <span>Trabajo agendado</span>
+              </div>
+              <span className="text-xs text-green-600">
+                #{lead.id.slice(0, 8)}
+              </span>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+              <div className="bg-white rounded-lg border border-gray-200 p-3">
+                <p className="text-gray-700 font-semibold mb-1">Cliente</p>
+                <p className="text-gray-900">{lead.nombre_cliente ?? "Cliente Sumee"}</p>
+                {lead.whatsapp && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    WhatsApp: {lead.whatsapp}
+                  </p>
+                )}
+                {lead.ubicacion_direccion && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    Dirección: {lead.ubicacion_direccion}
+                  </p>
+                )}
+              </div>
+              <div className="bg-white rounded-lg border border-gray-200 p-3 space-y-2">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (contactClientWhatsappLink) {
+                      openWhatsAppLink(contactClientWhatsappLink);
+                    }
+                  }}
+                  className="w-full bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg text-sm font-semibold transition-colors flex items-center justify-center gap-2"
+                  disabled={!contactClientWhatsappLink}
+                >
+                  <FontAwesomeIcon icon={faWhatsappBrand} />
+                  <span>Enviar mensaje al cliente</span>
+                </button>
+                {hasLeadLocation && (
+                  <a
+                    href={`https://www.google.com/maps/dir/${profesionalLat},${profesionalLng}/${lead.ubicacion_lat},${lead.ubicacion_lng}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                    className="w-full bg-blue-500 hover:bg-blue-600 text-white py-2 rounded-lg text-sm font-semibold transition-colors flex items-center justify-center gap-2"
+                  >
+                    <FontAwesomeIcon icon={faRoute} />
+                    <span>Ver ruta en Google Maps</span>
+                  </a>
+                )}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onSelect();
+                  }}
+                  className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 rounded-lg text-sm font-semibold transition-colors"
+                >
+                  Detalles y notas
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
+
+      {/* Estado de aceptado */}
+      {accepted &&
+        lead.estado?.toLowerCase() !== "contactado" &&
+        lead.estado?.toLowerCase() !== "en_progreso" && (
+          <div className="mt-3 pt-3 border-t border-gray-200">
+            <div className="flex items-center justify-center space-x-2 text-green-600 text-sm font-medium">
+              <FontAwesomeIcon icon={faCheck} />
+              <span>¡Proyecto Aceptado!</span>
+            </div>
+          </div>
+        )}
     </div>
   );
 }

@@ -20,71 +20,75 @@ export function useProfesionalData(): UseProfesionalDataReturn {
   const [error, setError] = useState<PostgrestError | string | null>(null);
   const [user, setUser] = useState<User | null>(null);
 
-  const fetchData = useCallback(async (currentUserId: string) => {
-    if (!currentUserId) {
-      setIsLoading(false);
-      return;
-    }
+  const cacheKey = "sumeeapp/professional-dashboard";
 
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      console.log("🔍 Buscando datos para usuario:", currentUserId);
-
-      const [profesionalResult, openLeadsResult] = await Promise.all([
-        supabase
-          .from("profiles")
-          .select("*")
-          .eq("user_id", currentUserId)
-          .single(),
-        supabase.rpc("get_open_leads_for_professional", {
-          professional_id: currentUserId,
-        }),
-      ]);
-
-      if (profesionalResult.error) {
-        console.error("❌ Error obteniendo perfil:", profesionalResult.error);
-        throw profesionalResult.error;
-      }
-      if (openLeadsResult.error) {
-        console.error("❌ Error obteniendo leads:", openLeadsResult.error);
-        throw openLeadsResult.error;
+  const fetchData = useCallback(
+    async (currentUserId: string) => {
+      if (!currentUserId) {
+        setIsLoading(false);
+        return;
       }
 
-      console.log("✅ Datos obtenidos:", {
-        profesional: profesionalResult.data,
-        leadsCount: openLeadsResult.data?.length || 0,
-      });
+      setIsLoading(true);
+      setError(null);
 
-      setProfesional(profesionalResult.data as Profesional);
-      setLeads((openLeadsResult.data as Lead[]) || []);
+      try {
+        const [profesionalResult, openLeadsResult] = await Promise.all([
+          supabase
+            .from("profiles")
+            .select("*")
+            .eq("user_id", currentUserId)
+            .single(),
+          supabase.rpc("get_open_leads_for_professional", {
+            professional_id: currentUserId,
+          }),
+        ]);
 
-      // Asegurar que el profesional quede marcado como "disponible"
-      if (profesionalResult.data?.disponibilidad !== "disponible") {
+        if (profesionalResult.error) {
+          throw profesionalResult.error;
+        }
+        if (openLeadsResult.error) {
+          throw openLeadsResult.error;
+        }
+
+        const profesionalData = profesionalResult.data as Profesional;
+        const leadsData = (openLeadsResult.data as Lead[]) || [];
+
+        setProfesional(profesionalData);
+        setLeads(leadsData);
+
         try {
-          await supabase
+          sessionStorage.setItem(
+            cacheKey,
+            JSON.stringify({
+              updatedAt: Date.now(),
+              profesional: profesionalData,
+              leads: leadsData,
+            })
+          );
+        } catch {
+          /* ignore cache write failures */
+        }
+
+        if (profesionalData?.disponibilidad !== "disponible") {
+          supabase
             .from("profiles")
             .update({ disponibilidad: "disponible" })
             .eq("user_id", currentUserId)
-            .throwOnError();
-        } catch (availabilityError) {
-          console.warn(
-            "⚠️ No se pudo actualizar la disponibilidad automáticamente:",
-            availabilityError
-          );
+            .throwOnError()
+            .catch(() => undefined);
         }
+      } catch (err) {
+        const errorMessage =
+          err instanceof Error ? err.message : "Error al obtener los datos.";
+        setError(errorMessage);
+        setProfesional(null);
+      } finally {
+        setIsLoading(false);
       }
-    } catch (err) {
-      console.error("❌ Error fetching professional data:", err);
-      const errorMessage =
-        err instanceof Error ? err.message : "Error al obtener los datos.";
-      setError(errorMessage);
-      setProfesional(null);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+    },
+    [cacheKey]
+  );
 
   const refetchData = useCallback(() => {
     if (user?.id) {
@@ -93,18 +97,30 @@ export function useProfesionalData(): UseProfesionalDataReturn {
   }, [user?.id, fetchData]);
 
   useEffect(() => {
-    console.log("🚀 Iniciando useProfesionalData hook");
     let isMounted = true;
     let authListener: { subscription: { unsubscribe: () => void } } | null =
       null;
     let timeoutId: NodeJS.Timeout | null = null;
 
+    try {
+      const cached = sessionStorage.getItem(cacheKey);
+      if (cached) {
+        const parsed = JSON.parse(cached) as {
+          updatedAt: number;
+          profesional: Profesional;
+          leads: Lead[];
+        };
+        setProfesional(parsed.profesional);
+        setLeads(parsed.leads);
+        setIsLoading(false);
+      }
+    } catch {
+      /* ignore cache read failures */
+    }
+
     // Timeout de seguridad para evitar que se quede cargando indefinidamente
     timeoutId = setTimeout(() => {
       if (isMounted) {
-        console.warn(
-          "⚠️ Timeout: El hook lleva mucho tiempo cargando, estableciendo isLoading = false"
-        );
         setIsLoading(false);
         setError("Tiempo de espera agotado. Por favor, recarga la página.");
       }
@@ -119,29 +135,17 @@ export function useProfesionalData(): UseProfesionalDataReturn {
         if (timeoutId) clearTimeout(timeoutId);
 
         const currentUser = session?.user ?? null;
-        console.log(
-          "🔍 Sesión obtenida:",
-          currentUser ? `Usuario: ${currentUser.id}` : "Sin sesión"
-        );
         setUser(currentUser);
 
         if (currentUser) {
-          console.log(
-            "👤 Usuario encontrado en sesión inicial:",
-            currentUser.id
-          );
           await fetchData(currentUser.id);
         } else {
-          console.log(
-            "❌ No hay usuario en sesión inicial - finalizando carga"
-          );
           setProfesional(null);
           setLeads([]);
           setIsLoading(false);
         }
       })
-      .catch((error) => {
-        console.error("❌ Error obteniendo sesión:", error);
+      .catch(() => {
         if (isMounted) {
           setError("Error al obtener la sesión de usuario");
           setIsLoading(false);
@@ -151,19 +155,15 @@ export function useProfesionalData(): UseProfesionalDataReturn {
 
     // Escuchar cambios de autenticación
     const { data: listener } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      async (_event, session) => {
         if (!isMounted) return;
-
-        console.log("🔄 Auth state change:", event, session?.user?.id);
 
         const currentUser = session?.user ?? null;
         setUser(currentUser);
 
         if (currentUser) {
-          console.log("👤 Usuario autenticado, obteniendo datos...");
           await fetchData(currentUser.id);
         } else {
-          console.log("🚪 Usuario desautenticado, limpiando datos...");
           setProfesional(null);
           setLeads([]);
           setIsLoading(false);
@@ -174,7 +174,6 @@ export function useProfesionalData(): UseProfesionalDataReturn {
     authListener = listener;
 
     return () => {
-      console.log("🧹 Limpiando auth listener");
       isMounted = false;
       if (timeoutId) clearTimeout(timeoutId);
       if (authListener) {
