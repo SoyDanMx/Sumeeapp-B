@@ -6,12 +6,7 @@ import { useProfesionalData } from "@/hooks/useProfesionalData";
 import { useGeolocation } from "@/hooks/useGeolocation";
 import { useNewLeadsSubscription } from "@/hooks/useNewLeadsSubscription";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faBars,
-  faTimes,
-  faBolt,
-  faRoute,
-} from "@fortawesome/free-solid-svg-icons";
+import { faBars, faTimes } from "@fortawesome/free-solid-svg-icons";
 import ProfesionalHeader from "@/components/ProfesionalHeader";
 import EditProfileModal from "@/components/EditProfileModal";
 import WorkFeed from "@/components/dashboard/WorkFeed";
@@ -74,13 +69,18 @@ export default function ProfesionalDashboardPage() {
     setIsModalOpen(false);
   }, [refetchData]);
 
-  const handleLeadClick = useCallback((leadId: string) => {
-    setSelectedLeadId(leadId);
-  }, []);
+  const handleLeadClick = useCallback(
+    (leadId: string) => {
+      setSelectedLeadId(leadId);
+      if (mobileActiveTab !== "leads") {
+        setMobileActiveTab("leads");
+      }
+    },
+    [mobileActiveTab]
+  );
 
   // Callback para cuando se recibe un lead nuevo en tiempo real
   const handleNewLeadReceived = useCallback((lead: Lead) => {
-    console.log("🔔 Lead nuevo recibido, mostrando modal...", lead);
     setNewLeadAlert(lead);
     setIsNewLeadModalOpen(true);
   }, []);
@@ -94,41 +94,56 @@ export default function ProfesionalDashboardPage() {
     onNewLead: handleNewLeadReceived,
   });
 
-  // Handler para aceptar lead desde el modal
+  const scrollToLeads = () => {
+    const container = document.getElementById("professional-leads-section");
+    if (container) {
+      container.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  };
+
+  const navigateToLeads = useCallback(
+    (tab: "nuevos" | "en_progreso", view: "mapa" | "lista") => {
+      setLeadTab(tab);
+      setLeadViewType(view);
+      setMobileActiveTab("leads");
+      setIsSidebarOpen(false);
+      setTimeout(scrollToLeads, 120);
+    },
+    []
+  );
+
+  const showLeadsList = () => navigateToLeads("nuevos", "lista");
+  const showLeadsMap = () => navigateToLeads("nuevos", "mapa");
+  const showAcceptedLeads = () => navigateToLeads("en_progreso", "lista");
+
+  const openCredential = useCallback(() => setShowCredential(true), []);
+  const closeCredential = useCallback(() => setShowCredential(false), []);
+
+  const handleLeadAccepted = useCallback(
+    (lead: Lead) => {
+      navigateToLeads("en_progreso", "lista");
+      setSelectedLeadId(lead.id);
+      refetchData();
+    },
+    [navigateToLeads, refetchData]
+  );
+
   const handleAcceptLeadFromModal = useCallback(
     async (leadId: string) => {
-      // Refrescar datos para que el lead aparezca en la lista
       await refetchData();
-      // Cerrar modal
       setIsNewLeadModalOpen(false);
       setNewLeadAlert(null);
+      navigateToLeads("en_progreso", "lista");
+      setSelectedLeadId(leadId);
     },
-    [refetchData]
+    [navigateToLeads, refetchData]
   );
 
   // Handler para rechazar lead desde el modal
   const handleRejectLeadFromModal = useCallback(() => {
-    console.log("❌ Lead rechazado");
     setIsNewLeadModalOpen(false);
     setNewLeadAlert(null);
   }, []);
-
-  const showLeadsList = () => {
-    setLeadTab("nuevos");
-    setLeadViewType("lista");
-    setMobileActiveTab("leads");
-    setIsSidebarOpen(false);
-  };
-
-  const showLeadsMap = () => {
-    setLeadTab("nuevos");
-    setLeadViewType("mapa");
-    setMobileActiveTab("leads");
-    setIsSidebarOpen(false);
-  };
-
-  const openCredential = () => setShowCredential(true);
-  const closeCredential = () => setShowCredential(false);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -138,7 +153,9 @@ export default function ProfesionalDashboardPage() {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  const handleTabNavigation = (tab: "profile" | "leads" | "help" | "logout") => {
+  const handleTabNavigation = (
+    tab: "profile" | "leads" | "help" | "logout"
+  ) => {
     switch (tab) {
       case "profile":
         setIsModalOpen(true);
@@ -182,6 +199,7 @@ export default function ProfesionalDashboardPage() {
               setLeadViewType("mapa");
             }}
             onShowCredential={openCredential}
+            onShowAcceptedLeads={showAcceptedLeads}
             onNavigate={handleTabNavigation}
             isMobile
           />
@@ -208,13 +226,14 @@ export default function ProfesionalDashboardPage() {
               currentLat={currentLocation?.lat}
               currentLng={currentLocation?.lng}
               onLeadClick={handleLeadClick}
-              onLeadAccepted={refetchData}
+              onLeadAccepted={handleLeadAccepted}
               selectedLeadId={selectedLeadId}
               avatarUrl={profesional?.avatar_url ?? null}
               onEditProfileClick={() => setIsModalOpen(true)}
               forcedViewType={leadViewType}
               onViewTypeChange={setLeadViewType}
-              forcedTab="nuevos"
+              forcedTab={leadTab}
+              onTabChange={setLeadTab}
             />
           </div>
         );
@@ -312,9 +331,7 @@ export default function ProfesionalDashboardPage() {
   if (isMobile) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-50 pt-[calc(var(--header-offset,72px)+1.5rem)] pb-20">
-        <div className="px-4 space-y-6">
-          {renderMobileContent()}
-        </div>
+        <div className="px-4 space-y-6">{renderMobileContent()}</div>
 
         <MobileBottomNav
           activeTab={mobileActiveTab}
@@ -357,7 +374,9 @@ export default function ProfesionalDashboardPage() {
               >
                 ×
               </button>
-              <ProfessionalVerificationID profesional={profesional as Profesional} />
+              <ProfessionalVerificationID
+                profesional={profesional as Profesional}
+              />
             </div>
           </div>
         )}
@@ -417,7 +436,7 @@ export default function ProfesionalDashboardPage() {
               currentLat={currentLocation?.lat}
               currentLng={currentLocation?.lng}
               onLeadClick={handleLeadClick}
-              onLeadAccepted={refetchData}
+              onLeadAccepted={handleLeadAccepted}
               selectedLeadId={selectedLeadId}
               avatarUrl={profesional?.avatar_url ?? null}
               onEditProfileClick={() => setIsModalOpen(true)}
@@ -448,6 +467,7 @@ export default function ProfesionalDashboardPage() {
               onShowLeadsList={showLeadsList}
               onShowLeadsMap={showLeadsMap}
               onShowCredential={openCredential}
+              onShowAcceptedLeads={showAcceptedLeads}
             />
           </div>
         )}
@@ -481,6 +501,7 @@ export default function ProfesionalDashboardPage() {
               onShowLeadsList={showLeadsList}
               onShowLeadsMap={showLeadsMap}
               onShowCredential={openCredential}
+              onShowAcceptedLeads={showAcceptedLeads}
             />
           </div>
         </div>

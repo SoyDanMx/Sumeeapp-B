@@ -8,8 +8,6 @@ import {
   faBriefcase,
   faQuestionCircle,
   faSignOutAlt,
-  faChartBar,
-  faUsers,
   faMapLocationDot,
   faIdCard,
   faShieldHalved,
@@ -24,6 +22,7 @@ interface ProfessionalTabsProps {
   onShowLeadsList?: () => void;
   onShowLeadsMap?: () => void;
   onShowCredential?: () => void;
+  onShowAcceptedLeads?: () => void;
   onNavigate?: (tab: TabType) => void;
   isMobile?: boolean;
 }
@@ -36,6 +35,7 @@ export default function ProfessionalTabs({
   onShowLeadsList,
   onShowLeadsMap,
   onShowCredential,
+  onShowAcceptedLeads,
   onNavigate,
   isMobile,
 }: ProfessionalTabsProps) {
@@ -54,6 +54,14 @@ export default function ProfessionalTabs({
     }
   };
 
+  const navigateToAcceptedLeads = () => {
+    if (onShowAcceptedLeads) {
+      onShowAcceptedLeads();
+    } else if (onShowLeadsList) {
+      onShowLeadsList();
+    }
+  };
+
   const tabs = [
     {
       id: "profile" as TabType,
@@ -66,7 +74,7 @@ export default function ProfessionalTabs({
       id: "leads" as TabType,
       label: "Mis Leads",
       icon: faBriefcase,
-      href: "/dashboard",
+      action: navigateToAcceptedLeads,
       description: "Gestiona tus oportunidades de trabajo",
     },
     {
@@ -87,7 +95,10 @@ export default function ProfessionalTabs({
 
   const avatarUrl = profesional.avatar_url;
   const rating = profesional.calificacion_promedio;
-  const reviewCount = (profesional as any)?.review_count ?? null;
+  const reviewCount = 
+    typeof profesional.review_count === "number"
+      ? profesional.review_count
+      : null;
   const membershipLabel =
     profesional.membership_status === "premium"
       ? "Sumee Pro Premium"
@@ -115,6 +126,7 @@ export default function ProfessionalTabs({
 
   const handleTabPress = (tab: (typeof tabs)[number]) => {
     setActiveTab(tab.id);
+    tab.action?.();
     if (onNavigate) {
       onNavigate(tab.id);
     }

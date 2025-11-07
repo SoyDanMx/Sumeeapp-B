@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useCallback } from "react";
 import dynamic from "next/dynamic";
 import { Lead } from "@/types/supabase";
 import LeadCard from "@/components/LeadCard";
@@ -40,7 +40,7 @@ interface WorkFeedProps {
   currentLat?: number;
   currentLng?: number;
   onLeadClick?: (leadId: string) => void;
-  onLeadAccepted?: () => void;
+  onLeadAccepted?: (lead: Lead) => void;
   selectedLeadId?: string | null;
   avatarUrl?: string | null; // URL del avatar del profesional
   onEditProfileClick?: () => void; // Función para abrir el modal de edición de perfil
@@ -72,6 +72,11 @@ export default function WorkFeed({
   const [activeTab, setActiveTabState] = useState<TabType>("nuevos");
   const [viewType, setViewTypeState] = useState<ViewType>("mapa");
   const [isMobile, setIsMobile] = useState(false);
+  const [localLeads, setLocalLeads] = useState<Lead[]>(leads);
+
+  useEffect(() => {
+    setLocalLeads(leads);
+  }, [leads]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -101,13 +106,13 @@ export default function WorkFeed({
   // Filtrar leads por estado
   const filteredLeads = useMemo(() => {
     if (activeTab === "nuevos") {
-      return leads.filter((lead) => lead.estado === "nuevo");
+      return localLeads.filter((lead) => lead.estado === "nuevo");
     } else {
-      return leads.filter(
+      return localLeads.filter(
         (lead) => lead.estado === "contactado" || lead.estado === "en_progreso"
       );
     }
-  }, [leads, activeTab]);
+  }, [localLeads, activeTab]);
 
   // Componente para estado vacío
   const EmptyState = ({ tabType }: { tabType: TabType }) => {
@@ -287,8 +292,36 @@ export default function WorkFeed({
     onTabChange?.(tab);
   };
 
+  const handleLeadAccepted = useCallback(
+    (lead: Lead) => {
+      setLocalLeads((prev) => {
+        const next = [...prev];
+        const index = next.findIndex((item) => item.id === lead.id);
+        if (index >= 0) {
+          next[index] = {
+            ...next[index],
+            ...lead,
+          };
+        } else {
+          next.push(lead);
+        }
+        return next;
+      });
+
+      setActiveTabState("en_progreso");
+      onTabChange?.("en_progreso");
+      setViewTypeState("lista");
+      onViewTypeChange?.("lista");
+      onLeadAccepted?.(lead);
+    },
+    [onLeadAccepted, onTabChange, onViewTypeChange]
+  );
+
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 h-full flex flex-col">
+    <div
+      id="professional-leads-section"
+      className="bg-white rounded-xl shadow-sm border border-gray-200 h-full flex flex-col"
+    >
       {/* Header con pestañas y toggle de vista */}
       <div className="border-b border-gray-200">
         <div className="flex">
@@ -307,9 +340,9 @@ export default function WorkFeed({
               />
               <span className="hidden sm:inline">Nuevos Leads</span>
               <span className="sm:hidden">Nuevos</span>
-              {leads.filter((lead) => lead.estado === "nuevo").length > 0 && (
+              {localLeads.filter((lead) => lead.estado === "nuevo").length > 0 && (
                 <span className="bg-blue-100 text-blue-600 text-xs px-1.5 md:px-2 py-0.5 md:py-1 rounded-full font-semibold">
-                  {leads.filter((lead) => lead.estado === "nuevo").length}
+                  {localLeads.filter((lead) => lead.estado === "nuevo").length}
                 </span>
               )}
             </div>
@@ -327,13 +360,13 @@ export default function WorkFeed({
               <FontAwesomeIcon icon={faClock} className="text-xs md:text-sm" />
               <span className="hidden sm:inline">En Progreso</span>
               <span className="sm:hidden">Progreso</span>
-              {leads.filter(
+              {localLeads.filter(
                 (lead) =>
                   lead.estado === "contactado" || lead.estado === "en_progreso"
               ).length > 0 && (
                 <span className="bg-green-100 text-green-600 text-xs px-1.5 md:px-2 py-0.5 md:py-1 rounded-full font-semibold">
                   {
-                    leads.filter(
+                    localLeads.filter(
                       (lead) =>
                         lead.estado === "contactado" ||
                         lead.estado === "en_progreso"
@@ -524,12 +557,10 @@ export default function WorkFeed({
                       key={lead.id}
                       lead={lead}
                       profesionalLat={(currentLat || profesionalLat) ?? 19.4326}
-                      profesionalLng={
-                        (currentLng || profesionalLng) ?? -99.1332
-                      }
+                      profesionalLng={(currentLng || profesionalLng) ?? -99.1332}
                       isSelected={lead.id === selectedLeadId}
                       onSelect={() => onLeadClick?.(lead.id)}
-                      onLeadAccepted={onLeadAccepted}
+                      onLeadAccepted={handleLeadAccepted}
                     />
                   )
                 )}
