@@ -1,10 +1,7 @@
 "use client";
 import React, { useState, FormEvent, useEffect } from "react";
-import { Profesional } from "@/types/supabase";
-import {
-  updateUserProfileFallback,
-  verifyUserPermissions,
-} from "@/lib/supabase/actions-alternative";
+import { Profesional, PortfolioItem, Lead } from "@/types/supabase";
+import { verifyUserPermissions } from "@/lib/supabase/actions-alternative";
 import { updateUserProfileWithFallback } from "@/lib/supabase/actions-alternative-rpc";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -36,11 +33,9 @@ import {
   faImage,
   faUpload,
   faTrash,
-  faIdCard,
   faShieldAlt,
 } from "@fortawesome/free-solid-svg-icons";
 import Image from "next/image";
-import { PortfolioItem, Lead } from "@/types/supabase";
 import {
   uploadAvatar,
   uploadPortfolioItem,
@@ -83,6 +78,25 @@ const OFICIOS_OPTIONS = [
   { id: "fumigacion", name: "Fumigación", icon: faBug, emoji: "🐛" },
 ];
 
+const WORK_ZONES = [
+  "Álvaro Obregón",
+  "Azcapotzalco",
+  "Benito Juárez",
+  "Coyoacán",
+  "Cuajimalpa",
+  "Cuauhtémoc",
+  "Gustavo A. Madero",
+  "Iztacalco",
+  "Iztapalapa",
+  "La Magdalena Contreras",
+  "Miguel Hidalgo",
+  "Milpa Alta",
+  "Tláhuac",
+  "Tlalpan",
+  "Venustiano Carranza",
+  "Xochimilco",
+];
+
 export default function EditProfileModal({
   profesional,
   isOpen,
@@ -100,6 +114,7 @@ export default function EditProfileModal({
     experiencia_uber: profesional.experiencia_uber,
     años_experiencia_uber: profesional.años_experiencia_uber,
     areas_servicio: profesional.areas_servicio || [],
+    work_zones: profesional.work_zones || [],
   });
   const [locationAddress, setLocationAddress] = useState("");
   const [loading, setLoading] = useState(false);
@@ -109,6 +124,7 @@ export default function EditProfileModal({
   const [customService, setCustomService] = useState("");
   const [isDetectingLocation, setIsDetectingLocation] = useState(false);
   const [profileSaved, setProfileSaved] = useState(false); // Para rastrear si el perfil ya se guardó en el Paso 5
+  const [customWorkZone, setCustomWorkZone] = useState("");
 
   // Estados para archivos y previews
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
@@ -147,9 +163,11 @@ export default function EditProfileModal({
         experiencia_uber: profesional.experiencia_uber,
         años_experiencia_uber: profesional.años_experiencia_uber,
         areas_servicio: profesional.areas_servicio || [],
+        work_zones: profesional.work_zones || [],
       });
       setLocationAddress("");
       setCustomService("");
+      setCustomWorkZone("");
       setLoading(false);
       setStatusMessage("");
       setCurrentStep(1);
@@ -223,6 +241,43 @@ export default function EditProfileModal({
       ...prev,
       areas_servicio:
         prev.areas_servicio?.filter((a) => a !== serviceName) || [],
+    }));
+  };
+
+  const handleWorkZoneToggle = (zone: string) => {
+    setFormData((prev) => {
+      const currentZones = prev.work_zones || [];
+      const zoneExists = currentZones.includes(zone);
+      const updatedZones = zoneExists
+        ? currentZones.filter((z) => z !== zone)
+        : [...currentZones, zone];
+      return {
+        ...prev,
+        work_zones: updatedZones,
+      };
+    });
+  };
+
+  const addCustomWorkZone = () => {
+    const zone = customWorkZone.trim();
+    if (!zone) return;
+    setFormData((prev) => {
+      const currentZones = prev.work_zones || [];
+      if (currentZones.some((z) => z.toLowerCase() === zone.toLowerCase())) {
+        return prev;
+      }
+      return {
+        ...prev,
+        work_zones: [...currentZones, zone],
+      };
+    });
+    setCustomWorkZone("");
+  };
+
+  const removeWorkZone = (zone: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      work_zones: prev.work_zones?.filter((z) => z !== zone) || [],
     }));
   };
 
@@ -373,14 +428,6 @@ export default function EditProfileModal({
 
   const prevStep = () => {
     if (currentStep > 1) setCurrentStep(currentStep - 1);
-  };
-
-  const formatPhoneNumber = (value: string) => {
-    const phoneNumber = value.replace(/\D/g, "");
-    if (phoneNumber.startsWith("52")) {
-      return `+52 ${phoneNumber.slice(2)}`;
-    }
-    return value;
   };
 
   return (
@@ -1238,6 +1285,119 @@ export default function EditProfileModal({
                         </div>
                       </div>
                     </div>
+                  </div>
+
+                  <div className="space-y-6">
+                    <div>
+                      <h4 className="text-lg font-semibold text-gray-800 mb-2">
+                        Zonas de trabajo prioritarias
+                      </h4>
+                      <p className="text-gray-600 text-sm mb-4">
+                        Selecciona las alcaldías o zonas donde puedes atender
+                        trabajos de forma recurrente. Esto nos permite enviarte
+                        leads cercanos y relevantes.
+                      </p>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                        {WORK_ZONES.map((zone) => {
+                          const isSelected =
+                            formData.work_zones?.includes(zone);
+                          return (
+                            <button
+                              key={zone}
+                              type="button"
+                              onClick={() => handleWorkZoneToggle(zone)}
+                              className={`px-4 py-3 rounded-xl border-2 text-sm font-semibold transition-all duration-200 flex items-center justify-between gap-2 ${
+                                isSelected
+                                  ? "border-indigo-500 bg-indigo-50 text-indigo-700 shadow-md"
+                                  : "border-gray-200 hover:border-indigo-300 hover:bg-gray-50 text-gray-700"
+                              }`}
+                            >
+                              <span className="truncate">{zone}</span>
+                              {isSelected && (
+                                <FontAwesomeIcon
+                                  icon={faCheck}
+                                  className="text-indigo-500"
+                                />
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 space-y-3">
+                      <h4 className="text-sm font-semibold text-gray-800">
+                        Agregar zona personalizada
+                      </h4>
+                      <p className="text-xs text-gray-600">
+                        Para municipios o colonias fuera de las alcaldías
+                        mostradas. Describe la zona o polígono donde sí puedes
+                        atender.
+                      </p>
+                      <div className="flex flex-col sm:flex-row gap-2">
+                        <input
+                          type="text"
+                          value={customWorkZone}
+                          onChange={(e) => setCustomWorkZone(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              e.preventDefault();
+                              addCustomWorkZone();
+                            }
+                          }}
+                          placeholder="Ej: Naucalpan, Estado de México"
+                          className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm"
+                        />
+                        <button
+                          type="button"
+                          onClick={addCustomWorkZone}
+                          disabled={!customWorkZone.trim()}
+                          className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-semibold hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                        >
+                          Agregar zona
+                        </button>
+                      </div>
+                    </div>
+
+                    {formData.work_zones && formData.work_zones.length > 0 && (
+                      <div className="bg-green-50 border border-green-200 rounded-xl p-4">
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center gap-2 text-green-700 font-semibold">
+                            <FontAwesomeIcon icon={faCheck} />
+                            <span>
+                              Zonas definidas ({formData.work_zones.length})
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {formData.work_zones.map((zone) => (
+                            <span
+                              key={zone}
+                              className="inline-flex items-center gap-2 bg-white text-green-700 border border-green-300 rounded-full px-3 py-1 text-xs font-medium shadow-sm"
+                            >
+                              <span>{zone}</span>
+                              <button
+                                type="button"
+                                onClick={() => removeWorkZone(zone)}
+                                className="text-green-600 hover:text-green-800"
+                                aria-label={`Eliminar zona ${zone}`}
+                              >
+                                <FontAwesomeIcon
+                                  icon={faTimes}
+                                  className="text-xs"
+                                />
+                              </button>
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    <p className="text-xs text-gray-500">
+                      Tip: entre más zonas definas, más leads relevantes podrás
+                      recibir. Si ya no trabajas en una zona, elimínala para
+                      evitar desplazamientos innecesarios.
+                    </p>
                   </div>
                 </div>
               )}

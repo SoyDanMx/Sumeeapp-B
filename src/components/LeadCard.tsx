@@ -8,7 +8,6 @@ import {
   faSpinner,
   faUser,
   faQuestion,
-  faPhone,
   faRoute,
 } from "@fortawesome/free-solid-svg-icons";
 import { faWhatsapp as faWhatsappBrand } from "@fortawesome/free-brands-svg-icons";
@@ -40,16 +39,41 @@ export default function LeadCard({
   const [isAccepting, setIsAccepting] = useState(false);
   const [accepted, setAccepted] = useState(false);
 
+  const normalizedClientWhatsapp = React.useMemo(() => {
+    if (!lead.whatsapp) return null;
+    const cleanPhone = lead.whatsapp.replace(/\D/g, "");
+    if (!cleanPhone) return null;
+    return cleanPhone.startsWith("52") ? cleanPhone : `52${cleanPhone}`;
+  }, [lead.whatsapp]);
+
+  const whatsappIntroMessage = React.useMemo(() => {
+    const clientName = lead.nombre_cliente?.trim() || "hola";
+    return encodeURIComponent(
+      `Hola ${clientName}, soy un profesional verificado de Sumee. Vi tu solicitud sobre "${
+        lead.descripcion_proyecto || "tu proyecto"
+      }" y me gustaría coordinar los detalles contigo. ¿Te parece si conversamos?`
+    );
+  }, [lead.nombre_cliente, lead.descripcion_proyecto]);
+
+  const contactClientWhatsappLink = normalizedClientWhatsapp
+    ? `https://wa.me/${normalizedClientWhatsapp}?text=${whatsappIntroMessage}`
+    : null;
+
   // Calcular distancia real usando la función de calculateDistance
-  const distanciaKm =
-    lead.ubicacion_lat != null && lead.ubicacion_lng != null
-      ? calculateDistance(
-          profesionalLat,
-          profesionalLng,
-          lead.ubicacion_lat,
-          lead.ubicacion_lng
-        ).toFixed(1)
-      : "0.0";
+  const hasLeadLocation =
+    lead.ubicacion_lat !== null &&
+    lead.ubicacion_lat !== undefined &&
+    lead.ubicacion_lng !== null &&
+    lead.ubicacion_lng !== undefined;
+
+  const distanciaKm = hasLeadLocation
+    ? calculateDistance(
+        profesionalLat,
+        profesionalLng,
+        lead.ubicacion_lat,
+        lead.ubicacion_lng
+      ).toFixed(1)
+    : "0.0";
 
   const handleAcceptLead = async (e: React.MouseEvent) => {
     e.stopPropagation(); // Evitar que se ejecute onSelect
@@ -79,7 +103,6 @@ export default function LeadCard({
           if (credentialResult.success && credentialResult.whatsappLink) {
             // Abrir WhatsApp con el mensaje pre-cargado
             openWhatsAppLink(credentialResult.whatsappLink);
-            console.log("✅ Credencial enviada automáticamente al cliente");
           } else {
             console.warn(
               "⚠️ No se pudo enviar la credencial:",
@@ -214,20 +237,7 @@ export default function LeadCard({
               </button>
 
               <div className="grid grid-cols-3 gap-2 md:gap-2">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    // TODO: Implementar chat
-                    alert("Función de chat próximamente");
-                  }}
-                  className="bg-yellow-500 hover:bg-yellow-600 text-white py-3 md:py-2 px-2 md:px-3 rounded-lg text-sm md:text-xs font-semibold md:font-medium transition-colors flex items-center justify-center space-x-1 touch-manipulation active:scale-95"
-                >
-                  <FontAwesomeIcon icon={faQuestion} className="text-sm" />
-                  <span className="hidden sm:inline">Preguntar</span>
-                  <span className="sm:hidden">?</span>
-                </button>
-
-                {lead.ubicacion_lat != null && lead.ubicacion_lng != null && (
+                {hasLeadLocation && (
                   <a
                     href={`https://www.google.com/maps/dir/${profesionalLat},${profesionalLng}/${lead.ubicacion_lat},${lead.ubicacion_lng}`}
                     target="_blank"
@@ -241,25 +251,37 @@ export default function LeadCard({
                   </a>
                 )}
 
-                {lead.whatsapp && (
-                  <a
-                    href={`https://wa.me/${lead.whatsapp.replace(
-                      /[^\d]/g,
-                      ""
-                    )}?text=Hola, soy un técnico de Sumee App y vi tu solicitud. ¿Podemos coordinar el servicio?`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={(e) => e.stopPropagation()}
-                    className="bg-green-500 hover:bg-green-600 text-white py-3 md:py-2 px-2 md:px-3 rounded-lg text-sm md:text-xs font-semibold md:font-medium transition-colors flex items-center justify-center space-x-1 touch-manipulation active:scale-95"
-                  >
-                    <FontAwesomeIcon
-                      icon={faWhatsappBrand}
-                      className="text-sm"
-                    />
-                    <span className="hidden sm:inline">WhatsApp</span>
-                    <span className="sm:hidden">💬</span>
-                  </a>
-                )}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (!contactClientWhatsappLink) {
+                      alert(
+                        "El cliente no compartió un número de WhatsApp. Puedes intentar llamarlo desde la sección de detalles."
+                      );
+                      return;
+                    }
+                    openWhatsAppLink(contactClientWhatsappLink);
+                  }}
+                  className="bg-green-500 hover:bg-green-600 text-white py-3 md:py-2 px-2 md:px-3 rounded-lg text-sm md:text-xs font-semibold md:font-medium transition-colors flex items-center justify-center space-x-1 touch-manipulation active:scale-95"
+                >
+                  <FontAwesomeIcon icon={faWhatsappBrand} className="text-sm" />
+                  <span className="hidden sm:inline">WhatsApp cliente</span>
+                  <span className="sm:hidden">💬</span>
+                </button>
+
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    alert(
+                      "Para llamadas directas, usa el botón de WhatsApp o revisa el detalle del lead en tu panel."
+                    );
+                  }}
+                  className="bg-yellow-500 hover:bg-yellow-600 text-white py-3 md:py-2 px-2 md:px-3 rounded-lg text-sm md:text-xs font-semibold md:font-medium transition-colors flex items-center justify-center space-x-1 touch-manipulation active:scale-95"
+                >
+                  <FontAwesomeIcon icon={faQuestion} className="text-sm" />
+                  <span className="hidden sm:inline">Notas</span>
+                  <span className="sm:hidden">ℹ️</span>
+                </button>
               </div>
             </div>
           </div>
