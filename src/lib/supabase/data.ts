@@ -204,27 +204,51 @@ export async function submitLead(leadData: {
  * @param profesionalId ID del profesional que acepta el lead (auth.uid()).
  */
 export async function acceptLead(leadId: string, profesionalId: string) {
-  // 💡 IMPORTANTE: Debes tener una política de RLS que permita hacer UPDATE
-  // a los leads donde el estado sea 'Nuevo' para que esta función funcione.
-
-  const { data, error } = await supabase
+  const { error } = await supabase
     .from("leads")
     .update({
-      estado: "Contactado", // Cambia el estado
-      profesional_asignado_id: profesionalId, // Asigna al profesional
+      estado: "Contactado",
+      profesional_asignado_id: profesionalId,
     })
-    .eq("id", leadId)
-    .select()
-    .single();
+    .eq("id", leadId);
 
   if (error) {
     console.error("Error al aceptar el lead:", error);
     throw new Error(`No se pudo aceptar el lead: ${error.message}`);
   }
 
+  let updatedLead: Lead | null = null;
+
+  try {
+    const { data: leadData, error: fetchError } = await supabase
+      .from("leads")
+      .select("*")
+      .eq("id", leadId)
+      .maybeSingle();
+
+    if (fetchError) {
+      console.warn(
+        "⚠️ Lead aceptado pero no se pudo obtener la fila actualizada:",
+        fetchError
+      );
+    } else {
+      updatedLead = (leadData as Lead) || null;
+    }
+  } catch (fetchError) {
+    console.warn(
+      "⚠️ Lead aceptado, pero ocurrió un error al consultar nuevamente la información:",
+      fetchError
+    );
+  }
+
+  const fallbackLead: Partial<Lead> = {
+    id: leadId,
+    estado: "contactado",
+  };
+
   return {
     success: true,
-    lead: data,
+    lead: updatedLead ?? fallbackLead,
   };
 }
 

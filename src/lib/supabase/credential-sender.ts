@@ -1,6 +1,6 @@
 // src/lib/supabase/credential-sender.ts
 
-import { Profesional, Lead } from "@/types/supabase";
+import { Profesional } from "@/types/supabase";
 import { supabase } from "@/lib/supabase/client";
 
 /**
@@ -62,28 +62,6 @@ export async function getProfesionalData(
 }
 
 /**
- * Obtiene los leads de un profesional para calcular métricas
- */
-export async function getProfesionalLeads(userId: string): Promise<Lead[]> {
-  try {
-    const { data, error } = await supabase
-      .from("leads")
-      .select("*")
-      .eq("profesional_asignado_id", userId);
-
-    if (error) {
-      console.error("Error al obtener leads del profesional:", error);
-      return [];
-    }
-
-    return (data as Lead[]) || [];
-  } catch (error) {
-    console.error("Error en getProfesionalLeads:", error);
-    return [];
-  }
-}
-
-/**
  * Envía automáticamente la credencial al cliente cuando se acepta un lead
  * @param leadId ID del lead aceptado
  * @param profesionalId ID del profesional que aceptó el lead
@@ -98,7 +76,7 @@ export async function sendCredentialToClient(
       .from("leads")
       .select("*")
       .eq("id", leadId)
-      .single();
+      .maybeSingle();
 
     if (leadError || !lead) {
       console.error("Error al obtener el lead:", leadError);
@@ -118,16 +96,13 @@ export async function sendCredentialToClient(
       return { success: false, error: "Profesional no encontrado" };
     }
 
-    // 4. Obtener leads del profesional para calcular métricas
-    const leads = await getProfesionalLeads(profesionalId);
-
-    // 5. Generar link de WhatsApp con la credencial
+    // 4. Generar link de WhatsApp con la credencial
     const whatsappLink = generateWhatsAppCredentialLink(
       lead.whatsapp,
       profesional
     );
 
-    // 6. Retornar el link (el frontend puede abrirlo o copiarlo)
+    // 5. Retornar el link (el frontend puede abrirlo o copiarlo)
     return {
       success: true,
       whatsappLink,
