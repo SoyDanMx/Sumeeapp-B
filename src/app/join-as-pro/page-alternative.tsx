@@ -19,22 +19,7 @@ import {
   faEyeSlash
 } from '@fortawesome/free-solid-svg-icons';
 import { ProfesionalRegistrationData, ValidationErrors } from '@/types/supabase';
-
-const PROFESSIONS = [
-  'Electricista',
-  'Plomero',
-  'Carpintero',
-  'Pintor',
-  'Albañil',
-  'Técnico en Refrigeración',
-  'Técnico en Aire Acondicionado',
-  'Soldador',
-  'Herrero',
-  'Técnico en Seguridad',
-  'Instalador de Pisos',
-  'Técnico en Gas',
-  'Otro'
-];
+import { PROFESSIONAL_PROFESSIONS } from '@/constants/professions';
 
 const WORK_ZONES = [
   'Álvaro Obregón',
@@ -295,7 +280,7 @@ export default function JoinAsProAlternative() {
                 }`}
               >
                 <option value="">Selecciona tu profesión</option>
-                {PROFESSIONS.map(prof => (
+                {PROFESSIONAL_PROFESSIONS.map(prof => (
                   <option key={prof} value={prof}>{prof}</option>
                 ))}
               </select>

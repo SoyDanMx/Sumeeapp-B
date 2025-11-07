@@ -21,6 +21,8 @@ BEGIN
     full_name, 
     email, 
     profession,
+    phone,
+    whatsapp,
     membership_status, -- Explícitamente añadido
     role
   )
@@ -32,7 +34,13 @@ BEGIN
     
     NEW.email,
     
-    NEW.raw_user_meta_data->>'profession',
+    NULLIF(TRIM(NEW.raw_user_meta_data->>'profession'), ''),
+
+    NULLIF(TRIM(NEW.raw_user_meta_data->>'phone'), ''),
+    COALESCE(
+      NULLIF(TRIM(NEW.raw_user_meta_data->>'whatsapp'), ''),
+      NULLIF(TRIM(NEW.raw_user_meta_data->>'phone'), '')
+    ),
 
     -- Explícitamente insertar el valor por defecto para membership_status.
     'free',
