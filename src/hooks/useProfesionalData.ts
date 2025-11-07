@@ -32,35 +32,49 @@ export function useProfesionalData(): UseProfesionalDataReturn {
     try {
       console.log("🔍 Buscando datos para usuario:", currentUserId);
 
-      const [profesionalResult, leadsResult] = await Promise.all([
+      const [profesionalResult, openLeadsResult] = await Promise.all([
         supabase
           .from("profiles")
           .select("*")
           .eq("user_id", currentUserId)
           .single(),
-        supabase
-          .from("leads")
-          .select("*")
-          .eq("profesional_asignado_id", currentUserId)
-          .order("fecha_creacion", { ascending: false }),
+        supabase.rpc("get_open_leads_for_professional", {
+          professional_id: currentUserId,
+        }),
       ]);
 
       if (profesionalResult.error) {
         console.error("❌ Error obteniendo perfil:", profesionalResult.error);
         throw profesionalResult.error;
       }
-      if (leadsResult.error) {
-        console.error("❌ Error obteniendo leads:", leadsResult.error);
-        throw leadsResult.error;
+      if (openLeadsResult.error) {
+        console.error("❌ Error obteniendo leads:", openLeadsResult.error);
+        throw openLeadsResult.error;
       }
 
       console.log("✅ Datos obtenidos:", {
         profesional: profesionalResult.data,
-        leadsCount: leadsResult.data?.length || 0,
+        leadsCount: openLeadsResult.data?.length || 0,
       });
 
       setProfesional(profesionalResult.data as Profesional);
-      setLeads(leadsResult.data as Lead[]);
+      setLeads((openLeadsResult.data as Lead[]) || []);
+
+      // Asegurar que el profesional quede marcado como "disponible"
+      if (profesionalResult.data?.disponibilidad !== "disponible") {
+        try {
+          await supabase
+            .from("profiles")
+            .update({ disponibilidad: "disponible" })
+            .eq("user_id", currentUserId)
+            .throwOnError();
+        } catch (availabilityError) {
+          console.warn(
+            "⚠️ No se pudo actualizar la disponibilidad automáticamente:",
+            availabilityError
+          );
+        }
+      }
     } catch (err) {
       console.error("❌ Error fetching professional data:", err);
       const errorMessage =

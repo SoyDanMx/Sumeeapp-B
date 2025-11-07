@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import dynamic from "next/dynamic";
 import { Lead } from "@/types/supabase";
 import LeadCard from "@/components/LeadCard";
@@ -29,6 +29,8 @@ import {
   faExclamationTriangle,
   faMap,
   faList,
+  faArrowRight,
+  faLocationDot,
 } from "@fortawesome/free-solid-svg-icons";
 
 interface WorkFeedProps {
@@ -42,10 +44,14 @@ interface WorkFeedProps {
   selectedLeadId?: string | null;
   avatarUrl?: string | null; // URL del avatar del profesional
   onEditProfileClick?: () => void; // Función para abrir el modal de edición de perfil
+  forcedViewType?: ViewType;
+  onViewTypeChange?: (view: ViewType) => void;
+  forcedTab?: TabType;
+  onTabChange?: (tab: TabType) => void;
 }
 
 type TabType = "nuevos" | "en_progreso";
-type ViewType = "mapa" | "lista" | "split";
+type ViewType = "mapa" | "lista";
 
 export default function WorkFeed({
   leads,
@@ -58,10 +64,39 @@ export default function WorkFeed({
   selectedLeadId,
   avatarUrl,
   onEditProfileClick,
+  forcedViewType,
+  onViewTypeChange,
+  forcedTab,
+  onTabChange,
 }: WorkFeedProps) {
-  const [activeTab, setActiveTab] = useState<TabType>("nuevos");
-  // Por defecto: split en desktop, lista en móvil
-  const [viewType, setViewType] = useState<ViewType>("split");
+  const [activeTab, setActiveTabState] = useState<TabType>("nuevos");
+  const [viewType, setViewTypeState] = useState<ViewType>("mapa");
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const updateIsMobile = () => setIsMobile(window.innerWidth < 768);
+    updateIsMobile();
+    window.addEventListener("resize", updateIsMobile);
+    return () => window.removeEventListener("resize", updateIsMobile);
+  }, []);
+
+  const handleChangeView = (view: ViewType) => {
+    setViewTypeState(view);
+    onViewTypeChange?.(view);
+  };
+
+  useEffect(() => {
+    if (forcedViewType && forcedViewType !== viewType) {
+      setViewTypeState(forcedViewType);
+    }
+  }, [forcedViewType, viewType]);
+
+  useEffect(() => {
+    if (forcedTab && forcedTab !== activeTab) {
+      setActiveTabState(forcedTab);
+    }
+  }, [forcedTab, activeTab]);
 
   // Filtrar leads por estado
   const filteredLeads = useMemo(() => {
@@ -138,7 +173,7 @@ export default function WorkFeed({
                       Mantén tu disponibilidad activa
                     </h4>
                     <p className="text-sm text-green-700">
-                      Asegúrate de que tu estado esté en "Disponible" para
+                      Asegúrate de que tu estado esté en &quot;Disponible&quot; para
                       recibir notificaciones.
                     </p>
                   </div>
@@ -212,13 +247,53 @@ export default function WorkFeed({
     });
   }, [filteredLeads, activeTab, profesionalLat, profesionalLng]);
 
+  const primaryLead = sortedLeads[0];
+
+  const calculateDistance = (
+    lat1?: number | null,
+    lng1?: number | null,
+    lat2?: number | null,
+    lng2?: number | null
+  ) => {
+    const coordinates: Array<number | null | undefined> = [
+      lat1,
+      lng1,
+      lat2,
+      lng2,
+    ];
+    const isNumber = (value: number | null | undefined): value is number =>
+      typeof value === "number";
+
+    if (!coordinates.every(isNumber)) {
+      return null;
+    }
+    const [safeLat1, safeLng1, safeLat2, safeLng2] = coordinates;
+    const toRad = (value: number) => (value * Math.PI) / 180;
+    const R = 6371; // km
+    const dLat = toRad(safeLat2 - safeLat1);
+    const dLon = toRad(safeLng2 - safeLng1);
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(toRad(safeLat1)) *
+        Math.cos(toRad(safeLat2)) *
+        Math.sin(dLon / 2) *
+        Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return Math.round(R * c * 10) / 10;
+  };
+
+  const changeActiveTab = (tab: TabType) => {
+    setActiveTabState(tab);
+    onTabChange?.(tab);
+  };
+
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 h-full flex flex-col">
       {/* Header con pestañas y toggle de vista */}
       <div className="border-b border-gray-200">
         <div className="flex">
           <button
-            onClick={() => setActiveTab("nuevos")}
+            onClick={() => changeActiveTab("nuevos")}
             className={`flex-1 px-3 md:px-6 py-3 md:py-4 text-xs md:text-sm font-medium transition-colors duration-200 touch-manipulation active:scale-95 ${
               activeTab === "nuevos"
                 ? "text-blue-600 border-b-2 border-blue-600 bg-blue-50"
@@ -241,7 +316,7 @@ export default function WorkFeed({
           </button>
 
           <button
-            onClick={() => setActiveTab("en_progreso")}
+            onClick={() => changeActiveTab("en_progreso")}
             className={`flex-1 px-3 md:px-6 py-3 md:py-4 text-xs md:text-sm font-medium transition-colors duration-200 touch-manipulation active:scale-95 ${
               activeTab === "en_progreso"
                 ? "text-green-600 border-b-2 border-green-600 bg-green-50"
@@ -269,56 +344,36 @@ export default function WorkFeed({
             </div>
           </button>
         </div>
-
-        {/* Toggle de vista Mapa/Lista/Split */}
         {activeTab === "nuevos" && (
-          <div className="flex justify-end px-3 md:px-4 py-2.5 md:py-2 border-t border-gray-100">
-            <div className="flex gap-2 md:gap-2">
+          <div className="flex justify-between items-center px-3 md:px-4 py-2.5 border-t border-gray-100 bg-white sticky top-0 z-20 md:static">
+            <div className="flex items-center gap-2 text-sm text-gray-600">
+              <span className="inline-flex items-center gap-1 bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full font-semibold">
+                <FontAwesomeIcon icon={faLocationDot} className="text-xs" />
+                {sortedLeads.length} lead(s) cercanos
+              </span>
+            </div>
+            <div className="flex gap-2">
               <button
-                onClick={() => setViewType("mapa")}
-                className={`px-3 md:px-3 py-2 md:py-1.5 text-sm md:text-xs font-semibold md:font-medium rounded-lg transition-colors active:scale-95 touch-manipulation ${
+                onClick={() => handleChangeView("mapa")}
+                className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors active:scale-95 ${
                   viewType === "mapa"
-                    ? "bg-blue-600 text-white shadow-md"
-                    : "bg-gray-100 text-gray-600 hover:bg-gray-200 active:bg-gray-300"
+                    ? "bg-blue-600 text-white"
+                    : "bg-gray-100 text-gray-600"
                 }`}
-                title="Vista Mapa"
-                aria-label="Vista Mapa"
               >
-                <FontAwesomeIcon icon={faMap} className="text-sm md:text-xs" />
-                <span className="hidden sm:inline ml-1">Mapa</span>
+                <FontAwesomeIcon icon={faMap} className="mr-1" />
+                Mapa
               </button>
               <button
-                onClick={() => setViewType("split")}
-                className={`px-3 md:px-3 py-2 md:py-1.5 text-sm md:text-xs font-semibold md:font-medium rounded-lg transition-colors active:scale-95 touch-manipulation ${
-                  viewType === "split"
-                    ? "bg-blue-600 text-white shadow-md"
-                    : "bg-gray-100 text-gray-600 hover:bg-gray-200 active:bg-gray-300"
-                }`}
-                title="Vista Split (Mapa + Lista)"
-                aria-label="Vista Split"
-              >
-                <FontAwesomeIcon
-                  icon={faMap}
-                  className="text-sm md:text-xs mr-1"
-                />
-                <FontAwesomeIcon
-                  icon={faList}
-                  className="text-sm md:text-xs mr-1"
-                />
-                <span className="hidden sm:inline">Split</span>
-              </button>
-              <button
-                onClick={() => setViewType("lista")}
-                className={`px-3 md:px-3 py-2 md:py-1.5 text-sm md:text-xs font-semibold md:font-medium rounded-lg transition-colors active:scale-95 touch-manipulation ${
+                onClick={() => handleChangeView("lista")}
+                className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors active:scale-95 ${
                   viewType === "lista"
-                    ? "bg-blue-600 text-white shadow-md"
-                    : "bg-gray-100 text-gray-600 hover:bg-gray-200 active:bg-gray-300"
+                    ? "bg-blue-600 text-white"
+                    : "bg-gray-100 text-gray-600"
                 }`}
-                title="Vista Lista"
-                aria-label="Vista Lista"
               >
-                <FontAwesomeIcon icon={faList} className="text-sm md:text-xs" />
-                <span className="hidden sm:inline ml-1">Lista</span>
+                <FontAwesomeIcon icon={faList} className="mr-1" />
+                Lista
               </button>
             </div>
           </div>
@@ -328,8 +383,11 @@ export default function WorkFeed({
       {/* Contenido: Mapa, Lista o Split según viewType */}
       <div className="flex-1 overflow-hidden">
         {activeTab === "nuevos" && viewType === "mapa" ? (
-          // Vista solo Mapa
-          <div className="h-full">
+          <div
+            className={`relative ${
+              isMobile ? "h-[calc(100vh-220px)]" : "h-full"
+            }`}
+          >
             <ProfessionalMapView
               leads={sortedLeads}
               profesionalLat={profesionalLat}
@@ -340,28 +398,128 @@ export default function WorkFeed({
               onLeadClick={onLeadClick}
               avatarUrl={avatarUrl}
             />
+            {primaryLead && (
+              <div
+                className={`absolute inset-x-0 ${
+                  isMobile ? "bottom-0" : "bottom-4"
+                } px-3 pb-4`}
+              >
+                <div
+                  className={`bg-white rounded-3xl shadow-2xl border border-gray-200 overflow-hidden ${
+                    isMobile ? "pb-2" : ""
+                  }`}
+                >
+                  <div className="px-4 pt-4 pb-3">
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-xs font-semibold uppercase tracking-wide text-blue-500">
+                        Lead disponible
+                      </span>
+                      {(() => {
+                        const refLat = currentLat ?? profesionalLat;
+                        const refLng = currentLng ?? profesionalLng;
+                        const distance = calculateDistance(
+                          refLat,
+                          refLng,
+                          primaryLead.ubicacion_lat,
+                          primaryLead.ubicacion_lng
+                        );
+                        if (distance === null) return null;
+                        return (
+                          <span className="bg-blue-100 text-blue-600 text-xs font-semibold px-2 py-1 rounded-full">
+                            {distance} km
+                          </span>
+                        );
+                      })()}
+                    </div>
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <h3 className="text-lg font-bold text-gray-900">
+                          {primaryLead.servicio_solicitado ||
+                            "Servicio profesional"}
+                        </h3>
+                        <p className="text-sm text-gray-600 mt-1 line-clamp-2">
+                          {primaryLead.descripcion_proyecto ||
+                            "¿Listo para apoyar a este cliente?"}
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          changeActiveTab("nuevos");
+                          if (viewType !== "mapa") {
+                            handleChangeView("mapa");
+                          }
+                          onLeadClick?.(primaryLead.id);
+                        }}
+                        className="flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-400 shadow-sm transition-all hover:text-blue-600 hover:border-blue-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2"
+                        aria-label="Ver ubicación del lead en el mapa"
+                      >
+                        <FontAwesomeIcon
+                          icon={faArrowRight}
+                          className="text-lg"
+                        />
+                      </button>
+                    </div>
+                    <div className="flex items-center mt-3 text-sm text-gray-600 gap-2">
+                      <FontAwesomeIcon
+                        icon={faLocationDot}
+                        className="text-blue-500"
+                      />
+                      <span className="truncate">
+                        {primaryLead.ubicacion_direccion || "Zona CDMX"}
+                      </span>
+                    </div>
+                    <div className="flex items-center mt-2 text-xs text-gray-500 gap-1">
+                      <FontAwesomeIcon icon={faClock} />
+                      <span>
+                        {new Date(primaryLead.fecha_creacion).toLocaleString(
+                          "es-MX",
+                          {
+                            day: "numeric",
+                            month: "short",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          }
+                        )}
+                      </span>
+                    </div>
+                    <div
+                      className={`flex ${
+                        isMobile
+                          ? "flex-col"
+                          : "flex-col sm:flex-row sm:items-center"
+                      } sm:justify-between mt-4 gap-2`}
+                    >
+                      <button
+                        onClick={() => {
+                          changeActiveTab("nuevos");
+                          handleChangeView("lista");
+                          onLeadClick?.(primaryLead.id);
+                        }}
+                        className="w-full sm:w-auto bg-blue-600 text-white px-4 py-3 rounded-xl text-sm font-semibold hover:bg-blue-700 transition-colors"
+                      >
+                        Ver detalles
+                      </button>
+                      <button
+                        onClick={() => onLeadClick?.(primaryLead.id)}
+                        className="w-full sm:w-auto bg-gray-100 text-gray-700 px-4 py-3 rounded-xl text-sm font-semibold hover:bg-gray-200 transition-colors"
+                      >
+                        Centrar en el mapa
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
-        ) : activeTab === "nuevos" && viewType === "split" ? (
-          // Vista Split (Mapa + Lista) - En móvil: lista arriba, mapa abajo; en desktop: lado a lado
-          <div className="flex flex-col md:flex-row h-full">
-            {/* Mapa: En móvil abajo, en desktop izquierda */}
-            <div className="order-2 md:order-1 flex-1 min-h-[300px] md:min-h-0 border-t md:border-t-0 md:border-r border-gray-200">
-              <ProfessionalMapView
-                leads={sortedLeads}
-                profesionalLat={profesionalLat}
-                profesionalLng={profesionalLng}
-                currentLat={currentLat}
-                currentLng={currentLng}
-                selectedLeadId={selectedLeadId}
-                onLeadClick={onLeadClick}
-                avatarUrl={avatarUrl}
-              />
-            </div>
-            {/* Lista: En móvil arriba, en desktop derecha */}
-            <div className="order-1 md:order-2 w-full md:w-96 overflow-y-auto max-h-[50vh] md:max-h-none border-b md:border-b-0 border-gray-200 md:border-l">
-              {sortedLeads.length > 0 ? (
-                <div className="p-2 md:p-4 space-y-3 md:space-y-4">
-                  {sortedLeads.map((lead) => (
+        ) : (
+          // Vista Lista para "nuevos" en modo lista y para "en progreso"
+          <div className={`flex-1 overflow-y-auto ${isMobile ? "pb-20" : ""}`}>
+            {(activeTab === "nuevos" ? sortedLeads : filteredLeads).length >
+            0 ? (
+              <div className="p-2 md:p-4 space-y-3 md:space-y-4">
+                {(activeTab === "nuevos" ? sortedLeads : filteredLeads).map(
+                  (lead) => (
                     <LeadCard
                       key={lead.id}
                       lead={lead}
@@ -373,29 +531,8 @@ export default function WorkFeed({
                       onSelect={() => onLeadClick?.(lead.id)}
                       onLeadAccepted={onLeadAccepted}
                     />
-                  ))}
-                </div>
-              ) : (
-                <EmptyState tabType={activeTab} />
-              )}
-            </div>
-          </div>
-        ) : (
-          // Vista solo Lista
-          <div className="flex-1 overflow-y-auto">
-            {sortedLeads.length > 0 ? (
-              <div className="p-2 md:p-4 space-y-3 md:space-y-4">
-                {sortedLeads.map((lead) => (
-                  <LeadCard
-                    key={lead.id}
-                    lead={lead}
-                    profesionalLat={(currentLat || profesionalLat) ?? 19.4326}
-                    profesionalLng={(currentLng || profesionalLng) ?? -99.1332}
-                    isSelected={lead.id === selectedLeadId}
-                    onSelect={() => onLeadClick?.(lead.id)}
-                    onLeadAccepted={onLeadAccepted}
-                  />
-                ))}
+                  )
+                )}
               </div>
             ) : (
               <EmptyState tabType={activeTab} />

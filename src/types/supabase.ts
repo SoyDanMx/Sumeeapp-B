@@ -147,6 +147,7 @@ export interface Lead {
   servicio?: string | null; // Campo alternativo para servicio
   urgencia?: string | null;
   cliente_id?: string | null;
+  photos_urls?: string[] | null;
   // Propiedad para datos del profesional asignado (obtenida via JOIN)
   profiles?: Partial<Profile> | null;
   profesional_asignado?: Partial<Profile> | null;

@@ -24,7 +24,7 @@ export default function LeadStatusPageClient({
     initialLead.estado === "completado";
 
   return (
-    <div className="min-h-screen bg-gray-50 pt-20">
+    <div className="min-h-screen bg-gray-50 pt-[calc(var(--header-offset,72px)+2rem)]">
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-6">
