@@ -594,6 +594,63 @@ const blogPosts: Record<string, BlogPost> = {
       "CDMX",
     ],
   },
+  "diferencia-pastilla-termomagnetica-diferencial": {
+    id: "7",
+    title:
+      "¿Cuál es la Diferencia Entre una Pastilla Termomagnética y un Diferencial? ¡Protege tu Hogar Inteligentemente!",
+    content: `
+      <p>Cuando se habla de seguridad eléctrica es frecuente escuchar "se botó la pastilla" para cualquier corte de energía. Sin embargo, no todos los dispositivos que interrumpen la corriente hacen lo mismo. Para proteger correctamente tu hogar necesitas dos dispositivos complementarios: la <strong>pastilla termomagnética</strong> y el <strong>interruptor diferencial</strong>.</p>
+
+      <h2>Pastilla termomagnética: el escudo de tus cables</h2>
+      <p>La pastilla termomagnética (breaker) protege la instalación ante:</p>
+      <ul>
+        <li><strong>Sobrecargas:</strong> cuando conectas demasiados aparatos o un equipo consume más de lo que soporta el circuito. La sección térmica detecta el calor y abre el circuito antes de que los cables se quemen.</li>
+        <li><strong>Cortocircuitos:</strong> si fase y neutro se tocan, la corriente se dispara. La parte magnética reacciona en milisegundos y corta la energía para evitar incendios.</li>
+      </ul>
+      <p>Si "se botó la pastilla" al sobrecargar un contacto, la termomagnética está haciendo su trabajo: impedir que tu instalación se dañe.</p>
+
+      <h2>Interruptor diferencial: el héroe que salva vidas</h2>
+      <p>El diferencial (IDR) protege a las personas contra descargas eléctricas. Compara la corriente que entra por la fase con la que regresa por el neutro. Si detecta una diferencia —una fuga a tierra o a través del cuerpo de una persona— corta la energía en milisegundos.</p>
+      <p><strong>Importante:</strong> el diferencial no sustituye a la pastilla termomagnética. No reacciona ante sobrecargas o cortocircuitos; su misión es salvar vidas.</p>
+
+      <div style="background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); border-left: 4px solid #2563eb; padding: 1.5rem; margin: 2rem 0; border-radius: 0.75rem;">
+        <h3 style="color:#1e3a8a; margin-bottom:0.75rem;">Checklist de seguridad para tu tablero</h3>
+        <ul style="color:#1e3a8a; line-height:1.8;">
+          <li>¿Cada circuito cuenta con su pastilla termomagnética dimensionada correctamente?</li>
+          <li>¿Tienes un diferencial de 30 mA en áreas con humedad (baños, cocina, lavandería)?</li>
+          <li>¿Presionas el botón "TEST" del diferencial cada 3 meses para verificar que funciona?</li>
+        </ul>
+      </div>
+
+      <h2>¿Cuál elegir? ¡Ambos!</h2>
+      <p>La pastilla termomagnética protege cables y equipos; el diferencial protege a las personas. Las instalaciones modernas requieren ambos dispositivos trabajando juntos para ofrecer una protección integral.</p>
+
+      <h2>Confía la instalación a profesionales certificados</h2>
+      <p>Un electricista certificado evalúa la carga de tu hogar, instala ambos dispositivos, verifica la tierra física y deja todo cumpliendo con la NOM. En Sumee App todos nuestros técnicos están verificados y ofrecen garantía.</p>
+
+      <div style="background: linear-gradient(135deg, #fb7185 0%, #f97316 100%); color: white; padding: 2rem; border-radius: 0.75rem; margin: 3rem 0; text-align: center;">
+        <h3 style="font-size:1.8rem; margin-bottom:1rem;">Protege tu hogar con la Membresía Sumee</h3>
+        <p style="font-size:1.1rem; max-width:600px; margin:0 auto 1.5rem;">Accede a revisiones eléctricas periódicas, atención prioritaria y técnicos expertos cuando más lo necesitas. No improvises con la seguridad de tu familia.</p>
+        <a
+          href="/membresia"
+          style="display:inline-block; padding:0.9rem 2.2rem; background:white; color:#f97316; font-weight:700; border-radius:9999px; text-decoration:none; transition:all 0.3s ease;"
+          onmouseover="this.style.background='#fff7ed'"
+          onmouseout="this.style.background='white'"
+        >
+          Conoce nuestros planes de membresía
+        </a>
+      </div>
+    `,
+    author: "Equipo Sumee",
+    publishDate: "2025-02-07",
+    readTime: "6 min",
+    category: "Seguridad Eléctrica",
+    image:
+      "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=400&q=80",
+    slug: "diferencia-pastilla-termomagnetica-diferencial",
+    views: 0,
+    tags: ["electricidad", "seguridad", "hogar", "protección"],
+  },
   // Más posts se agregarían aquí...
 };
 
