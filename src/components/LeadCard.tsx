@@ -1,7 +1,7 @@
 "use client";
 
 import { Lead } from "@/types/supabase";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faCheck,
@@ -28,6 +28,18 @@ interface LeadCardProps {
   onLeadAccepted?: (lead: Lead) => void; // Callback con el lead actualizado
 }
 
+const sanitizeWhatsapp = (input?: string | null) => {
+  if (!input) return "";
+  const digits = input.replace(/\D/g, "");
+  if (!digits) return "";
+  if (digits.startsWith("52")) return digits;
+  if (digits.length === 10) return `52${digits}`;
+  if (digits.startsWith("521") && digits.length === 13) {
+    return `52${digits.slice(3)}`;
+  }
+  return digits;
+};
+
 export default function LeadCard({
   lead,
   profesionalLat,
@@ -42,13 +54,55 @@ export default function LeadCard({
       (lead.estado || "").toLowerCase()
     )
   );
+  const [clientWhatsapp, setClientWhatsapp] = useState(
+    sanitizeWhatsapp(lead.whatsapp)
+  );
+
+  useEffect(() => {
+    setClientWhatsapp(sanitizeWhatsapp(lead.whatsapp));
+  }, [lead.whatsapp]);
+
+  useEffect(() => {
+    if (clientWhatsapp || !lead.cliente_id) {
+      return;
+    }
+
+    let cancelled = false;
+
+    const fetchClientWhatsapp = async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("whatsapp, phone")
+        .eq("user_id", lead.cliente_id!)
+        .maybeSingle();
+
+      if (error) {
+        console.warn("No se pudo obtener el WhatsApp del cliente:", error);
+        return;
+      }
+
+      const normalized =
+        sanitizeWhatsapp(data?.whatsapp) || sanitizeWhatsapp(data?.phone);
+
+      if (!cancelled && normalized) {
+        setClientWhatsapp(normalized);
+      }
+    };
+
+    fetchClientWhatsapp();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [clientWhatsapp, lead.cliente_id]);
 
   const normalizedClientWhatsapp = React.useMemo(() => {
-    if (!lead.whatsapp) return null;
-    const cleanPhone = lead.whatsapp.replace(/\D/g, "");
-    if (!cleanPhone) return null;
-    return cleanPhone.startsWith("52") ? cleanPhone : `52${cleanPhone}`;
-  }, [lead.whatsapp]);
+    if (!clientWhatsapp) return null;
+    if (!clientWhatsapp.startsWith("52") && clientWhatsapp.length === 10) {
+      return `52${clientWhatsapp}`;
+    }
+    return clientWhatsapp;
+  }, [clientWhatsapp]);
 
   const whatsappIntroMessage = React.useMemo(() => {
     const clientName = lead.nombre_cliente?.trim() || "hola";
@@ -265,7 +319,7 @@ export default function LeadCard({
                     e.stopPropagation();
                     if (!contactClientWhatsappLink) {
                       alert(
-                        "El cliente no compartió un número de WhatsApp. Puedes intentar llamarlo desde la sección de detalles."
+                        "Aún no tenemos el WhatsApp de este cliente. Puedes abrir el detalle del lead para completarlo."
                       );
                       return;
                     }
