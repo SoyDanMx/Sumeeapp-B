@@ -25,8 +25,8 @@ import {
   faHardHat,
   faCubes,
   faExclamationTriangle,
-  faWhatsapp,
 } from "@fortawesome/free-solid-svg-icons";
+import { faWhatsapp as faWhatsappBrand } from "@fortawesome/free-brands-svg-icons";
 import { supabase } from "@/lib/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { useMembership } from "@/context/MembershipContext";
@@ -1348,7 +1348,7 @@ export default function RequestServiceModal({
                 </div>
                 <div className="flex items-center space-x-3">
                   <FontAwesomeIcon
-                    icon={faWhatsapp}
+                    icon={faWhatsappBrand}
                     className="text-green-600"
                   />
                   <span>
