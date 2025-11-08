@@ -103,13 +103,15 @@ const nextConfig = {
     optimizePackageImports: [
       "@fortawesome/react-fontawesome",
       "@fortawesome/free-solid-svg-icons",
+      "@fortawesome/free-brands-svg-icons",
     ],
-    turbo: {
-      rules: {
-        "*.svg": {
-          loaders: ["@svgr/webpack"],
-          as: "*.js",
-        },
+  },
+
+  turbopack: {
+    rules: {
+      "*.svg": {
+        loaders: ["@svgr/webpack"],
+        as: "*.js",
       },
     },
   },
