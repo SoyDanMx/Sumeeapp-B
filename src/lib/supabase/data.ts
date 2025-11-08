@@ -3,6 +3,7 @@
 import { supabase } from "@/lib/supabase/client";
 import { geocodeAddress } from "@/lib/geocoding"; // Importamos la utilidad que acabamos de crear
 import { Profesional, Lead } from "@/types/supabase"; // Importamos los tipos necesarios
+import { PostgrestError } from "@supabase/supabase-js"; // Importamos PostgrestError para manejar errores de RPC
 
 // =========================================================================
 // 🚨 NUEVA ESTRUCTURA DE BASE DE DATOS 🚨
@@ -204,20 +205,37 @@ export async function submitLead(leadData: {
  * @param profesionalId ID del profesional que acepta el lead (auth.uid()).
  */
 export async function acceptLead(leadId: string, profesionalId: string) {
-  const { error } = await supabase
-    .from("leads")
-    .update({
-      estado: "aceptado",
-      profesional_asignado_id: profesionalId,
-    })
-    .eq("id", leadId);
-
-  if (error) {
-    console.error("Error al aceptar el lead:", error);
-    throw new Error(`No se pudo aceptar el lead: ${error.message}`);
-  }
-
   let updatedLead: Lead | null = null;
+  let mainError: PostgrestError | null = null;
+
+  const { data: rpcData, error: rpcError } = await supabase.rpc(
+    "accept_lead",
+    {
+      lead_uuid: leadId,
+    }
+  );
+
+  if (rpcData && !rpcError) {
+    updatedLead = rpcData as Lead;
+  } else {
+    if (rpcError) {
+      console.warn("RPC accept_lead falló, usando fallback:", rpcError);
+      mainError = rpcError as PostgrestError;
+    }
+
+    const { error: updateError } = await supabase
+      .from("leads")
+      .update({
+        estado: "aceptado",
+        profesional_asignado_id: profesionalId,
+      })
+      .eq("id", leadId);
+
+    if (updateError) {
+      console.error("Error al aceptar el lead:", updateError);
+      throw new Error(`No se pudo aceptar el lead: ${updateError.message}`);
+    }
+  }
 
   try {
     const { data: leadData, error: fetchError } = await supabase
@@ -250,6 +268,7 @@ export async function acceptLead(leadId: string, profesionalId: string) {
   return {
     success: true,
     lead: updatedLead ?? fallbackLead,
+    metadata: mainError ? { fallback: true, reason: mainError.message } : null,
   };
 }
 

@@ -6,6 +6,7 @@ import {
   createSupabaseAdminClient,
 } from "@/lib/supabase/server";
 import LeadStatusPageClient from "./LeadStatusPageClient";
+import { Lead } from "@/types/supabase";
 
 interface LeadStatusPageProps {
   params: Promise<{ leadId: string }>;
@@ -27,18 +28,37 @@ export default async function LeadStatusPage({ params }: LeadStatusPageProps) {
   const supabase = await createSupabaseServerClient();
   const adminSupabase = createSupabaseAdminClient();
 
-  // Obtener datos iniciales del lead
-  // PATRÓN DEFENSIVO: No usar .single() para evitar race conditions
-  // después de crear un lead. En su lugar, manejamos manualmente el caso
-  // donde no se encuentra el lead o el array está vacío.
-  const { data: lead, error } = await adminSupabase
-    .from("leads")
-    .select("*")
-    .eq("id", leadId)
-    .maybeSingle();
+  let lead: Lead | null = null;
 
-  if (error || !lead) {
-    notFound();
+  if (adminSupabase) {
+    const { data, error } = await adminSupabase
+      .from("leads")
+      .select("*")
+      .eq("id", leadId)
+      .maybeSingle();
+
+    if (data) {
+      lead = data as Lead;
+    } else if (error) {
+      console.error("Error fetching lead with admin client:", error);
+    }
+  }
+
+  if (!lead) {
+    const { data, error } = await supabase
+      .from("leads")
+      .select("*")
+      .eq("id", leadId)
+      .maybeSingle();
+
+    if (data) {
+      lead = data as Lead;
+    } else {
+      if (error) {
+        console.error("Error fetching lead with server client:", error);
+      }
+      notFound();
+    }
   }
 
   // Obtener el usuario actual para verificar permisos
@@ -71,7 +91,8 @@ export default async function LeadStatusPage({ params }: LeadStatusPageProps) {
   // Obtener información del profesional asignado si existe
   let profesionalAsignado = null;
   if (lead.profesional_asignado_id) {
-    const { data: profile } = await adminSupabase
+    const profileClient = adminSupabase ?? supabase;
+    const { data: profile, error: profileError } = await profileClient
       .from("profiles")
       .select(
         "full_name, email, avatar_url, profession, whatsapp, calificacion_promedio"
@@ -81,6 +102,8 @@ export default async function LeadStatusPage({ params }: LeadStatusPageProps) {
 
     if (profile) {
       profesionalAsignado = profile;
+    } else if (profileError) {
+      console.warn("No se pudo obtener el perfil del profesional:", profileError);
     }
   }
 
