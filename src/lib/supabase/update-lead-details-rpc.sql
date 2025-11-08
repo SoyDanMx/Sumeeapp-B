@@ -10,6 +10,7 @@ CREATE OR REPLACE FUNCTION public.update_lead_details(
   servicio_solicitado_in text,
   descripcion_proyecto_in text,
   ubicacion_direccion_in text,
+  whatsapp_in text,
   photos_urls_in text[]
 )
 RETURNS void
@@ -31,6 +32,7 @@ BEGIN
     servicio_solicitado = servicio_solicitado_in,
     descripcion_proyecto = descripcion_proyecto_in,
     ubicacion_direccion = ubicacion_direccion_in,
+    whatsapp = whatsapp_in,
     photos_urls = photos_urls_in,
     updated_at = now()
   WHERE id = lead_id
@@ -42,8 +44,8 @@ BEGIN
 END;
 $$;
 
-REVOKE ALL ON FUNCTION public.update_lead_details(uuid, text, text, text, text[]) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION public.update_lead_details(uuid, text, text, text, text[]) TO authenticated;
+REVOKE ALL ON FUNCTION public.update_lead_details(uuid, text, text, text, text, text[]) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.update_lead_details(uuid, text, text, text, text, text[]) TO authenticated;
 
 -- =====================================================================
 -- Nota: Asegúrate de tener políticas SELECT adecuadas para lead_id/cliente_id.

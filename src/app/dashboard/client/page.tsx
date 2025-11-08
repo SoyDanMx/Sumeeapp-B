@@ -160,6 +160,7 @@ export default function ClientDashboardPage() {
         servicio_solicitado: data.service.trim() || null,
         descripcion_proyecto: data.description.trim() || null,
         ubicacion_direccion: data.address?.trim() || null,
+        whatsapp: data.whatsapp || null,
         photos_urls: data.photos.length > 0 ? data.photos : null,
       };
 
@@ -188,6 +189,7 @@ export default function ClientDashboardPage() {
               servicio_solicitado_in: updatePayload.servicio_solicitado,
               descripcion_proyecto_in: updatePayload.descripcion_proyecto,
               ubicacion_direccion_in: updatePayload.ubicacion_direccion,
+              whatsapp_in: updatePayload.whatsapp,
               photos_urls_in: updatePayload.photos_urls,
             }
           );
@@ -507,6 +509,7 @@ export default function ClientDashboardPage() {
 interface LeadUpdatePayload {
   service: string;
   description: string;
+  whatsapp: string;
   address?: string;
   photos: string[];
 }
@@ -519,6 +522,54 @@ interface LeadDetailsModalProps {
   isDeleting: boolean;
   isUpdating: boolean;
 }
+
+const normalizeWhatsappNumber = (input: string) => {
+  const digits = (input || "").replace(/\D/g, "");
+
+  if (digits.length === 0) {
+    return { normalized: "", isValid: false };
+  }
+
+  if (digits.startsWith("521") && digits.length === 13) {
+    return { normalized: `52${digits.slice(3)}`, isValid: true };
+  }
+
+  if (digits.startsWith("52") && digits.length === 12) {
+    return { normalized: digits, isValid: true };
+  }
+
+  if (digits.length === 11 && digits.startsWith("1")) {
+    const trimmed = digits.slice(1);
+    return {
+      normalized: trimmed.length === 10 ? `52${trimmed}` : digits,
+      isValid: trimmed.length === 10,
+    };
+  }
+
+  if (digits.length === 10) {
+    return { normalized: `52${digits}`, isValid: true };
+  }
+
+  if (digits.length > 12 && digits.startsWith("52")) {
+    const trimmed = digits.slice(0, 12);
+    return { normalized: trimmed, isValid: trimmed.length === 12 };
+  }
+
+  return { normalized: digits, isValid: false };
+};
+
+const formatWhatsappForDisplay = (normalized: string) => {
+  if (!normalized) return "";
+  const localDigits = normalized.startsWith("52")
+    ? normalized.slice(2)
+    : normalized;
+
+  if (localDigits.length === 10) {
+    return localDigits.replace(/(\d{2})(\d{4})(\d{4})/, "$1 $2 $3");
+  }
+
+  return normalized;
+};
 
 function LeadDetailsModal({
   lead,
@@ -534,6 +585,13 @@ function LeadDetailsModal({
     lead.descripcion_proyecto || ""
   );
   const [address, setAddress] = useState(lead.ubicacion_direccion || "");
+  const [whatsapp, setWhatsapp] = useState(() => {
+    const { normalized, isValid } = normalizeWhatsappNumber(lead.whatsapp || "");
+    return isValid
+      ? formatWhatsappForDisplay(normalized)
+      : lead.whatsapp || "";
+  });
+  const [whatsappError, setWhatsappError] = useState<string | null>(null);
   const [photos, setPhotos] = useState<string[]>(lead.photos_urls || []);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -542,16 +600,53 @@ function LeadDetailsModal({
     setService(lead.servicio_solicitado || "");
     setDescription(lead.descripcion_proyecto || "");
     setAddress(lead.ubicacion_direccion || "");
+    const { normalized, isValid } = normalizeWhatsappNumber(
+      lead.whatsapp || ""
+    );
+    setWhatsapp(
+      isValid ? formatWhatsappForDisplay(normalized) : lead.whatsapp || ""
+    );
+    setWhatsappError(null);
     setPhotos(lead.photos_urls || []);
   }, [lead]);
 
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault();
-    onUpdate({ service, description, address, photos });
+    const { normalized, isValid } = normalizeWhatsappNumber(whatsapp);
+
+    if (!isValid) {
+      setWhatsappError(
+        "Ingresa un número de WhatsApp válido de 10 dígitos (ej. 55 1234 5678)."
+      );
+      return;
+    }
+
+    setWhatsapp(formatWhatsappForDisplay(normalized));
+    onUpdate({
+      service,
+      description,
+      whatsapp: normalized,
+      address,
+      photos,
+    });
   };
 
   const handleUploadClick = () => {
     fileInputRef.current?.click();
+  };
+
+  const handleWhatsappChange = (value: string) => {
+    setWhatsapp(value);
+    if (whatsappError) {
+      setWhatsappError(null);
+    }
+  };
+
+  const applyWhatsappFormatting = () => {
+    const { normalized, isValid } = normalizeWhatsappNumber(whatsapp);
+    if (isValid) {
+      setWhatsapp(formatWhatsappForDisplay(normalized));
+    }
   };
 
   const handleFileChange = async (
@@ -670,6 +765,29 @@ function LeadDetailsModal({
               onChange={(event) => setDescription(event.target.value)}
               placeholder="Describe el servicio que necesitas"
             />
+          </div>
+          <div>
+            <label className="text-sm font-semibold text-gray-500 block mb-1">
+              WhatsApp de contacto <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="tel"
+              inputMode="tel"
+              autoComplete="tel"
+              className={`w-full rounded-lg border px-3 py-2 focus:ring-2 focus:ring-blue-200 ${
+                whatsappError ? "border-red-400 focus:border-red-500" : "border-gray-300 focus:border-blue-500"
+              }`}
+              value={whatsapp}
+              onChange={(event) => handleWhatsappChange(event.target.value)}
+              onBlur={applyWhatsappFormatting}
+              placeholder="55 1234 5678"
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              Este número se comparte con profesionales verificados para coordinar el servicio por WhatsApp.
+            </p>
+            {whatsappError && (
+              <p className="text-xs text-red-600 mt-1">{whatsappError}</p>
+            )}
           </div>
           <div>
             <label className="text-sm font-semibold text-gray-500 block mb-2">

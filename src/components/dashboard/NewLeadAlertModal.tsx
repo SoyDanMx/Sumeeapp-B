@@ -84,7 +84,7 @@ export default function NewLeadAlertModal({
       }
 
       // Aceptar el lead
-      await acceptLead(lead.id, user.id);
+      await acceptLead(lead.id);
 
       // Enviar credencial automáticamente al cliente
       try {
