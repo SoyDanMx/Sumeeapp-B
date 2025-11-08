@@ -106,11 +106,14 @@ export default function WorkFeed({
   // Filtrar leads por estado
   const filteredLeads = useMemo(() => {
     if (activeTab === "nuevos") {
-      return localLeads.filter((lead) => lead.estado === "nuevo");
-    } else {
       return localLeads.filter(
-        (lead) => lead.estado === "contactado" || lead.estado === "en_progreso"
+        (lead) => (lead.estado || "").toLowerCase() === "nuevo"
       );
+    } else {
+      return localLeads.filter((lead) => {
+        const estado = (lead.estado || "").toLowerCase();
+        return ["aceptado", "contactado", "en_progreso"].includes(estado);
+      });
     }
   }, [localLeads, activeTab]);
 
@@ -340,9 +343,15 @@ export default function WorkFeed({
               />
               <span className="hidden sm:inline">Nuevos Leads</span>
               <span className="sm:hidden">Nuevos</span>
-              {localLeads.filter((lead) => lead.estado === "nuevo").length > 0 && (
+              {localLeads.filter(
+                (lead) => (lead.estado || "").toLowerCase() === "nuevo"
+              ).length > 0 && (
                 <span className="bg-blue-100 text-blue-600 text-xs px-1.5 md:px-2 py-0.5 md:py-1 rounded-full font-semibold">
-                  {localLeads.filter((lead) => lead.estado === "nuevo").length}
+                  {
+                    localLeads.filter(
+                      (lead) => (lead.estado || "").toLowerCase() === "nuevo"
+                    ).length
+                  }
                 </span>
               )}
             </div>
@@ -360,16 +369,23 @@ export default function WorkFeed({
               <FontAwesomeIcon icon={faClock} className="text-xs md:text-sm" />
               <span className="hidden sm:inline">En Progreso</span>
               <span className="sm:hidden">Progreso</span>
-              {localLeads.filter(
-                (lead) =>
-                  lead.estado === "contactado" || lead.estado === "en_progreso"
-              ).length > 0 && (
+              {localLeads.filter((lead) => {
+                const estado = (lead.estado || "").toLowerCase();
+                return ["aceptado", "contactado", "en_progreso"].includes(
+                  estado
+                );
+              }).length > 0 && (
                 <span className="bg-green-100 text-green-600 text-xs px-1.5 md:px-2 py-0.5 md:py-1 rounded-full font-semibold">
                   {
                     localLeads.filter(
-                      (lead) =>
-                        lead.estado === "contactado" ||
-                        lead.estado === "en_progreso"
+                      (lead) => {
+                        const estado = (lead.estado || "").toLowerCase();
+                        return [
+                          "aceptado",
+                          "contactado",
+                          "en_progreso",
+                        ].includes(estado);
+                      }
                     ).length
                   }
                 </span>

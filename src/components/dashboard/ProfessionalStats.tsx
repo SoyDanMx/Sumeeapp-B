@@ -34,9 +34,10 @@ export default function ProfessionalStats({
     const acceptedLeads = leads.filter(
       (lead) => lead.profesional_asignado_id === profesional.user_id
     );
-    const activeLeads = leads.filter(
-      (lead) => lead.estado === "contactado" || lead.estado === "en_progreso"
-    );
+    const activeLeads = leads.filter((lead) => {
+      const estado = (lead.estado || "").toLowerCase();
+      return ["aceptado", "contactado", "en_progreso"].includes(estado);
+    });
     const newLeads = leads.filter((lead) => lead.estado === "nuevo");
 
     // Calcular tasa de aceptación

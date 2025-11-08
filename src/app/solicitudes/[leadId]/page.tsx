@@ -1,9 +1,10 @@
 import React from "react";
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
-import StatusTracker from "@/components/client/StatusTracker";
-import ChatBox from "@/components/client/ChatBox";
+import {
+  createSupabaseServerClient,
+  createSupabaseAdminClient,
+} from "@/lib/supabase/server";
 import LeadStatusPageClient from "./LeadStatusPageClient";
 
 interface LeadStatusPageProps {
@@ -24,31 +25,21 @@ export async function generateMetadata({
 export default async function LeadStatusPage({ params }: LeadStatusPageProps) {
   const { leadId } = await params;
   const supabase = await createSupabaseServerClient();
+  const adminSupabase = createSupabaseAdminClient();
 
   // Obtener datos iniciales del lead
   // PATRÓN DEFENSIVO: No usar .single() para evitar race conditions
   // después de crear un lead. En su lugar, manejamos manualmente el caso
   // donde no se encuentra el lead o el array está vacío.
-  const { data: leads, error } = await supabase
+  const { data: lead, error } = await adminSupabase
     .from("leads")
     .select("*")
-    .eq("id", leadId);
+    .eq("id", leadId)
+    .maybeSingle();
 
-  // Verificar errores de consulta
-  if (error) {
-    console.error("Error fetching lead:", error);
+  if (error || !lead) {
     notFound();
   }
-
-  // Verificar que se encontró exactamente un lead
-  // Esto maneja el caso de "race condition" donde el lead no es visible aún
-  if (!leads || leads.length === 0) {
-    console.warn(`Lead ${leadId} no encontrado. Puede ser una race condition.`);
-    notFound();
-  }
-
-  // Extraer el lead del array (sabemos que existe porque verificamos arriba)
-  const lead = leads[0];
 
   // Obtener el usuario actual para verificar permisos
   // Para usuarios anónimos que acaban de crear un lead, esto puede ser null
@@ -80,7 +71,7 @@ export default async function LeadStatusPage({ params }: LeadStatusPageProps) {
   // Obtener información del profesional asignado si existe
   let profesionalAsignado = null;
   if (lead.profesional_asignado_id) {
-    const { data: profile } = await supabase
+    const { data: profile } = await adminSupabase
       .from("profiles")
       .select(
         "full_name, email, avatar_url, profession, whatsapp, calificacion_promedio"
