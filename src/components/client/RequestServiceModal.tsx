@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -25,6 +25,7 @@ import {
   faHardHat,
   faCubes,
   faExclamationTriangle,
+  faWhatsapp,
 } from "@fortawesome/free-solid-svg-icons";
 import { supabase } from "@/lib/supabase/client";
 import { useAuth } from "@/context/AuthContext";
@@ -132,6 +133,55 @@ const serviceCategories = [
   },
 ];
 
+const normalizeWhatsappNumber = (input: string) => {
+  const digits = (input || "").replace(/\D/g, "");
+
+  if (digits.length === 0) {
+    return { normalized: "", isValid: false };
+  }
+
+  if (digits.startsWith("521") && digits.length === 13) {
+    return { normalized: `52${digits.slice(3)}`, isValid: true };
+  }
+
+  if (digits.startsWith("52") && digits.length === 12) {
+    return { normalized: digits, isValid: true };
+  }
+
+  if (digits.length === 11 && digits.startsWith("1")) {
+    const trimmed = digits.slice(1);
+    return {
+      normalized: trimmed.length === 10 ? `52${trimmed}` : digits,
+      isValid: trimmed.length === 10,
+    };
+  }
+
+  if (digits.length === 10) {
+    return { normalized: `52${digits}`, isValid: true };
+  }
+
+  if (digits.length > 12 && digits.startsWith("52")) {
+    const trimmed = digits.slice(0, 12);
+    return { normalized: trimmed, isValid: trimmed.length === 12 };
+  }
+
+  return { normalized: digits, isValid: false };
+};
+
+const formatWhatsappForDisplay = (normalized: string) => {
+  if (!normalized) return "";
+
+  const localDigits = normalized.startsWith("52")
+    ? normalized.slice(2)
+    : normalized;
+
+  if (localDigits.length === 10) {
+    return localDigits.replace(/(\d{2})(\d{4})(\d{4})/, "$1 $2 $3");
+  }
+
+  return normalized;
+};
+
 export default function RequestServiceModal({
   isOpen,
   onClose,
@@ -144,17 +194,20 @@ export default function RequestServiceModal({
     imagen: null as File | null,
     ubicacion: "",
     urgencia: "normal",
+    whatsapp: "",
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isGettingLocation, setIsGettingLocation] = useState(false);
   const [isSubmittingFreeRequest, setIsSubmittingFreeRequest] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const hasPrefilledWhatsapp = useRef(false);
   const router = useRouter();
   const { user, profile, isAuthenticated, isLoading, hasActiveMembership } =
     useAuth();
   const { isFreeUser, isBasicUser, isPremiumUser, requestsRemaining } =
     useMembership();
+  const [whatsappError, setWhatsappError] = useState<string | null>(null);
 
   const totalSteps = 4;
 
@@ -304,6 +357,90 @@ export default function RequestServiceModal({
     }
   };
 
+  const whatsappValidation = useMemo(
+    () => normalizeWhatsappNumber(formData.whatsapp),
+    [formData.whatsapp]
+  );
+
+  const formattedWhatsappDisplay = useMemo(() => {
+    if (!whatsappValidation.normalized) return formData.whatsapp;
+    return formatWhatsappForDisplay(whatsappValidation.normalized);
+  }, [whatsappValidation.normalized, formData.whatsapp]);
+
+  const handleWhatsappChange = (value: string) => {
+    setFormData((prev) => ({ ...prev, whatsapp: value }));
+    if (whatsappError) {
+      setWhatsappError(null);
+    }
+  };
+
+  const ensureWhatsappIsValid = () => {
+    const { normalized, isValid } = whatsappValidation;
+    if (!isValid) {
+      setWhatsappError(
+        "Ingresa un número de WhatsApp válido de 10 dígitos (ejemplo: 55 1234 5678)."
+      );
+      return null;
+    }
+    return normalized;
+  };
+
+  const applyWhatsappFormatting = () => {
+    const normalized = ensureWhatsappIsValid();
+    if (normalized) {
+      setFormData((prev) => ({
+        ...prev,
+        whatsapp: formatWhatsappForDisplay(normalized),
+      }));
+    }
+    return normalized;
+  };
+
+  const persistWhatsapp = async (normalized: string) => {
+    try {
+      await supabase.auth.updateUser({ data: { phone: normalized } });
+    } catch (authError) {
+      console.warn(
+        "No se pudo actualizar el teléfono en Supabase Auth:",
+        authError
+      );
+    }
+
+    if (user?.id) {
+      try {
+        await supabase
+          .from("profiles")
+          .update({ phone: normalized, whatsapp: normalized })
+          .eq("user_id", user.id);
+      } catch (profileError) {
+        console.warn(
+          "No se pudo actualizar el WhatsApp en el perfil:",
+          profileError
+        );
+      }
+    }
+  };
+
+  useEffect(() => {
+    if (hasPrefilledWhatsapp.current) return;
+    if (!user && !profile) return;
+
+    const existingPhone =
+      (user?.user_metadata?.phone as string | undefined) ||
+      (profile?.whatsapp as string | undefined) ||
+      (profile?.phone as string | undefined) ||
+      "";
+
+    if (existingPhone) {
+      const { normalized, isValid } = normalizeWhatsappNumber(existingPhone);
+      const displayValue = isValid
+        ? formatWhatsappForDisplay(normalized)
+        : existingPhone;
+      setFormData((prev) => ({ ...prev, whatsapp: displayValue }));
+      hasPrefilledWhatsapp.current = true;
+    }
+  }, [user, profile]);
+
   const handleSubmit = async () => {
     if (!user) {
       setError("Debes estar logueado para solicitar un servicio");
@@ -314,6 +451,19 @@ export default function RequestServiceModal({
     setError(null);
 
     try {
+      const normalizedWhatsapp = ensureWhatsappIsValid();
+      if (!normalizedWhatsapp) {
+        setLoading(false);
+        return;
+      }
+
+      setFormData((prev) => ({
+        ...prev,
+        whatsapp: formatWhatsappForDisplay(normalizedWhatsapp),
+      }));
+
+      await persistWhatsapp(normalizedWhatsapp);
+
       // Subir imagen si existe
       let imagenUrl = null;
       if (formData.imagen) {
@@ -338,7 +488,7 @@ export default function RequestServiceModal({
         .from("leads")
         .insert({
           nombre_cliente: user.user_metadata?.full_name || "Cliente",
-          whatsapp: user.user_metadata?.phone || null,
+          whatsapp: normalizedWhatsapp,
           descripcion_proyecto: formData.descripcion || "Sin descripción",
           ubicacion_lat: 19.4326, // CDMX por defecto - se puede mejorar con geocoding
           ubicacion_lng: -99.1332,
@@ -515,6 +665,19 @@ export default function RequestServiceModal({
     setError(null);
 
     try {
+      const normalizedWhatsapp = ensureWhatsappIsValid();
+      if (!normalizedWhatsapp) {
+        setIsSubmittingFreeRequest(false);
+        return;
+      }
+
+      setFormData((prev) => ({
+        ...prev,
+        whatsapp: formatWhatsappForDisplay(normalizedWhatsapp),
+      }));
+
+      await persistWhatsapp(normalizedWhatsapp);
+
       // Subir imagen si existe
       let imagenUrl = null;
       if (formData.imagen) {
@@ -563,7 +726,7 @@ export default function RequestServiceModal({
         "create_lead",
         {
           nombre_cliente_in: user.user_metadata?.full_name || "Cliente",
-          whatsapp_in: user.user_metadata?.phone || null,
+          whatsapp_in: normalizedWhatsapp,
           descripcion_proyecto_in: formData.descripcion || "Sin descripción",
           servicio_in: formData.servicio,
           ubicacion_lat_in: 19.4326,
@@ -586,7 +749,7 @@ export default function RequestServiceModal({
           "🔍 handleFreeRequestSubmit - Creando lead con INSERT directo:",
           {
             nombre_cliente: user.user_metadata?.full_name || "Cliente",
-            whatsapp: user.user_metadata?.phone || null,
+            whatsapp: normalizedWhatsapp,
             descripcion_proyecto: formData.descripcion,
             ubicacion_lat: 19.4326,
             ubicacion_lng: -99.1332,
@@ -604,7 +767,7 @@ export default function RequestServiceModal({
           .from("leads")
           .insert({
             nombre_cliente: user.user_metadata?.full_name || "Cliente",
-            whatsapp: user.user_metadata?.phone || null,
+            whatsapp: normalizedWhatsapp,
             descripcion_proyecto: formData.descripcion || "Sin descripción",
             ubicacion_lat: 19.4326,
             ubicacion_lng: -99.1332,
@@ -731,6 +894,8 @@ export default function RequestServiceModal({
           .update({
             requests_used: (profile?.requests_used || 0) + 1,
             last_free_request_date: new Date().toISOString(),
+            whatsapp: normalizedWhatsapp,
+            phone: normalizedWhatsapp,
           })
           .eq("user_id", user.id);
 
@@ -810,7 +975,20 @@ export default function RequestServiceModal({
   };
 
   const nextStep = () => {
+    if (currentStep === 2 && !formData.descripcion.trim()) {
+      setError("Por favor describe el problema con más detalle.");
+      return;
+    }
+
+    if (currentStep === 3) {
+      const normalized = applyWhatsappFormatting();
+      if (!normalized) {
+        return;
+      }
+    }
+
     if (currentStep < totalSteps) {
+      setError(null);
       setCurrentStep(currentStep + 1);
     }
   };
@@ -1037,6 +1215,38 @@ export default function RequestServiceModal({
               <div className="space-y-3 md:space-y-4">
                 <div>
                   <label className="block text-xs md:text-sm font-medium text-gray-700 mb-2">
+                    WhatsApp de contacto <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="tel"
+                    inputMode="tel"
+                    autoComplete="tel"
+                    value={formData.whatsapp}
+                    onChange={(e) => handleWhatsappChange(e.target.value)}
+                    onBlur={() => {
+                      const normalized = applyWhatsappFormatting();
+                      if (!normalized && !formData.whatsapp) {
+                        setWhatsappError(
+                          "Ingresa tu número de WhatsApp para que el profesional pueda contactarte."
+                        );
+                      }
+                    }}
+                    className={`w-full p-3 md:p-4 text-sm md:text-base border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
+                      whatsappError ? "border-red-400" : "border-gray-300"
+                    }`}
+                    placeholder="55 1234 5678"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Este número se compartirá con el profesional para coordinar
+                    el servicio vía WhatsApp.
+                  </p>
+                  {whatsappError && (
+                    <p className="text-xs text-red-600 mt-1">{whatsappError}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-xs md:text-sm font-medium text-gray-700 mb-2">
                     Dirección
                   </label>
                   <div className="flex flex-col md:flex-row gap-2">
@@ -1134,6 +1344,16 @@ export default function RequestServiceModal({
                   />
                   <span>
                     <strong>Descripción:</strong> {formData.descripcion}
+                  </span>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <FontAwesomeIcon
+                    icon={faWhatsapp}
+                    className="text-green-600"
+                  />
+                  <span>
+                    <strong>WhatsApp:</strong>{" "}
+                    {formattedWhatsappDisplay || formData.whatsapp || "—"}
                   </span>
                 </div>
                 {formData.imagen && (
@@ -1341,7 +1561,8 @@ export default function RequestServiceModal({
                 onClick={nextStep}
                 disabled={
                   !formData.servicio ||
-                  (currentStep === 2 && !formData.descripcion)
+                  (currentStep === 2 && !formData.descripcion.trim()) ||
+                  (currentStep === 3 && !whatsappValidation.isValid)
                 }
                 className="flex items-center justify-center space-x-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed font-semibold shadow-lg text-sm md:text-base"
               >
