@@ -204,71 +204,33 @@ export async function submitLead(leadData: {
  * @param leadId ID del lead a aceptar.
  * @param profesionalId ID del profesional que acepta el lead (auth.uid()).
  */
-export async function acceptLead(leadId: string, profesionalId: string) {
-  let updatedLead: Lead | null = null;
-  let mainError: PostgrestError | null = null;
+export async function acceptLead(leadId: string) {
+  const response = await fetch("/api/leads/accept", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ leadId }),
+  });
 
-  const { data: rpcData, error: rpcError } = await supabase.rpc(
-    "accept_lead",
-    {
-      lead_uuid: leadId,
+  if (!response.ok) {
+    let message = "No se pudo aceptar el lead. Intenta nuevamente.";
+    try {
+      const errorPayload = await response.json();
+      if (errorPayload?.error) {
+        message = errorPayload.error;
+      }
+    } catch {
+      // ignore json parsing errors
     }
-  );
-
-  if (rpcData && !rpcError) {
-    updatedLead = rpcData as Lead;
-  } else {
-    if (rpcError) {
-      console.warn("RPC accept_lead falló, usando fallback:", rpcError);
-      mainError = rpcError as PostgrestError;
-    }
-
-    const { error: updateError } = await supabase
-      .from("leads")
-      .update({
-        estado: "aceptado",
-        profesional_asignado_id: profesionalId,
-      })
-      .eq("id", leadId);
-
-    if (updateError) {
-      console.error("Error al aceptar el lead:", updateError);
-      throw new Error(`No se pudo aceptar el lead: ${updateError.message}`);
-    }
+    throw new Error(message);
   }
 
-  try {
-    const { data: leadData, error: fetchError } = await supabase
-      .from("leads")
-      .select("*")
-      .eq("id", leadId)
-      .maybeSingle();
-
-    if (fetchError) {
-      console.warn(
-        "⚠️ Lead aceptado pero no se pudo obtener la fila actualizada:",
-        fetchError
-      );
-    } else {
-      updatedLead = (leadData as Lead) || null;
-    }
-  } catch (fetchError) {
-    console.warn(
-      "⚠️ Lead aceptado, pero ocurrió un error al consultar nuevamente la información:",
-      fetchError
-    );
-  }
-
-  const fallbackLead: Partial<Lead> = {
-    id: leadId,
-    estado: "aceptado",
-    profesional_asignado_id: profesionalId,
-  };
+  const payload = (await response.json()) as { lead: Lead };
 
   return {
     success: true,
-    lead: updatedLead ?? fallbackLead,
-    metadata: mainError ? { fallback: true, reason: mainError.message } : null,
+    lead: payload.lead,
   };
 }
 

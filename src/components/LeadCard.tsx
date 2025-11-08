@@ -93,13 +93,12 @@ export default function LeadCard({
       }
 
       // Aceptar el lead
-      const result = await acceptLead(lead.id, user.id);
+      const result = await acceptLead(lead.id);
 
       if (result.success) {
         const updatedLead: Lead = {
           ...lead,
-          estado: "aceptado",
-          profesional_asignado_id: user.id,
+          ...result.lead,
         };
 
         setAccepted(true);
