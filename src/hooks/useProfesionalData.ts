@@ -22,6 +22,15 @@ export function useProfesionalData(): UseProfesionalDataReturn {
 
   const cacheKey = "sumeeapp/professional-dashboard";
 
+  const normalizeLead = useCallback((lead: Lead): Lead => {
+    if (!lead) return lead;
+    const estado = (lead.estado || "").toLowerCase();
+    if (estado === "aceptado") {
+      return { ...lead, estado: "en_progreso" };
+    }
+    return lead;
+  }, []);
+
   const fetchData = useCallback(
     async (currentUserId: string) => {
       if (!currentUserId) {
@@ -52,7 +61,9 @@ export function useProfesionalData(): UseProfesionalDataReturn {
         }
 
         const profesionalData = profesionalResult.data as Profesional;
-        const leadsData = (openLeadsResult.data as Lead[]) || [];
+        const leadsData = ((openLeadsResult.data as Lead[]) || []).map(
+          normalizeLead
+        );
 
         setProfesional(profesionalData);
         setLeads(leadsData);
@@ -90,7 +101,7 @@ export function useProfesionalData(): UseProfesionalDataReturn {
         setIsLoading(false);
       }
     },
-    [cacheKey]
+    [cacheKey, normalizeLead]
   );
 
   const refetchData = useCallback(() => {
@@ -114,7 +125,7 @@ export function useProfesionalData(): UseProfesionalDataReturn {
           leads: Lead[];
         };
         setProfesional(parsed.profesional);
-        setLeads(parsed.leads);
+        setLeads(parsed.leads.map(normalizeLead));
         setIsLoading(false);
       }
     } catch {
@@ -185,6 +196,85 @@ export function useProfesionalData(): UseProfesionalDataReturn {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Array vacío - solo ejecutar una vez al montar
+
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const channel = supabase
+      .channel(`professional-leads-${user.id}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "leads" },
+        (payload) => {
+          const newRecord = payload.new as Lead | null;
+          const oldRecord = payload.old as Lead | null;
+
+          setLeads((previous) => {
+            let next = [...previous];
+
+            const removeLead = (id?: string | null) => {
+              if (!id) return;
+              next = next.filter((lead) => lead.id !== id);
+            };
+
+            const upsertLead = (lead: Lead) => {
+              const index = next.findIndex((item) => item.id === lead.id);
+              if (index >= 0) {
+                next[index] = lead;
+              } else {
+                next.push(lead);
+              }
+            };
+
+            const shouldInclude = (lead: Lead | null) => {
+              if (!lead) return false;
+              const assignedToUser =
+                lead.profesional_asignado_id === user.id ||
+                lead.profesional_asignado_id === user.id?.toString();
+              return assignedToUser || lead.profesional_asignado_id === null;
+            };
+
+            switch (payload.eventType) {
+              case "INSERT": {
+                if (shouldInclude(newRecord)) {
+                  upsertLead(normalizeLead(newRecord as Lead));
+                }
+                break;
+              }
+              case "UPDATE": {
+                const includeNew = shouldInclude(newRecord);
+                const includeOld = shouldInclude(oldRecord);
+
+                if (includeNew) {
+                  upsertLead(normalizeLead(newRecord as Lead));
+                } else {
+                  removeLead(newRecord?.id);
+                }
+
+                if (!includeNew && includeOld) {
+                  removeLead(oldRecord?.id);
+                }
+
+                break;
+              }
+              case "DELETE": {
+                removeLead(oldRecord?.id);
+                break;
+              }
+              default:
+                break;
+            }
+
+            return next;
+          });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [normalizeLead, user?.id]);
 
   return { profesional, leads, isLoading, error, refetchData };
 }
