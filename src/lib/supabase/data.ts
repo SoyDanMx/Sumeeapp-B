@@ -207,7 +207,7 @@ export async function acceptLead(leadId: string, profesionalId: string) {
   const { error } = await supabase
     .from("leads")
     .update({
-      estado: "Contactado",
+      estado: "aceptado",
       profesional_asignado_id: profesionalId,
     })
     .eq("id", leadId);
@@ -243,7 +243,8 @@ export async function acceptLead(leadId: string, profesionalId: string) {
 
   const fallbackLead: Partial<Lead> = {
     id: leadId,
-    estado: "contactado",
+    estado: "aceptado",
+    profesional_asignado_id: profesionalId,
   };
 
   return {

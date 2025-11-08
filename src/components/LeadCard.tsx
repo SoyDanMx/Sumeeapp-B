@@ -38,7 +38,7 @@ export default function LeadCard({
 }: LeadCardProps) {
   const [isAccepting, setIsAccepting] = useState(false);
   const [accepted, setAccepted] = useState(
-    ["contactado", "en_progreso", "completado"].includes(
+    ["aceptado", "contactado", "en_progreso", "completado"].includes(
       (lead.estado || "").toLowerCase()
     )
   );
@@ -98,7 +98,7 @@ export default function LeadCard({
       if (result.success) {
         const updatedLead: Lead = {
           ...lead,
-          estado: "contactado",
+          estado: "aceptado",
           profesional_asignado_id: user.id,
         };
 

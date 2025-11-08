@@ -51,9 +51,10 @@ export default function ControlPanel({
   const stats = {
     totalLeads: leads.length,
     completedLeads: leads.filter((lead) => lead.estado === "completado").length,
-    activeLeads: leads.filter(
-      (lead) => lead.estado === "contactado" || lead.estado === "en_progreso"
-    ).length,
+    activeLeads: leads.filter((lead) => {
+      const estado = (lead.estado || "").toLowerCase();
+      return ["aceptado", "contactado", "en_progreso"].includes(estado);
+    }).length,
     newLeads: leads.filter((lead) => lead.estado === "nuevo").length,
   };
 
