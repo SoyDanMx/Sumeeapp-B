@@ -601,6 +601,11 @@ const blogPosts: Record<string, BlogPost> = {
     content: `
       <p>Cuando se habla de seguridad eléctrica es frecuente escuchar "se botó la pastilla" para cualquier corte de energía. Sin embargo, no todos los dispositivos que interrumpen la corriente hacen lo mismo. Para proteger correctamente tu hogar necesitas dos dispositivos complementarios: la <strong>pastilla termomagnética</strong> y el <strong>interruptor diferencial</strong>.</p>
 
+      <div style="text-align: center; margin: 2rem 0;">
+        <img src="https://images.unsplash.com/photo-1618005198919-d3d4b82b3be1?auto=format&fit=crop&w=900&h=550&q=80" alt="Mano presionando el botón de prueba de un interruptor diferencial en un tablero eléctrico doméstico" style="width: 100%; max-width: 760px; height: auto; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.15);">
+        <p style="color: #4b5563; font-size: 0.95rem; margin-top: 0.75rem;">Siempre prueba el botón "T" del diferencial para confirmar que sigue operativo.</p>
+      </div>
+
       <h2>Pastilla termomagnética: el escudo de tus cables</h2>
       <p>La pastilla termomagnética (breaker) protege la instalación ante:</p>
       <ul>
@@ -608,6 +613,11 @@ const blogPosts: Record<string, BlogPost> = {
         <li><strong>Cortocircuitos:</strong> si fase y neutro se tocan, la corriente se dispara. La parte magnética reacciona en milisegundos y corta la energía para evitar incendios.</li>
       </ul>
       <p>Si "se botó la pastilla" al sobrecargar un contacto, la termomagnética está haciendo su trabajo: impedir que tu instalación se dañe.</p>
+
+      <div style="text-align: center; margin: 2rem 0;">
+        <img src="https://images.unsplash.com/photo-1618005199177-3f5f58bb0a4e?auto=format&fit=crop&w=900&h=550&q=80" alt="Detalle de interruptores termomagnéticos y diferenciales instalados en un tablero moderno" style="width: 100%; max-width: 760px; height: auto; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.15);">
+        <p style="color: #4b5563; font-size: 0.95rem; margin-top: 0.75rem;">Identifica y etiqueta cada circuito para saber exactamente qué protege cada pastilla.</p>
+      </div>
 
       <h2>Interruptor diferencial: el héroe que salva vidas</h2>
       <p>El diferencial (IDR) protege a las personas contra descargas eléctricas. Compara la corriente que entra por la fase con la que regresa por el neutro. Si detecta una diferencia —una fuga a tierra o a través del cuerpo de una persona— corta la energía en milisegundos.</p>
@@ -624,6 +634,11 @@ const blogPosts: Record<string, BlogPost> = {
 
       <h2>¿Cuál elegir? ¡Ambos!</h2>
       <p>La pastilla termomagnética protege cables y equipos; el diferencial protege a las personas. Las instalaciones modernas requieren ambos dispositivos trabajando juntos para ofrecer una protección integral.</p>
+
+      <div style="text-align: center; margin: 2.5rem 0;">
+        <img src="https://images.unsplash.com/photo-1580894906472-7b064b2577f4?auto=format&fit=crop&w=900&h=550&q=80" alt="Infografía que muestra la diferencia entre interruptor diferencial y termomagnético" style="width: 100%; max-width: 760px; height: auto; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.15);">
+        <p style="color: #4b5563; font-size: 0.95rem; margin-top: 0.75rem;">El diferencial reacciona ante fugas de corriente; la pastilla termomagnética se enfoca en sobrecargas y cortocircuitos.</p>
+      </div>
 
       <h2>Confía la instalación a profesionales certificados</h2>
       <p>Un electricista certificado evalúa la carga de tu hogar, instala ambos dispositivos, verifica la tierra física y deja todo cumpliendo con la NOM. En Sumee App todos nuestros técnicos están verificados y ofrecen garantía.</p>
@@ -646,7 +661,7 @@ const blogPosts: Record<string, BlogPost> = {
     readTime: "6 min",
     category: "Seguridad Eléctrica",
     image:
-      "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=400&q=80",
+      "https://images.unsplash.com/photo-1618005199385-d3d4b82b3be1?auto=format&fit=crop&w=1200&h=630&q=80",
     slug: "diferencia-pastilla-termomagnetica-diferencial",
     views: 0,
     tags: ["electricidad", "seguridad", "hogar", "protección"],
