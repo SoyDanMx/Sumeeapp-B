@@ -1007,8 +1007,11 @@ export default function RequestServiceModal({
       imagen: null,
       ubicacion: "",
       urgencia: "normal",
+      whatsapp: "",
     });
     setError(null);
+    setWhatsappError(null);
+    hasPrefilledWhatsapp.current = false;
   };
 
   const handleClose = () => {

@@ -181,8 +181,8 @@ export default function WorkFeed({
                       Mantén tu disponibilidad activa
                     </h4>
                     <p className="text-sm text-green-700">
-                      Asegúrate de que tu estado esté en &quot;Disponible&quot; para
-                      recibir notificaciones.
+                      Asegúrate de que tu estado esté en &quot;Disponible&quot;
+                      para recibir notificaciones.
                     </p>
                   </div>
                 </div>
@@ -256,6 +256,30 @@ export default function WorkFeed({
   }, [filteredLeads, activeTab, profesionalLat, profesionalLng]);
 
   const primaryLead = sortedLeads[0];
+
+  const openLeadInMaps = useCallback((lead: Lead) => {
+    if (typeof window === "undefined") return;
+
+    const { ubicacion_lat, ubicacion_lng, ubicacion_direccion } = lead;
+    let mapsUrl = "";
+
+    if (
+      typeof ubicacion_lat === "number" &&
+      Number.isFinite(ubicacion_lat) &&
+      typeof ubicacion_lng === "number" &&
+      Number.isFinite(ubicacion_lng)
+    ) {
+      mapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${ubicacion_lat},${ubicacion_lng}&travelmode=driving`;
+    } else if (ubicacion_direccion) {
+      mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+        ubicacion_direccion
+      )}`;
+    }
+
+    if (mapsUrl) {
+      window.open(mapsUrl, "_blank", "noopener,noreferrer");
+    }
+  }, []);
 
   const calculateDistance = (
     lat1?: number | null,
@@ -377,16 +401,12 @@ export default function WorkFeed({
               }).length > 0 && (
                 <span className="bg-green-100 text-green-600 text-xs px-1.5 md:px-2 py-0.5 md:py-1 rounded-full font-semibold">
                   {
-                    localLeads.filter(
-                      (lead) => {
-                        const estado = (lead.estado || "").toLowerCase();
-                        return [
-                          "aceptado",
-                          "contactado",
-                          "en_progreso",
-                        ].includes(estado);
-                      }
-                    ).length
+                    localLeads.filter((lead) => {
+                      const estado = (lead.estado || "").toLowerCase();
+                      return ["aceptado", "contactado", "en_progreso"].includes(
+                        estado
+                      );
+                    }).length
                   }
                 </span>
               )}
@@ -499,9 +519,10 @@ export default function WorkFeed({
                             handleChangeView("mapa");
                           }
                           onLeadClick?.(primaryLead.id);
+                          openLeadInMaps(primaryLead);
                         }}
                         className="flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-400 shadow-sm transition-all hover:text-blue-600 hover:border-blue-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2"
-                        aria-label="Ver ubicación del lead en el mapa"
+                        aria-label="Abrir la ruta hacia este lead"
                       >
                         <FontAwesomeIcon
                           icon={faArrowRight}
@@ -573,7 +594,9 @@ export default function WorkFeed({
                       key={lead.id}
                       lead={lead}
                       profesionalLat={(currentLat || profesionalLat) ?? 19.4326}
-                      profesionalLng={(currentLng || profesionalLng) ?? -99.1332}
+                      profesionalLng={
+                        (currentLng || profesionalLng) ?? -99.1332
+                      }
                       isSelected={lead.id === selectedLeadId}
                       onSelect={() => onLeadClick?.(lead.id)}
                       onLeadAccepted={handleLeadAccepted}
