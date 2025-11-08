@@ -124,6 +124,22 @@ const blogPosts: BlogPost[] = [
     views: 0,
     featured: true,
   },
+  {
+    id: "7",
+    title:
+      "¿Cuál es la Diferencia Entre una Pastilla Termomagnética y un Diferencial?",
+    excerpt:
+      "Aprende por qué estos dos dispositivos son complementarios y cómo mantener tu instalación eléctrica segura contra incendios y descargas.",
+    author: "Equipo Sumee",
+    publishDate: "2025-02-07",
+    readTime: "6 min",
+    category: "Seguridad Eléctrica",
+    image:
+      "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=250&q=80",
+    slug: "diferencia-pastilla-termomagnetica-diferencial",
+    views: 0,
+    featured: false,
+  },
 ];
 
 const categories = [
@@ -131,6 +147,7 @@ const categories = [
   "Mantenimiento",
   "Consejos",
   "Seguridad",
+  "Seguridad Eléctrica",
   "Tecnología",
   "Plomería",
   "Electricidad",
