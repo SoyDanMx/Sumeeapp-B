@@ -22,8 +22,28 @@ import {
   submitLeadReview,
 } from "@/lib/supabase/data";
 
+type ClientLead = Lead & {
+  appointment_at?: string | null;
+  appointment_notes?: string | null;
+  appointment_status?: string | null;
+  profesional_asignado?: {
+    full_name?: string | null;
+    profession?: string | null;
+    whatsapp?: string | null;
+    calificacion_promedio?: number | null;
+    areas_servicio?: string[] | null;
+  } | null;
+  lead_review?: {
+    id: string;
+    rating: number;
+    comment?: string | null;
+    created_at: string;
+    created_by?: string | null;
+  } | null;
+};
+
 interface LeadStatusPageClientProps {
-  initialLead: Lead;
+  initialLead: ClientLead;
   currentUserId: string | null; // Puede ser null para usuarios anónimos
 }
 
@@ -31,7 +51,7 @@ export default function LeadStatusPageClient({
   initialLead,
   currentUserId,
 }: LeadStatusPageClientProps) {
-  const [lead, setLead] = useState<Lead>(initialLead);
+  const [lead, setLead] = useState<ClientLead>(initialLead);
   const [isConfirming, setIsConfirming] = useState(false);
   const [showRescheduleModal, setShowRescheduleModal] = useState(false);
   const [proposedDate, setProposedDate] = useState<string>(
@@ -67,14 +87,14 @@ export default function LeadStatusPageClient({
     lead.appointment_status === "pendiente_confirmacion";
 
   const handleLeadChange = (updated: Lead) => {
-    setLead(updated);
+    setLead(updated as ClientLead);
   };
 
   const handleConfirmAppointment = async () => {
     setIsConfirming(true);
     try {
       const updated = await confirmLeadAppointment(lead.id);
-      setLead(updated);
+      setLead(updated as ClientLead);
     } catch (error) {
       console.error(error);
       alert(
