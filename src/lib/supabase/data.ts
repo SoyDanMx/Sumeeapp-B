@@ -205,12 +205,23 @@ export async function submitLead(leadData: {
  * @param profesionalId ID del profesional que acepta el lead (auth.uid()).
  */
 export async function acceptLead(leadId: string) {
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+
+  if (session?.access_token) {
+    headers.Authorization = `Bearer ${session.access_token}`;
+  }
+
   const response = await fetch("/api/leads/accept", {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
+    headers,
     body: JSON.stringify({ leadId }),
+    credentials: "include",
   });
 
   if (!response.ok) {
@@ -232,6 +243,189 @@ export async function acceptLead(leadId: string) {
     success: true,
     lead: payload.lead,
   };
+}
+
+export async function markLeadContacted(
+  leadId: string,
+  method: string,
+  notes?: string
+) {
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+
+  if (session?.access_token) {
+    headers.Authorization = `Bearer ${session.access_token}`;
+  }
+
+  const response = await fetch("/api/leads/contact", {
+    method: "POST",
+    headers,
+    credentials: "include",
+    body: JSON.stringify({ leadId, method, notes }),
+  });
+
+  if (!response.ok) {
+    const payload = await response.json().catch(() => null);
+    throw new Error(
+      payload?.error ??
+        "No se pudo registrar el contacto. Intenta nuevamente."
+    );
+  }
+
+  const payload = (await response.json()) as { lead: Lead };
+  return payload.lead;
+}
+
+export async function scheduleLeadAppointment(
+  leadId: string,
+  appointmentAt: string,
+  notes?: string
+) {
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+
+  if (session?.access_token) {
+    headers.Authorization = `Bearer ${session.access_token}`;
+  }
+
+  const response = await fetch("/api/leads/appointment", {
+    method: "POST",
+    headers,
+    credentials: "include",
+    body: JSON.stringify({
+      leadId,
+      appointmentAt,
+      notes,
+      action: "schedule",
+    }),
+  });
+
+  if (!response.ok) {
+    const payload = await response.json().catch(() => null);
+    throw new Error(
+      payload?.error ??
+        "No se pudo agendar la cita. Verifica la información e inténtalo nuevamente."
+    );
+  }
+
+  const payload = (await response.json()) as { lead: Lead };
+  return payload.lead;
+}
+
+export async function confirmLeadAppointment(leadId: string) {
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+
+  if (session?.access_token) {
+    headers.Authorization = `Bearer ${session.access_token}`;
+  }
+
+  const response = await fetch("/api/leads/appointment", {
+    method: "POST",
+    headers,
+    credentials: "include",
+    body: JSON.stringify({
+      leadId,
+      action: "confirm",
+    }),
+  });
+
+  if (!response.ok) {
+    const payload = await response.json().catch(() => null);
+    throw new Error(
+      payload?.error ??
+        "No se pudo confirmar la cita. Intenta nuevamente más tarde."
+    );
+  }
+
+  const payload = (await response.json()) as { lead: Lead };
+  return payload.lead;
+}
+
+export async function completeLeadWork(leadId: string, notes?: string) {
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+
+  if (session?.access_token) {
+    headers.Authorization = `Bearer ${session.access_token}`;
+  }
+
+  const response = await fetch("/api/leads/complete", {
+    method: "POST",
+    headers,
+    credentials: "include",
+    body: JSON.stringify({
+      leadId,
+      notes,
+    }),
+  });
+
+  if (!response.ok) {
+    const payload = await response.json().catch(() => null);
+    throw new Error(
+      payload?.error ??
+        "No se pudo marcar el trabajo como completado. Intenta nuevamente."
+    );
+  }
+
+  const payload = (await response.json()) as { lead: Lead };
+  return payload.lead;
+}
+
+export async function submitLeadReview(
+  leadId: string,
+  rating: number,
+  comment?: string
+) {
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+
+  if (session?.access_token) {
+    headers.Authorization = `Bearer ${session.access_token}`;
+  }
+
+  const response = await fetch("/api/leads/review", {
+    method: "POST",
+    headers,
+    credentials: "include",
+    body: JSON.stringify({ leadId, rating, comment }),
+  });
+
+  if (!response.ok) {
+    const payload = await response.json().catch(() => null);
+    throw new Error(
+      payload?.error ??
+        "No se pudo registrar la reseña. Inténtalo nuevamente más tarde."
+    );
+  }
+
+  const payload = await response.json();
+  return payload.review;
 }
 
 /**
@@ -302,7 +496,27 @@ export async function getClientLeads(clientId: string) {
     // Primero intentar con cliente_id si existe
     let { data, error } = await supabase
       .from("leads")
-      .select("*")
+      .select(
+        `
+          *,
+          lead_reviews (
+            id,
+            rating,
+            comment,
+            created_at,
+            created_by
+          ),
+          profesional_asignado:profiles!leads_profesional_asignado_id_fkey (
+            user_id,
+            full_name,
+            avatar_url,
+            profession,
+            whatsapp,
+            calificacion_promedio,
+            areas_servicio
+          )
+        `
+      )
       .eq("cliente_id", clientId)
       .order("fecha_creacion", { ascending: false });
 
@@ -327,10 +541,85 @@ export async function getClientLeads(clientId: string) {
     }
 
     console.log("✅ getClientLeads - Leads encontrados:", data?.length || 0);
-    return data || [];
+    const normalized =
+      data?.map((lead) => {
+        const { lead_reviews, ...rest } = lead as any;
+        return {
+          ...(rest as any),
+          lead_review: Array.isArray(lead_reviews)
+            ? lead_reviews[0] ?? null
+            : null,
+        };
+      }) ?? [];
+
+    return normalized;
   } catch (error) {
     console.error("❌ Error en getClientLeads:", error);
     return [];
+  }
+}
+
+export async function getClientLeadDetails(leadId: string) {
+  try {
+    let accessToken: string | undefined;
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      accessToken = session?.access_token;
+    } catch (sessionError) {
+      console.warn("⚠️ No se pudo obtener la sesión del cliente:", sessionError);
+    }
+
+    const response = await fetch(`/api/leads/details?leadId=${leadId}`, {
+      method: "GET",
+      credentials: "include",
+      headers: accessToken
+        ? {
+            Authorization: `Bearer ${accessToken}`,
+          }
+        : undefined,
+    });
+
+    const rawBody = await response.text();
+    let details: any = null;
+    if (rawBody) {
+      try {
+        details = JSON.parse(rawBody);
+      } catch (parseError) {
+        console.error("❌ No se pudo parsear la respuesta de lead details:", {
+          rawBody,
+          parseError,
+        });
+      }
+    }
+
+    if (!response.ok) {
+      console.error("❌ API lead details error:", {
+        status: response.status,
+        statusText: response.statusText,
+        body: rawBody,
+        details,
+      });
+      throw new Error(
+        details?.message ||
+          (response.status === 401
+            ? "Debes iniciar sesión para ver los detalles del servicio."
+            : response.status === 403
+            ? "No tienes permisos para ver esta solicitud."
+            : response.status === 404
+            ? "No encontramos la solicitud solicitada."
+            : response.status === 500
+            ? "El servidor tuvo un problema al obtener los detalles del servicio."
+            : null) ||
+          "No pudimos obtener la información detallada de la solicitud."
+      );
+    }
+
+    return details?.lead ?? null;
+  } catch (error) {
+    console.error("❌ Error en getClientLeadDetails:", error);
+    throw error;
   }
 }
 
