@@ -16,27 +16,90 @@ export async function POST(request: Request) {
     }
 
     const supabase = await createSupabaseServerClient();
-    const adminClient = createSupabaseAdminClient();
-
-    if (!adminClient) {
-      return NextResponse.json(
-        {
-          error:
-            "SUPABASE_SERVICE_ROLE_KEY no está configurado. Contacta al administrador de la plataforma.",
-        },
-        { status: 500 }
-      );
-    }
 
     const {
       data: { user },
       error: authError,
     } = await supabase.auth.getUser();
 
-    if (authError || !user) {
+    let currentUser = user;
+
+    if ((!user || authError) && request.headers.has("Authorization")) {
+      const token = request.headers
+        .get("Authorization")
+        ?.replace("Bearer ", "")
+        .trim();
+
+      if (token) {
+        const {
+          data: fallbackUser,
+          error: fallbackError,
+        } = await supabase.auth.getUser(token);
+
+        if (!fallbackError && fallbackUser?.user) {
+          currentUser = fallbackUser.user;
+        } else if (fallbackError) {
+          console.warn(
+            "⚠️ Error verificando token Bearer en /api/leads/accept:",
+            fallbackError.message || fallbackError
+          );
+        }
+      }
+    }
+
+    if (authError && authError.message) {
+      console.warn(
+        "⚠️ Supabase no detectó al profesional autenticado (getUser cookie):",
+        authError.message
+      );
+    }
+
+    if (!currentUser) {
       return NextResponse.json(
-        { error: "Debes iniciar sesión como profesional para aceptar leads." },
+        {
+          error:
+            "Debes iniciar sesión como profesional para aceptar leads. Refresca tu sesión e inténtalo nuevamente.",
+        },
         { status: 401 }
+      );
+    }
+
+    // Intentar primero con el RPC (SECURITY DEFINER) para no depender del service role
+    const { data: rpcLead, error: rpcError } = await supabase
+      .rpc("accept_lead", { lead_uuid: leadId })
+      .maybeSingle();
+
+    if (rpcLead) {
+      return NextResponse.json({ lead: rpcLead });
+    }
+
+    if (rpcError) {
+      console.warn("⚠️ RPC accept_lead falló:", rpcError.message || rpcError);
+      if (rpcError.message?.includes("JWT") || rpcError.message?.includes("auth")) {
+        return NextResponse.json(
+          {
+            error:
+              "Tu sesión expiró. Vuelve a iniciar sesión como profesional e inténtalo de nuevo.",
+          },
+          { status: 401 }
+        );
+      }
+    }
+
+    // Si el RPC falla (por ejemplo, función no creada aún), intentar con el cliente admin
+    const adminClient = createSupabaseAdminClient();
+
+    if (!adminClient) {
+      console.error(
+        "❌ accept_lead RPC falló y no hay SUPABASE_SERVICE_ROLE_KEY configurado:",
+        rpcError
+      );
+      return NextResponse.json(
+        {
+          error:
+            "No se pudo aceptar el lead porque falta la configuración administrativa. Contacta al administrador de la plataforma.",
+        },
+        { status: 500 }
       );
     }
 
@@ -65,7 +128,7 @@ export async function POST(request: Request) {
       .from("leads")
       .update({
         estado: "aceptado",
-        profesional_asignado_id: user.id,
+        profesional_asignado_id: currentUser.id,
         fecha_asignacion: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       })

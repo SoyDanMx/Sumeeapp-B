@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { getClientLeads } from "@/lib/supabase/data";
+import { getClientLeadDetails, getClientLeads } from "@/lib/supabase/data";
 import { supabase } from "@/lib/supabase/client";
 import { Lead } from "@/types/supabase";
 import { useAuth } from "@/context/AuthContext";
@@ -18,6 +18,7 @@ import {
   faPlus,
   faWrench,
 } from "@fortawesome/free-solid-svg-icons";
+import { faWhatsapp } from "@fortawesome/free-brands-svg-icons";
 
 export default function ClientDashboardPage() {
   const { user, isLoading: userLoading, isAuthenticated } = useAuth();
@@ -34,6 +35,8 @@ export default function ClientDashboardPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedService, setSelectedService] = useState<string | null>(null);
   const [leadDetails, setLeadDetails] = useState<Lead | null>(null);
+  const [isDetailsLoading, setIsDetailsLoading] = useState(false);
+  const [detailsError, setDetailsError] = useState<string | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
@@ -97,16 +100,34 @@ export default function ClientDashboardPage() {
     setSelectedService(null);
   };
 
-  const handleViewLead = (lead: Lead) => {
-    setLeadDetails(lead);
+  const handleViewLead = async (lead: Lead) => {
     setIsDetailsOpen(true);
     setActionError(null);
+    setDetailsError(null);
+    setIsDetailsLoading(true);
+    setLeadDetails(lead);
+
+    try {
+      const fullLead = await getClientLeadDetails(lead.id);
+      setLeadDetails(fullLead as Lead);
+    } catch (fetchError) {
+      console.error("Error fetching full lead details:", fetchError);
+      setDetailsError(
+        fetchError instanceof Error
+          ? fetchError.message
+          : "No pudimos cargar todos los detalles del servicio."
+      );
+    } finally {
+      setIsDetailsLoading(false);
+    }
   };
 
   const handleCloseDetails = () => {
     setIsDetailsOpen(false);
     setLeadDetails(null);
     setActionError(null);
+    setDetailsError(null);
+    setIsDetailsLoading(false);
   };
 
   const handleDeleteLead = async (lead: Lead) => {
@@ -374,7 +395,10 @@ export default function ClientDashboardPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
           {/* Widget de Próximo Servicio - Ocupa 2 columnas */}
           <div className="lg:col-span-2">
-            <UpcomingServiceWidget upcomingLead={upcomingService} />
+            <UpcomingServiceWidget
+              upcomingLead={upcomingService}
+              onViewDetails={handleViewLead}
+            />
           </div>
 
           {/* Widget de Actividad Reciente - Ocupa 1 columna */}
@@ -500,6 +524,8 @@ export default function ClientDashboardPage() {
           onUpdate={(data) => handleUpdateLead(leadDetails.id, data)}
           isDeleting={isDeleting}
           isUpdating={isUpdating}
+          isLoading={isDetailsLoading}
+          loadError={detailsError}
         />
       )}
     </div>
@@ -521,6 +547,8 @@ interface LeadDetailsModalProps {
   onUpdate: (data: LeadUpdatePayload) => void;
   isDeleting: boolean;
   isUpdating: boolean;
+  isLoading: boolean;
+  loadError: string | null;
 }
 
 const normalizeWhatsappNumber = (input: string) => {
@@ -578,6 +606,8 @@ function LeadDetailsModal({
   onUpdate,
   isDeleting,
   isUpdating,
+  isLoading,
+  loadError,
 }: LeadDetailsModalProps) {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [service, setService] = useState(lead.servicio_solicitado || "");
@@ -731,7 +761,7 @@ function LeadDetailsModal({
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full overflow-hidden">
         <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-4 flex justify-between items-center">
           <h3 className="text-lg font-bold">Detalle de la Solicitud</h3>
           <button
@@ -742,7 +772,89 @@ function LeadDetailsModal({
             ×
           </button>
         </div>
-        <form className="p-6 space-y-4" onSubmit={handleSubmit}>
+        <form className="p-6 space-y-5" onSubmit={handleSubmit}>
+          {isLoading && (
+            <div className="flex items-center gap-3 px-4 py-3 rounded-lg bg-blue-50 border border-blue-200 text-blue-700 text-sm">
+              <FontAwesomeIcon icon={faSpinner} spin className="text-base" />
+              Cargando información completa del servicio…
+            </div>
+          )}
+
+          {loadError && (
+            <div className="px-4 py-3 rounded-lg border border-amber-200 bg-amber-50 text-amber-800 text-sm">
+              {loadError}
+            </div>
+          )}
+
+          {lead.profesional_asignado && (
+            <section className="p-4 rounded-xl border border-blue-100 bg-blue-50/60">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="w-14 h-14 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 text-white font-semibold flex items-center justify-center text-xl shadow-inner">
+                    {lead.profesional_asignado.full_name
+                      ?.charAt(0)
+                      .toUpperCase() || "P"}
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold text-blue-700 uppercase tracking-wide">
+                      Profesional asignado
+                    </p>
+                    <h4 className="text-lg font-semibold text-gray-900">
+                      {lead.profesional_asignado.full_name || "Profesional Sumee"}
+                    </h4>
+                    <p className="text-sm text-gray-600">
+                      {lead.profesional_asignado.profession || "Especialista certificado"}
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      ⭐{" "}
+                      {(lead.profesional_asignado.calificacion_promedio ?? 5).toFixed(
+                        1
+                      )}{" "}
+                      / 5.0 · ID Sumee Pro{" "}
+                      {lead.profesional_asignado.user_id
+                        ? lead.profesional_asignado.user_id.slice(0, 8).toUpperCase()
+                        : "—"}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex flex-col gap-2 w-full sm:w-auto sm:items-end">
+                  {lead.profesional_asignado.whatsapp && (
+                    <a
+                      href={`https://wa.me/${lead.profesional_asignado.whatsapp}?text=Hola%20${
+                        lead.profesional_asignado.full_name
+                          ? encodeURIComponent(lead.profesional_asignado.full_name)
+                          : ""
+                      }%2C%20tengo%20dudas%20sobre%20mi%20servicio%20de%20${encodeURIComponent(
+                        lead.servicio_solicitado || "Sumee App"
+                      )}.`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-green-600 hover:bg-green-700 text-white text-sm font-semibold transition-colors"
+                    >
+                      <FontAwesomeIcon icon={faWhatsapp} />
+                      WhatsApp profesional
+                    </a>
+                  )}
+                  {lead.profesional_asignado.areas_servicio &&
+                    lead.profesional_asignado.areas_servicio.length > 0 && (
+                      <div className="flex flex-wrap gap-2 justify-end">
+                        {lead.profesional_asignado.areas_servicio
+                          .slice(0, 3)
+                          .map((area) => (
+                            <span
+                              key={area}
+                              className="px-3 py-1 rounded-full bg-white/70 text-blue-700 text-xs font-medium border border-blue-200"
+                            >
+                              {area}
+                            </span>
+                          ))}
+                      </div>
+                    )}
+                </div>
+              </div>
+            </section>
+          )}
+
           <div>
             <label className="text-sm font-semibold text-gray-500 block mb-1">
               Servicio

@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="550" viewBox="0 0 900 550" role="img" aria-labelledby="title desc">
+  <title id="title">Infografía diferencial vs termomagnético</title>
+  <desc id="desc">Comparación visual entre la protección que ofrece un interruptor diferencial y una pastilla termomagnética.</desc>
+  <rect width="900" height="550" fill="#f8fafc" />
+  <text x="450" y="70" text-anchor="middle" font-family="'Inter', sans-serif" font-weight="700" font-size="32" fill="#1f2937">Seguridad eléctrica: ¿qué protege cada dispositivo?</text>
+  <g transform="translate(120 120)">
+    <rect width="300" height="340" rx="24" fill="#ffffff" stroke="#e2e8f0" stroke-width="3" />
+    <text x="150" y="48" text-anchor="middle" font-family="'Inter', sans-serif" font-weight="600" font-size="26" fill="#0f172a">Interruptor Diferencial</text>
+    <rect x="75" y="80" width="150" height="150" rx="18" fill="#ef4444" opacity="0.85" />
+    <rect x="105" y="176" width="90" height="54" rx="12" fill="#ffffff" opacity="0.9" />
+    <text x="150" y="210" text-anchor="middle" font-family="'Inter', sans-serif" font-weight="700" font-size="28" fill="#ef4444">T</text>
+    <text x="150" y="260" text-anchor="middle" font-family="'Inter', sans-serif" font-size="18" fill="#475569">Corta la energía ante fugas a tierra (30 mA)</text>
+    <g transform="translate(48 290)">
+      <circle cx="24" cy="20" r="12" fill="#0ea5e9" />
+      <text x="48" y="26" font-family="'Inter', sans-serif" font-size="18" fill="#0f172a">Protege a las personas</text>
+      <circle cx="24" cy="62" r="12" fill="#0ea5e9" opacity="0.6" />
+      <text x="48" y="68" font-family="'Inter', sans-serif" font-size="18" fill="#0f172a">Detecta fugas de corriente</text>
+    </g>
+  </g>
+  <g transform="translate(480 120)">
+    <rect width="300" height="340" rx="24" fill="#ffffff" stroke="#e2e8f0" stroke-width="3" />
+    <text x="150" y="48" text-anchor="middle" font-family="'Inter', sans-serif" font-weight="600" font-size="26" fill="#0f172a">Pastilla Termomagnética</text>
+    <rect x="75" y="80" width="150" height="150" rx="18" fill="#f97316" opacity="0.85" />
+    <g transform="translate(105 148)">
+      <rect width="90" height="54" rx="12" fill="#1e293b" opacity="0.15" />
+      <text x="44" y="37" text-anchor="middle" font-family="'Inter', sans-serif" font-weight="700" font-size="28" fill="#ffffff">TI</text>
+    </g>
+    <text x="150" y="260" text-anchor="middle" font-family="'Inter', sans-serif" font-size="18" fill="#475569">Interrumpe sobrecargas y cortocircuitos</text>
+    <g transform="translate(48 290)">
+      <circle cx="24" cy="20" r="12" fill="#f59e0b" />
+      <text x="48" y="26" font-family="'Inter', sans-serif" font-size="18" fill="#0f172a">Protege cables y equipos</text>
+      <circle cx="24" cy="62" r="12" fill="#f59e0b" opacity="0.6" />
+      <text x="48" y="68" font-family="'Inter', sans-serif" font-size="18" fill="#0f172a">Responde a sobrecargas</text>
+    </g>
+  </g>
+  <g transform="translate(120 480)">
+    <rect width="660" height="40" rx="12" fill="#e0f2fe" />
+    <text x="330" y="26" text-anchor="middle" font-family="'Inter', sans-serif" font-size="18" fill="#0369a1">Usa ambos dispositivos en cada tablero para una protección completa.</text>
+  </g>
+</svg>

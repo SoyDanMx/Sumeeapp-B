@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="550" viewBox="0 0 900 550" role="img" aria-labelledby="title desc">
+  <title id="title">Prueba del interruptor diferencial</title>
+  <desc id="desc">Dibujo plano de una mano activando el botón de prueba de un interruptor diferencial en un tablero eléctrico residencial.</desc>
+  <rect width="900" height="550" fill="#f1f5f9" />
+  <g transform="translate(120 80)">
+    <rect width="660" height="390" rx="26" fill="#1f2937" opacity="0.12" />
+    <rect x="32" y="32" width="596" height="326" rx="22" fill="#ffffff" stroke="#cbd5e1" stroke-width="3" />
+    <rect x="80" y="84" width="512" height="120" rx="18" fill="#0f172a" opacity="0.08" />
+    <g transform="translate(120 120)">
+      <rect width="188" height="152" rx="16" fill="#ffffff" stroke="#e2e8f0" stroke-width="3" />
+      <text x="16" y="32" font-family="'Inter', sans-serif" font-weight="600" font-size="22" fill="#0f172a">DIFERENCIAL</text>
+      <rect x="24" y="56" width="140" height="30" rx="8" fill="#e2e8f0" />
+      <g transform="translate(24 96)">
+        <rect width="62" height="48" rx="10" fill="#ef4444" />
+        <rect x="62" width="62" height="48" rx="10" fill="#1e293b" opacity="0.2" />
+        <text x="30" y="32" font-family="'Inter', sans-serif" font-size="24" font-weight="700" fill="#fff">T</text>
+      </g>
+      <text x="24" y="148" font-family="'Inter', sans-serif" font-size="16" fill="#64748b">30 mA · Botón TEST</text>
+    </g>
+    <g transform="translate(328 120)">
+      <rect width="188" height="152" rx="16" fill="#ffffff" stroke="#e2e8f0" stroke-width="3" />
+      <text x="16" y="32" font-family="'Inter', sans-serif" font-weight="600" font-size="22" fill="#0f172a">TERMOMAGN.</text>
+      <rect x="24" y="56" width="140" height="30" rx="8" fill="#e2e8f0" />
+      <g transform="translate(24 96)">
+        <rect width="62" height="48" rx="10" fill="#f97316" />
+        <rect x="62" width="62" height="48" rx="10" fill="#1e293b" opacity="0.4" />
+        <text x="30" y="32" font-family="'Inter', sans-serif" font-size="24" font-weight="700" fill="#fff">T</text>
+        <text x="94" y="32" font-family="'Inter', sans-serif" font-size="22" font-weight="600" fill="#fff">I</text>
+      </g>
+      <text x="24" y="148" font-family="'Inter', sans-serif" font-size="16" fill="#64748b">20 A · Corte térmico</text>
+    </g>
+  </g>
+  <g transform="translate(530 290)">
+    <path d="M120 0c30 4 60 24 72 54 12 30 6 70-12 98-20 30-54 48-88 64-36 16-72 28-114 34-18 3-38 4-54-6-14-10-22-28-16-44 6-14 22-20 36-22 32-4 64 2 96-2 30-4 60-18 80-40 16-18 24-40 30-64 4-18 16-38 32-48 14-8 32-8 48-4z" fill="#f1aeb5" />
+    <path d="M40 140c30-6 60-12 86-28s46-42 56-70c2-8 6-16 14-20 12-8 30-6 40 4 10 10 12 26 8 40-10 34-34 64-64 84-26 18-54 28-84 32-20 2-42 2-60-8-8-4-14-12-14-22 0-12 10-20 18-24z" fill="#fcd5ce" />
+    <circle cx="228" cy="70" r="36" fill="#ef4444" />
+    <rect x="224" y="46" width="12" height="48" rx="6" fill="#ffffff" />
+  </g>
+</svg>

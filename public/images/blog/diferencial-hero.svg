@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-labelledby="title desc">
+  <title id="title">Tablero eléctrico con interruptor termomagnético y diferencial</title>
+  <desc id="desc">Ilustración minimalista de un tablero eléctrico residencial mostrando interruptores rotulados como termomagnético y diferencial.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#eef2ff" />
+      <stop offset="50%" stop-color="#dbeafe" />
+      <stop offset="100%" stop-color="#e2e8f0" />
+    </linearGradient>
+    <linearGradient id="panel" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#f8fafc" />
+      <stop offset="100%" stop-color="#cbd5f5" />
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)" />
+  <g transform="translate(180 90)">
+    <rect width="840" height="450" rx="32" fill="#1f2937" opacity="0.12" />
+    <rect x="24" y="24" width="792" height="402" rx="24" fill="url(#panel)" />
+    <rect x="72" y="84" width="720" height="180" rx="20" fill="#0f172a" opacity="0.1" />
+    <g transform="translate(110 120)">
+      <rect width="260" height="190" rx="16" fill="#ffffff" stroke="#cbd5e1" stroke-width="4" />
+      <text x="24" y="42" font-family="'Inter', sans-serif" font-weight="600" font-size="28" fill="#0f172a">TERMOMAGNÉTICO</text>
+      <rect x="36" y="72" width="188" height="38" rx="10" fill="#1f2937" opacity="0.1" />
+      <g transform="translate(36 120)">
+        <rect width="82" height="72" rx="12" fill="#ef4444" />
+        <rect x="82" width="82" height="72" rx="12" fill="#1e293b" />
+        <rect x="164" width="24" height="72" rx="12" fill="#1e293b" opacity="0.4" />
+        <text x="40" y="46" font-family="'Inter', sans-serif" font-size="34" font-weight="700" fill="#fff">T</text>
+        <text x="122" y="46" font-family="'Inter', sans-serif" font-size="34" font-weight="700" fill="#fff">I</text>
+      </g>
+      <text x="36" y="168" font-family="'Inter', sans-serif" font-size="18" fill="#475569">20 A · Corte térmico + magnético</text>
+    </g>
+    <g transform="translate(440 120)">
+      <rect width="260" height="190" rx="16" fill="#ffffff" stroke="#cbd5e1" stroke-width="4" />
+      <text x="24" y="42" font-family="'Inter', sans-serif" font-weight="600" font-size="28" fill="#0f172a">DIFERENCIAL</text>
+      <rect x="36" y="72" width="188" height="38" rx="10" fill="#1f2937" opacity="0.1" />
+      <g transform="translate(36 120)">
+        <rect width="82" height="72" rx="12" fill="#ef4444" />
+        <rect x="82" width="82" height="72" rx="12" fill="#1e293b" opacity="0.2" />
+        <text x="40" y="46" font-family="'Inter', sans-serif" font-size="34" font-weight="700" fill="#fff">T</text>
+        <text x="122" y="46" font-family="'Inter', sans-serif" font-size="30" font-weight="600" fill="#0f172a">30mA</text>
+      </g>
+      <text x="36" y="168" font-family="'Inter', sans-serif" font-size="18" fill="#475569">Protección contra fugas a tierra</text>
+    </g>
+    <g transform="translate(110 350)">
+      <rect width="590" height="60" rx="12" fill="#94a3b8" opacity="0.25" />
+      <rect x="24" y="18" width="180" height="24" rx="8" fill="#6366f1" opacity="0.45" />
+      <rect x="228" y="18" width="120" height="24" rx="8" fill="#f97316" opacity="0.45" />
+      <rect x="364" y="18" width="160" height="24" rx="8" fill="#22c55e" opacity="0.45" />
+    </g>
+  </g>
+  <text x="600" y="560" text-anchor="middle" font-family="'Inter', sans-serif" font-weight="600" font-size="32" fill="#1f2937">Seguridad eléctrica: diferencia entre protección térmica y diferencial</text>
+</svg>

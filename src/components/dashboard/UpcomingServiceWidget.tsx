@@ -1,7 +1,6 @@
 "use client";
 
 import React from "react";
-import Link from "next/link";
 import { Lead } from "@/types/supabase";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -14,10 +13,12 @@ import {
 
 interface UpcomingServiceWidgetProps {
   upcomingLead: Lead | null;
+  onViewDetails?: (lead: Lead) => void;
 }
 
 export default function UpcomingServiceWidget({
   upcomingLead,
+  onViewDetails,
 }: UpcomingServiceWidgetProps) {
   if (!upcomingLead) {
     return (
@@ -62,52 +63,72 @@ export default function UpcomingServiceWidget({
 
   const statusInfo = getStatusInfo(upcomingLead.estado);
 
-  return (
-    <Link href={`/solicitudes/${upcomingLead.id}`}>
-      <div className="bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl p-6 text-white hover:from-blue-600 hover:to-purple-700 transition-all cursor-pointer shadow-lg">
-        <div className="flex items-start justify-between mb-4">
-          <div className="flex-1">
-            <div className="flex items-center mb-2">
-              <FontAwesomeIcon
-                icon={statusInfo.icon}
-                className={`${statusInfo.color} mr-2`}
-              />
-              <span className="text-sm font-medium">{statusInfo.label}</span>
-            </div>
-            <h3 className="text-xl font-bold mb-1">
-              {upcomingLead.servicio_solicitado || "Servicio Profesional"}
-            </h3>
-            {upcomingLead.profesional_asignado && (
-              <div className="flex items-center mt-2 text-blue-100">
-                <FontAwesomeIcon icon={faUser} className="mr-2" />
-                <span>
-                  {upcomingLead.profesional_asignado.full_name ||
-                    "Profesional Asignado"}
-                </span>
-              </div>
-            )}
-          </div>
-          <FontAwesomeIcon
-            icon={faChevronRight}
-            className="text-xl opacity-50"
-          />
-        </div>
+  const triggerView = () => {
+    if (onViewDetails) {
+      onViewDetails(upcomingLead);
+    } else {
+      void (async () => {
+        // fallback navigation if no callback provided
+        window.location.href = `/solicitudes/${upcomingLead.id}`;
+      })();
+    }
+  };
 
-        <div className="pt-4 border-t border-white/20">
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-blue-100">
-              {new Date(upcomingLead.fecha_creacion).toLocaleDateString(
-                "es-MX",
-                {
-                  day: "numeric",
-                  month: "short",
-                }
-              )}
-            </span>
-            <span className="text-sm font-medium">Ver Detalles →</span>
+  return (
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={(event) => {
+        event.preventDefault();
+        triggerView();
+      }}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          triggerView();
+        }
+      }}
+      className="bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl p-6 text-white hover:from-blue-600 hover:to-purple-700 transition-all cursor-pointer shadow-lg focus:outline-none focus:ring-4 focus:ring-blue-200"
+    >
+      <div className="flex items-start justify-between mb-4">
+        <div className="flex-1">
+          <div className="flex items-center mb-2">
+            <FontAwesomeIcon
+              icon={statusInfo.icon}
+              className={`${statusInfo.color} mr-2`}
+            />
+            <span className="text-sm font-medium">{statusInfo.label}</span>
           </div>
+          <h3 className="text-xl font-bold mb-1">
+            {upcomingLead.servicio_solicitado || "Servicio Profesional"}
+          </h3>
+          {upcomingLead.profesional_asignado && (
+            <div className="flex items-center mt-2 text-blue-100">
+              <FontAwesomeIcon icon={faUser} className="mr-2" />
+              <span>
+                {upcomingLead.profesional_asignado.full_name ||
+                  "Profesional Asignado"}
+              </span>
+            </div>
+          )}
+        </div>
+        <FontAwesomeIcon
+          icon={faChevronRight}
+          className="text-xl opacity-50"
+        />
+      </div>
+
+      <div className="pt-4 border-t border-white/20">
+        <div className="flex items-center justify-between">
+          <span className="text-sm text-blue-100">
+            {new Date(upcomingLead.fecha_creacion).toLocaleDateString("es-MX", {
+              day: "numeric",
+              month: "short",
+            })}
+          </span>
+          <span className="text-sm font-medium">Ver Detalles →</span>
         </div>
       </div>
-    </Link>
+    </div>
   );
 }
