@@ -5,7 +5,9 @@ import {
   type CookieOptions,
 } from "@supabase/ssr";
 import { createClient } from "@supabase/supabase-js";
-import type { Lead } from "@/types/supabase";
+import type { Lead, LeadReview } from "@/types/supabase";
+
+export const runtime = "nodejs";
 
 const LEAD_SELECT = `
   *,
@@ -27,12 +29,14 @@ const LEAD_SELECT = `
   )
 `;
 
-function normalizeLead(data: any): Lead {
+type LeadWithReview = Lead & { lead_review: LeadReview | null };
+
+function normalizeLead(data: any): LeadWithReview {
   const { lead_reviews, ...rest } = data ?? {};
   return {
     ...(rest as Lead),
     lead_review: Array.isArray(lead_reviews) ? lead_reviews[0] ?? null : null,
-  };
+  } as LeadWithReview;
 }
 
 export async function GET(request: NextRequest) {
