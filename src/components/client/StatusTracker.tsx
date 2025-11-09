@@ -2,59 +2,96 @@
 
 import React, { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase/client";
-import { Lead } from "@/types/supabase";
+import { Lead, Profile } from "@/types/supabase";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faCheckCircle,
-  faClock,
   faSpinner,
   faUser,
   faMapMarkerAlt,
   faWrench,
 } from "@fortawesome/free-solid-svg-icons";
 
+type TrackerLead = Lead & {
+  appointment_at?: string | null;
+  appointment_status?: string | null;
+  profesional_asignado?: Partial<Profile> | null;
+};
+
 interface StatusTrackerProps {
-  initialLead: Lead;
+  lead: TrackerLead;
   currentUserId: string | null;
+  onLeadChange?: (lead: Lead) => void;
 }
 
 const STATUS_STEPS = [
-  { key: "nuevo", label: "Solicitud Enviada", icon: faCheckCircle },
-  { key: "contactado", label: "Buscando Profesional", icon: faSpinner },
-  { key: "aceptado", label: "Profesional Asignado", icon: faUser },
-  { key: "en_camino", label: "Técnico en Camino", icon: faMapMarkerAlt },
-  { key: "completado", label: "Trabajo Completado", icon: faWrench },
+  {
+    key: "nuevo",
+    label: "Solicitud enviada",
+    icon: faCheckCircle,
+  },
+  {
+    key: "aceptado",
+    label: "Profesional asignado",
+    icon: faUser,
+  },
+  {
+    key: "contactado",
+    label: "Contacto en seguimiento",
+    icon: faSpinner,
+  },
+  {
+    key: "en_progreso",
+    label: "Cita programada",
+    icon: faMapMarkerAlt,
+  },
+  {
+    key: "completado",
+    label: "Trabajo completado",
+    icon: faWrench,
+  },
 ];
 
+function mapStatus(lead: TrackerLead) {
+  const estado = (lead.estado || "").toLowerCase();
+  if (estado === "completado") return "completado";
+  if (estado === "en_progreso") return "en_progreso";
+  if (estado === "contactado") return "contactado";
+  if (estado === "aceptado") return "aceptado";
+  return "nuevo";
+}
+
 export default function StatusTracker({
-  initialLead,
+  lead,
   currentUserId,
+  onLeadChange,
 }: StatusTrackerProps) {
-  const [currentLead, setCurrentLead] = useState<Lead>(initialLead);
+  const [currentLead, setCurrentLead] = useState<TrackerLead>(lead);
   const [isLoading, setIsLoading] = useState(false);
 
   // Suscribirse a cambios en tiempo real del lead
   useEffect(() => {
-    if (!initialLead?.id) return;
+    if (!lead?.id) return;
 
     let subscription: any = null;
 
     const subscribeToLeadUpdates = async () => {
       try {
         subscription = supabase
-          .channel(`lead:${initialLead.id}`)
+          .channel(`lead:${lead.id}`)
           .on(
             "postgres_changes",
             {
               event: "UPDATE",
               schema: "public",
               table: "leads",
-              filter: `id=eq.${initialLead.id}`,
+              filter: `id=eq.${lead.id}`,
             },
             (payload) => {
-              const updatedLead = payload.new as Lead;
+              const updatedLead = payload.new as TrackerLead;
               setCurrentLead(updatedLead);
               setIsLoading(false);
+              onLeadChange?.(updatedLead);
             }
           )
           .subscribe();
@@ -71,18 +108,26 @@ export default function StatusTracker({
         supabase.removeChannel(subscription);
       }
     };
-  }, [initialLead?.id]);
+  }, [lead?.id, onLeadChange]);
+
+  useEffect(() => {
+    setCurrentLead(lead);
+  }, [lead]);
 
   // Obtener el índice del paso actual
   const getCurrentStepIndex = () => {
-    const currentStatus = currentLead?.estado?.toLowerCase() || "nuevo";
-    const stepIndex = STATUS_STEPS.findIndex(
-      (step) => step.key === currentStatus
-    );
+    const mappedStatus = mapStatus(currentLead);
+    const stepIndex = STATUS_STEPS.findIndex((step) => step.key === mappedStatus);
     return stepIndex >= 0 ? stepIndex : 0;
   };
 
   const currentStepIndex = getCurrentStepIndex();
+  const appointmentInfo = currentLead.appointment_at
+    ? new Date(currentLead.appointment_at).toLocaleString("es-MX", {
+        dateStyle: "medium",
+        timeStyle: "short",
+      })
+    : null;
 
   return (
     <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
@@ -146,37 +191,38 @@ export default function StatusTracker({
                   </h3>
 
                   {/* Información adicional según el paso */}
-                  {isCurrent &&
-                    index === 2 &&
-                    currentLead?.profesional_asignado_id && (
-                      <p className="text-sm text-gray-600">
-                        Profesional asignado a tu solicitud
-                      </p>
-                    )}
-                  {isCurrent && index === 3 && (
-                    <div className="mt-3">
-                      <p className="text-sm text-gray-600 mb-2">
-                        El técnico está en camino a tu ubicación
-                      </p>
-                      {/* Placeholder para mapa */}
-                      <div className="bg-gray-100 rounded-lg h-48 flex items-center justify-center border-2 border-dashed border-gray-300">
-                        <div className="text-center text-gray-500">
-                          <FontAwesomeIcon
-                            icon={faMapMarkerAlt}
-                            className="text-3xl mb-2"
-                          />
-                          <p className="text-sm">Mapa en tiempo real</p>
-                          <p className="text-xs mt-1">
-                            {/* TODO: Integrar Mapbox/Google Maps aquí */}
-                            Integrar Mapa aquí
-                          </p>
-                        </div>
-                      </div>
+                  {isCurrent && step.key === "aceptado" && (
+                    <p className="text-sm text-gray-600">
+                      Tu profesional ya fue asignado y está por contactarte.
+                    </p>
+                  )}
+                  {isCurrent && step.key === "contactado" && (
+                    <p className="text-sm text-gray-600">
+                      El profesional está coordinando los detalles contigo.
+                    </p>
+                  )}
+                  {isCurrent && step.key === "en_progreso" && (
+                    <div className="mt-2 space-y-2">
+                      {appointmentInfo ? (
+                        <p className="text-sm text-gray-600">
+                          Cita programada para <strong>{appointmentInfo}</strong>.{" "}
+                          Recibirás recordatorios antes del horario acordado.
+                        </p>
+                      ) : (
+                        <p className="text-sm text-gray-600">
+                          Aún no se ha definido la fecha del servicio. Puedes usar los botones de la página para confirmarla.
+                        </p>
+                      )}
+                      {currentLead.appointment_status === "pendiente_confirmacion" && (
+                        <p className="text-xs text-amber-600">
+                          Falta tu confirmación para cerrar la cita.
+                        </p>
+                      )}
                     </div>
                   )}
-                  {isCurrent && index === 4 && (
+                  {isCurrent && step.key === "completado" && (
                     <p className="text-sm text-green-600 font-medium">
-                      ¡Servicio completado exitosamente!
+                      ¡Servicio completado! No olvides dejar tu reseña.
                     </p>
                   )}
                 </div>
