@@ -4,6 +4,8 @@ import {
   createSupabaseServerClient,
 } from "@/lib/supabase/server";
 
+export const runtime = "nodejs";
+
 export async function POST(request: Request) {
   try {
     const { leadId, rating, comment } = await request.json();

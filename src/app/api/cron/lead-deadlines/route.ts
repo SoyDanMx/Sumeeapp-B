@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
 
+export const runtime = "nodejs";
+
 /**
  * Endpoint para Vercel Cron / programador externo.
  * Revisa leads cuyo tiempo de contacto expiró y aplica penalizaciones leves.
