@@ -5,7 +5,7 @@ import {
   type CookieOptions,
 } from "@supabase/ssr";
 import { createClient } from "@supabase/supabase-js";
-import type { Lead, LeadReview } from "@/types/supabase";
+import type { Lead } from "@/types/supabase";
 
 export const runtime = "nodejs";
 
@@ -29,7 +29,15 @@ const LEAD_SELECT = `
   )
 `;
 
-type LeadWithReview = Lead & { lead_review: LeadReview | null };
+type LeadReviewPayload = {
+  id: string;
+  rating: number;
+  comment?: string | null;
+  created_at: string;
+  created_by: string;
+};
+
+type LeadWithReview = Lead & { lead_review: LeadReviewPayload | null };
 
 function normalizeLead(data: any): LeadWithReview {
   const { lead_reviews, ...rest } = data ?? {};
