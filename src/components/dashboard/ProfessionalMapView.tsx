@@ -311,6 +311,7 @@ export default function ProfessionalMapView({
   avatarUrl,
 }: ProfessionalMapViewProps) {
   const [popupInfo, setPopupInfo] = useState<Lead | null>(null);
+  const [serviceFilter, setServiceFilter] = useState<string | null>(null);
 
   // Usar ubicación actual si está disponible, sino usar la del perfil
   const displayLat = currentLat || profesionalLat || 19.4326;
@@ -319,7 +320,7 @@ export default function ProfessionalMapView({
 
   // Filtrar leads con coordenadas válidas y calcular distancias
   const leadsWithDistance = useMemo(() => {
-    return leads
+    let filtered = leads
       .filter(
         (lead) =>
           lead.ubicacion_lat != null &&
@@ -335,15 +336,116 @@ export default function ProfessionalMapView({
           lead.ubicacion_lng!
         ),
       }))
-      .filter((lead) => lead.distance <= searchRadius * 2) // Mostrar leads hasta 2x el radio de búsqueda
-      .sort((a, b) => a.distance - b.distance);
-  }, [leads, displayLat, displayLng, searchRadius]);
+      .filter((lead) => lead.distance <= searchRadius * 2); // Mostrar leads hasta 2x el radio de búsqueda
+
+    // Aplicar filtro de servicio si está activo
+    if (serviceFilter) {
+      filtered = filtered.filter(
+        (lead) => lead.servicio_solicitado === serviceFilter
+      );
+    }
+
+    return filtered.sort((a, b) => a.distance - b.distance);
+  }, [leads, displayLat, displayLng, searchRadius, serviceFilter]);
 
   // Convertir km a metros para el círculo de radio
   const radiusInMeters = searchRadius * 1000;
 
+  // Obtener lista única de servicios disponibles
+  const availableServices = useMemo(() => {
+    const services = new Set<string>();
+    leads.forEach((lead) => {
+      if (lead.servicio_solicitado) {
+        services.add(lead.servicio_solicitado);
+      }
+    });
+    return Array.from(services).sort();
+  }, [leads]);
+
+  // Estadísticas de leads
+  const stats = useMemo(() => {
+    return {
+      total: leadsWithDistance.length,
+      totalAvailable: leads.filter((l) => l.estado === "nuevo").length,
+      nearest: leadsWithDistance[0]?.distance || 0,
+      inRadius: leadsWithDistance.filter((l) => l.distance <= searchRadius).length,
+    };
+  }, [leadsWithDistance, leads, searchRadius]);
+
   return (
-    <div className="relative w-full h-full rounded-lg overflow-hidden">
+    <div className="relative w-full h-full flex flex-col rounded-lg overflow-hidden">
+      {/* Barra superior con filtros y estadísticas */}
+      <div className="bg-gradient-to-r from-indigo-600 to-blue-600 p-4 shadow-lg z-10">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          {/* Estadísticas */}
+          <div className="flex items-center gap-4 text-white">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
+                <span className="font-bold">{stats.inRadius}</span>
+              </div>
+              <div className="text-sm">
+                <div className="font-semibold">En radio</div>
+                <div className="text-xs text-blue-100">{searchRadius} km</div>
+              </div>
+            </div>
+            {stats.nearest > 0 && (
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
+                  <span className="text-xs">📍</span>
+                </div>
+                <div className="text-sm">
+                  <div className="font-semibold">Más cercano</div>
+                  <div className="text-xs text-blue-100">{stats.nearest.toFixed(1)} km</div>
+                </div>
+              </div>
+            )}
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
+                <span className="font-bold">{stats.totalAvailable}</span>
+              </div>
+              <div className="text-sm">
+                <div className="font-semibold">Disponibles</div>
+                <div className="text-xs text-blue-100">Total CDMX</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Filtros de servicio */}
+          <div className="flex items-center gap-2 overflow-x-auto">
+            <button
+              onClick={() => setServiceFilter(null)}
+              className={`px-4 py-2 rounded-lg text-sm font-semibold whitespace-nowrap transition-all ${
+                !serviceFilter
+                  ? "bg-white text-indigo-600 shadow-md"
+                  : "bg-white/20 text-white hover:bg-white/30"
+              }`}
+            >
+              Todos ({stats.totalAvailable})
+            </button>
+            {availableServices.map((service) => {
+              const count = leads.filter(
+                (l) => l.servicio_solicitado === service && l.estado === "nuevo"
+              ).length;
+              return (
+                <button
+                  key={service}
+                  onClick={() => setServiceFilter(service)}
+                  className={`px-4 py-2 rounded-lg text-sm font-semibold whitespace-nowrap transition-all ${
+                    serviceFilter === service
+                      ? "bg-white text-indigo-600 shadow-md"
+                      : "bg-white/20 text-white hover:bg-white/30"
+                  }`}
+                >
+                  {service} ({count})
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      {/* Mapa */}
+      <div className="relative flex-1 w-full">
       <MapContainer
         center={center}
         zoom={12}
@@ -440,26 +542,41 @@ export default function ProfessionalMapView({
         })}
       </MapContainer>
 
-      {/* Leyenda del mapa */}
-      <div className="absolute bottom-4 left-4 bg-white rounded-lg shadow-lg p-3 z-[1000] text-xs">
-        <div className="space-y-2">
-          <div className="flex items-center space-x-2">
-            <div className="w-4 h-4 bg-blue-600 rounded-full"></div>
-            <span>Tú</span>
-          </div>
-          <div className="flex items-center space-x-2">
-            <div className="w-4 h-4 bg-yellow-500 rounded-full"></div>
-            <span>Lead disponible</span>
-          </div>
-          <div className="flex items-center space-x-2">
-            <div className="w-4 h-4 bg-green-600 rounded-full"></div>
-            <span>Lead seleccionado</span>
-          </div>
-          <div className="flex items-center space-x-2">
-            <div className="w-3 h-3 border-2 border-blue-500 rounded-full bg-blue-100"></div>
-            <span>Radio de búsqueda ({searchRadius} km)</span>
+        {/* Leyenda del mapa */}
+        <div className="absolute bottom-4 left-4 bg-white rounded-lg shadow-lg p-3 z-[1000] text-xs">
+          <div className="space-y-2">
+            <div className="flex items-center space-x-2">
+              <div className="w-4 h-4 bg-blue-600 rounded-full"></div>
+              <span>Tú</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <div className="w-4 h-4 bg-yellow-500 rounded-full"></div>
+              <span>Lead disponible</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <div className="w-4 h-4 bg-green-600 rounded-full"></div>
+              <span>Lead seleccionado</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <div className="w-3 h-3 border-2 border-blue-500 rounded-full bg-blue-100"></div>
+              <span>Radio de búsqueda ({searchRadius} km)</span>
+            </div>
           </div>
         </div>
+
+        {/* Contador de leads visible */}
+        {leadsWithDistance.length > 0 && (
+          <div className="absolute top-4 right-4 bg-white rounded-lg shadow-lg p-3 z-[1000]">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-indigo-600">
+                {leadsWithDistance.length}
+              </div>
+              <div className="text-xs text-gray-600">
+                {serviceFilter ? "filtrados" : "en mapa"}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -11,6 +11,7 @@ import RequestServiceModal from "@/components/client/RequestServiceModal";
 import UpcomingServiceWidget from "@/components/dashboard/UpcomingServiceWidget";
 import QuickActionsWidget from "@/components/dashboard/QuickActionsWidget";
 import RecentActivityWidget from "@/components/dashboard/RecentActivityWidget";
+import NearbyProfessionalsWidget from "@/components/dashboard/NearbyProfessionalsWidget";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faSpinner,
@@ -41,6 +42,8 @@ export default function ClientDashboardPage() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [clientLocation, setClientLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [showProfessionalsMap, setShowProfessionalsMap] = useState(false);
 
   // Función para refrescar los leads
   const refreshLeads = async () => {
@@ -87,6 +90,56 @@ export default function ClientDashboardPage() {
 
     fetchLeads();
   }, [user, userLoading]);
+
+  // Obtener ubicación del cliente desde su perfil
+  useEffect(() => {
+    const fetchClientLocation = async () => {
+      if (!user) return;
+
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('ubicacion_lat, ubicacion_lng')
+          .eq('user_id', user.id)
+          .single();
+
+        if (error) {
+          console.error('Error fetching client location:', error);
+          // Fallback a ubicación por defecto (Centro CDMX)
+          setClientLocation({ lat: 19.4326, lng: -99.1332 });
+          return;
+        }
+
+        if (data && data.ubicacion_lat && data.ubicacion_lng) {
+          setClientLocation({ lat: data.ubicacion_lat, lng: data.ubicacion_lng });
+        } else {
+          // Si no tiene ubicación, usar geolocalización del navegador
+          if ('geolocation' in navigator) {
+            navigator.geolocation.getCurrentPosition(
+              (position) => {
+                setClientLocation({
+                  lat: position.coords.latitude,
+                  lng: position.coords.longitude,
+                });
+              },
+              () => {
+                // Fallback a Centro CDMX
+                setClientLocation({ lat: 19.4326, lng: -99.1332 });
+              }
+            );
+          } else {
+            // Fallback a Centro CDMX
+            setClientLocation({ lat: 19.4326, lng: -99.1332 });
+          }
+        }
+      } catch (err) {
+        console.error('Error:', err);
+        setClientLocation({ lat: 19.4326, lng: -99.1332 });
+      }
+    };
+
+    fetchClientLocation();
+  }, [user]);
 
   // Manejar clic en servicio rápido
   const handleQuickServiceClick = (serviceName: string) => {
@@ -411,6 +464,17 @@ export default function ClientDashboardPage() {
         {leads.length > 0 && (
           <div className="mb-8">
             <QuickActionsWidget onServiceClick={handleQuickServiceClick} />
+          </div>
+        )}
+
+        {/* Widget de Profesionales Cercanos - Full Width */}
+        {clientLocation && (
+          <div className="mb-8">
+            <NearbyProfessionalsWidget
+              clientLat={clientLocation.lat}
+              clientLng={clientLocation.lng}
+              searchRadius={15}
+            />
           </div>
         )}
 
