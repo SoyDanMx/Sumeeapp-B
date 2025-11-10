@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase/client-new";
 import { getEmailConfirmationUrl } from "@/lib/utils";
+import { geocodeAddress } from "@/lib/geocoding";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faUser,
@@ -178,6 +179,24 @@ export default function JoinAsPro() {
           ? otherCityInput.trim() || "Ciudad de México" // Si seleccionó "Otra", usar lo que escribió
           : formData.city || "Ciudad de México";
 
+      // 🗺️ NUEVO: Geocodificar la ubicación automáticamente
+      console.log("📍 Geocodificando ubicación:", realCity);
+      let ubicacion_lat = 19.4326; // Fallback: Centro CDMX
+      let ubicacion_lng = -99.1332;
+      
+      try {
+        const coords = await geocodeAddress(`${realCity}, México`);
+        if (coords) {
+          ubicacion_lat = coords.lat;
+          ubicacion_lng = coords.lng;
+          console.log("✅ Ubicación geocodificada:", coords.displayName);
+        } else {
+          console.log("⚠️ No se pudo geocodificar, usando fallback CDMX");
+        }
+      } catch (geoError) {
+        console.warn("⚠️ Error en geocoding, usando fallback:", geoError);
+      }
+
       const userMetadata: Record<string, any> = {
         full_name: formData.fullName?.trim() || "Nuevo Usuario",
         profession: formData.profession,
@@ -187,6 +206,8 @@ export default function JoinAsPro() {
         whatsapp: normalizedPhone,
         phone_original: formData.phone,
         registration_type: "professional",
+        ubicacion_lat,  // ← NUEVO
+        ubicacion_lng,  // ← NUEVO
       };
 
       // Añadir work_zones según la ciudad seleccionada
