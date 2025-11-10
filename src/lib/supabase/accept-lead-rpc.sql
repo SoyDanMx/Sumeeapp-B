@@ -29,6 +29,9 @@ BEGIN
   SET
     estado = 'aceptado',
     profesional_asignado_id = current_professional,
+    contact_deadline_at = COALESCE(contact_deadline_at, NOW() + interval '2 hours'),
+    appointment_status = 'pendiente_contacto',
+    fecha_asignacion = NOW(),
     fecha_actualizacion = NOW()
   WHERE id = lead_uuid
   RETURNING * INTO updated_lead;
@@ -36,6 +39,15 @@ BEGIN
   IF NOT FOUND THEN
     RAISE EXCEPTION 'Lead no encontrado para el ID: %', lead_uuid;
   END IF;
+
+  INSERT INTO public.lead_events (lead_id, actor_id, actor_role, event_type, payload)
+  VALUES (
+    lead_uuid,
+    current_professional,
+    'profesional',
+    'lead_accepted',
+    jsonb_build_object('contact_deadline_at', updated_lead.contact_deadline_at)
+  );
 
   RETURN updated_lead;
 END;

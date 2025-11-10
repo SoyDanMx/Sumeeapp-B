@@ -33,12 +33,16 @@ export default async function LeadStatusPage({ params }: LeadStatusPageProps) {
   if (adminSupabase) {
     const { data, error } = await adminSupabase
       .from("leads")
-      .select("*")
+      .select("*, lead_reviews(*)")
       .eq("id", leadId)
       .maybeSingle();
 
     if (data) {
-      lead = data as Lead;
+      const { lead_reviews, ...rest } = data as any;
+      lead = {
+        ...(rest as Lead),
+        lead_review: Array.isArray(lead_reviews) ? lead_reviews[0] ?? null : null,
+      };
     } else if (error) {
       console.error("Error fetching lead with admin client:", error);
     }
@@ -47,12 +51,16 @@ export default async function LeadStatusPage({ params }: LeadStatusPageProps) {
   if (!lead) {
     const { data, error } = await supabase
       .from("leads")
-      .select("*")
+      .select("*, lead_reviews(*)")
       .eq("id", leadId)
       .maybeSingle();
 
     if (data) {
-      lead = data as Lead;
+      const { lead_reviews, ...rest } = data as any;
+      lead = {
+        ...(rest as Lead),
+        lead_review: Array.isArray(lead_reviews) ? lead_reviews[0] ?? null : null,
+      };
     } else {
       if (error) {
         console.error("Error fetching lead with server client:", error);

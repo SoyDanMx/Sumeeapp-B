@@ -5,6 +5,7 @@ import { Profesional, Lead } from "@/types/supabase";
 import ProfileChecklist from "./ProfileChecklist";
 import ProfessionalStats from "./ProfessionalStats";
 import ProfessionalTools from "./ProfessionalTools";
+import ProfessionalGamificationCard from "./ProfessionalGamificationCard";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faUser,
@@ -193,6 +194,8 @@ export default function ControlPanel({
               </div>
             </div>
           </div>
+
+          <ProfessionalGamificationCard profesional={profesional} leads={leads} />
 
           {/* Checklist de Perfil */}
           <ProfileChecklist

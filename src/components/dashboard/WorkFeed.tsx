@@ -600,6 +600,7 @@ export default function WorkFeed({
                       isSelected={lead.id === selectedLeadId}
                       onSelect={() => onLeadClick?.(lead.id)}
                       onLeadAccepted={handleLeadAccepted}
+                      onLeadUpdated={handleLeadAccepted}
                     />
                   )
                 )}

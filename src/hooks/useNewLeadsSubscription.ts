@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase/client";
+import type { RealtimeChannel } from "@supabase/supabase-js";
 import { Lead, Profesional } from "@/types/supabase";
 import { matchesProfessionalProfile } from "@/lib/utils/leadMatching";
 import {
@@ -29,7 +30,6 @@ export function useNewLeadsSubscription({
   const [isSubscribed, setIsSubscribed] = useState(false);
 
   useEffect(() => {
-    // No suscribirse si el profesional no está online o no hay datos del profesional
     if (!isOnline || !profesional) {
       setIsSubscribed(false);
       return;
@@ -37,68 +37,122 @@ export function useNewLeadsSubscription({
 
     console.log("🔔 Suscribiéndose a leads nuevos en tiempo real...");
 
-    // Crear canal de suscripción
-    const channel = supabase
-      .channel("new-leads-for-professional")
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "leads",
-          // Filtrar solo leads nuevos (se puede hacer más específico con RLS)
-        },
-        async (payload) => {
-          try {
-            const newLead = payload.new as Lead;
-            console.log("📨 Lead nuevo recibido:", newLead);
+    let isMounted = true;
+    let retryTimeout: NodeJS.Timeout | null = null;
+    let channel: RealtimeChannel | null = null;
 
-            // Verificar si el lead coincide con el perfil del profesional
-            const matches = matchesProfessionalProfile(
-              newLead,
-              profesional,
-              profesionalLat,
-              profesionalLng
-            );
+    const clearRetry = () => {
+      if (retryTimeout) {
+        clearTimeout(retryTimeout);
+        retryTimeout = null;
+      }
+    };
 
-            if (matches) {
-              console.log(
-                "✅ Lead coincide con el perfil. Mostrando alerta..."
+    const cleanupChannel = () => {
+      if (channel) {
+        supabase.removeChannel(channel);
+      }
+      channel = null;
+    };
+
+    const subscribe = () => {
+      cleanupChannel();
+      channel = supabase.channel(
+        `new-leads-for-professional-${profesional.user_id || "anon"}`
+      );
+
+      channel
+        ?.on(
+          "postgres_changes",
+          {
+            event: "INSERT",
+            schema: "public",
+            table: "leads",
+          },
+          async (payload) => {
+            try {
+              const newLead = payload.new as Lead;
+              console.log("📨 Lead nuevo recibido:", newLead);
+
+              const matches = matchesProfessionalProfile(
+                newLead,
+                profesional,
+                profesionalLat,
+                profesionalLng
               );
 
-              // Reproducir sonido de notificación
-              playLeadNotificationSound();
-
-              // Vibrar dispositivo (si está disponible)
-              vibrateDevice();
-
-              // Llamar callback para mostrar el modal
-              onNewLead(newLead);
-            } else {
-              console.log("❌ Lead NO coincide con el perfil. Ignorando...");
+              if (matches) {
+                console.log(
+                  "✅ Lead coincide con el perfil. Mostrando alerta..."
+                );
+                playLeadNotificationSound();
+                vibrateDevice();
+                onNewLead(newLead);
+              } else {
+                console.log("❌ Lead NO coincide con el perfil. Ignorando...");
+              }
+            } catch (error) {
+              console.error("❌ Error procesando lead nuevo:", error);
             }
-          } catch (error) {
-            console.error("❌ Error procesando lead nuevo:", error);
           }
-        }
-      )
-      .subscribe((status) => {
-        if (status === "SUBSCRIBED") {
-          console.log("✅ Suscrito a leads nuevos en tiempo real");
-          setIsSubscribed(true);
-        } else if (status === "CHANNEL_ERROR") {
-          console.error("❌ Error en suscripción a leads nuevos");
-          setIsSubscribed(false);
-        }
-      });
+        )
+        ?.subscribe((status, err) => {
+          if (!isMounted) {
+            return;
+          }
 
-    // Cleanup: Desuscribirse cuando el componente se desmonte o cambien las dependencias
+          switch (status) {
+            case "SUBSCRIBED":
+              console.log("✅ Suscrito a leads nuevos en tiempo real");
+              clearRetry();
+              setIsSubscribed(true);
+              break;
+            case "CHANNEL_ERROR":
+              console.warn(
+                "⚠️ No se pudo suscribir a los leads nuevos:",
+                err?.message || err
+              );
+              setIsSubscribed(false);
+              clearRetry();
+              retryTimeout = setTimeout(() => {
+                if (isMounted) {
+                  console.log("⟳ Reintentando suscripción a leads nuevos...");
+                  subscribe();
+                }
+              }, 5000);
+              break;
+            case "TIMED_OUT":
+              console.warn("⚠️ La conexión en tiempo real se agotó. Reintentando…");
+              setIsSubscribed(false);
+              clearRetry();
+              retryTimeout = setTimeout(() => {
+                if (isMounted) {
+                  subscribe();
+                }
+              }, 3000);
+              break;
+            default:
+              break;
+          }
+        });
+    };
+
+    subscribe();
+
     return () => {
       console.log("🔕 Desuscribiéndose de leads nuevos...");
-      supabase.removeChannel(channel);
+      isMounted = false;
+      clearRetry();
+      cleanupChannel();
       setIsSubscribed(false);
     };
-  }, [isOnline, profesional, profesionalLat, profesionalLng, onNewLead]);
+  }, [
+    isOnline,
+    profesional,
+    profesionalLat,
+    profesionalLng,
+    onNewLead,
+  ]);
 
   return { isSubscribed };
 }
