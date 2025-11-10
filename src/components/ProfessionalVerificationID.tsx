@@ -1211,28 +1211,28 @@ export default function ProfessionalVerificationID({
         </div>
       )}
 
-      {/* Credencial - Diseño mejorado con UX/UI profesional */}
+      {/* Credencial - Diseño mejorado con UX/UI profesional - RESPONSIVE */}
       <div
         ref={credentialRef}
         id="professional-credential"
-        className="relative rounded-3xl shadow-2xl overflow-hidden border-4 max-w-2xl mx-auto"
+        className="relative rounded-2xl md:rounded-3xl shadow-2xl overflow-hidden border-2 md:border-4 max-w-2xl mx-auto"
         style={{
           background: getBackgroundGradientHex(selectedStyle),
           borderColor: getBorderColorHex(selectedStyle),
         }}
       >
-        {/* Header con logo y verificación - Diseño mejorado */}
+        {/* Header con logo y verificación - Diseño mejorado RESPONSIVE */}
         <div
-          className="relative px-8 pt-8 pb-6 border-b-2"
+          className="relative px-4 md:px-8 pt-4 md:pt-8 pb-3 md:pb-6 border-b-2"
           style={{
             borderBottomColor: getBorderColorHex(selectedStyle),
             backgroundColor: "rgba(255, 255, 255, 0.8)",
             backdropFilter: "blur(8px)",
           }}
         >
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <div className="relative w-20 h-20 flex-shrink-0">
+          <div className="flex items-center justify-between gap-2 md:gap-0">
+            <div className="flex items-center space-x-2 md:space-x-4">
+              <div className="relative w-12 h-12 md:w-20 md:h-20 flex-shrink-0">
                 <Image
                   src="/logo.png"
                   alt="Sumee Logo"
@@ -1244,34 +1244,35 @@ export default function ProfessionalVerificationID({
             </div>
             <div>
                 <h3
-                  className="text-3xl font-black tracking-tight"
+                  className="text-lg md:text-3xl font-black tracking-tight"
                   style={{ color: styleConfig.primaryColor }}
                 >
                   Sumee
                 </h3>
-                <p className="text-xs text-gray-600 font-medium">
+                <p className="text-[10px] md:text-xs text-gray-600 font-medium hidden sm:block">
                   Plataforma de Servicios Profesionales
                 </p>
             </div>
           </div>
             <div
-              className="flex items-center space-x-2 text-white px-5 py-2.5 rounded-full shadow-lg font-bold text-sm"
+              className="flex items-center space-x-1 md:space-x-2 text-white px-2 md:px-5 py-1.5 md:py-2.5 rounded-full shadow-lg font-bold text-xs md:text-sm flex-shrink-0"
               style={{
                 background: `linear-gradient(135deg, ${styleConfig.accentColor}, ${styleConfig.primaryColor})`,
               }}
             >
-              <FontAwesomeIcon icon={faShieldAlt} className="text-lg" />
-              <span>Verificado</span>
+              <FontAwesomeIcon icon={faShieldAlt} className="text-sm md:text-lg" />
+              <span className="hidden sm:inline">Verificado</span>
+              <span className="sm:hidden">✓</span>
             </div>
           </div>
         </div>
 
-        {/* Contenido principal - Diseño mejorado */}
-        <div className="p-8 space-y-6">
-          {/* Foto y nombre - Diseño mejorado */}
-          <div className="flex items-start space-x-6">
+        {/* Contenido principal - Diseño mejorado RESPONSIVE */}
+        <div className="p-4 md:p-8 space-y-4 md:space-y-6">
+          {/* Foto y nombre - Diseño mejorado RESPONSIVE */}
+          <div className="flex items-start space-x-3 md:space-x-6">
             <div
-              className="relative w-36 h-36 rounded-2xl overflow-hidden border-4 shadow-xl flex-shrink-0"
+              className="relative w-20 h-20 md:w-36 md:h-36 rounded-xl md:rounded-2xl overflow-hidden border-2 md:border-4 shadow-xl flex-shrink-0"
               style={{ borderColor: styleConfig.primaryColor }}
             >
               {profesional.avatar_url ? (
@@ -1284,7 +1285,7 @@ export default function ProfessionalVerificationID({
                 />
               ) : (
                 <div
-                  className="w-full h-full flex items-center justify-center text-white text-5xl font-black"
+                  className="w-full h-full flex items-center justify-center text-white text-2xl md:text-5xl font-black"
                   style={{
                     background: `linear-gradient(135deg, ${styleConfig.primaryColor}, ${styleConfig.secondaryColor})`,
                   }}
@@ -1294,29 +1295,29 @@ export default function ProfessionalVerificationID({
               )}
             </div>
             <div className="flex-1 min-w-0">
-              <h2 className="text-3xl font-black text-gray-900 mb-3 leading-tight">
+              <h2 className="text-lg md:text-3xl font-black text-gray-900 mb-2 md:mb-3 leading-tight break-words">
                 {profesional.full_name || "Nombre no disponible"}
               </h2>
               {profesional.numero_imss && (
-                <div className="flex items-center space-x-2 text-gray-600 mb-2">
+                <div className="flex items-center space-x-1 md:space-x-2 text-gray-600 mb-1 md:mb-2">
                   <FontAwesomeIcon
                     icon={faIdCard}
-                    className="text-sm"
+                    className="text-xs md:text-sm"
                     style={{ color: styleConfig.primaryColor }}
                   />
-                  <span className="text-sm font-medium">
+                  <span className="text-xs md:text-sm font-medium">
                     IMSS: {profesional.numero_imss}
                   </span>
                 </div>
               )}
               {completedLeads > 0 && (
-                <div className="flex items-center space-x-2 text-gray-600">
+                <div className="flex items-center space-x-1 md:space-x-2 text-gray-600">
                   <FontAwesomeIcon
                     icon={faBriefcase}
-                    className="text-sm"
+                    className="text-xs md:text-sm"
                     style={{ color: styleConfig.primaryColor }}
                   />
-                  <span className="text-sm font-semibold">
+                  <span className="text-xs md:text-sm font-semibold">
                     {completedLeads} trabajo{completedLeads !== 1 ? "s" : ""}{" "}
                     completado{completedLeads !== 1 ? "s" : ""}
                   </span>
@@ -1325,32 +1326,32 @@ export default function ProfessionalVerificationID({
             </div>
           </div>
           
-          {/* Grid de métricas - Calificación y Tasa de Aceptación */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Calificación Promedio - SIEMPRE 5 estrellas */}
+          {/* Grid de métricas - Calificación y Tasa de Aceptación RESPONSIVE */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
+            {/* Calificación Promedio - SIEMPRE 5 estrellas RESPONSIVE */}
             <div
-              className="rounded-2xl p-5 border-2 border-yellow-200 shadow-lg"
+              className="rounded-xl md:rounded-2xl p-3 md:p-5 border-2 border-yellow-200 shadow-lg"
               style={{
                 backgroundColor: "rgba(255, 255, 255, 0.9)",
                 backdropFilter: "blur(8px)",
               }}
             >
-              <div className="flex items-center justify-between mb-3">
-                <p className="text-xs font-bold text-gray-600 uppercase tracking-wide">
+              <div className="flex items-center justify-between mb-2 md:mb-3">
+                <p className="text-[10px] md:text-xs font-bold text-gray-600 uppercase tracking-wide">
                   Calificación
                 </p>
                 <FontAwesomeIcon
                   icon={faStar}
-                  className="text-yellow-400 text-lg"
+                  className="text-yellow-400 text-sm md:text-lg"
                 />
               </div>
-              <div className="flex items-center space-x-2 mb-2">
-                {/* SIEMPRE mostrar 5 estrellas */}
+              <div className="flex items-center space-x-1 md:space-x-2 mb-1 md:mb-2">
+                {/* SIEMPRE mostrar 5 estrellas RESPONSIVE */}
                 {Array.from({ length: 5 }, (_, i) => (
                     <FontAwesomeIcon 
                       key={i}
                       icon={faStar} 
-                    className={`text-2xl ${
+                    className={`text-base md:text-2xl ${
                       i < fullStars
                         ? "text-yellow-400"
                         : i === fullStars && hasHalfStar
@@ -1360,39 +1361,39 @@ export default function ProfessionalVerificationID({
                     />
                   ))}
                 </div>
-              <p className="text-2xl font-black text-gray-900">
+              <p className="text-xl md:text-2xl font-black text-gray-900">
                 {rating.toFixed(1)}{" "}
-                <span className="text-sm font-normal text-gray-500">/ 5.0</span>
+                <span className="text-xs md:text-sm font-normal text-gray-500">/ 5.0</span>
               </p>
                 </div>
 
-            {/* Tasa de Aceptación - Nuevo diseño mejorado */}
+            {/* Tasa de Aceptación - Nuevo diseño mejorado RESPONSIVE */}
             <div
-              className="rounded-2xl p-5 border-2 border-green-200 shadow-lg"
+              className="rounded-xl md:rounded-2xl p-3 md:p-5 border-2 border-green-200 shadow-lg"
               style={{
                 backgroundColor: "rgba(255, 255, 255, 0.9)",
                 backdropFilter: "blur(8px)",
               }}
             >
-              <div className="flex items-center justify-between mb-3">
-                <p className="text-xs font-bold text-gray-600 uppercase tracking-wide">
+              <div className="flex items-center justify-between mb-2 md:mb-3">
+                <p className="text-[10px] md:text-xs font-bold text-gray-600 uppercase tracking-wide">
                   Tasa de Aceptación
                 </p>
                 <FontAwesomeIcon
                   icon={faPercent}
-                  className="text-green-500 text-lg"
+                  className="text-green-500 text-sm md:text-lg"
                 />
                 </div>
-              <div className="flex items-center space-x-3 mb-2">
+              <div className="flex items-center space-x-2 md:space-x-3 mb-1 md:mb-2">
                 <p
-                  className="text-4xl font-black"
+                  className="text-2xl md:text-4xl font-black"
                   style={{ color: styleConfig.accentColor }}
                 >
                   {acceptanceRate}%
                 </p>
                 {totalLeadsAvailable > 0 && (
                   <div className="flex-1">
-                    <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                    <div className="h-1.5 md:h-2 bg-gray-200 rounded-full overflow-hidden">
                       <div
                         className="h-full rounded-full transition-all duration-500"
                         style={{
@@ -1416,33 +1417,33 @@ export default function ProfessionalVerificationID({
           {/* Especialidades - CON "Especialista en" */}
           {areasServicio.length > 0 && (
             <div
-              className="rounded-2xl p-5 border-2 shadow-lg"
+              className="rounded-xl md:rounded-2xl p-3 md:p-5 border-2 shadow-lg"
               style={{
                 borderColor: styleConfig.primaryColor,
                 backgroundColor: "rgba(255, 255, 255, 0.9)",
                 backdropFilter: "blur(8px)",
               }}
             >
-              <div className="flex items-center space-x-3 mb-4">
+              <div className="flex items-center space-x-2 md:space-x-3 mb-3 md:mb-4">
                 <FontAwesomeIcon
                   icon={faBriefcase}
-                  className="text-xl"
+                  className="text-base md:text-xl"
                   style={{ color: styleConfig.primaryColor }}
                 />
                 <div>
-                  <p className="text-sm font-bold text-gray-700">
+                  <p className="text-xs md:text-sm font-bold text-gray-700">
                     Especialista en
                   </p>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-[10px] md:text-xs text-gray-500 hidden sm:block">
                     Áreas de servicio y especialidades
                   </p>
                 </div>
               </div>
-              <div className="flex flex-wrap gap-2.5">
+              <div className="flex flex-wrap gap-2 md:gap-2.5">
                 {areasServicio.map((area, index) => (
                   <span
                     key={index}
-                    className="px-4 py-2 rounded-xl text-sm font-bold text-white shadow-md"
+                    className="px-2 md:px-4 py-1 md:py-2 rounded-lg md:rounded-xl text-xs md:text-sm font-bold text-white shadow-md"
                     style={{
                       background: `linear-gradient(135deg, ${styleConfig.primaryColor}, ${styleConfig.secondaryColor})`,
                     }}
@@ -1454,38 +1455,38 @@ export default function ProfessionalVerificationID({
             </div>
           )}
 
-          {/* Zonas de Trabajo - NUEVO */}
+          {/* Zonas de Trabajo - NUEVO RESPONSIVE */}
           {workZones.length > 0 && (
             <div
-              className="rounded-2xl p-5 border-2 border-blue-200 shadow-lg"
+              className="rounded-xl md:rounded-2xl p-3 md:p-5 border-2 border-blue-200 shadow-lg"
               style={{
                 backgroundColor: "rgba(255, 255, 255, 0.9)",
                 backdropFilter: "blur(8px)",
               }}
             >
-            <div className="flex items-center space-x-3 mb-4">
+            <div className="flex items-center space-x-2 md:space-x-3 mb-3 md:mb-4">
                 <FontAwesomeIcon
                   icon={faMap}
-                  className="text-xl text-blue-600"
+                  className="text-base md:text-xl text-blue-600"
                 />
                 <div>
-                  <p className="text-sm font-bold text-gray-700">
+                  <p className="text-xs md:text-sm font-bold text-gray-700">
                     Zonas de Trabajo
                   </p>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-[10px] md:text-xs text-gray-500 hidden sm:block">
                     Ubicaciones donde presto servicios
                   </p>
               </div>
             </div>
-              <div className="flex flex-wrap gap-2.5">
+              <div className="flex flex-wrap gap-2 md:gap-2.5">
                 {workZones.map((zone, index) => (
                 <span 
                   key={index}
-                    className="px-4 py-2 rounded-xl text-sm font-semibold bg-blue-50 text-blue-700 border-2 border-blue-200"
+                    className="px-2 md:px-4 py-1 md:py-2 rounded-lg md:rounded-xl text-xs md:text-sm font-semibold bg-blue-50 text-blue-700 border-2 border-blue-200"
                   >
                     <FontAwesomeIcon
                       icon={faMapMarkerAlt}
-                      className="mr-2 text-blue-500"
+                      className="mr-1 md:mr-2 text-blue-500 text-xs md:text-sm"
                     />
                     {zone}
                 </span>
@@ -1494,14 +1495,14 @@ export default function ProfessionalVerificationID({
             </div>
           )}
 
-          {/* QR Code y fecha - Diseño mejorado */}
+          {/* QR Code y fecha - Diseño mejorado RESPONSIVE */}
           <div
-            className="flex items-center justify-between pt-6 border-t-2"
+            className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 md:pt-6 border-t-2"
             style={{
               borderTopColor: getBorderColorHex(selectedStyle),
             }}
           >
-            <div className="text-sm">
+            <div className="text-xs md:text-sm text-center sm:text-left">
               <p className="text-gray-500 font-medium mb-1">
                 Fecha de verificación:
               </p>
@@ -1514,23 +1515,32 @@ export default function ProfessionalVerificationID({
               </p>
                 </div>
             <div className="flex flex-col items-center space-y-2">
-              <div className="bg-white p-3 rounded-xl shadow-lg border-2 border-gray-200">
+              <div className="bg-white p-2 md:p-3 rounded-lg md:rounded-xl shadow-lg border-2 border-gray-200">
+                <QRCodeSVG
+                  value={professionalUrl}
+                  size={80}
+                  className="md:hidden"
+                  level="H"
+                  bgColor="#FFFFFF"
+                  fgColor={styleConfig.primaryColor}
+                />
                 <QRCodeSVG
                   value={professionalUrl}
                   size={100}
+                  className="hidden md:block"
                   level="H"
                   bgColor="#FFFFFF"
                   fgColor={styleConfig.primaryColor}
                 />
                 </div>
               <div
-                className="flex items-center space-x-2"
+                className="flex items-center space-x-1 md:space-x-2"
                 style={{ color: styleConfig.primaryColor }}
               >
-                <FontAwesomeIcon icon={faQrcode} className="text-base" />
-                <span className="text-xs font-bold">Código QR</span>
+                <FontAwesomeIcon icon={faQrcode} className="text-xs md:text-base" />
+                <span className="text-[10px] md:text-xs font-bold">Código QR</span>
               </div>
-              <p className="text-xs text-gray-500 text-center max-w-[100px] font-medium">
+              <p className="text-[10px] md:text-xs text-gray-500 text-center max-w-[100px] font-medium">
                 Escanea para verificar
               </p>
               </div>
@@ -1538,12 +1548,12 @@ export default function ProfessionalVerificationID({
             </div>
           </div>
 
-      {/* Botones de acción - Diseño mejorado */}
-      <div className="flex flex-wrap items-center justify-center gap-4">
+      {/* Botones de acción - Diseño mejorado RESPONSIVE */}
+      <div className="flex flex-col sm:flex-row items-center justify-center gap-3 md:gap-4 px-4 md:px-0">
         <button
           onClick={handleDownloadImage}
           disabled={isDownloading !== null}
-          className="flex items-center space-x-3 px-6 py-3.5 text-white rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed font-bold"
+          className="w-full sm:w-auto flex items-center justify-center space-x-2 md:space-x-3 px-4 md:px-6 py-2.5 md:py-3.5 text-white rounded-lg md:rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed font-bold text-sm md:text-base"
           style={{
             background:
               isDownloading === "image"
@@ -1553,12 +1563,12 @@ export default function ProfessionalVerificationID({
         >
           {isDownloading === "image" ? (
             <>
-              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+              <div className="w-4 h-4 md:w-5 md:h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
               <span>Generando...</span>
             </>
           ) : (
             <>
-              <FontAwesomeIcon icon={faDownload} />
+              <FontAwesomeIcon icon={faDownload} className="text-sm md:text-base" />
               <span>Descargar Imagen</span>
             </>
           )}
@@ -1566,7 +1576,7 @@ export default function ProfessionalVerificationID({
         <button
           onClick={handleDownloadPDF}
           disabled={isDownloading !== null}
-          className="flex items-center space-x-3 px-6 py-3.5 text-white rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed font-bold"
+          className="w-full sm:w-auto flex items-center justify-center space-x-2 md:space-x-3 px-4 md:px-6 py-2.5 md:py-3.5 text-white rounded-lg md:rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed font-bold text-sm md:text-base"
           style={{
             background: "linear-gradient(90deg, #dc2626 0%, #ec4899 100%)",
           }}
