@@ -42,6 +42,8 @@ export default function RegistroPage() {
           data: {
             full_name: fullName,
             registration_type: userType, // Marcar el tipo de registro
+            role: userType === 'client' ? 'client' : 'profesional',
+            plan: userType === 'client' ? 'express_free' : undefined // Plan Express gratuito solo para clientes
           },
         },
       });

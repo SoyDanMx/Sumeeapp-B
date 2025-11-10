@@ -244,15 +244,17 @@ export const Hero = () => {
 
                 {/* Mensaje principal - Tamaños mejorados para móviles */}
                 <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-4 sm:mb-5 md:mb-6 leading-tight text-white drop-shadow-2xl">
-                  <span className="text-orange-400">La Solución Confiable</span>
+                  <span className="text-orange-400">Tu emergencia</span>
                   <br />
-                  <span className="text-white">para tu Hogar.</span>
+                  <span className="text-white">de plomería o electricidad,</span>
+                  <br />
+                  <span className="text-blue-300">resuelta en minutos.</span>
                 </h1>
 
                 <p className="text-lg sm:text-xl md:text-2xl lg:text-2xl text-blue-100 mb-6 sm:mb-7 md:mb-8 leading-relaxed drop-shadow-lg">
-                  Deja de buscar. Encuentra al técnico perfecto.
+                  Técnicos certificados asignados al instante para emergencias. Gestionamos tus proyectos programados (A/C, CCTV y más) con total confianza.
                   <span className="block mt-3 sm:mt-4 text-green-300 font-semibold text-xl sm:text-2xl md:text-2xl">
-                    Tu primera visita de revisión es gratis.
+                    Regístrate gratis.
                   </span>
                 </p>
 

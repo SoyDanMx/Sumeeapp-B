@@ -62,14 +62,15 @@ export default function ClientRegistrationForm() {
     }
 
     try {
-      // Registrar usuario con role 'client'
+      // Registrar usuario con role 'client' y plan Express por defecto
       const { data, error: authError } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
         options: {
           data: {
             full_name: formData.fullName,
-            role: 'client' // Asegurar que se registre como cliente
+            role: 'client', // Asegurar que se registre como cliente
+            plan: 'express_free' // Plan Express gratuito por defecto
           }
         }
       });
