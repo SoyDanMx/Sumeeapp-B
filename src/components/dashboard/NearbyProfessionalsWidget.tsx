@@ -9,9 +9,9 @@ import {
   faFilter,
   faUser,
   faStar,
-  faWhatsapp,
   faMapMarkerAlt,
 } from "@fortawesome/free-solid-svg-icons";
+import { faWhatsapp } from "@fortawesome/free-brands-svg-icons";
 
 // Importar el mapa dinámicamente para evitar SSR issues
 const ClientProfessionalsMapView = dynamic(

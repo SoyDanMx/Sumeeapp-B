@@ -16,8 +16,8 @@ import {
   faMapMarkerAlt,
   faUser,
   faStar,
-  faWhatsapp,
 } from "@fortawesome/free-solid-svg-icons";
+import { faWhatsapp } from "@fortawesome/free-brands-svg-icons";
 import { calculateDistance } from "@/lib/calculateDistance";
 import { supabase } from "@/lib/supabase/client";
 
