@@ -12,6 +12,7 @@ import UpcomingServiceWidget from "@/components/dashboard/UpcomingServiceWidget"
 import QuickActionsWidget from "@/components/dashboard/QuickActionsWidget";
 import RecentActivityWidget from "@/components/dashboard/RecentActivityWidget";
 import NearbyProfessionalsWidget from "@/components/dashboard/NearbyProfessionalsWidget";
+import ExploreMapCTA from "@/components/dashboard/ExploreMapCTA";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faSpinner,
@@ -467,16 +468,10 @@ export default function ClientDashboardPage() {
           </div>
         )}
 
-        {/* Widget de Profesionales Cercanos - Full Width */}
-        {clientLocation && (
-          <div className="mb-8">
-            <NearbyProfessionalsWidget
-              clientLat={clientLocation.lat}
-              clientLng={clientLocation.lng}
-              searchRadius={15}
-            />
-          </div>
-        )}
+        {/* CTA: Explorar Mapa Interactivo - Full Width */}
+        <div className="mb-8">
+          <ExploreMapCTA professionalCount={50} maxRadius={15} />
+        </div>
 
         {/* Lista de Todas las Solicitudes */}
         {leads.length > 0 ? (
