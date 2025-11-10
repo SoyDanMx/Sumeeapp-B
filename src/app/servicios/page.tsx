@@ -41,6 +41,7 @@ const SERVICES_DATA = [
     icon_name: "faWrench",
     is_popular: true,
     category: "Urgencias",
+    serviceType: "express",
     thumbnail_image_url: "/images/services/plomeria.jpg",
     background_color: "#3B82F6",
   },
@@ -52,6 +53,7 @@ const SERVICES_DATA = [
     icon_name: "faLightbulb",
     is_popular: true,
     category: "Urgencias",
+    serviceType: "express",
     thumbnail_image_url: "/images/services/electricidad.jpg",
     background_color: "#F59E0B",
   },
@@ -64,6 +66,7 @@ const SERVICES_DATA = [
     icon_name: "faFan",
     is_popular: true,
     category: "Mantenimiento",
+    serviceType: "pro",
     thumbnail_image_url: "/images/services/aire-acondicionado.jpg",
     background_color: "#10B981",
   },
@@ -75,6 +78,7 @@ const SERVICES_DATA = [
     icon_name: "faVideo",
     is_popular: false,
     category: "Tecnología",
+    serviceType: "pro",
     thumbnail_image_url: "/images/services/cctv.jpg",
     background_color: "#8B5CF6",
   },
@@ -86,6 +90,7 @@ const SERVICES_DATA = [
     icon_name: "faHammer",
     is_popular: false,
     category: "Mantenimiento",
+    serviceType: "pro",
     thumbnail_image_url: "/images/services/carpinteria.jpg",
     background_color: "#D97706",
   },
@@ -97,6 +102,7 @@ const SERVICES_DATA = [
     icon_name: "faPaintRoller",
     is_popular: false,
     category: "Mantenimiento",
+    serviceType: "pro",
     thumbnail_image_url: "/images/services/pintura.jpg",
     background_color: "#EC4899",
   },
@@ -108,6 +114,7 @@ const SERVICES_DATA = [
     icon_name: "faBroom",
     is_popular: false,
     category: "Mantenimiento",
+    serviceType: "pro",
     thumbnail_image_url: "/images/services/limpieza.jpg",
     background_color: "#06B6D4",
   },
@@ -119,6 +126,7 @@ const SERVICES_DATA = [
     icon_name: "faLeaf",
     is_popular: false,
     category: "Mantenimiento",
+    serviceType: "pro",
     thumbnail_image_url: "/images/services/jardineria.jpg",
     background_color: "#22C55E",
   },
@@ -130,6 +138,7 @@ const SERVICES_DATA = [
     icon_name: "faWifi",
     is_popular: false,
     category: "Tecnología",
+    serviceType: "pro",
     thumbnail_image_url: "/images/services/wifi.jpg",
     background_color: "#6366F1",
   },
@@ -141,6 +150,7 @@ const SERVICES_DATA = [
     icon_name: "faBug",
     is_popular: false,
     category: "Especializado",
+    serviceType: "pro",
     thumbnail_image_url: "/images/services/fumigacion.jpg",
     background_color: "#EF4444",
   },
@@ -152,6 +162,7 @@ const SERVICES_DATA = [
     icon_name: "faHardHat",
     is_popular: false,
     category: "Construcción",
+    serviceType: "pro",
     thumbnail_image_url: "/images/services/tablaroca.jpg",
     background_color: "#F97316",
   },
@@ -163,6 +174,7 @@ const SERVICES_DATA = [
     icon_name: "faHammer",
     is_popular: false,
     category: "Construcción",
+    serviceType: "pro",
     thumbnail_image_url: "/images/services/construccion.jpg",
     background_color: "#84CC16",
   },
@@ -175,6 +187,7 @@ const SERVICES_DATA = [
     icon_name: "faBuilding",
     is_popular: false,
     category: "Especializado",
+    serviceType: "pro",
     thumbnail_image_url: "/images/services/arquitectos.jpg",
     background_color: "#6366F1",
   },
@@ -460,9 +473,7 @@ export default function ServicesPage() {
               Todos Nuestros Servicios
             </h1>
             <p className="text-xl text-blue-100 max-w-3xl mx-auto mb-12">
-              Encuentra la solución perfecta para tu hogar. Desde urgencias
-              hasta proyectos especializados, tenemos el técnico perfecto para
-              ti.
+              Ofrecemos servicios <strong>Express</strong> para emergencias y <strong>Pro</strong> para tus proyectos programados. Tenemos el técnico perfecto para ti.
             </p>
 
             {/* Buscador Principal Mejorado */}

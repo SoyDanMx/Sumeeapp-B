@@ -72,10 +72,22 @@ export default function ServiceCard({ service }: ServiceCardProps) {
 
         {/* Contenido de la tarjeta */}
         <div className="p-6 bg-white">
-          {/* Nombre del Servicio */}
-          <h3 className="text-2xl font-bold text-gray-900 mb-3 group-hover:text-blue-600 transition-colors">
-            {service.name}
-          </h3>
+          {/* Nombre del Servicio con Badge */}
+          <div className="flex items-center gap-2 mb-3">
+            <h3 className="text-2xl font-bold text-gray-900 group-hover:text-blue-600 transition-colors">
+              {service.name}
+            </h3>
+            {service.serviceType === 'express' && (
+              <span className="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-700 border border-blue-200">
+                Express
+              </span>
+            )}
+            {service.serviceType === 'pro' && (
+              <span className="px-2 py-1 text-xs font-semibold rounded-full bg-purple-100 text-purple-700 border border-purple-200">
+                Pro
+              </span>
+            )}
+          </div>
           
           {/* Descripción */}
           <p className="text-gray-600 text-base flex-grow mb-6 leading-relaxed">

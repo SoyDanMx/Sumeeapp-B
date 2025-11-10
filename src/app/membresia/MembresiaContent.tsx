@@ -62,14 +62,16 @@ export default function MembresiaContent() {
 
   const pricingPlans = [
     {
-      name: 'Plan Gratuito',
-      price: '$0',
-      period: 'MXN / siempre gratis',
-      description: 'Perfecto para probar nuestros servicios',
+      name: 'Sumee Express',
+      price: 'GRATIS',
+      period: 'siempre',
+      description: 'La solución más rápida para tus emergencias de Plomería y Electricidad.',
       features: [
-        { icon: faUsers, text: '1 solicitud de servicio por mes' },
-        { icon: faCheck, text: 'Acceso básico a técnicos' },
-        { icon: faMobile, text: 'Seguimiento básico en la App' },
+        { icon: faInfinity, text: 'Solicitudes ILIMITADAS (para servicios Express)' },
+        { icon: faCheck, text: 'Acceso a técnicos verificados' },
+        { icon: faCamera, text: 'Diagnóstico inicial por Foto/Video' },
+        { icon: faMobile, text: 'Seguimiento completo en la App (Dashboard)' },
+        { icon: faShieldAlt, text: 'Garantía Sumee de 30 días' },
         { icon: faHeadset, text: 'Soporte por chat' }
       ],
       popular: false,
@@ -78,36 +80,20 @@ export default function MembresiaContent() {
       ctaLink: '/registro-cliente'
     },
     {
-      name: 'Plan Básico',
-      price: '$299',
-      period: 'MXN / anual',
-      description: 'Perfecto para reparaciones y servicios ocasionales - Suscripción anual',
-      features: [
-        { icon: faUsers, text: 'Hasta 5 solicitudes de servicio por mes' },
-        { icon: faCheck, text: 'Acceso a técnicos verificados' },
-        { icon: faCamera, text: 'Diagnóstico inicial por Foto/Video' },
-        { icon: faMobile, text: 'Seguimiento completo en la App' },
-        { icon: faShieldAlt, text: 'Garantía Sumee de 30 días' },
-        { icon: faHeadset, text: 'Soporte por chat' }
-      ],
-      popular: false,
-      buyButtonId: 'buy_btn_1SLx83E2shKTNR9MwlSZog2K'
-    },
-    {
-      name: 'Plan Premium',
+      name: 'Sumee Pro',
       price: '$499',
-      period: 'MXN / anual',
-      description: 'La tranquilidad total para tu hogar u oficina',
-      subtitle: 'Recomendado para Administradores de Edificios, Contratistas, Arquitectos, Ingenieros y más',
+      period: 'Anual',
+      description: 'La tranquilidad total para tu hogar, oficina o edificio. Recomendado para administradores y proyectos.',
       features: [
-        { icon: faInfinity, text: 'Solicitudes de servicio ilimitadas' },
+        { icon: faCheck, text: 'Todo lo de Express, y además:' },
+        { icon: faInfinity, text: 'Solicitudes de servicio ilimitadas (Express y Pro)' },
         { icon: faClock, text: 'Prioridad en asignación y respuesta' },
-        { icon: faTrophy, text: 'Acceso exclusivo a técnicos "Sumee Pro"' },
+        { icon: faTrophy, text: 'Acceso exclusivo a técnicos "Sumee Pro" (Elite)' },
         { icon: faShieldAlt, text: 'Garantía extendida Sumee de 90 días' },
-        { icon: faConciergeBell, text: 'Servicio de Conserjería (Concierge)' },
+        { icon: faConciergeBell, text: 'Servicio de Conserjería (Concierge) para proyectos' },
         { icon: faUsers, text: 'Múltiples cotizaciones para proyectos grandes' },
         { icon: faHistory, text: 'Historial de Mantenimiento del Hogar' },
-        { icon: faPhone, text: 'Soporte prioritario por teléfono y WhatsApp 24/7' }
+        { icon: faPhone, text: 'Soporte prioritario 24/7 (Teléfono y WhatsApp)' }
       ],
       popular: true,
       buyButtonId: 'buy_btn_1SLwlqE2shKTNR9MmwebXHlB'
@@ -134,10 +120,10 @@ export default function MembresiaContent() {
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
           <div className="text-center">
             <h1 className="text-4xl md:text-6xl font-bold text-white mb-6">
-              Membresía <span className="text-yellow-300">Premium</span>
+              Sumee <span className="text-yellow-300">Express</span> y <span className="text-purple-300">Pro</span>
             </h1>
             <p className="text-xl md:text-2xl text-blue-100 mb-8 max-w-3xl mx-auto">
-              Accede a los mejores técnicos de Ciudad de México con garantía total y respuesta en 2 horas
+              Soluciones Express para emergencias y Pro para tus proyectos. Elige el plan perfecto para ti.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link 
@@ -162,10 +148,10 @@ export default function MembresiaContent() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              ¿Por qué elegir Sumee Premium?
+              ¿Por qué elegir Sumee?
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              La experiencia más completa para el cuidado de tu hogar
+              Respuesta rápida para emergencias y soluciones completas para tus proyectos
             </p>
           </div>
           
@@ -199,7 +185,7 @@ export default function MembresiaContent() {
             </p>
           </div>
           
-          <div className="grid md:grid-cols-3 gap-8 max-w-7xl mx-auto">
+          <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
             {pricingPlans.map((plan, index) => (
               <div 
                 key={index} 
@@ -230,11 +216,6 @@ export default function MembresiaContent() {
                   <p className="text-sm text-gray-500">
                     {plan.description}
                   </p>
-                  {plan.subtitle && (
-                    <p className="text-xs text-blue-600 font-medium mt-2">
-                      {plan.subtitle}
-                    </p>
-                  )}
                 </div>
                 
                 <div className="space-y-4 mb-8">
