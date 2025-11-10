@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Completa tu Perfil en Sumee App</title>
+    <style>
+        /* Reset básico */
+        body { margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f4f4f4; }
+        table { border-collapse: collapse; }
+        img { border: 0; display: block; }
+        
+        /* Contenedor principal */
+        .email-wrapper { width: 100%; background-color: #f4f4f4; padding: 20px 0; }
+        .email-container { max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        
+        /* Hero section */
+        .hero { background: linear-gradient(135deg, #8a2be2 0%, #4b0082 100%); padding: 40px 30px; text-align: center; color: #ffffff; }
+        .hero-logo { width: 60px; height: 60px; margin: 0 auto 20px; }
+        .hero h1 { margin: 0 0 10px 0; font-size: 32px; font-weight: bold; }
+        .hero p { margin: 0; font-size: 18px; line-height: 1.4; }
+        
+        /* Content */
+        .content { padding: 30px; }
+        .content p { margin: 0 0 15px 0; font-size: 16px; line-height: 1.6; color: #333333; }
+        
+        /* Cards de datos faltantes */
+        .missing-data-card { background-color: #f9f9f9; border-left: 5px solid #25D366; border-radius: 8px; padding: 20px; margin: 15px 0; }
+        .missing-data-card.location { border-left-color: #FF5722; }
+        .missing-data-card h3 { margin: 0 0 10px 0; font-size: 18px; color: #333333; }
+        .missing-data-card p { margin: 0; font-size: 15px; color: #555555; }
+        .icon { display: inline-block; font-size: 24px; margin-right: 10px; }
+        
+        /* CTA Button */
+        .cta-container { text-align: center; padding: 30px; }
+        .cta-button { display: inline-block; background: linear-gradient(90deg, #8a2be2 0%, #6a0dad 100%); color: #ffffff; text-decoration: none; padding: 18px 40px; border-radius: 8px; font-size: 18px; font-weight: bold; box-shadow: 0 4px 10px rgba(138, 43, 226, 0.3); transition: all 0.3s ease; }
+        .cta-button:hover { background: linear-gradient(90deg, #6a0dad 0%, #4b0082 100%); box-shadow: 0 6px 15px rgba(138, 43, 226, 0.4); }
+        
+        /* Urgency banner */
+        .urgency-banner { background-color: #FFFBEB; border: 2px solid #FCD34D; border-radius: 8px; padding: 20px; margin: 20px 0; text-align: center; }
+        .urgency-banner p { margin: 0; font-size: 16px; color: #92400E; font-weight: bold; }
+        
+        /* Benefits list */
+        .benefits { margin: 20px 0; }
+        .benefit-item { display: flex; align-items: flex-start; margin-bottom: 15px; }
+        .benefit-icon { width: 30px; height: 30px; background-color: #4CAF50; border-radius: 50%; color: white; display: flex; align-items: center; justify-content: center; margin-right: 15px; flex-shrink: 0; font-size: 18px; font-weight: bold; }
+        .benefit-text { flex: 1; font-size: 15px; color: #555555; line-height: 1.5; }
+        
+        /* Footer */
+        .footer { background-color: #f9f9f9; padding: 20px 30px; text-align: center; font-size: 12px; color: #999999; line-height: 1.6; }
+        .footer a { color: #8a2be2; text-decoration: none; }
+        
+        /* Responsive */
+        @media only screen and (max-width: 600px) {
+            .hero h1 { font-size: 24px; }
+            .hero p { font-size: 16px; }
+            .content { padding: 20px; }
+            .cta-button { padding: 15px 30px; font-size: 16px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="email-wrapper">
+        <div class="email-container">
+            <!-- Hero Section -->
+            <div class="hero">
+                <img src="https://sumeeapp.com/logo.png" alt="Sumee Logo" class="hero-logo">
+                <h1>¡Hola, [NOMBRE]!</h1>
+                <p>Tu perfil está al <strong>85%</strong>. ¡Falta poco para el éxito!</p>
+            </div>
+            
+            <!-- Main Content -->
+            <div class="content">
+                <p>Vemos que tu perfil de profesional en Sumee App está casi listo para triunfar, ¡pero faltan un par de detalles clave!</p>
+                
+                <p>Completar tu perfil no es solo "llenar casillas", es la diferencia entre ser visible para docenas de clientes... o no serlo.</p>
+                
+                <!-- Card: WhatsApp Faltante -->
+                <div class="missing-data-card">
+                    <h3><span class="icon">💬</span> Dato Faltante: Tu WhatsApp</h3>
+                    <p><strong>¿Por qué añadirlo?</strong> Es la vía de contacto #1. Los clientes quieren respuestas inmediatas. Al añadir tu WhatsApp, permites que te contacten al instante, cerrando tratos más rápido.</p>
+                </div>
+                
+                <!-- Card: Ubicación Faltante -->
+                <div class="missing-data-card location">
+                    <h3><span class="icon">📍</span> Dato Faltante: Tu Zona de Trabajo</h3>
+                    <p><strong>¿Por qué añadirla?</strong> ¡Para que te encuentren los clientes correctos! Al definir tu zona, aparecerás en las búsquedas de clientes que están cerca de ti y buscan activamente tus servicios en esa área.</p>
+                </div>
+                
+                <!-- Urgency Banner -->
+                <div class="urgency-banner">
+                    <p>¡No pierdas más oportunidades! Los profesionales con perfiles completos reciben <strong>10X más contactos</strong>.</p>
+                </div>
+            </div>
+            
+            <!-- CTA -->
+            <div class="cta-container">
+                <p style="margin: 0 0 25px 0; font-size: 16px; color: #555555;">Solo te tomará <strong>2 minutos</strong> y la diferencia en tu visibilidad será enorme.</p>
+                <a href="https://sumeeapp.com/login" class="cta-button">Completar mi Perfil Ahora</a>
+            </div>
+            
+            <!-- Benefits -->
+            <div class="content">
+                <h3 style="margin: 0 0 20px 0; font-size: 20px; color: #333333;">¿Qué ganas al completar tu perfil?</h3>
+                
+                <div class="benefits">
+                    <div class="benefit-item">
+                        <div class="benefit-icon">✓</div>
+                        <div class="benefit-text"><strong>Multiplica tus contactos:</strong> Aparece en más búsquedas y recibe más solicitudes.</div>
+                    </div>
+                    
+                    <div class="benefit-item">
+                        <div class="benefit-icon">✓</div>
+                        <div class="benefit-text"><strong>Genera confianza:</strong> Un perfil completo inspira seguridad en los clientes.</div>
+                    </div>
+                    
+                    <div class="benefit-item">
+                        <div class="benefit-icon">✓</div>
+                        <div class="benefit-text"><strong>Acceso a mejores leads:</strong> Los clientes con proyectos serios buscan profesionales detallados.</div>
+                    </div>
+                </div>
+                
+                <p style="margin-top: 30px;">¡Estamos ansiosos por verte conectar con más clientes!</p>
+                <p style="margin-bottom: 0;">— El equipo de Sumee App</p>
+            </div>
+            
+            <!-- Footer -->
+            <div class="footer">
+                <p>Recibiste este email porque te registraste en Sumee App.</p>
+                <p>© 2024 Sumee App. Todos los derechos reservados.</p>
+                <p>
+                    <a href="https://sumeeapp.com/privacy">Política de Privacidad</a> | 
+                    <a href="https://sumeeapp.com/terms">Términos de Servicio</a>
+                </p>
+                <p><a href="[UNSUBSCRIBE]">Darse de baja</a></p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+
