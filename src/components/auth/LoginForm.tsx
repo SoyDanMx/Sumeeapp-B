@@ -84,8 +84,34 @@ export default function LoginForm() {
         throw error;
       }
 
-      // Si el login es exitoso, redirigir a una futura página de perfil o dashboard
-      router.push('/dashboard'); 
+      // Si el login es exitoso, obtener el perfil del usuario para redirigir correctamente
+      console.log('✅ Login exitoso, obteniendo perfil del usuario...');
+      
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (user) {
+        // Obtener el perfil para saber el rol
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('user_id', user.id)
+          .single();
+        
+        console.log('Usuario:', user.email, 'Rol:', profile?.role);
+        
+        // Redirigir basado en el rol
+        if (profile?.role === 'profesional') {
+          console.log('🎯 Redirigiendo a professional-dashboard...');
+          router.push('/professional-dashboard');
+        } else {
+          console.log('🎯 Redirigiendo a client dashboard...');
+          router.push('/dashboard/client');
+        }
+      } else {
+        // Fallback: redirigir a /dashboard que usa el RoleRouter
+        console.log('⚠️ No se pudo obtener el perfil, usando RoleRouter...');
+        router.push('/dashboard');
+      } 
 
     } catch (error: any) {
       if (error.message === 'EMAIL_NOT_CONFIRMED') {
