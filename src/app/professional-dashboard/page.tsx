@@ -14,6 +14,7 @@ import ControlPanel from "@/components/dashboard/ControlPanel";
 import ProfessionalTabs from "@/components/dashboard/ProfessionalTabs";
 import MobileBottomNav from "@/components/dashboard/MobileBottomNav";
 import NewLeadAlertModal from "@/components/dashboard/NewLeadAlertModal";
+import RequiredWhatsAppModal from "@/components/dashboard/RequiredWhatsAppModal";
 import { Profesional, Lead } from "@/types/supabase";
 import ProfessionalVerificationID from "@/components/ProfessionalVerificationID";
 import { useRouter } from "next/navigation";
@@ -40,6 +41,8 @@ export default function ProfesionalDashboardPage() {
   } | null>(null);
   const [newLeadAlert, setNewLeadAlert] = useState<Lead | null>(null);
   const [isNewLeadModalOpen, setIsNewLeadModalOpen] = useState(false);
+  const [showWhatsAppModal, setShowWhatsAppModal] = useState(false);
+  const [hasCheckedWhatsApp, setHasCheckedWhatsApp] = useState(false);
 
   // Geolocalización en tiempo real (siempre activa para ofrecer experiencias tipo Uber)
   const {
@@ -62,6 +65,23 @@ export default function ProfesionalDashboardPage() {
   useEffect(() => {
     updateLocation();
   }, [updateLocation]);
+
+  // Verificar si el profesional tiene WhatsApp al cargar
+  useEffect(() => {
+    if (!profesional || hasCheckedWhatsApp) return;
+
+    // Revisar si el profesional NO tiene whatsapp
+    const needsWhatsApp = !profesional.whatsapp || profesional.whatsapp.trim() === '';
+    
+    if (needsWhatsApp) {
+      // Mostrar modal después de un breve delay para mejor UX
+      setTimeout(() => {
+        setShowWhatsAppModal(true);
+      }, 500);
+    }
+    
+    setHasCheckedWhatsApp(true);
+  }, [profesional, hasCheckedWhatsApp]);
 
   // --- FUNCIONES HANDLER ---
   const handleProfileUpdateSuccess = useCallback(() => {
@@ -144,6 +164,17 @@ export default function ProfesionalDashboardPage() {
     setIsNewLeadModalOpen(false);
     setNewLeadAlert(null);
   }, []);
+
+  // Handler cuando se completa la actualización de WhatsApp
+  const handleWhatsAppSuccess = useCallback((whatsapp: string) => {
+    setShowWhatsAppModal(false);
+    // Actualizar el profesional localmente
+    if (profesional) {
+      profesional.whatsapp = whatsapp;
+    }
+    // Re-fetch data para asegurar sincronización
+    refetchData();
+  }, [profesional, refetchData]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -380,6 +411,17 @@ export default function ProfesionalDashboardPage() {
             </div>
           </div>
         )}
+
+        {/* Modal Obligatorio de WhatsApp - Versión Móvil */}
+        {profesional && (
+          <RequiredWhatsAppModal
+            isOpen={showWhatsAppModal}
+            userId={profesional.user_id}
+            userEmail={profesional.email}
+            userName={profesional.full_name || 'Profesional'}
+            onSuccess={handleWhatsAppSuccess}
+          />
+        )}
       </div>
     );
   }
@@ -554,6 +596,17 @@ export default function ProfesionalDashboardPage() {
             />
           </div>
         </div>
+      )}
+
+      {/* Modal Obligatorio de WhatsApp */}
+      {profesional && (
+        <RequiredWhatsAppModal
+          isOpen={showWhatsAppModal}
+          userId={profesional.user_id}
+          userEmail={profesional.email}
+          userName={profesional.full_name || 'Profesional'}
+          onSuccess={handleWhatsAppSuccess}
+        />
       )}
     </div>
   );
