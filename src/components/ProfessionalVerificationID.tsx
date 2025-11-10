@@ -5,7 +5,7 @@ import React, { useState, useRef } from "react";
 import Image from "next/image";
 import QRCodeSVG from "react-qr-code";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
+import { 
   faShieldAlt,
   faStar,
   faCheckCircle,
@@ -97,8 +97,8 @@ function getBorderColorHex(style: CredentialStyle): string {
   return colors[style];
 }
 
-export default function ProfessionalVerificationID({
-  profesional,
+export default function ProfessionalVerificationID({ 
+  profesional, 
   leads = [],
   showCustomization = true,
 }: ProfessionalVerificationIDProps) {
@@ -1241,8 +1241,8 @@ export default function ProfessionalVerificationID({
                   priority
                   unoptimized
                 />
-              </div>
-              <div>
+            </div>
+            <div>
                 <h3
                   className="text-3xl font-black tracking-tight"
                   style={{ color: styleConfig.primaryColor }}
@@ -1252,8 +1252,8 @@ export default function ProfessionalVerificationID({
                 <p className="text-xs text-gray-600 font-medium">
                   Plataforma de Servicios Profesionales
                 </p>
-              </div>
             </div>
+          </div>
             <div
               className="flex items-center space-x-2 text-white px-5 py-2.5 rounded-full shadow-lg font-bold text-sm"
               style={{
@@ -1276,7 +1276,7 @@ export default function ProfessionalVerificationID({
             >
               {profesional.avatar_url ? (
                 <Image
-                  src={profesional.avatar_url}
+                  src={profesional.avatar_url} 
                   alt={profesional.full_name || "Profesional"}
                   fill
                   className="object-cover"
@@ -1324,7 +1324,7 @@ export default function ProfessionalVerificationID({
               )}
             </div>
           </div>
-
+          
           {/* Grid de métricas - Calificación y Tasa de Aceptación */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Calificación Promedio - SIEMPRE 5 estrellas */}
@@ -1347,24 +1347,24 @@ export default function ProfessionalVerificationID({
               <div className="flex items-center space-x-2 mb-2">
                 {/* SIEMPRE mostrar 5 estrellas */}
                 {Array.from({ length: 5 }, (_, i) => (
-                  <FontAwesomeIcon
-                    key={i}
-                    icon={faStar}
+                    <FontAwesomeIcon 
+                      key={i}
+                      icon={faStar} 
                     className={`text-2xl ${
                       i < fullStars
                         ? "text-yellow-400"
                         : i === fullStars && hasHalfStar
                         ? "text-yellow-300"
                         : "text-gray-300"
-                    }`}
-                  />
-                ))}
-              </div>
+                      }`} 
+                    />
+                  ))}
+                </div>
               <p className="text-2xl font-black text-gray-900">
                 {rating.toFixed(1)}{" "}
                 <span className="text-sm font-normal text-gray-500">/ 5.0</span>
               </p>
-            </div>
+                </div>
 
             {/* Tasa de Aceptación - Nuevo diseño mejorado */}
             <div
@@ -1382,7 +1382,7 @@ export default function ProfessionalVerificationID({
                   icon={faPercent}
                   className="text-green-500 text-lg"
                 />
-              </div>
+                </div>
               <div className="flex items-center space-x-3 mb-2">
                 <p
                   className="text-4xl font-black"
@@ -1400,18 +1400,18 @@ export default function ProfessionalVerificationID({
                           backgroundColor: styleConfig.accentColor,
                         }}
                       />
-                    </div>
+                </div>
                     <p className="text-xs text-gray-500 mt-1">
                       {acceptedLeads.length} de {totalLeadsAvailable} leads
                     </p>
-                  </div>
-                )}
               </div>
+                )}
+            </div>
               {totalLeadsAvailable === 0 && (
                 <p className="text-xs text-gray-500">Aún no hay datos</p>
               )}
-            </div>
-          </div>
+                </div>
+                  </div>
 
           {/* Especialidades - CON "Especialista en" */}
           {areasServicio.length > 0 && (
@@ -1463,7 +1463,7 @@ export default function ProfessionalVerificationID({
                 backdropFilter: "blur(8px)",
               }}
             >
-              <div className="flex items-center space-x-3 mb-4">
+            <div className="flex items-center space-x-3 mb-4">
                 <FontAwesomeIcon
                   icon={faMap}
                   className="text-xl text-blue-600"
@@ -1475,12 +1475,12 @@ export default function ProfessionalVerificationID({
                   <p className="text-xs text-gray-500">
                     Ubicaciones donde presto servicios
                   </p>
-                </div>
               </div>
+            </div>
               <div className="flex flex-wrap gap-2.5">
                 {workZones.map((zone, index) => (
-                  <span
-                    key={index}
+                <span 
+                  key={index}
                     className="px-4 py-2 rounded-xl text-sm font-semibold bg-blue-50 text-blue-700 border-2 border-blue-200"
                   >
                     <FontAwesomeIcon
@@ -1488,9 +1488,9 @@ export default function ProfessionalVerificationID({
                       className="mr-2 text-blue-500"
                     />
                     {zone}
-                  </span>
-                ))}
-              </div>
+                </span>
+              ))}
+            </div>
             </div>
           )}
 
@@ -1512,7 +1512,7 @@ export default function ProfessionalVerificationID({
                   day: "numeric",
                 })}
               </p>
-            </div>
+                </div>
             <div className="flex flex-col items-center space-y-2">
               <div className="bg-white p-3 rounded-xl shadow-lg border-2 border-gray-200">
                 <QRCodeSVG
@@ -1522,7 +1522,7 @@ export default function ProfessionalVerificationID({
                   bgColor="#FFFFFF"
                   fgColor={styleConfig.primaryColor}
                 />
-              </div>
+                </div>
               <div
                 className="flex items-center space-x-2"
                 style={{ color: styleConfig.primaryColor }}
@@ -1533,10 +1533,10 @@ export default function ProfessionalVerificationID({
               <p className="text-xs text-gray-500 text-center max-w-[100px] font-medium">
                 Escanea para verificar
               </p>
+              </div>
+              </div>
             </div>
           </div>
-        </div>
-      </div>
 
       {/* Botones de acción - Diseño mejorado */}
       <div className="flex flex-wrap items-center justify-center gap-4">

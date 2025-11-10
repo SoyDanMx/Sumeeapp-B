@@ -23,6 +23,25 @@ export type LeadEstado =
   | "completado"
   | "cancelado";
 
+export type LeadAppointmentStatus =
+  | "pendiente_contacto"
+  | "contactado"
+  | "pendiente_confirmacion"
+  | "confirmada"
+  | "completado"
+  | "no_show_profesional"
+  | "no_show_cliente"
+  | "cancelada";
+
+export interface LeadReview {
+  id: string;
+  lead_id: string;
+  rating: number;
+  comment?: string | null;
+  created_at: string;
+  created_by: string;
+}
+
 export type ServiceCategory =
   | "Urgencias"
   | "Mantenimiento"
@@ -140,6 +159,7 @@ export interface Lead {
   ubicacion_lng: number;
   ubicacion_direccion?: string | null;
   fecha_creacion: string;
+  fecha_asignacion?: string | null;
   estado: LeadEstado;
   profesional_asignado_id?: string | null;
   imagen_url?: string | null;
@@ -148,6 +168,18 @@ export interface Lead {
   urgencia?: string | null;
   cliente_id?: string | null;
   photos_urls?: string[] | null;
+  contact_deadline_at?: string | null;
+  contacted_at?: string | null;
+  contact_method?: string | null;
+  contact_notes?: string | null;
+  appointment_at?: string | null;
+  appointment_confirmed_at?: string | null;
+  appointment_status?: LeadAppointmentStatus | null;
+  appointment_notes?: string | null;
+  work_completed_at?: string | null;
+  work_completion_notes?: string | null;
+  engagement_points?: number | null;
+  lead_review?: LeadReview | null;
   // Propiedad para datos del profesional asignado (obtenida via JOIN)
   profiles?: Partial<Profile> | null;
   profesional_asignado?: Partial<Profile> | null;
