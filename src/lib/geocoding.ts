@@ -23,33 +23,62 @@ interface ReverseNominatimResult {
 
 /**
  * Convierte una dirección de texto a coordenadas (lat, lng) usando Nominatim (gratis).
+ * Con retry, mejor User-Agent y manejo de errores mejorado.
  */
 export async function geocodeAddress(
-  address: string
+  address: string,
+  retries = 2
 ): Promise<{ lat: number; lng: number; displayName: string } | null> {
   if (!address) return null;
 
   // Usamos el punto final de búsqueda de Nominatim
   const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(
     address
-  )}&format=json&limit=1`;
+  )}&format=json&limit=1&addressdetails=1`;
 
-  try {
-    const response = await fetch(url);
-    const data: NominatimResult[] = await response.json();
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      console.log(`🗺️ Geocoding intento ${attempt + 1}/${retries + 1}: "${address}"`);
+      
+      const response = await fetch(url, {
+        headers: {
+          "User-Agent": "SumeeApp/1.0 (https://sumeeapp.com; contact@sumeeapp.com)",
+          "Accept-Language": "es-MX,es;q=0.9",
+        },
+      });
 
-    if (data && data.length > 0) {
-      const result = data[0];
-      return {
-        lat: parseFloat(result.lat),
-        lng: parseFloat(result.lon),
-        displayName: result.display_name,
-      };
+      if (!response.ok) {
+        console.warn(`⚠️ Geocoding response status: ${response.status}`);
+        if (attempt < retries) {
+          await new Promise((resolve) => setTimeout(resolve, 1000 * (attempt + 1))); // Delay incremental
+          continue;
+        }
+        return null;
+      }
+
+      const data: NominatimResult[] = await response.json();
+
+      if (data && data.length > 0) {
+        const result = data[0];
+        const coords = {
+          lat: parseFloat(result.lat),
+          lng: parseFloat(result.lon),
+          displayName: result.display_name,
+        };
+        console.log("✅ Geocoding exitoso:", coords);
+        return coords;
+      } else {
+        console.warn("⚠️ Nominatim no encontró resultados para:", address);
+      }
+    } catch (error) {
+      console.error(`❌ Error al geocodificar (intento ${attempt + 1}):`, error);
+      if (attempt < retries) {
+        await new Promise((resolve) => setTimeout(resolve, 1000 * (attempt + 1)));
+      }
     }
-  } catch (error) {
-    console.error("Error al geocodificar la dirección:", error);
   }
 
+  console.error("❌ Geocoding falló después de todos los intentos");
   return null;
 }
 
