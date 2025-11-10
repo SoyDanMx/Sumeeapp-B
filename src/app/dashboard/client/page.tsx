@@ -15,6 +15,8 @@ import NearbyProfessionalsWidget from "@/components/dashboard/NearbyProfessional
 import ExploreMapCTA from "@/components/dashboard/ExploreMapCTA";
 import ClientOnboardingModal from "@/components/dashboard/ClientOnboardingModal";
 import ClientProfileWidget from "@/components/dashboard/ClientProfileWidget";
+import ClientProfileWidgetCompact from "@/components/dashboard/ClientProfileWidgetCompact";
+import ExploreMapCTACompact from "@/components/dashboard/ExploreMapCTACompact";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faSpinner,
@@ -519,23 +521,23 @@ export default function ClientDashboardPage() {
         </div>
       )}
 
-      {/* Contenido Principal - Grid de Widgets */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Grid de Widgets Principal */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+      {/* Contenido Principal - Grid de Widgets COMPACTO RESPONSIVE */}
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 md:py-8">
+        {/* Grid de Widgets Principal - Layout Compacto Responsive */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4 mb-4 sm:mb-6">
           {/* Widget de Próximo Servicio - Ocupa 2 columnas */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="lg:col-span-2">
             <UpcomingServiceWidget
               upcomingLead={upcomingService}
               onViewDetails={handleViewLead}
             />
           </div>
 
-          {/* Columna Lateral - Widgets de Usuario */}
-          <div className="lg:col-span-1 space-y-6">
-            {/* Widget de Perfil del Cliente */}
+          {/* Columna Lateral - Widgets Compactos Apilados - RESPONSIVE */}
+          <div className="lg:col-span-1 space-y-3 sm:space-y-4">
+            {/* Widget de Perfil del Cliente COMPACTO */}
             {userProfile && (
-              <ClientProfileWidget
+              <ClientProfileWidgetCompact
                 profile={userProfile}
                 onProfileUpdate={() => {
                   // Refrescar perfil
@@ -553,6 +555,9 @@ export default function ClientDashboardPage() {
               />
             )}
             
+            {/* Widget de Mapa Interactivo COMPACTO */}
+            <ExploreMapCTACompact professionalCount={50} maxRadius={15} />
+            
             {/* Widget de Actividad Reciente */}
             <RecentActivityWidget recentLeads={recentCompleted} />
           </div>
@@ -564,11 +569,6 @@ export default function ClientDashboardPage() {
             <QuickActionsWidget onServiceClick={handleQuickServiceClick} />
           </div>
         )}
-
-        {/* CTA: Explorar Mapa Interactivo - Full Width */}
-        <div className="mb-8">
-          <ExploreMapCTA professionalCount={50} maxRadius={15} />
-        </div>
 
         {/* Lista de Todas las Solicitudes */}
         {leads.length > 0 ? (
