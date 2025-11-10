@@ -93,7 +93,8 @@ export default function MembresiaContent() {
         { icon: faConciergeBell, text: 'Servicio de Conserjería (Concierge) para proyectos' },
         { icon: faUsers, text: 'Múltiples cotizaciones para proyectos grandes' },
         { icon: faHistory, text: 'Historial de Mantenimiento del Hogar' },
-        { icon: faPhone, text: 'Soporte prioritario 24/7 (Teléfono y WhatsApp)' }
+        { icon: faPhone, text: 'Soporte prioritario 24/7 (Teléfono y WhatsApp)' },
+        { icon: faStar, text: 'Supervisor InSite' }
       ],
       popular: true,
       buyButtonId: 'buy_btn_1SLwlqE2shKTNR9MmwebXHlB'
