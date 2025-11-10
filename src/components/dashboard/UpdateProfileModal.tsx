@@ -66,6 +66,12 @@ export default function UpdateProfileModal({
   currentProfile,
   onSuccess,
 }: UpdateProfileModalProps) {
+  // 🔍 DEBUG: Verificar que el modal se está renderizando
+  console.log("🟣 UpdateProfileModal renderizado:");
+  console.log("   - isOpen:", isOpen);
+  console.log("   - userRole:", userRole);
+  console.log("   - currentProfile:", currentProfile);
+  
   const [formData, setFormData] = useState({
     full_name: currentProfile.full_name || "",
     whatsapp: currentProfile.whatsapp || "",
