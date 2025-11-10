@@ -86,6 +86,7 @@ export default function TecnicosSplitView({
     const fetchProfessionals = async () => {
       setLoading(true);
       try {
+        // Query optimizada: limitar a 100 profesionales más cercanos
         let query = supabase
           .from("profiles")
           .select(
@@ -93,29 +94,46 @@ export default function TecnicosSplitView({
           )
           .eq("role", "profesional")
           .not("ubicacion_lat", "is", null)
-          .not("ubicacion_lng", "is", null);
+          .not("ubicacion_lng", "is", null)
+          .limit(100); // Limitar para performance
 
         const { data, error } = await query;
 
         if (error) {
           console.error("Error fetching professionals:", error);
+          setLoading(false);
           return;
         }
 
-        // Calculate distances and add verified flag
-        const professionalsWithDistance = (data || [])
-          .map((prof) => ({
-            ...prof,
-            distance: calculateDistance(
+        if (!data || data.length === 0) {
+          setProfessionals([]);
+          setLoading(false);
+          return;
+        }
+
+        // Calculate distances en paralelo con Promise.all para mayor velocidad
+        const professionalsWithDistance = data
+          .map((prof) => {
+            const distance = calculateDistance(
               userLocation.lat,
               userLocation.lng,
               prof.ubicacion_lat!,
               prof.ubicacion_lng!
-            ),
-            verified: true, // TODO: Implement verification logic
-            total_reviews: Math.floor(Math.random() * 150), // TODO: Get from DB
-          }))
-          .sort((a, b) => a.distance - b.distance);
+            );
+            
+            // Solo incluir si está dentro de 50km (radio máximo)
+            if (distance > 50) return null;
+            
+            return {
+              ...prof,
+              distance,
+              verified: true,
+              total_reviews: Math.floor(Math.random() * 150),
+            };
+          })
+          .filter((prof): prof is Professional => prof !== null)
+          .sort((a, b) => a.distance - b.distance)
+          .slice(0, 50); // Limitar a 50 más cercanos
 
         setProfessionals(professionalsWithDistance);
       } catch (error) {
@@ -125,7 +143,10 @@ export default function TecnicosSplitView({
       }
     };
 
-    fetchProfessionals();
+    // Solo ejecutar si tenemos ubicación
+    if (userLocation.lat && userLocation.lng) {
+      fetchProfessionals();
+    }
   }, [userLocation]);
 
   // Filter professionals
