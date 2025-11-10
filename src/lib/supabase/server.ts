@@ -28,12 +28,16 @@ export function createSupabaseAdminClient(): SupabaseClient | null {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
+  // Log detallado para debugging (solo en desarrollo y durante troubleshooting)
+  console.log('🔍 createSupabaseAdminClient - Verificando variables:');
+  console.log('- NEXT_PUBLIC_SUPABASE_URL:', supabaseUrl ? '✅ Definida' : '❌ Falta');
+  console.log('- SUPABASE_SERVICE_ROLE_KEY:', serviceRoleKey ? `✅ Definida (${serviceRoleKey.substring(0, 10)}...)` : '❌ Falta');
+
   if (!supabaseUrl || !serviceRoleKey) {
-    if (process.env.NODE_ENV !== "production") {
-      console.warn(
-        "⚠️ SUPABASE_SERVICE_ROLE_KEY no está definido. Las operaciones administrativas se omitirán."
-      );
-    }
+    console.error(
+      "❌ SUPABASE_SERVICE_ROLE_KEY no está definido. Las operaciones administrativas fallarán."
+    );
+    console.error('Variables disponibles:', Object.keys(process.env).filter(k => k.includes('SUPABASE')));
     return null;
   }
 
