@@ -30,11 +30,11 @@ import {
 import { useCountdown } from "@/hooks/useCountdown";
 
 interface LeadCardProps {
-  lead: Lead;
-  profesionalLat: number;
-  profesionalLng: number;
-  isSelected: boolean;
-  onSelect: () => void;
+    lead: Lead;
+    profesionalLat: number;
+    profesionalLng: number;
+    isSelected: boolean;
+    onSelect: () => void;
   onLeadAccepted?: (lead: Lead) => void; // Callback con el lead actualizado
   onLeadUpdated?: (lead: Lead) => void;
 }
@@ -49,7 +49,7 @@ export default function LeadCard({
   onLeadUpdated,
 }: LeadCardProps) {
   const [leadState, setLeadState] = useState<Lead>(lead);
-  const [isAccepting, setIsAccepting] = useState(false);
+    const [isAccepting, setIsAccepting] = useState(false);
   const [accepted, setAccepted] = useState(
     ["aceptado", "contactado", "en_progreso", "completado"].includes(
       (lead.estado || "").toLowerCase()
@@ -116,35 +116,35 @@ export default function LeadCard({
     leadInfo.ubicacion_lng !== undefined;
 
   const distanciaKm = hasLeadLocation
-    ? calculateDistance(
-        profesionalLat,
-        profesionalLng,
+        ? calculateDistance(
+            profesionalLat,
+            profesionalLng,
         leadInfo.ubicacion_lat,
         leadInfo.ubicacion_lng
-      ).toFixed(1)
+          ).toFixed(1)
     : "0.0";
 
-  const handleAcceptLead = async (e: React.MouseEvent) => {
+    const handleAcceptLead = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    setIsAccepting(true);
+        setIsAccepting(true);
 
-    try {
+        try {
       const {
         data: { user },
       } = await supabase.auth.getUser();
-      if (!user) {
+            if (!user) {
         throw new Error("Usuario no autenticado");
-      }
+            }
 
       const result = await acceptLead(leadInfo.id);
-
-      if (result.success) {
+            
+            if (result.success) {
         const updatedLead: Lead = {
           ...leadInfo,
           ...result.lead,
         };
 
-        setAccepted(true);
+                setAccepted(true);
         setLeadState(updatedLead);
 
         try {
@@ -162,7 +162,7 @@ export default function LeadCard({
           );
         }
 
-        if (onLeadAccepted) {
+                if (onLeadAccepted) {
           onLeadAccepted(updatedLead);
         }
         if (onLeadUpdated) {
@@ -176,10 +176,10 @@ export default function LeadCard({
           ? error.message
           : "Error al aceptar el proyecto. Por favor, inténtalo de nuevo.";
       alert(errorMessage);
-    } finally {
-      setIsAccepting(false);
-    }
-  };
+        } finally {
+            setIsAccepting(false);
+        }
+    };
 
   const emitLeadUpdate = (updated: Lead) => {
     setLeadState(updated);
@@ -457,7 +457,7 @@ export default function LeadCard({
     return null;
   };
 
-  const getStatusBadge = () => {
+    const getStatusBadge = () => {
     switch (leadInfo.estado?.toLowerCase()) {
       case "nuevo":
         return (
@@ -483,16 +483,16 @@ export default function LeadCard({
             Completado
           </span>
         );
-      default:
+            default:
         return (
           <span className="px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded-full">
             {leadInfo.estado || "Nuevo"}
           </span>
         );
-    }
-  };
+        }
+    };
 
-  return (
+    return (
     <div
       className={`p-3 md:p-4 border rounded-lg transition-all duration-200 touch-manipulation ${
         isSelected
@@ -500,7 +500,7 @@ export default function LeadCard({
           : "bg-white hover:border-gray-400 active:scale-[0.98]"
       }`}
     >
-      <div onClick={onSelect} className="cursor-pointer">
+            <div onClick={onSelect} className="cursor-pointer">
         <div className="flex justify-between items-start mb-2 gap-2">
           <h3 className="font-bold text-gray-800 flex items-center text-base md:text-lg flex-1 min-w-0">
             <FontAwesomeIcon
@@ -510,9 +510,9 @@ export default function LeadCard({
             <span className="truncate">
               {leadInfo.nombre_cliente || "Cliente Anónimo"}
             </span>
-          </h3>
-          {getStatusBadge()}
-        </div>
+                    </h3>
+                    {getStatusBadge()}
+                </div>
         <p className="text-sm text-gray-600 mb-3">
           {leadInfo.descripcion_proyecto || "Sin descripción"}
         </p>
@@ -524,33 +524,33 @@ export default function LeadCard({
           <div className="text-right">
             <p className="font-semibold text-gray-700">Distancia</p>
             <p>{distanciaKm} km aprox.</p>
-          </div>
-        </div>
-      </div>
+                </div>
+                </div>
+            </div>
 
       {!accepted && (
         <div className="space-y-3">
-          <button
-            onClick={handleAcceptLead}
-            disabled={isAccepting}
+                        <button
+                            onClick={handleAcceptLead}
+                            disabled={isAccepting}
             className={`w-full flex items-center justify-center gap-2 py-3 rounded-lg text-sm font-semibold transition-colors ${
               isAccepting
                 ? "bg-gray-300 text-gray-600"
                 : "bg-green-500 hover:bg-green-600 text-white"
             }`}
-          >
-            {isAccepting ? (
-              <>
+                        >
+                            {isAccepting ? (
+                                <>
                 <FontAwesomeIcon icon={faSpinner} className="animate-spin" />
-                <span>Aceptando...</span>
-              </>
-            ) : (
-              <>
-                <FontAwesomeIcon icon={faCheck} />
-                <span>Aceptar Trabajo</span>
-              </>
-            )}
-          </button>
+                                    <span>Aceptando...</span>
+                                </>
+                            ) : (
+                                <>
+                                    <FontAwesomeIcon icon={faCheck} />
+                                    <span>Aceptar Trabajo</span>
+                                </>
+                            )}
+                        </button>
         </div>
       )}
 
@@ -563,17 +563,17 @@ export default function LeadCard({
             {hasLeadLocation && (
               <a
                 href={`https://www.google.com/maps/dir/${profesionalLat},${profesionalLng}/${leadInfo.ubicacion_lat},${leadInfo.ubicacion_lng}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={(e) => e.stopPropagation()}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    onClick={(e) => e.stopPropagation()}
                 className="bg-blue-500 hover:bg-blue-600 text-white py-3 md:py-2 px-2 md:px-3 rounded-lg text-sm md:text-xs font-semibold md:font-medium transition-colors flex items-center justify-center space-x-1 touch-manipulation active:scale-95"
-              >
+                                >
                 <FontAwesomeIcon icon={faRoute} className="text-sm" />
                 <span className="hidden sm:inline">Ver ruta</span>
                 <span className="sm:hidden">🗺️</span>
-              </a>
-            )}
-
+                                </a>
+                            )}
+                            
             <button
               onClick={(e) => {
                 e.stopPropagation();
@@ -649,15 +649,15 @@ export default function LeadCard({
                 {hasLeadLocation && (
                   <a
                     href={`https://www.google.com/maps/dir/${profesionalLat},${profesionalLng}/${leadInfo.ubicacion_lat},${leadInfo.ubicacion_lng}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={(e) => e.stopPropagation()}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    onClick={(e) => e.stopPropagation()}
                     className="w-full bg-blue-500 hover:bg-blue-600 text-white py-2 rounded-lg text-sm font-semibold transition-colors flex items-center justify-center gap-2"
-                  >
+                                >
                     <FontAwesomeIcon icon={faRoute} />
                     <span>Ver ruta en Google Maps</span>
-                  </a>
-                )}
+                                </a>
+                            )}
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
@@ -669,10 +669,10 @@ export default function LeadCard({
                   <span>Detalles y notas</span>
                 </button>
               </div>
-            </div>
-          </div>
-        </div>
-      )}
+                        </div>
+                    </div>
+                </div>
+            )}
 
       {showScheduleModal && (
         <div
@@ -831,7 +831,7 @@ export default function LeadCard({
                   </p>
                 )}
               </section>
-            </div>
+                    </div>
 
             <section className="border border-gray-200 rounded-xl p-4 space-y-3">
               <h4 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
@@ -908,7 +908,7 @@ export default function LeadCard({
             </div>
           </div>
         </div>
-      )}
-    </div>
-  );
+            )}
+        </div>
+    );
 }

@@ -174,7 +174,7 @@ export const AIHelper = () => {
             <span className="text-sm font-semibold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
               POWERED BY GOOGLE GEMINI AI
             </span>
-          </div>
+        </div>
 
           <div className="relative inline-block mb-6">
             <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 rounded-full blur-2xl opacity-30 animate-pulse"></div>
@@ -183,7 +183,7 @@ export const AIHelper = () => {
               className="relative text-6xl md:text-7xl bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent filter drop-shadow-lg"
             />
           </div>
-
+          
           <h2 className="text-4xl md:text-5xl lg:text-6xl font-extrabold mb-6 bg-gradient-to-r from-gray-900 via-blue-900 to-gray-900 bg-clip-text text-transparent leading-tight">
             ¿No sabes a quién necesitas?
           </h2>
@@ -262,11 +262,11 @@ export const AIHelper = () => {
                           className="w-full h-full"
                           variant="compact"
                         />
-                      </div>
+                            </div>
                       {/* Resplandor sutil al hover */}
                       <div className="absolute inset-0 bg-white/40 rounded-full blur-sm opacity-0 group-hover/btn:opacity-100 transition-opacity duration-300"></div>
-                    </div>
-
+                          </div>
+                          
                     {/* Texto con mejor contraste */}
                     <span className="relative z-10 font-semibold text-base md:text-lg">
                       Iniciar Diagnóstico AI
@@ -277,7 +277,7 @@ export const AIHelper = () => {
                       icon={faArrowRight}
                       className="relative z-10 transform group-hover/btn:translate-x-2 transition-all duration-300 opacity-90 group-hover/btn:opacity-100"
                     />
-                  </span>
+                                  </span>
 
                   {/* Efecto de borde brillante */}
                   <div className="absolute inset-0 rounded-xl border-2 border-white/30 opacity-0 group-hover/btn:opacity-100 transition-opacity"></div>
@@ -288,11 +288,11 @@ export const AIHelper = () => {
                   <div className="flex items-center gap-2 text-sm text-gray-600">
                     <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
                     <span>Respuesta instantánea</span>
-                  </div>
+                          </div>
                   <div className="flex items-center gap-2 text-sm text-gray-600">
                     <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
                     <span>IA avanzada Gemini</span>
-                  </div>
+                          </div>
                   <div className="flex items-center gap-2 text-sm text-gray-600">
                     <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse"></div>
                     <span>Técnicos verificados</span>
@@ -303,11 +303,11 @@ export const AIHelper = () => {
           </div>
         </div>
       </div>
-
+      
       {/* Modal del Chatbot de Diagnóstico */}
-      <AIDiagnosisChatbot
-        isOpen={isChatbotOpen}
-        onClose={() => setIsChatbotOpen(false)}
+      <AIDiagnosisChatbot 
+        isOpen={isChatbotOpen} 
+        onClose={() => setIsChatbotOpen(false)} 
       />
     </section>
   );

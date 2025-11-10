@@ -389,9 +389,9 @@ export default function EditProfileModal({
 
       // Solo cerrar automáticamente si NO estamos en el Paso 5
       if (currentStep !== 5) {
-        setTimeout(() => {
-          onSuccess();
-        }, 2000);
+      setTimeout(() => {
+        onSuccess();
+      }, 2000);
       }
     } catch (error: any) {
       console.error("❌ Error al actualizar el perfil:", error);
@@ -498,647 +498,647 @@ export default function EditProfileModal({
         {/* Content */}
         <div className="flex-1 overflow-y-auto flex flex-col">
           <div className="flex-1 p-4 md:p-8 pb-28 md:pb-8">
-            <form
-              onSubmit={handleSubmit}
-              onClick={(e) => {
-                // Prevenir que clicks dentro del formulario cierren el modal
-                e.stopPropagation();
-              }}
-            >
-              {/* Step 1: Información de Contacto y Documentos */}
-              {currentStep === 1 && (
-                <div className="space-y-8 animate-in slide-in-from-right-4 duration-300">
-                  <div className="text-center mb-8">
-                    <div className="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <FontAwesomeIcon
-                        icon={faUser}
-                        className="text-2xl text-indigo-600"
-                      />
-                    </div>
-                    <h3 className="text-xl font-bold text-gray-900 mb-2">
-                      Información de Contacto y Documentos
-                    </h3>
-                    <p className="text-gray-600">
-                      Enriquece tu perfil con documentos y portfolio
-                    </p>
+          <form
+            onSubmit={handleSubmit}
+            onClick={(e) => {
+              // Prevenir que clicks dentro del formulario cierren el modal
+              e.stopPropagation();
+            }}
+          >
+            {/* Step 1: Información de Contacto y Documentos */}
+            {currentStep === 1 && (
+              <div className="space-y-8 animate-in slide-in-from-right-4 duration-300">
+                <div className="text-center mb-8">
+                  <div className="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <FontAwesomeIcon
+                      icon={faUser}
+                      className="text-2xl text-indigo-600"
+                    />
                   </div>
+                  <h3 className="text-xl font-bold text-gray-900 mb-2">
+                    Información de Contacto y Documentos
+                  </h3>
+                  <p className="text-gray-600">
+                    Enriquece tu perfil con documentos y portfolio
+                  </p>
+                </div>
 
-                  {/* Contacto */}
-                  <div className="grid md:grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                      <label className="flex items-center text-sm font-semibold text-gray-700">
-                        <FontAwesomeIcon
-                          icon={faPhone}
-                          className="mr-2 text-indigo-500"
-                        />
-                        Número WhatsApp *
-                      </label>
-                      <input
-                        type="tel"
-                        name="whatsapp"
-                        value={formData.whatsapp ?? ""}
-                        onChange={handleChange}
-                        placeholder="Ej: +52 55 1234 5678"
-                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200"
-                        required
-                      />
-                      <p className="text-xs text-gray-500">
-                        Los leads te llegarán por este número
-                      </p>
-                    </div>
-                    <div className="space-y-2">
-                      <label className="flex items-center text-sm font-semibold text-gray-700">
-                        <FontAwesomeIcon
-                          icon={faCertificate}
-                          className="mr-2 text-indigo-500"
-                        />
-                        Número IMSS (Opcional)
-                      </label>
-                      <input
-                        type="text"
-                        name="numero_imss"
-                        value={formData.numero_imss ?? ""}
-                        onChange={handleChange}
-                        placeholder="Ej: 12345678901"
-                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200"
-                      />
-                      <p className="text-xs text-gray-500">
-                        Para mayor credibilidad
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Foto de Perfil */}
-                  <div className="space-y-4">
+                {/* Contacto */}
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
                     <label className="flex items-center text-sm font-semibold text-gray-700">
                       <FontAwesomeIcon
-                        icon={faImage}
+                        icon={faPhone}
                         className="mr-2 text-indigo-500"
                       />
-                      Foto de Perfil (Opcional)
+                      Número WhatsApp *
                     </label>
-                    <div className="flex items-center space-x-4">
-                      {avatarPreview && (
-                        <div className="relative w-24 h-24 rounded-full overflow-hidden border-2 border-indigo-200">
-                          <Image
-                            src={avatarPreview}
-                            alt="Foto de perfil"
-                            fill
-                            className="object-cover"
-                          />
+                    <input
+                      type="tel"
+                      name="whatsapp"
+                      value={formData.whatsapp ?? ""}
+                      onChange={handleChange}
+                      placeholder="Ej: +52 55 1234 5678"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200"
+                      required
+                    />
+                    <p className="text-xs text-gray-500">
+                      Los leads te llegarán por este número
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="flex items-center text-sm font-semibold text-gray-700">
+                      <FontAwesomeIcon
+                        icon={faCertificate}
+                        className="mr-2 text-indigo-500"
+                      />
+                      Número IMSS (Opcional)
+                    </label>
+                    <input
+                      type="text"
+                      name="numero_imss"
+                      value={formData.numero_imss ?? ""}
+                      onChange={handleChange}
+                      placeholder="Ej: 12345678901"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200"
+                    />
+                    <p className="text-xs text-gray-500">
+                      Para mayor credibilidad
+                    </p>
+                  </div>
+                </div>
+
+                {/* Foto de Perfil */}
+                <div className="space-y-4">
+                  <label className="flex items-center text-sm font-semibold text-gray-700">
+                    <FontAwesomeIcon
+                      icon={faImage}
+                      className="mr-2 text-indigo-500"
+                    />
+                    Foto de Perfil (Opcional)
+                  </label>
+                  <div className="flex items-center space-x-4">
+                    {avatarPreview && (
+                      <div className="relative w-24 h-24 rounded-full overflow-hidden border-2 border-indigo-200">
+                        <Image
+                          src={avatarPreview}
+                          alt="Foto de perfil"
+                          fill
+                          className="object-cover"
+                        />
+                      </div>
+                    )}
+                    <label className="flex-1 cursor-pointer">
+                      <div className="px-4 py-3 border-2 border-dashed border-gray-300 rounded-xl hover:border-indigo-500 transition-colors text-center">
+                        <FontAwesomeIcon
+                          icon={faUpload}
+                          className="mr-2 text-indigo-500"
+                        />
+                        <span className="text-sm text-gray-600">
+                          {avatarFile
+                            ? avatarFile.name
+                            : "Subir foto de perfil"}
+                        </span>
+                      </div>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            setAvatarFile(file);
+                            setAvatarPreview(URL.createObjectURL(file));
+                          }
+                        }}
+                      />
+                    </label>
+                  </div>
+                </div>
+
+                {/* Portfolio de Proyectos */}
+                <div className="space-y-4">
+                  <label className="flex items-center text-sm font-semibold text-gray-700">
+                    <FontAwesomeIcon
+                      icon={faBriefcase}
+                      className="mr-2 text-indigo-500"
+                    />
+                    Portfolio de Proyectos (Opcional)
+                  </label>
+                  <p className="text-xs text-gray-500 mb-4">
+                    Muestra tus trabajos anteriores. Cada foto debe tener una
+                    descripción del tipo de trabajo.
+                  </p>
+
+                  {/* Portfolio existente */}
+                  {existingPortfolio.length > 0 && (
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
+                      {existingPortfolio.map((item, index) => (
+                        <div key={index} className="relative group">
+                          <div className="relative w-full aspect-square rounded-lg overflow-hidden border-2 border-gray-200">
+                            <Image
+                              src={item.url}
+                              alt={item.description}
+                              fill
+                              className="object-cover"
+                            />
+                          </div>
+                          <div className="mt-2 text-xs text-gray-600 truncate">
+                            {item.description}
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setExistingPortfolio(
+                                  existingPortfolio.filter(
+                                    (_, i) => i !== index
+                                  )
+                              );
+                            }}
+                            className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <FontAwesomeIcon
+                              icon={faTrash}
+                              className="text-xs"
+                            />
+                          </button>
                         </div>
-                      )}
-                      <label className="flex-1 cursor-pointer">
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Nuevos items del portfolio */}
+                  {portfolioItems.length > 0 && (
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
+                      {portfolioItems.map((item, index) => (
+                        <div key={index} className="relative group">
+                          <div className="relative w-full aspect-square rounded-lg overflow-hidden border-2 border-indigo-200">
+                            <Image
+                              src={item.preview}
+                              alt={item.description}
+                              fill
+                              className="object-cover"
+                            />
+                          </div>
+                          <div className="mt-2 text-xs text-gray-600 truncate">
+                            {item.description}
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setPortfolioItems(
+                                portfolioItems.filter((_, i) => i !== index)
+                              );
+                            }}
+                            className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <FontAwesomeIcon
+                              icon={faTrash}
+                              className="text-xs"
+                            />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Agregar nuevo item al portfolio */}
+                  <div className="bg-gray-50 rounded-xl p-4 space-y-4">
+                    <label className="flex items-center text-sm font-semibold text-gray-700">
+                      <FontAwesomeIcon
+                        icon={faPlus}
+                        className="mr-2 text-indigo-500"
+                      />
+                      Agregar Proyecto al Portfolio
+                    </label>
+                    <div className="space-y-3">
+                      <input
+                        type="text"
+                        placeholder="Ej: Instalación de bombas hidroneumáticas"
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                        id="portfolio-description"
+                      />
+                      <label className="cursor-pointer block">
                         <div className="px-4 py-3 border-2 border-dashed border-gray-300 rounded-xl hover:border-indigo-500 transition-colors text-center">
                           <FontAwesomeIcon
                             icon={faUpload}
                             className="mr-2 text-indigo-500"
                           />
                           <span className="text-sm text-gray-600">
-                            {avatarFile
-                              ? avatarFile.name
-                              : "Subir foto de perfil"}
+                            Seleccionar foto del proyecto
                           </span>
                         </div>
                         <input
                           type="file"
                           accept="image/*"
                           className="hidden"
+                          id="portfolio-file"
                           onChange={(e) => {
                             const file = e.target.files?.[0];
-                            if (file) {
-                              setAvatarFile(file);
-                              setAvatarPreview(URL.createObjectURL(file));
+                            const descriptionInput = document.getElementById(
+                              "portfolio-description"
+                            ) as HTMLInputElement;
+                            if (file && descriptionInput?.value.trim()) {
+                              setPortfolioItems([
+                                ...portfolioItems,
+                                {
+                                  file,
+                                  description: descriptionInput.value.trim(),
+                                  preview: URL.createObjectURL(file),
+                                },
+                              ]);
+                              descriptionInput.value = "";
+                              e.target.value = "";
+                            } else if (file) {
+                              alert(
+                                "Por favor, ingresa una descripción del trabajo."
+                              );
                             }
                           }}
                         />
                       </label>
                     </div>
                   </div>
+                </div>
 
-                  {/* Portfolio de Proyectos */}
-                  <div className="space-y-4">
-                    <label className="flex items-center text-sm font-semibold text-gray-700">
-                      <FontAwesomeIcon
-                        icon={faBriefcase}
-                        className="mr-2 text-indigo-500"
-                      />
-                      Portfolio de Proyectos (Opcional)
-                    </label>
-                    <p className="text-xs text-gray-500 mb-4">
-                      Muestra tus trabajos anteriores. Cada foto debe tener una
-                      descripción del tipo de trabajo.
-                    </p>
+                {/* Certificaciones */}
+                <div className="space-y-4">
+                  <label className="flex items-center text-sm font-semibold text-gray-700">
+                    <FontAwesomeIcon
+                      icon={faCertificate}
+                      className="mr-2 text-indigo-500"
+                    />
+                    Certificaciones (DC-3, Red CONOCER, etc.) (Opcional)
+                  </label>
+                  <p className="text-xs text-gray-500 mb-4">
+                    Sube tus certificaciones para aumentar la confianza de los
+                    clientes.
+                  </p>
 
-                    {/* Portfolio existente */}
-                    {existingPortfolio.length > 0 && (
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
-                        {existingPortfolio.map((item, index) => (
-                          <div key={index} className="relative group">
-                            <div className="relative w-full aspect-square rounded-lg overflow-hidden border-2 border-gray-200">
-                              <Image
-                                src={item.url}
-                                alt={item.description}
-                                fill
-                                className="object-cover"
-                              />
-                            </div>
-                            <div className="mt-2 text-xs text-gray-600 truncate">
-                              {item.description}
-                            </div>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setExistingPortfolio(
-                                  existingPortfolio.filter(
-                                    (_, i) => i !== index
-                                  )
-                                );
-                              }}
-                              className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                            >
-                              <FontAwesomeIcon
-                                icon={faTrash}
-                                className="text-xs"
-                              />
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
-                    {/* Nuevos items del portfolio */}
-                    {portfolioItems.length > 0 && (
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
-                        {portfolioItems.map((item, index) => (
-                          <div key={index} className="relative group">
-                            <div className="relative w-full aspect-square rounded-lg overflow-hidden border-2 border-indigo-200">
-                              <Image
-                                src={item.preview}
-                                alt={item.description}
-                                fill
-                                className="object-cover"
-                              />
-                            </div>
-                            <div className="mt-2 text-xs text-gray-600 truncate">
-                              {item.description}
-                            </div>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setPortfolioItems(
-                                  portfolioItems.filter((_, i) => i !== index)
-                                );
-                              }}
-                              className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                            >
-                              <FontAwesomeIcon
-                                icon={faTrash}
-                                className="text-xs"
-                              />
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
-                    {/* Agregar nuevo item al portfolio */}
-                    <div className="bg-gray-50 rounded-xl p-4 space-y-4">
-                      <label className="flex items-center text-sm font-semibold text-gray-700">
-                        <FontAwesomeIcon
-                          icon={faPlus}
-                          className="mr-2 text-indigo-500"
-                        />
-                        Agregar Proyecto al Portfolio
-                      </label>
-                      <div className="space-y-3">
-                        <input
-                          type="text"
-                          placeholder="Ej: Instalación de bombas hidroneumáticas"
-                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                          id="portfolio-description"
-                        />
-                        <label className="cursor-pointer block">
-                          <div className="px-4 py-3 border-2 border-dashed border-gray-300 rounded-xl hover:border-indigo-500 transition-colors text-center">
-                            <FontAwesomeIcon
-                              icon={faUpload}
-                              className="mr-2 text-indigo-500"
+                  {/* Certificaciones existentes */}
+                  {existingCertificates.length > 0 && (
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
+                      {existingCertificates.map((url, index) => (
+                        <div key={index} className="relative group">
+                          <div className="relative w-full aspect-square rounded-lg overflow-hidden border-2 border-gray-200">
+                            <Image
+                              src={url}
+                              alt={`Certificación ${index + 1}`}
+                              fill
+                              className="object-cover"
                             />
-                            <span className="text-sm text-gray-600">
-                              Seleccionar foto del proyecto
-                            </span>
                           </div>
-                          <input
-                            type="file"
-                            accept="image/*"
-                            className="hidden"
-                            id="portfolio-file"
-                            onChange={(e) => {
-                              const file = e.target.files?.[0];
-                              const descriptionInput = document.getElementById(
-                                "portfolio-description"
-                              ) as HTMLInputElement;
-                              if (file && descriptionInput?.value.trim()) {
-                                setPortfolioItems([
-                                  ...portfolioItems,
-                                  {
-                                    file,
-                                    description: descriptionInput.value.trim(),
-                                    preview: URL.createObjectURL(file),
-                                  },
-                                ]);
-                                descriptionInput.value = "";
-                                e.target.value = "";
-                              } else if (file) {
-                                alert(
-                                  "Por favor, ingresa una descripción del trabajo."
-                                );
-                              }
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setExistingCertificates(
+                                existingCertificates.filter(
+                                  (_, i) => i !== index
+                                )
+                              );
                             }}
-                          />
-                        </label>
-                      </div>
+                            className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <FontAwesomeIcon
+                              icon={faTrash}
+                              className="text-xs"
+                            />
+                          </button>
+                        </div>
+                      ))}
                     </div>
-                  </div>
+                  )}
 
-                  {/* Certificaciones */}
-                  <div className="space-y-4">
-                    <label className="flex items-center text-sm font-semibold text-gray-700">
+                  {/* Nuevas certificaciones */}
+                  {certificatePreviews.length > 0 && (
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
+                      {certificatePreviews.map((preview, index) => (
+                        <div key={index} className="relative group">
+                          <div className="relative w-full aspect-square rounded-lg overflow-hidden border-2 border-indigo-200">
+                            <Image
+                              src={preview}
+                              alt={`Nueva certificación ${index + 1}`}
+                              fill
+                              className="object-cover"
+                            />
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setCertificateFiles(
+                                certificateFiles.filter((_, i) => i !== index)
+                              );
+                              setCertificatePreviews(
+                                certificatePreviews.filter(
+                                  (_, i) => i !== index
+                                )
+                              );
+                            }}
+                            className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <FontAwesomeIcon
+                              icon={faTrash}
+                              className="text-xs"
+                            />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Agregar certificación */}
+                  <label className="cursor-pointer">
+                    <div className="px-4 py-3 border-2 border-dashed border-gray-300 rounded-xl hover:border-indigo-500 transition-colors text-center">
                       <FontAwesomeIcon
-                        icon={faCertificate}
+                        icon={faUpload}
                         className="mr-2 text-indigo-500"
                       />
-                      Certificaciones (DC-3, Red CONOCER, etc.) (Opcional)
-                    </label>
-                    <p className="text-xs text-gray-500 mb-4">
-                      Sube tus certificaciones para aumentar la confianza de los
-                      clientes.
-                    </p>
-
-                    {/* Certificaciones existentes */}
-                    {existingCertificates.length > 0 && (
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
-                        {existingCertificates.map((url, index) => (
-                          <div key={index} className="relative group">
-                            <div className="relative w-full aspect-square rounded-lg overflow-hidden border-2 border-gray-200">
-                              <Image
-                                src={url}
-                                alt={`Certificación ${index + 1}`}
-                                fill
-                                className="object-cover"
-                              />
-                            </div>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setExistingCertificates(
-                                  existingCertificates.filter(
-                                    (_, i) => i !== index
-                                  )
-                                );
-                              }}
-                              className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                            >
-                              <FontAwesomeIcon
-                                icon={faTrash}
-                                className="text-xs"
-                              />
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
-                    {/* Nuevas certificaciones */}
-                    {certificatePreviews.length > 0 && (
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
-                        {certificatePreviews.map((preview, index) => (
-                          <div key={index} className="relative group">
-                            <div className="relative w-full aspect-square rounded-lg overflow-hidden border-2 border-indigo-200">
-                              <Image
-                                src={preview}
-                                alt={`Nueva certificación ${index + 1}`}
-                                fill
-                                className="object-cover"
-                              />
-                            </div>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setCertificateFiles(
-                                  certificateFiles.filter((_, i) => i !== index)
-                                );
-                                setCertificatePreviews(
-                                  certificatePreviews.filter(
-                                    (_, i) => i !== index
-                                  )
-                                );
-                              }}
-                              className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                            >
-                              <FontAwesomeIcon
-                                icon={faTrash}
-                                className="text-xs"
-                              />
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
-                    {/* Agregar certificación */}
-                    <label className="cursor-pointer">
-                      <div className="px-4 py-3 border-2 border-dashed border-gray-300 rounded-xl hover:border-indigo-500 transition-colors text-center">
-                        <FontAwesomeIcon
-                          icon={faUpload}
-                          className="mr-2 text-indigo-500"
-                        />
-                        <span className="text-sm text-gray-600">
-                          Agregar certificación (PDF o imagen)
-                        </span>
-                      </div>
-                      <input
-                        type="file"
-                        accept="image/*,application/pdf"
-                        className="hidden"
-                        multiple
-                        onChange={(e) => {
-                          const files = Array.from(e.target.files || []);
-                          if (files.length > 0) {
+                      <span className="text-sm text-gray-600">
+                        Agregar certificación (PDF o imagen)
+                      </span>
+                    </div>
+                    <input
+                      type="file"
+                      accept="image/*,application/pdf"
+                      className="hidden"
+                      multiple
+                      onChange={(e) => {
+                        const files = Array.from(e.target.files || []);
+                        if (files.length > 0) {
                             setCertificateFiles([
                               ...certificateFiles,
                               ...files,
                             ]);
-                            setCertificatePreviews([
-                              ...certificatePreviews,
-                              ...files.map((file) => URL.createObjectURL(file)),
-                            ]);
-                          }
-                        }}
-                      />
-                    </label>
-                  </div>
+                          setCertificatePreviews([
+                            ...certificatePreviews,
+                            ...files.map((file) => URL.createObjectURL(file)),
+                          ]);
+                        }
+                      }}
+                    />
+                  </label>
+                </div>
 
-                  {/* Antecedentes No Penales */}
-                  <div className="space-y-4">
-                    <label className="flex items-center text-sm font-semibold text-gray-700">
+                {/* Antecedentes No Penales */}
+                <div className="space-y-4">
+                  <label className="flex items-center text-sm font-semibold text-gray-700">
+                    <FontAwesomeIcon
+                      icon={faShieldAlt}
+                      className="mr-2 text-indigo-500"
+                    />
+                    Constancia de Antecedentes No Penales (Opcional)
+                  </label>
+                  <p className="text-xs text-gray-500 mb-4">
+                    Sube tu constancia de antecedentes no penales para mayor
+                    confianza.
+                  </p>
+
+                  {backgroundCheckPreview && (
+                    <div className="relative w-full max-w-md group">
+                      <div className="relative w-full aspect-[4/3] rounded-lg overflow-hidden border-2 border-indigo-200">
+                        <Image
+                          src={backgroundCheckPreview}
+                          alt="Antecedentes no penales"
+                          fill
+                          className="object-cover"
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setBackgroundCheckFile(null);
+                          setBackgroundCheckPreview(null);
+                        }}
+                        className="absolute top-2 right-2 bg-red-500 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <FontAwesomeIcon icon={faTrash} />
+                      </button>
+                    </div>
+                  )}
+
+                  <label className="cursor-pointer">
+                    <div className="px-4 py-3 border-2 border-dashed border-gray-300 rounded-xl hover:border-indigo-500 transition-colors text-center">
                       <FontAwesomeIcon
-                        icon={faShieldAlt}
+                        icon={faUpload}
                         className="mr-2 text-indigo-500"
                       />
-                      Constancia de Antecedentes No Penales (Opcional)
-                    </label>
-                    <p className="text-xs text-gray-500 mb-4">
-                      Sube tu constancia de antecedentes no penales para mayor
-                      confianza.
-                    </p>
-
-                    {backgroundCheckPreview && (
-                      <div className="relative w-full max-w-md group">
-                        <div className="relative w-full aspect-[4/3] rounded-lg overflow-hidden border-2 border-indigo-200">
-                          <Image
-                            src={backgroundCheckPreview}
-                            alt="Antecedentes no penales"
-                            fill
-                            className="object-cover"
-                          />
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setBackgroundCheckFile(null);
-                            setBackgroundCheckPreview(null);
-                          }}
-                          className="absolute top-2 right-2 bg-red-500 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          <FontAwesomeIcon icon={faTrash} />
-                        </button>
-                      </div>
-                    )}
-
-                    <label className="cursor-pointer">
-                      <div className="px-4 py-3 border-2 border-dashed border-gray-300 rounded-xl hover:border-indigo-500 transition-colors text-center">
-                        <FontAwesomeIcon
-                          icon={faUpload}
-                          className="mr-2 text-indigo-500"
-                        />
-                        <span className="text-sm text-gray-600">
-                          {backgroundCheckFile
-                            ? backgroundCheckFile.name
-                            : "Subir constancia de antecedentes no penales"}
-                        </span>
-                      </div>
-                      <input
-                        type="file"
-                        accept="image/*,application/pdf"
-                        className="hidden"
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (file) {
-                            setBackgroundCheckFile(file);
+                      <span className="text-sm text-gray-600">
+                        {backgroundCheckFile
+                          ? backgroundCheckFile.name
+                          : "Subir constancia de antecedentes no penales"}
+                      </span>
+                    </div>
+                    <input
+                      type="file"
+                      accept="image/*,application/pdf"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          setBackgroundCheckFile(file);
                             setBackgroundCheckPreview(
                               URL.createObjectURL(file)
                             );
-                          }
-                        }}
-                      />
-                    </label>
-                  </div>
-                </div>
-              )}
-
-              {/* Step 2: Biografía */}
-              {currentStep === 2 && (
-                <div className="space-y-6 animate-in slide-in-from-right-4 duration-300">
-                  <div className="text-center mb-8">
-                    <div className="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <FontAwesomeIcon
-                        icon={faStar}
-                        className="text-2xl text-indigo-600"
-                      />
-                    </div>
-                    <h3 className="text-xl font-bold text-gray-900 mb-2">
-                      Tu Historia Profesional
-                    </h3>
-                    <p className="text-gray-600">
-                      Destaca tu experiencia y confianza
-                    </p>
-                  </div>
-
-                  <div className="space-y-4">
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Descripción Profesional *
-                    </label>
-                    <textarea
-                      name="descripcion_perfil"
-                      value={formData.descripcion_perfil ?? ""}
-                      onChange={handleChange}
-                      rows={6}
-                      placeholder="Ej: Soy electricista certificado con 10 años de experiencia. Especialista en instalaciones residenciales y comerciales. Trabajos garantizados y materiales de calidad. Atiendo toda la CDMX y área metropolitana."
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200 resize-none"
-                      required
+                        }
+                      }}
                     />
-                    <div className="flex items-center justify-between text-sm text-gray-500">
-                      <span>
-                        {formData.descripcion_perfil?.length || 0} caracteres
-                      </span>
+                  </label>
+                </div>
+              </div>
+            )}
+
+            {/* Step 2: Biografía */}
+            {currentStep === 2 && (
+              <div className="space-y-6 animate-in slide-in-from-right-4 duration-300">
+                <div className="text-center mb-8">
+                  <div className="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <FontAwesomeIcon
+                      icon={faStar}
+                      className="text-2xl text-indigo-600"
+                    />
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-900 mb-2">
+                    Tu Historia Profesional
+                  </h3>
+                  <p className="text-gray-600">
+                    Destaca tu experiencia y confianza
+                  </p>
+                </div>
+
+                <div className="space-y-4">
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Descripción Profesional *
+                  </label>
+                  <textarea
+                    name="descripcion_perfil"
+                    value={formData.descripcion_perfil ?? ""}
+                    onChange={handleChange}
+                    rows={6}
+                    placeholder="Ej: Soy electricista certificado con 10 años de experiencia. Especialista en instalaciones residenciales y comerciales. Trabajos garantizados y materiales de calidad. Atiendo toda la CDMX y área metropolitana."
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200 resize-none"
+                    required
+                  />
+                  <div className="flex items-center justify-between text-sm text-gray-500">
+                    <span>
+                      {formData.descripcion_perfil?.length || 0} caracteres
+                    </span>
                       <span className="text-indigo-500">
                         Mín. 100 caracteres
                       </span>
-                    </div>
                   </div>
                 </div>
-              )}
+              </div>
+            )}
 
-              {/* Step 3: Especialidades */}
-              {currentStep === 3 && (
-                <div className="space-y-6 animate-in slide-in-from-right-4 duration-300">
-                  <div className="text-center mb-8">
-                    <div className="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <FontAwesomeIcon
-                        icon={faBriefcase}
-                        className="text-2xl text-indigo-600"
-                      />
+            {/* Step 3: Especialidades */}
+            {currentStep === 3 && (
+              <div className="space-y-6 animate-in slide-in-from-right-4 duration-300">
+                <div className="text-center mb-8">
+                  <div className="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <FontAwesomeIcon
+                      icon={faBriefcase}
+                      className="text-2xl text-indigo-600"
+                    />
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-900 mb-2">
+                    Tus Especialidades
+                  </h3>
+                  <p className="text-gray-600">
+                    Selecciona todos los servicios que ofreces (puedes elegir
+                    múltiples)
+                  </p>
+                </div>
+
+                <div className="space-y-6">
+                  {/* Servicios predefinidos */}
+                  <div>
+                    <h4 className="text-lg font-semibold text-gray-800 mb-4">
+                      Servicios Disponibles
+                    </h4>
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                      {OFICIOS_OPTIONS.map((office) => (
+                        <button
+                          key={office.id}
+                          type="button"
+                          onClick={() => handleOfficesChange(office.name)}
+                          className={`p-4 rounded-xl border-2 transition-all duration-200 flex flex-col items-center space-y-2 group ${
+                            isOfficeSelected(office.name)
+                              ? "border-indigo-500 bg-indigo-50 text-indigo-700 shadow-lg transform scale-105"
+                              : "border-gray-200 hover:border-indigo-300 hover:bg-gray-50"
+                          }`}
+                        >
+                          <FontAwesomeIcon
+                            icon={office.icon}
+                            className="text-2xl"
+                          />
+                          <span className="text-sm font-medium text-center">
+                            {office.name}
+                          </span>
+                        </button>
+                      ))}
                     </div>
-                    <h3 className="text-xl font-bold text-gray-900 mb-2">
-                      Tus Especialidades
-                    </h3>
-                    <p className="text-gray-600">
-                      Selecciona todos los servicios que ofreces (puedes elegir
-                      múltiples)
-                    </p>
                   </div>
 
-                  <div className="space-y-6">
-                    {/* Servicios predefinidos */}
-                    <div>
-                      <h4 className="text-lg font-semibold text-gray-800 mb-4">
-                        Servicios Disponibles
-                      </h4>
-                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                        {OFICIOS_OPTIONS.map((office) => (
-                          <button
-                            key={office.id}
-                            type="button"
-                            onClick={() => handleOfficesChange(office.name)}
-                            className={`p-4 rounded-xl border-2 transition-all duration-200 flex flex-col items-center space-y-2 group ${
-                              isOfficeSelected(office.name)
-                                ? "border-indigo-500 bg-indigo-50 text-indigo-700 shadow-lg transform scale-105"
-                                : "border-gray-200 hover:border-indigo-300 hover:bg-gray-50"
-                            }`}
-                          >
-                            <FontAwesomeIcon
-                              icon={office.icon}
-                              className="text-2xl"
-                            />
-                            <span className="text-sm font-medium text-center">
-                              {office.name}
+                  {/* Campo para servicio personalizado */}
+                  <div className="bg-gray-50 rounded-xl p-4">
+                    <h4 className="text-lg font-semibold text-gray-800 mb-3 flex items-center">
+                      <FontAwesomeIcon
+                        icon={faPlus}
+                        className="mr-2 text-indigo-500"
+                      />
+                      Agregar Servicio Personalizado
+                    </h4>
+                    <p className="text-sm text-gray-600 mb-4">
+                      ¿No encuentras tu especialidad? Agrega un servicio
+                      personalizado que no esté en la lista.
+                    </p>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={customService}
+                        onChange={(e) => setCustomService(e.target.value)}
+                        placeholder="Ej: Instalación de Persianas, Soldadura, etc."
+                        className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                        onKeyPress={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            addCustomService();
+                          }
+                        }}
+                      />
+                      <button
+                        type="button"
+                        onClick={addCustomService}
+                        disabled={!customService.trim()}
+                        className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                      >
+                        <FontAwesomeIcon icon={faPlus} />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Servicios seleccionados */}
+                  {formData.areas_servicio &&
+                    formData.areas_servicio.length > 0 && (
+                      <div className="bg-green-50 border border-green-200 rounded-xl p-4">
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center space-x-2 text-green-700">
+                            <FontAwesomeIcon icon={faCheck} />
+                            <span className="font-semibold">
+                              Especialidades seleccionadas (
+                              {formData.areas_servicio.length})
                             </span>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Campo para servicio personalizado */}
-                    <div className="bg-gray-50 rounded-xl p-4">
-                      <h4 className="text-lg font-semibold text-gray-800 mb-3 flex items-center">
-                        <FontAwesomeIcon
-                          icon={faPlus}
-                          className="mr-2 text-indigo-500"
-                        />
-                        Agregar Servicio Personalizado
-                      </h4>
-                      <p className="text-sm text-gray-600 mb-4">
-                        ¿No encuentras tu especialidad? Agrega un servicio
-                        personalizado que no esté en la lista.
-                      </p>
-                      <div className="flex gap-2">
-                        <input
-                          type="text"
-                          value={customService}
-                          onChange={(e) => setCustomService(e.target.value)}
-                          placeholder="Ej: Instalación de Persianas, Soldadura, etc."
-                          className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                          onKeyPress={(e) => {
-                            if (e.key === "Enter") {
-                              e.preventDefault();
-                              addCustomService();
-                            }
-                          }}
-                        />
-                        <button
-                          type="button"
-                          onClick={addCustomService}
-                          disabled={!customService.trim()}
-                          className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
-                        >
-                          <FontAwesomeIcon icon={faPlus} />
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Servicios seleccionados */}
-                    {formData.areas_servicio &&
-                      formData.areas_servicio.length > 0 && (
-                        <div className="bg-green-50 border border-green-200 rounded-xl p-4">
-                          <div className="flex items-center justify-between mb-3">
-                            <div className="flex items-center space-x-2 text-green-700">
-                              <FontAwesomeIcon icon={faCheck} />
-                              <span className="font-semibold">
-                                Especialidades seleccionadas (
-                                {formData.areas_servicio.length})
-                              </span>
-                            </div>
-                          </div>
-                          <div className="flex flex-wrap gap-2">
-                            {formData.areas_servicio.map((area, index) => (
-                              <span
-                                key={index}
-                                className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm flex items-center space-x-2"
-                              >
-                                <span>{area}</span>
-                                <button
-                                  type="button"
-                                  onClick={() => removeService(area)}
-                                  className="ml-1 text-green-600 hover:text-green-800 transition-colors"
-                                >
-                                  <FontAwesomeIcon
-                                    icon={faTimes}
-                                    className="text-xs"
-                                  />
-                                </button>
-                              </span>
-                            ))}
                           </div>
                         </div>
-                      )}
-                  </div>
+                        <div className="flex flex-wrap gap-2">
+                          {formData.areas_servicio.map((area, index) => (
+                            <span
+                              key={index}
+                              className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm flex items-center space-x-2"
+                            >
+                              <span>{area}</span>
+                              <button
+                                type="button"
+                                onClick={() => removeService(area)}
+                                className="ml-1 text-green-600 hover:text-green-800 transition-colors"
+                              >
+                                <FontAwesomeIcon
+                                  icon={faTimes}
+                                  className="text-xs"
+                                />
+                              </button>
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                 </div>
-              )}
+              </div>
+            )}
 
-              {/* Step 4: Ubicación */}
-              {currentStep === 4 && (
-                <div className="space-y-6 animate-in slide-in-from-right-4 duration-300">
-                  <div className="text-center mb-8">
-                    <div className="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <FontAwesomeIcon
-                        icon={faMapMarkerAlt}
-                        className="text-2xl text-indigo-600"
-                      />
-                    </div>
-                    <h3 className="text-xl font-bold text-gray-900 mb-2">
-                      Ubicación de Servicio
-                    </h3>
-                    <p className="text-gray-600">
-                      Actualiza tu ubicación para recibir leads cercanos
-                    </p>
+            {/* Step 4: Ubicación */}
+            {currentStep === 4 && (
+              <div className="space-y-6 animate-in slide-in-from-right-4 duration-300">
+                <div className="text-center mb-8">
+                  <div className="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <FontAwesomeIcon
+                      icon={faMapMarkerAlt}
+                      className="text-2xl text-indigo-600"
+                    />
                   </div>
+                  <h3 className="text-xl font-bold text-gray-900 mb-2">
+                    Ubicación de Servicio
+                  </h3>
+                  <p className="text-gray-600">
+                    Actualiza tu ubicación para recibir leads cercanos
+                  </p>
+                </div>
 
-                  <div className="space-y-4">
+                <div className="space-y-4">
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">
-                        Dirección de Servicio
-                      </label>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Dirección de Servicio
+                  </label>
                       <button
                         type="button"
                         onClick={async () => {
@@ -1261,31 +1261,31 @@ export default function EditProfileModal({
                         )}
                       </button>
                     </div>
-                    <input
-                      type="text"
-                      value={locationAddress}
-                      onChange={(e) => setLocationAddress(e.target.value)}
-                      placeholder="Ej: Calle Catorce #123, Benito Juárez, Ciudad de México, CDMX"
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200"
-                    />
-                    <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
-                      <div className="flex items-start space-x-3">
-                        <FontAwesomeIcon
-                          icon={faMapMarkerAlt}
-                          className="text-blue-500 mt-1"
-                        />
-                        <div>
-                          <p className="text-blue-800 font-medium mb-1">
-                            Ubicación en el mapa
-                          </p>
-                          <p className="text-blue-600 text-sm">
+                  <input
+                    type="text"
+                    value={locationAddress}
+                    onChange={(e) => setLocationAddress(e.target.value)}
+                    placeholder="Ej: Calle Catorce #123, Benito Juárez, Ciudad de México, CDMX"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200"
+                  />
+                  <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                    <div className="flex items-start space-x-3">
+                      <FontAwesomeIcon
+                        icon={faMapMarkerAlt}
+                        className="text-blue-500 mt-1"
+                      />
+                      <div>
+                        <p className="text-blue-800 font-medium mb-1">
+                          Ubicación en el mapa
+                        </p>
+                        <p className="text-blue-600 text-sm">
                             Tu pin azul se actualizará con esta dirección para
                             que los clientes puedan encontrarte en el mapa.
-                          </p>
-                        </div>
+                        </p>
                       </div>
                     </div>
                   </div>
+                </div>
 
                   <div className="space-y-6">
                     <div>
@@ -1348,14 +1348,14 @@ export default function EditProfileModal({
                           placeholder="Ej: Naucalpan, Estado de México"
                           className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm"
                         />
-                        <button
-                          type="button"
+                  <button
+                    type="button"
                           onClick={addCustomWorkZone}
                           disabled={!customWorkZone.trim()}
                           className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-semibold hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
                         >
                           Agregar zona
-                        </button>
+                  </button>
                       </div>
                     </div>
 
@@ -1398,7 +1398,7 @@ export default function EditProfileModal({
                       recibir. Si ya no trabajas en una zona, elimínala para
                       evitar desplazamientos innecesarios.
                     </p>
-                  </div>
+              </div>
                 </div>
               )}
 
@@ -1438,7 +1438,7 @@ export default function EditProfileModal({
 
             <div className="relative px-4 md:px-0">
               {/* Mensaje de estado - Solo mostrar en desktop, o arriba en móvil si hay espacio */}
-              {statusMessage && (
+                {statusMessage && (
                 <div className="hidden md:flex items-center justify-center mb-4">
                   <div
                     className={`flex items-center space-x-2 px-4 py-2 rounded-lg ${
@@ -1461,8 +1461,8 @@ export default function EditProfileModal({
                     )}
                     <span className="text-sm font-medium">{statusMessage}</span>
                   </div>
-                </div>
-              )}
+                  </div>
+                )}
 
               <div className="flex justify-between items-center gap-3 md:gap-4">
                 {/* Botón Anterior */}
@@ -1515,20 +1515,20 @@ export default function EditProfileModal({
 
                 {/* Botón Siguiente/Guardar */}
                 <div className="flex-1 md:flex-initial">
-                  {currentStep < totalSteps ? (
-                    <button
-                      type="button"
-                      onClick={nextStep}
-                      disabled={
-                        (currentStep === 1 && !formData.whatsapp) ||
-                        (currentStep === 2 && !formData.descripcion_perfil) ||
-                        (currentStep === 3 &&
-                          (!formData.areas_servicio ||
-                            formData.areas_servicio.length === 0))
-                      }
+                {currentStep < totalSteps ? (
+                  <button
+                    type="button"
+                    onClick={nextStep}
+                    disabled={
+                      (currentStep === 1 && !formData.whatsapp) ||
+                      (currentStep === 2 && !formData.descripcion_perfil) ||
+                      (currentStep === 3 &&
+                        (!formData.areas_servicio ||
+                          formData.areas_servicio.length === 0))
+                    }
                       className="w-full md:w-auto px-6 md:px-8 py-4 md:py-3 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white rounded-xl transition-all duration-200 disabled:from-gray-300 disabled:to-gray-400 disabled:cursor-not-allowed flex items-center justify-center space-x-2 font-bold text-base md:text-base shadow-lg hover:shadow-xl active:scale-95 touch-manipulation min-h-[52px] md:min-h-[44px]"
-                    >
-                      <span>Siguiente</span>
+                  >
+                    <span>Siguiente</span>
                       <FontAwesomeIcon
                         icon={faRocket}
                         className="text-sm md:text-sm"
@@ -1554,40 +1554,40 @@ export default function EditProfileModal({
                         >
                           <FontAwesomeIcon icon={faTimes} />
                           <span>Cerrar</span>
-                        </button>
-                      ) : (
-                        <button
-                          type="submit"
-                          disabled={
-                            loading ||
-                            !formData.areas_servicio ||
-                            formData.areas_servicio.length === 0
-                          }
+                  </button>
+                ) : (
+                  <button
+                    type="submit"
+                    disabled={
+                      loading ||
+                      !formData.areas_servicio ||
+                      formData.areas_servicio.length === 0
+                    }
                           className="w-full md:w-auto px-6 md:px-8 py-4 md:py-3 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white rounded-xl transition-all duration-200 disabled:from-gray-300 disabled:to-gray-400 disabled:cursor-not-allowed flex items-center justify-center space-x-2 font-bold text-base md:text-base shadow-lg hover:shadow-xl active:scale-95 touch-manipulation min-h-[52px] md:min-h-[44px]"
-                        >
-                          {loading ? (
-                            <>
-                              <FontAwesomeIcon
-                                icon={faSpinner}
-                                className="animate-spin"
-                              />
-                              <span>Guardando...</span>
-                            </>
-                          ) : (
-                            <>
-                              <FontAwesomeIcon icon={faCheck} />
+                  >
+                    {loading ? (
+                      <>
+                        <FontAwesomeIcon
+                          icon={faSpinner}
+                          className="animate-spin"
+                        />
+                        <span>Guardando...</span>
+                      </>
+                    ) : (
+                      <>
+                        <FontAwesomeIcon icon={faCheck} />
                               <span className="hidden sm:inline">
                                 Guardar y Finalizar
                               </span>
                               <span className="sm:hidden">Finalizar</span>
-                            </>
-                          )}
-                        </button>
+                      </>
+                    )}
+                  </button>
                       )}
                     </>
-                  )}
-                </div>
+                )}
               </div>
+            </div>
             </div>
           </div>
         </div>

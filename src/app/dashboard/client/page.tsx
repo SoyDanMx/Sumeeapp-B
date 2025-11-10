@@ -14,6 +14,7 @@ import RecentActivityWidget from "@/components/dashboard/RecentActivityWidget";
 import NearbyProfessionalsWidget from "@/components/dashboard/NearbyProfessionalsWidget";
 import ExploreMapCTA from "@/components/dashboard/ExploreMapCTA";
 import ClientOnboardingModal from "@/components/dashboard/ClientOnboardingModal";
+import ClientProfileWidget from "@/components/dashboard/ClientProfileWidget";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faSpinner,
@@ -523,15 +524,36 @@ export default function ClientDashboardPage() {
         {/* Grid de Widgets Principal */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
           {/* Widget de Próximo Servicio - Ocupa 2 columnas */}
-          <div className="lg:col-span-2">
+          <div className="lg:col-span-2 space-y-6">
             <UpcomingServiceWidget
               upcomingLead={upcomingService}
               onViewDetails={handleViewLead}
             />
           </div>
 
-          {/* Widget de Actividad Reciente - Ocupa 1 columna */}
-          <div className="lg:col-span-1">
+          {/* Columna Lateral - Widgets de Usuario */}
+          <div className="lg:col-span-1 space-y-6">
+            {/* Widget de Perfil del Cliente */}
+            {userProfile && (
+              <ClientProfileWidget
+                profile={userProfile}
+                onProfileUpdate={() => {
+                  // Refrescar perfil
+                  if (user) {
+                    supabase
+                      .from("profiles")
+                      .select("*")
+                      .eq("user_id", user.id)
+                      .single()
+                      .then(({ data }) => {
+                        if (data) setUserProfile(data);
+                      });
+                  }
+                }}
+              />
+            )}
+            
+            {/* Widget de Actividad Reciente */}
             <RecentActivityWidget recentLeads={recentCompleted} />
           </div>
         </div>

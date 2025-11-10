@@ -3,12 +3,12 @@
 
 import React, { useMemo } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faChartLine,
-  faStar,
-  faClock,
-  faDollarSign,
-  faUsers,
+import { 
+  faChartLine, 
+  faStar, 
+  faClock, 
+  faDollarSign, 
+  faUsers, 
   faThumbsUp,
   faCalendarAlt,
   faTrophy,
@@ -299,7 +299,7 @@ export default function ProfessionalStats({
               Tu Rendimiento Profesional
             </h3>
             <p className="text-blue-100 text-sm">
-              {stats.yearsExperience > 0
+              {stats.yearsExperience > 0 
                 ? `${stats.yearsExperience} años de experiencia`
                 : "Profesional certificado"}
             </p>
@@ -316,7 +316,7 @@ export default function ProfessionalStats({
       {/* Grid de Estadísticas */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {statCards.map((stat, index) => (
-          <div
+          <div 
             key={index}
             className={`p-4 rounded-lg border ${getColorClasses(stat.color)}`}
           >
@@ -378,7 +378,7 @@ export default function ProfessionalStats({
               </div>
             </div>
           )}
-
+          
           {stats.hasRating && stats.rating >= 4.5 && (
             <div className="flex items-center space-x-3 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
               <FontAwesomeIcon icon={faStar} className="text-yellow-600" />
