@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { getClientLeadDetails, getClientLeads } from "@/lib/supabase/data";
 import { supabase } from "@/lib/supabase/client";
-import { Lead } from "@/types/supabase";
+import { Lead, Profile } from "@/types/supabase";
 import { useAuth } from "@/context/AuthContext";
 import { useMembership } from "@/context/MembershipContext";
 import RequestServiceModal from "@/components/client/RequestServiceModal";
@@ -13,6 +13,7 @@ import QuickActionsWidget from "@/components/dashboard/QuickActionsWidget";
 import RecentActivityWidget from "@/components/dashboard/RecentActivityWidget";
 import NearbyProfessionalsWidget from "@/components/dashboard/NearbyProfessionalsWidget";
 import ExploreMapCTA from "@/components/dashboard/ExploreMapCTA";
+import ClientOnboardingModal from "@/components/dashboard/ClientOnboardingModal";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faSpinner,
@@ -45,6 +46,11 @@ export default function ClientDashboardPage() {
   const [actionError, setActionError] = useState<string | null>(null);
   const [clientLocation, setClientLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [showProfessionalsMap, setShowProfessionalsMap] = useState(false);
+  
+  // 🆕 ONBOARDING MODAL
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [userProfile, setUserProfile] = useState<Profile | null>(null);
+  const [hasCheckedOnboarding, setHasCheckedOnboarding] = useState(false);
 
   // Función para refrescar los leads
   const refreshLeads = async () => {
@@ -91,6 +97,48 @@ export default function ClientDashboardPage() {
 
     fetchLeads();
   }, [user, userLoading]);
+
+  // 🆕 VERIFICAR SI NECESITA ONBOARDING
+  useEffect(() => {
+    const checkOnboarding = async () => {
+      if (!user || hasCheckedOnboarding) return;
+
+      try {
+        const { data: profile, error } = await supabase
+          .from('profiles')
+          .select('user_id, whatsapp, ubicacion_lat, ubicacion_lng, city, full_name, email')
+          .eq('user_id', user.id)
+          .single();
+
+        if (error) {
+          console.error('Error fetching profile for onboarding:', error);
+          return;
+        }
+
+        if (profile) {
+          setUserProfile(profile);
+          
+          // Verificar si necesita onboarding (falta WhatsApp o ubicación)
+          const needsOnboarding = !profile.whatsapp || !profile.ubicacion_lat;
+          
+          if (needsOnboarding) {
+            console.log('🆕 Cliente necesita onboarding');
+            // Delay de 500ms para mejor UX (evitar flash)
+            setTimeout(() => {
+              setShowOnboarding(true);
+            }, 500);
+          }
+          
+          setHasCheckedOnboarding(true);
+        }
+      } catch (err) {
+        console.error('Error checking onboarding:', err);
+        setHasCheckedOnboarding(true);
+      }
+    };
+
+    checkOnboarding();
+  }, [user, hasCheckedOnboarding]);
 
   // Obtener ubicación del cliente desde su perfil
   useEffect(() => {
@@ -152,6 +200,33 @@ export default function ClientDashboardPage() {
   const handleModalClose = () => {
     setIsModalOpen(false);
     setSelectedService(null);
+  };
+
+  // 🆕 CALLBACK DE ONBOARDING COMPLETADO
+  const handleOnboardingComplete = async () => {
+    console.log('✅ Onboarding completado, refrescando datos...');
+    setShowOnboarding(false);
+    
+    // Refrescar el perfil del usuario
+    if (user) {
+      const { data: updatedProfile } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+      
+      if (updatedProfile) {
+        setUserProfile(updatedProfile);
+        
+        // Actualizar ubicación del cliente
+        if (updatedProfile.ubicacion_lat && updatedProfile.ubicacion_lng) {
+          setClientLocation({
+            lat: updatedProfile.ubicacion_lat,
+            lng: updatedProfile.ubicacion_lng
+          });
+        }
+      }
+    }
   };
 
   const handleViewLead = async (lead: Lead) => {
@@ -585,6 +660,15 @@ export default function ClientDashboardPage() {
           isUpdating={isUpdating}
           isLoading={isDetailsLoading}
           loadError={detailsError}
+        />
+      )}
+
+      {/* 🆕 ONBOARDING MODAL */}
+      {showOnboarding && userProfile && (
+        <ClientOnboardingModal
+          isOpen={showOnboarding}
+          userProfile={userProfile}
+          onComplete={handleOnboardingComplete}
         />
       )}
     </div>

@@ -140,6 +140,65 @@ export async function submitLead(leadData: {
       }
     }
 
+    // 🆕 FASE 1: FALLBACK - Actualizar perfil del cliente si no tiene ubicación
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        // Verificar si el perfil del cliente tiene ubicación
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('ubicacion_lat, ubicacion_lng, whatsapp')
+          .eq('user_id', session.user.id)
+          .single();
+        
+        if (profile && !profile.ubicacion_lat && lat && lng) {
+          console.log('🆕 Primer lead del cliente, actualizando perfil con ubicación');
+          
+          // Extraer ciudad de la dirección (aproximado)
+          const cityGuess = leadData.ubicacion.toLowerCase().includes('cdmx') ||
+                           leadData.ubicacion.toLowerCase().includes('ciudad de méxico') ||
+                           leadData.ubicacion.toLowerCase().includes('mexico city')
+                           ? 'Ciudad de México'
+                           : 'Ciudad de México'; // Default
+          
+          // Actualizar perfil con ubicación del lead
+          await supabase
+            .from('profiles')
+            .update({
+              ubicacion_lat: lat,
+              ubicacion_lng: lng,
+              city: cityGuess,
+              updated_at: new Date().toISOString()
+            })
+            .eq('user_id', session.user.id);
+          
+          console.log('✅ Perfil del cliente actualizado con ubicación:', { lat, lng, city: cityGuess });
+        }
+        
+        // También actualizar WhatsApp si no lo tiene
+        if (profile && !profile.whatsapp && leadData.whatsapp) {
+          console.log('🆕 Guardando WhatsApp en perfil del cliente');
+          await supabase
+            .from('profiles')
+            .update({
+              whatsapp: leadData.whatsapp,
+              updated_at: new Date().toISOString()
+            })
+            .eq('user_id', session.user.id);
+          
+          // También actualizar en metadata de auth
+          await supabase.auth.updateUser({
+            data: { whatsapp: leadData.whatsapp }
+          });
+          
+          console.log('✅ WhatsApp guardado en perfil');
+        }
+      }
+    } catch (profileError) {
+      // No fallar el lead si hay error actualizando el perfil
+      console.warn('⚠️ Error actualizando perfil del cliente (no crítico):', profileError);
+    }
+
     // Preparar la descripción del proyecto
     // Si se proporciona descripcion_proyecto, usarla; si no, construir una genérica
     const descripcion_proyecto =
