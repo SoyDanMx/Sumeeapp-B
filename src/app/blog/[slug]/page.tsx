@@ -818,7 +818,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
               El artículo que buscas no existe o ha sido movido.
             </p>
             <Link
-              href="/blog"
+              href="/blog" 
               className="inline-flex items-center text-indigo-600 hover:text-indigo-700 font-medium"
             >
               <svg
@@ -853,11 +853,11 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
       />
 
-      <div className="flex flex-col min-h-screen bg-gray-50">
-        <Header />
+    <div className="flex flex-col min-h-screen bg-gray-50">
+      <Header />
         <BlogPostContent post={post} />
-        <Footer />
-      </div>
+      <Footer />
+    </div>
     </>
   );
 }
