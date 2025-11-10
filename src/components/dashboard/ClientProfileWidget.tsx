@@ -45,11 +45,11 @@ export default function ClientProfileWidget({
   const missingLocation = !profile.ubicacion_lat || !profile.ubicacion_lng;
 
   // Determinar plan del cliente
-  const planName = profile.membership_status === "premium" || profile.membership_status === "pro_annual"
+  const planName = profile.membership_status === "premium"
     ? "Sumee Pro"
     : "Sumee Express";
 
-  const planColor = profile.membership_status === "premium" || profile.membership_status === "pro_annual"
+  const planColor = profile.membership_status === "premium"
     ? "from-purple-600 to-indigo-600"
     : "from-blue-500 to-cyan-500";
 
