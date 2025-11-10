@@ -188,16 +188,42 @@ export default function ClientOnboardingModal({
 
       // Actualizar perfil en profiles
       console.log("📤 Actualizando perfil en Supabase...");
-      const { error: updateError } = await supabase
-        .from("profiles")
-        .update({
-          whatsapp: formData.whatsapp,
-          city: finalCity,
-          ubicacion_lat,
-          ubicacion_lng,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("user_id", userProfile.user_id);
+      
+      // Primero intentar con 'city', si falla, actualizar sin 'city'
+      let updateError = null;
+      const updateData: any = {
+        whatsapp: formData.whatsapp,
+        ubicacion_lat,
+        ubicacion_lng,
+        updated_at: new Date().toISOString(),
+      };
+      
+      // Intentar incluir 'city' (podría no existir en schema antiguo)
+      try {
+        const result = await supabase
+          .from("profiles")
+          .update({
+            ...updateData,
+            city: finalCity,
+          })
+          .eq("user_id", userProfile.user_id);
+        
+        updateError = result.error;
+        
+        // Si error es por columna 'city', reintentar sin ella
+        if (updateError && updateError.message?.includes("city")) {
+          console.warn("⚠️ Columna 'city' no existe, reintentando sin ella...");
+          const retryResult = await supabase
+            .from("profiles")
+            .update(updateData)
+            .eq("user_id", userProfile.user_id);
+          
+          updateError = retryResult.error;
+        }
+      } catch (err) {
+        console.error("❌ Error en actualización:", err);
+        updateError = err;
+      }
 
       if (updateError) {
         console.error("❌ Error actualizando perfil:", updateError);
