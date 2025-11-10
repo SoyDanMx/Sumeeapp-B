@@ -106,7 +106,7 @@ export default function ClientDashboardPage() {
       try {
         const { data: profile, error } = await supabase
           .from('profiles')
-          .select('user_id, whatsapp, ubicacion_lat, ubicacion_lng, city, full_name, email')
+          .select('*')
           .eq('user_id', user.id)
           .single();
 
