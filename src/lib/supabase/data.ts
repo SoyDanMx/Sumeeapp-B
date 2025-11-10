@@ -162,12 +162,12 @@ export async function submitLead(leadData: {
                            : 'Ciudad de México'; // Default
           
           // Actualizar perfil con ubicación del lead
+          // Nota: 'city' podría no existir en schema antiguo, pero no es crítico
           await supabase
             .from('profiles')
             .update({
               ubicacion_lat: lat,
               ubicacion_lng: lng,
-              city: cityGuess,
               updated_at: new Date().toISOString()
             })
             .eq('user_id', session.user.id);
