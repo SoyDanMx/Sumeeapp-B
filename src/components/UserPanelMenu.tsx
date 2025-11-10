@@ -14,9 +14,11 @@ import {
   faCrown,
   faListAlt,
   faWrench,
+  faUserEdit,
 } from "@fortawesome/free-solid-svg-icons";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/lib/supabase/client";
+import UpdateProfileModal from "./dashboard/UpdateProfileModal";
 
 interface UserPanelMenuProps {
   onClose?: () => void;
@@ -28,6 +30,7 @@ export default function UserPanelMenu({
   isScrolled = false,
 }: UserPanelMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [showProfileModal, setShowProfileModal] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const { user, profile, isProfessional, isClient } = useAuth();
 
@@ -194,6 +197,22 @@ export default function UserPanelMenu({
 
               {/* Opciones generales para todos */}
               <div className="border-t border-gray-100 my-1"></div>
+              
+              {/* Botón Actualizar Perfil */}
+              <button
+                onClick={() => {
+                  setShowProfileModal(true);
+                  setIsOpen(false);
+                }}
+                className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors"
+              >
+                <FontAwesomeIcon
+                  icon={faUserEdit}
+                  className="mr-3 text-gray-400 w-4"
+                />
+                Actualizar Mi Perfil
+              </button>
+              
               <Link
                 href="/help"
                 onClick={closeMenu}
@@ -219,6 +238,21 @@ export default function UserPanelMenu({
             </div>
           </div>
         </>
+      )}
+
+      {/* Modal de Actualizar Perfil */}
+      {showProfileModal && profile && (
+        <UpdateProfileModal
+          isOpen={showProfileModal}
+          onClose={() => setShowProfileModal(false)}
+          userRole={isProfessional ? "professional" : "client"}
+          currentProfile={profile}
+          onSuccess={() => {
+            setShowProfileModal(false);
+            // Forzar refresh de la página para actualizar datos
+            window.location.reload();
+          }}
+        />
       )}
     </div>
   );
