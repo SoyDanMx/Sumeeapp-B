@@ -16,6 +16,7 @@ const SERVICE_BASED_PROFESSIONS = [
 ];
 
 const ADDITIONAL_PROFESSIONS = [
+  "Ayudante Eléctrico",
   "Técnico en Refrigeración",
   "Soldador",
   "Herrero",
