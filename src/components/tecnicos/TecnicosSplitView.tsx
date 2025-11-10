@@ -111,29 +111,32 @@ export default function TecnicosSplitView({
           return;
         }
 
-        // Calculate distances en paralelo con Promise.all para mayor velocidad
-        const professionalsWithDistance = data
-          .map((prof) => {
-            const distance = calculateDistance(
-              userLocation.lat,
-              userLocation.lng,
-              prof.ubicacion_lat!,
-              prof.ubicacion_lng!
-            );
-            
-            // Solo incluir si está dentro de 50km (radio máximo)
-            if (distance > 50) return null;
-            
-            return {
+        // Calculate distances y filtrar por radio máximo
+        const professionalsWithDistance: Professional[] = [];
+        
+        for (const prof of data) {
+          const distance = calculateDistance(
+            userLocation.lat,
+            userLocation.lng,
+            prof.ubicacion_lat!,
+            prof.ubicacion_lng!
+          );
+          
+          // Solo incluir si está dentro de 50km (radio máximo)
+          if (distance <= 50) {
+            professionalsWithDistance.push({
               ...prof,
               distance,
               verified: true,
               total_reviews: Math.floor(Math.random() * 150),
-            };
-          })
-          .filter((prof): prof is Professional => prof !== null)
-          .sort((a, b) => a.distance - b.distance)
-          .slice(0, 50); // Limitar a 50 más cercanos
+            });
+          }
+        }
+        
+        // Ordenar por distancia y limitar a 50 más cercanos
+        professionalsWithDistance
+          .sort((a, b) => a.distance! - b.distance!)
+          .splice(50); // Mantener solo los primeros 50
 
         setProfessionals(professionalsWithDistance);
       } catch (error) {
