@@ -79,6 +79,7 @@ export default function UserPanelMenu({
   const displayName = profile?.full_name || userEmail.split("@")[0];
 
   return (
+    <>
     <div className="relative" ref={dropdownRef}>
       {/* Botón del menú - Estilo blanco para header transparente */}
       <button
@@ -201,6 +202,9 @@ export default function UserPanelMenu({
               {/* Botón Actualizar Perfil */}
               <button
                 onClick={() => {
+                  console.log("🔵 Click en Actualizar Mi Perfil");
+                  console.log("🔵 Profile actual:", profile);
+                  console.log("🔵 isProfessional:", isProfessional);
                   setShowProfileModal(true);
                   setIsOpen(false);
                 }}
@@ -239,21 +243,38 @@ export default function UserPanelMenu({
           </div>
         </>
       )}
-
-      {/* Modal de Actualizar Perfil */}
-      {showProfileModal && profile && (
-        <UpdateProfileModal
-          isOpen={showProfileModal}
-          onClose={() => setShowProfileModal(false)}
-          userRole={isProfessional ? "professional" : "client"}
-          currentProfile={profile}
-          onSuccess={() => {
-            setShowProfileModal(false);
-            // Forzar refresh de la página para actualizar datos
-            window.location.reload();
-          }}
-        />
-      )}
     </div>
+
+    {/* Modal de Actualizar Perfil - FUERA del dropdown para evitar desmontaje */}
+    {(() => {
+      console.log("🟢 Renderizando UserPanelMenu:");
+      console.log("   - showProfileModal:", showProfileModal);
+      console.log("   - profile existe:", !!profile);
+      console.log("   - isProfessional:", isProfessional);
+      
+      if (showProfileModal && profile) {
+        console.log("✅ Renderizando UpdateProfileModal");
+        return (
+          <UpdateProfileModal
+            isOpen={showProfileModal}
+            onClose={() => {
+              console.log("🔴 Cerrando modal");
+              setShowProfileModal(false);
+            }}
+            userRole={isProfessional ? "professional" : "client"}
+            currentProfile={profile}
+            onSuccess={() => {
+              console.log("✅ Perfil actualizado exitosamente");
+              setShowProfileModal(false);
+              window.location.reload();
+            }}
+          />
+        );
+      } else {
+        console.log("⚠️ No se renderiza modal:", { showProfileModal, hasProfile: !!profile });
+        return null;
+      }
+    })()}
+    </>
   );
 }
