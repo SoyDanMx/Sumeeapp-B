@@ -37,6 +37,7 @@ interface RequestServiceModalProps {
   isOpen: boolean;
   onClose: () => void;
   onLeadCreated?: () => void;
+  initialService?: string | null;
 }
 
 const serviceCategories = [
@@ -186,6 +187,7 @@ export default function RequestServiceModal({
   isOpen,
   onClose,
   onLeadCreated,
+  initialService,
 }: RequestServiceModalProps) {
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState({
@@ -210,6 +212,34 @@ export default function RequestServiceModal({
   const [whatsappError, setWhatsappError] = useState<string | null>(null);
 
   const totalSteps = 4;
+  const prevInitialService = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    if (initialService) {
+      const serviceId = initialService;
+      const isEmergencyService =
+        serviceId === "electricidad" || serviceId === "plomeria";
+
+      setFormData((prev) => ({
+        ...prev,
+        servicio: serviceId,
+        urgencia: isEmergencyService ? "emergencia" : prev.urgencia,
+      }));
+
+      setCurrentStep((prev) => (prev === 1 ? 2 : prev));
+      prevInitialService.current = serviceId;
+    } else if (prevInitialService.current) {
+      prevInitialService.current = null;
+      setFormData((prev) => ({
+        ...prev,
+        servicio: "",
+        urgencia: "normal",
+      }));
+      setCurrentStep(1);
+    }
+  }, [initialService, isOpen]);
 
   const handleServiceSelect = (serviceId: string) => {
     setFormData((prev) => ({ ...prev, servicio: serviceId }));

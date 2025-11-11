@@ -23,6 +23,10 @@ import {
   faExclamationTriangle,
   faPlus,
   faWrench,
+  faRocket,
+  faBolt,
+  faWater,
+  faTimes,
 } from "@fortawesome/free-solid-svg-icons";
 import { faWhatsapp } from "@fortawesome/free-brands-svg-icons";
 
@@ -54,6 +58,7 @@ export default function ClientDashboardPage() {
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [userProfile, setUserProfile] = useState<Profile | null>(null);
   const [hasCheckedOnboarding, setHasCheckedOnboarding] = useState(false);
+  const [isEmergencyMenuOpen, setIsEmergencyMenuOpen] = useState(false);
 
   // Función para refrescar los leads
   const refreshLeads = async () => {
@@ -199,10 +204,23 @@ export default function ClientDashboardPage() {
     setIsModalOpen(true);
   };
 
+  const handleEmergencyRequest = (serviceId: string) => {
+    setSelectedService(serviceId);
+    setIsEmergencyMenuOpen(false);
+    setIsModalOpen(true);
+  };
+
+  const handleProgrammedRequest = () => {
+    setSelectedService(null);
+    setIsEmergencyMenuOpen(false);
+    setIsModalOpen(true);
+  };
+
   // Cerrar modal y limpiar servicio seleccionado
   const handleModalClose = () => {
     setIsModalOpen(false);
     setSelectedService(null);
+    setIsEmergencyMenuOpen(false);
   };
 
   // 🆕 CALLBACK DE ONBOARDING COMPLETADO
@@ -385,6 +403,9 @@ export default function ClientDashboardPage() {
     return leads.filter((lead) => lead.estado === "completado").slice(0, 3);
   };
 
+  const hasLeads = leads.length > 0;
+  const showWelcomeCard = !hasLeads;
+
   // Loading State
   if (userLoading || loading) {
     return (
@@ -523,6 +544,79 @@ export default function ClientDashboardPage() {
 
       {/* Contenido Principal - Grid de Widgets COMPACTO RESPONSIVE */}
       <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 md:py-8">
+        {/* CTA de Emergencias Express */}
+        <div className="mb-4 sm:mb-6">
+          <div className="bg-gradient-to-br from-indigo-600 via-blue-600 to-cyan-500 text-white rounded-2xl sm:rounded-3xl shadow-xl overflow-hidden border border-white/10 p-5 sm:p-7 lg:p-8 flex flex-col lg:flex-row gap-5 lg:gap-8 items-start">
+            <div className="flex-1 min-w-0">
+              <p className="text-[10px] sm:text-xs uppercase tracking-[0.35em] text-white/70 font-semibold mb-2">
+                Servicios Express • Atención inmediata
+              </p>
+              <h2 className="text-xl sm:text-2xl lg:text-3xl font-black leading-tight mb-2 sm:mb-3">
+                ¿Emergencia en casa? Te asignamos un técnico en minutos.
+              </h2>
+              <p className="text-sm sm:text-base text-white/85 max-w-2xl">
+                Elige una urgencia y comienza el chat de coordinación de forma inmediata. Para proyectos programados, agenda con calma desde la misma vista.
+              </p>
+              <div className="flex flex-wrap items-center gap-3 mt-4 text-[11px] sm:text-xs text-white/80">
+                <span className="inline-flex items-center gap-2 bg-white/10 px-3 py-1.5 rounded-full">
+                  <FontAwesomeIcon icon={faBolt} className="text-yellow-300 text-sm" />
+                  Tiempo promedio 25 min
+                </span>
+                <span className="inline-flex items-center gap-2 bg-white/10 px-3 py-1.5 rounded-full">
+                  <FontAwesomeIcon icon={faWater} className="text-cyan-200 text-sm" />
+                  Técnicos verificados
+                </span>
+                <span className="inline-flex items-center gap-2 bg-white/10 px-3 py-1.5 rounded-full">
+                  <FontAwesomeIcon icon={faRocket} className="text-white text-sm" />
+                  Garantía Sumee Express
+                </span>
+              </div>
+            </div>
+
+            <div className="w-full lg:w-auto flex flex-col gap-2.5 sm:gap-3 min-w-[240px]">
+              <button
+                onClick={() => handleEmergencyRequest("electricidad")}
+                className="group w-full inline-flex items-center justify-between gap-3 bg-white text-indigo-600 font-semibold text-sm sm:text-base px-4 sm:px-5 py-3 sm:py-3.5 rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200"
+              >
+                <span className="flex items-center gap-2">
+                  <FontAwesomeIcon icon={faBolt} className="text-yellow-500 text-base sm:text-lg" />
+                  Urgencia Eléctrica
+                </span>
+                <span className="text-[10px] sm:text-xs uppercase tracking-[0.3em] text-indigo-500">
+                  Express
+                </span>
+              </button>
+              <button
+                onClick={() => handleEmergencyRequest("plomeria")}
+                className="group w-full inline-flex items-center justify-between gap-3 bg-white/90 text-cyan-700 font-semibold text-sm sm:text-base px-4 sm:px-5 py-3 sm:py-3.5 rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200"
+              >
+                <span className="flex items-center gap-2">
+                  <FontAwesomeIcon icon={faWater} className="text-cyan-500 text-base sm:text-lg" />
+                  Urgencia de Plomería
+                </span>
+                <span className="text-[10px] sm:text-xs uppercase tracking-[0.3em] text-cyan-600">
+                  Express
+                </span>
+              </button>
+              <button
+                onClick={handleProgrammedRequest}
+                className="w-full inline-flex items-center justify-between gap-3 bg-white/10 text-white font-semibold text-sm sm:text-base px-4 sm:px-5 py-3 sm:py-3.5 rounded-xl border border-white/20 hover:bg-white/15 transition-all duration-200"
+              >
+                <span className="flex items-center gap-2">
+                  <FontAwesomeIcon icon={faWrench} className="text-white text-base sm:text-lg" />
+                  Agendar Proyecto Pro
+                </span>
+                <span className="text-[10px] sm:text-xs uppercase tracking-[0.3em] text-white/70">
+                  Programado
+                </span>
+              </button>
+              <p className="text-[11px] sm:text-xs text-white/80 leading-snug">
+                Express = atención inmediata. PRO = servicios planificados con visita diagnóstica y múltiples cotizaciones.
+              </p>
+            </div>
+          </div>
+        </div>
+
         {/* Grid de Widgets Principal - Layout Compacto Responsive */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4 mb-4 sm:mb-6">
           {/* Widget de Próximo Servicio - Ocupa 2 columnas */}
@@ -535,6 +629,43 @@ export default function ClientDashboardPage() {
 
           {/* Columna Lateral - Widgets Compactos Apilados - RESPONSIVE */}
           <div className="lg:col-span-1 space-y-3 sm:space-y-4">
+            {/* CTA de Primer Servicio - Solo si no hay leads */}
+            {showWelcomeCard && (
+              <div className="bg-gradient-to-br from-indigo-600 via-blue-600 to-cyan-500 text-white rounded-xl sm:rounded-2xl shadow-lg border border-white/10 px-4 py-4 sm:px-5 sm:py-5">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white/20 flex items-center justify-center shadow-inner">
+                    <FontAwesomeIcon icon={faRocket} className="text-white text-lg sm:text-xl" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[10px] sm:text-xs uppercase tracking-[0.2em] text-white/70 font-semibold">
+                      Primer paso
+                    </p>
+                    <h3 className="text-base sm:text-lg font-bold leading-tight">
+                      ¡Bienvenido a tu Dashboard!
+                    </h3>
+                    <p className="text-white/85 text-sm sm:text-[15px] mt-2 leading-relaxed">
+                      Solicita tu primer servicio y te conectaremos con especialistas verificados en minutos.
+                    </p>
+                  </div>
+                </div>
+                <div className="mt-4 flex flex-col sm:flex-row gap-2">
+                  <button
+                    onClick={() => setIsModalOpen(true)}
+                    className="inline-flex items-center justify-center gap-2 bg-white text-indigo-600 font-semibold text-sm sm:text-sm px-4 py-2.5 rounded-lg shadow-md hover:shadow-lg hover:bg-indigo-50 transition-colors"
+                  >
+                    <FontAwesomeIcon icon={faPlus} className="text-xs sm:text-sm" />
+                    Solicitar servicio
+                  </button>
+                  <Link
+                    href="/tecnicos"
+                    className="inline-flex items-center justify-center gap-2 bg-white/15 text-white font-semibold text-sm sm:text-sm px-4 py-2.5 rounded-lg border border-white/20 hover:bg-white/20 transition-colors"
+                  >
+                    Explorar profesionales
+                  </Link>
+                </div>
+              </div>
+            )}
+
             {/* Widget de Perfil del Cliente COMPACTO */}
             {userProfile && (
               <ClientProfileWidgetCompact
@@ -564,14 +695,14 @@ export default function ClientDashboardPage() {
         </div>
 
         {/* Widget de Servicios Rápidos - Full Width */}
-        {leads.length > 0 && (
+        {hasLeads && (
           <div className="mb-8">
             <QuickActionsWidget onServiceClick={handleQuickServiceClick} />
           </div>
         )}
 
         {/* Lista de Todas las Solicitudes */}
-        {leads.length > 0 ? (
+        {hasLeads ? (
           <div className="bg-white rounded-xl shadow-md p-6">
             <h2 className="text-xl font-bold text-gray-900 mb-6">
               Todas tus Solicitudes
@@ -634,36 +765,93 @@ export default function ClientDashboardPage() {
                       >
                         {isDeleting ? "Eliminando..." : "Eliminar"}
                       </button>
-                    </div>
+                  </div>
                   </div>
                 </div>
               ))}
             </div>
           </div>
         ) : (
-          <div className="bg-white rounded-xl shadow-md p-12 text-center">
-            <div className="w-24 h-24 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
-              <FontAwesomeIcon
-                icon={faWrench}
-                className="text-4xl text-blue-600"
-              />
+          <div className="bg-white rounded-xl border border-dashed border-blue-200 p-8 sm:p-10 text-center shadow-sm">
+            <div className="w-16 h-16 sm:w-20 sm:h-20 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4">
+              <FontAwesomeIcon icon={faWrench} className="text-2xl sm:text-3xl text-blue-500" />
             </div>
-            <h3 className="text-2xl font-bold text-gray-900 mb-3">
-              ¡Bienvenido a tu Dashboard!
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">
+              Aún no tienes solicitudes activas
             </h3>
-            <p className="text-gray-600 mb-6 max-w-md mx-auto">
-              Comienza solicitando tu primer servicio. Te ayudaremos a encontrar
-              el profesional perfecto para resolverlo.
+            <p className="text-sm sm:text-base text-gray-600 max-w-xl mx-auto">
+              Puedes comenzar desde el botón “Solicitar servicio” en la parte superior derecha o explorar profesionales destacados para inspirarte.
             </p>
+            <div className="mt-6 flex flex-col sm:flex-row justify-center gap-3">
             <button
               onClick={() => setIsModalOpen(true)}
-              className="bg-blue-600 text-white px-8 py-4 rounded-lg hover:bg-blue-700 transition-colors inline-flex items-center text-lg font-semibold shadow-lg"
+                className="inline-flex items-center justify-center gap-2 bg-blue-600 text-white px-5 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
             >
-              <FontAwesomeIcon icon={faPlus} className="mr-2" />
-              Solicitar mi Primer Servicio
+                <FontAwesomeIcon icon={faPlus} className="text-sm" />
+                Solicitar servicio
             </button>
+              <Link
+                href="/tecnicos"
+                className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-lg font-semibold border border-blue-100 text-blue-600 bg-blue-50 hover:bg-blue-100 transition-colors"
+              >
+                Explorar profesionales
+              </Link>
+            </div>
           </div>
         )}
+      </div>
+
+      {/* FAB de emergencias (solo móvil) */}
+      {isEmergencyMenuOpen && (
+        <div
+          className="md:hidden fixed inset-0 bg-black/30 backdrop-blur-sm z-30"
+          onClick={() => setIsEmergencyMenuOpen(false)}
+        />
+      )}
+      <div className="md:hidden fixed bottom-24 right-4 z-40 flex flex-col items-end gap-3">
+        <div
+          className={`flex flex-col gap-2 w-56 transition-all duration-200 ${
+            isEmergencyMenuOpen ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2 pointer-events-none"
+          }`}
+        >
+          <button
+            onClick={() => handleEmergencyRequest("electricidad")}
+            className="w-full inline-flex items-center justify-between px-4 py-3 rounded-xl bg-white shadow-lg text-indigo-600 font-semibold"
+          >
+            <span className="flex items-center gap-2">
+              <FontAwesomeIcon icon={faBolt} className="text-yellow-500" />
+              Urgencia eléctrica
+            </span>
+            <span className="text-[10px] uppercase tracking-[0.3em]">Express</span>
+          </button>
+          <button
+            onClick={() => handleEmergencyRequest("plomeria")}
+            className="w-full inline-flex items-center justify-between px-4 py-3 rounded-xl bg-white shadow-lg text-cyan-700 font-semibold"
+          >
+            <span className="flex items-center gap-2">
+              <FontAwesomeIcon icon={faWater} className="text-cyan-500" />
+              Urgencia plomería
+            </span>
+            <span className="text-[10px] uppercase tracking-[0.3em]">Express</span>
+          </button>
+          <button
+            onClick={handleProgrammedRequest}
+            className="w-full inline-flex items-center justify-between px-4 py-3 rounded-xl border border-white/70 bg-white/80 text-gray-900 font-semibold"
+          >
+            <span className="flex items-center gap-2">
+              <FontAwesomeIcon icon={faWrench} className="text-indigo-600" />
+              Proyecto programado
+            </span>
+            <span className="text-[10px] uppercase tracking-[0.3em]">Pro</span>
+          </button>
+        </div>
+        <button
+          onClick={() => setIsEmergencyMenuOpen((prev) => !prev)}
+          className="w-14 h-14 rounded-full shadow-xl bg-gradient-to-br from-indigo-600 to-blue-600 text-white flex items-center justify-center text-2xl active:scale-95 transition-transform duration-150"
+          aria-label="Abrir atajos de emergencia"
+        >
+          <FontAwesomeIcon icon={isEmergencyMenuOpen ? faTimes : faBolt} />
+        </button>
       </div>
 
       {/* Modal de Solicitud de Servicio */}
@@ -671,6 +859,7 @@ export default function ClientDashboardPage() {
         isOpen={isModalOpen}
         onClose={handleModalClose}
         onLeadCreated={refreshLeads}
+        initialService={selectedService}
       />
       {isDetailsOpen && leadDetails && (
         <LeadDetailsModal

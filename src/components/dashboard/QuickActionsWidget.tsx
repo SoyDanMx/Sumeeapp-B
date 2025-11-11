@@ -54,7 +54,7 @@ export default function QuickActionsWidget({
         {QUICK_SERVICES.map((service) => (
           <button
             key={service.id}
-            onClick={() => onServiceClick(service.name)}
+            onClick={() => onServiceClick(service.id)}
             className="flex flex-col items-center justify-center p-4 rounded-lg border-2 border-gray-200 hover:border-blue-500 hover:bg-blue-50 transition-all group"
           >
             <div
