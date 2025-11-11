@@ -111,7 +111,7 @@ export default function TecnicosSplitView({
           return;
         }
 
-        // Calculate distances y filtrar por radio máximo
+        // Calculate distances (sin filtrar por radio para mostrar todos los profesionales)
         const professionalsWithDistance: Professional[] = [];
         
         for (const prof of data) {
@@ -121,19 +121,16 @@ export default function TecnicosSplitView({
             prof.ubicacion_lat!,
             prof.ubicacion_lng!
           );
-          
-          // Solo incluir si está dentro de 50km (radio máximo)
-          if (distance <= 50) {
-            professionalsWithDistance.push({
-              ...prof,
-              distance,
-              verified: true,
-              total_reviews: Math.floor(Math.random() * 150),
-            });
-          }
+
+          professionalsWithDistance.push({
+            ...prof,
+            distance,
+            verified: true,
+            total_reviews: Math.floor(Math.random() * 150),
+          });
         }
         
-        // Ordenar por distancia y limitar a 50 más cercanos
+        // Ordenar por distancia y limitar a 50 más cercanos (solo por performance)
         professionalsWithDistance
           .sort((a, b) => a.distance! - b.distance!)
           .splice(50); // Mantener solo los primeros 50
@@ -181,11 +178,6 @@ export default function TecnicosSplitView({
         (!prof.calificacion_promedio ||
           prof.calificacion_promedio < filters.minRating)
       ) {
-        return false;
-      }
-
-      // Radius
-      if (prof.distance && prof.distance > filters.radius) {
         return false;
       }
 
