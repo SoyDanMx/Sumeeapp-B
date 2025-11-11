@@ -60,11 +60,21 @@ export default function LoginForm() {
     setError(null);
     setLoading(true);
 
+    // Timeout de seguridad para móviles (10 segundos)
+    const timeoutId = setTimeout(() => {
+      setLoading(false);
+      setError('La autenticación está tardando demasiado. Por favor, verifica tu conexión e intenta de nuevo.');
+    }, 10000);
+
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      console.log('🔐 Intentando login...');
+      
+      const { data: authData, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
+
+      clearTimeout(timeoutId);
 
       if (error) {
         // Manejar específicamente el error de email no confirmado
@@ -84,36 +94,51 @@ export default function LoginForm() {
         throw error;
       }
 
+      if (!authData.user) {
+        throw new Error('No se pudo autenticar al usuario');
+      }
+
       // Si el login es exitoso, obtener el perfil del usuario para redirigir correctamente
       console.log('✅ Login exitoso, obteniendo perfil del usuario...');
       
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (user) {
-        // Obtener el perfil para saber el rol
-        const { data: profile } = await supabase
+      try {
+        // Obtener el perfil para saber el rol con timeout
+        const profilePromise = supabase
           .from('profiles')
           .select('role')
-          .eq('user_id', user.id)
-          .single();
+          .eq('user_id', authData.user.id)
+          .single()
+          .then(({ data }) => data);
+
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Timeout al obtener perfil')), 5000)
+        );
+
+        const profile = await Promise.race([profilePromise, timeoutPromise]) as any;
         
-        console.log('Usuario:', user.email, 'Rol:', profile?.role);
+        console.log('Usuario:', authData.user.email, 'Rol:', profile?.role);
+        
+        // Esperar un momento antes de redirigir (fix para móviles)
+        await new Promise(resolve => setTimeout(resolve, 300));
         
         // Redirigir basado en el rol
         if (profile?.role === 'profesional') {
           console.log('🎯 Redirigiendo a professional-dashboard...');
-          router.push('/professional-dashboard');
+          window.location.href = '/professional-dashboard';
         } else {
           console.log('🎯 Redirigiendo a client dashboard...');
-          router.push('/dashboard/client');
+          window.location.href = '/dashboard/client';
         }
-      } else {
+      } catch (profileError) {
         // Fallback: redirigir a /dashboard que usa el RoleRouter
-        console.log('⚠️ No se pudo obtener el perfil, usando RoleRouter...');
-        router.push('/dashboard');
-      } 
+        console.warn('⚠️ Error al obtener perfil, usando RoleRouter...', profileError);
+        await new Promise(resolve => setTimeout(resolve, 300));
+        window.location.href = '/dashboard';
+      }
 
     } catch (error: any) {
+      clearTimeout(timeoutId);
+      
       if (error.message === 'EMAIL_NOT_CONFIRMED') {
         setError('Tu correo electrónico no ha sido confirmado. Haz clic en "Reenviar confirmación" para recibir el enlace de activación.');
       } else if (error.message === 'TEST_CREDENTIALS_NOT_CONFIRMED') {
@@ -121,7 +146,6 @@ export default function LoginForm() {
       } else {
         setError(error.message || 'No se pudo iniciar sesión. Revisa tus credenciales.');
       }
-    } finally {
       setLoading(false);
     }
   };

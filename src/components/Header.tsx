@@ -199,7 +199,7 @@ export const Header = () => {
             </div>
 
             {/* CTA Principal - Versión Blanca para Header Transparente */}
-            <div className="flex items-center space-x-2 sm:space-x-3">
+            <div className="flex items-center space-x-2 sm:space-x-3 relative z-50">
               {isLoading ? (
                 // Estado de carga: mostrar skeleton con fondo transparente
                 <div className="h-9 w-24 bg-white/20 rounded-lg animate-pulse"></div>
@@ -211,13 +211,13 @@ export const Header = () => {
                 />
               ) : (
                 <>
-                  {/* Botón "Iniciar Sesión" */}
+                  {/* Botón "Iniciar Sesión" - MEJORADO PARA MÓVILES */}
                   <Link
                     href="/login"
-                    className={`backdrop-blur-sm px-3 sm:px-4 md:px-5 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm md:text-base font-semibold transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 whitespace-nowrap ${
+                    className={`backdrop-blur-sm px-4 sm:px-4 md:px-5 py-2.5 sm:py-2.5 rounded-lg text-sm sm:text-sm md:text-base font-bold transition-all duration-300 shadow-xl hover:shadow-2xl hover:scale-105 whitespace-nowrap relative z-50 touch-manipulation active:scale-95 ${
                       isScrolled
-                        ? "bg-gray-100 hover:bg-gray-200 border border-gray-300 text-gray-800"
-                        : "bg-white/20 hover:bg-white/30 border border-white/30 text-white"
+                        ? "bg-gray-100 hover:bg-gray-200 border-2 border-gray-400 text-gray-900"
+                        : "bg-white/30 hover:bg-white/40 border-2 border-white/50 text-white"
                     }`}
                   >
                     Iniciar Sesión
