@@ -19,7 +19,10 @@ CREATE OR REPLACE FUNCTION public.create_lead(
   servicio_in TEXT,
   ubicacion_lat_in DOUBLE PRECISION DEFAULT NULL,
   ubicacion_lng_in DOUBLE PRECISION DEFAULT NULL,
-  ubicacion_direccion_in TEXT DEFAULT NULL
+  ubicacion_direccion_in TEXT DEFAULT NULL,
+  disciplina_ia_in TEXT DEFAULT NULL,
+  urgencia_ia_in INTEGER DEFAULT NULL,
+  diagnostico_ia_in TEXT DEFAULT NULL
 )
 RETURNS UUID
 LANGUAGE plpgsql
@@ -43,6 +46,9 @@ BEGIN
     ubicacion_lng,
     ubicacion_direccion,
     cliente_id,
+    disciplina_ia,
+    urgencia_ia,
+    diagnostico_ia,
     estado,
     profesional_asignado_id
   )
@@ -55,6 +61,9 @@ BEGIN
     COALESCE(ubicacion_lng_in, -99.1332), -- CDMX por defecto
     ubicacion_direccion_in,
     current_user_id, -- NULL si es usuario anónimo, UUID si está autenticado
+    disciplina_ia_in,
+    urgencia_ia_in,
+    diagnostico_ia_in,
     'nuevo',
     NULL -- Sin profesional asignado inicialmente
   )

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect, useMemo } from "react";
+import React, { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -134,6 +134,58 @@ const serviceCategories = [
   },
 ];
 
+type AiStatus = "idle" | "typing" | "loading" | "success" | "error";
+
+interface AiSuggestion {
+  disciplina?: string | null;
+  diagnostico?: string | null;
+  urgencia?: number | string | null;
+}
+
+const disciplineServiceMap: Record<string, string | null> = {
+  electricidad: "electricidad",
+  "problema electrico": "electricidad",
+  plomería: "plomeria",
+  plomeria: "plomeria",
+  hvac: "aire-acondicionado",
+  "aire acondicionado": "aire-acondicionado",
+  carpintería: "carpinteria",
+  carpinteria: "carpinteria",
+  albañilería: "construccion",
+  albañileria: "construccion",
+  otros: null,
+};
+
+const mapDisciplineToServiceId = (disciplina: string | undefined | null) => {
+  if (!disciplina) return null;
+  const normalized = disciplina.toLowerCase().trim();
+  if (disciplineServiceMap[normalized] !== undefined) {
+    return disciplineServiceMap[normalized];
+  }
+
+  if (normalized.includes("electric")) return "electricidad";
+  if (normalized.includes("plom")) return "plomeria";
+  if (normalized.includes("hvac") || normalized.includes("clima")) {
+    return "aire-acondicionado";
+  }
+  if (normalized.includes("aire")) return "aire-acondicionado";
+  if (normalized.includes("carp")) return "carpinteria";
+  if (normalized.includes("albañ") || normalized.includes("alban")) {
+    return "construccion";
+  }
+
+  return null;
+};
+
+const mapUrgencyToLabel = (urgencia?: number | null) => {
+  if (typeof urgencia !== "number" || Number.isNaN(urgencia)) {
+    return null;
+  }
+  if (urgencia >= 8) return "emergencia";
+  if (urgencia >= 5) return "urgente";
+  return "normal";
+};
+
 const normalizeWhatsappNumber = (input: string) => {
   const digits = (input || "").replace(/\D/g, "");
 
@@ -210,9 +262,98 @@ export default function RequestServiceModal({
   const { isFreeUser, isBasicUser, isPremiumUser, requestsRemaining } =
     useMembership();
   const [whatsappError, setWhatsappError] = useState<string | null>(null);
+  const [iaStatus, setIaStatus] = useState<AiStatus>("idle");
+  const [iaSuggestion, setIaSuggestion] = useState<AiSuggestion | null>(null);
+  const [iaError, setIaError] = useState<string | null>(null);
+  const [disciplinaIa, setDisciplinaIa] = useState<string | null>(null);
+  const [urgenciaIa, setUrgenciaIa] = useState<number | null>(null);
+  const [diagnosticoIa, setDiagnosticoIa] = useState<string | null>(null);
+  const aiDebounceRef = useRef<number | null>(null);
+  const lastClassifiedDescription = useRef<string>("");
+  const [userOverrodeService, setUserOverrodeService] = useState(false);
+  const [userOverrodeUrgency, setUserOverrodeUrgency] = useState(false);
 
   const totalSteps = 4;
   const prevInitialService = useRef<string | null>(null);
+
+  const classifyDescription = useCallback(
+    async (description: string) => {
+      try {
+        setIaStatus("loading");
+        setIaError(null);
+
+        const { data, error } = await supabase.functions.invoke<AiSuggestion>(
+          "classify-service",
+          {
+            body: { description },
+          },
+        );
+
+        if (error) {
+          throw new Error(error.message);
+        }
+
+        lastClassifiedDescription.current = description;
+
+        const extras = (data ?? {}) as Record<string, unknown>;
+        const disciplina = data?.disciplina ??
+          (extras["disciplina_ia"] as string | undefined) ?? null;
+        const diagnostico =
+          data?.diagnostico ??
+            (extras["diagnostico_sugerido"] as string | undefined) ??
+            (extras["diagnostico_ia"] as string | undefined) ??
+            null;
+        const urgenciaValueRaw = data?.urgencia ??
+          (extras["urgencia_ia"] as number | string | undefined) ?? null;
+
+        const urgenciaNumber = typeof urgenciaValueRaw === "number"
+          ? urgenciaValueRaw
+          : urgenciaValueRaw
+          ? Number.parseInt(String(urgenciaValueRaw), 10)
+          : null;
+
+        setIaSuggestion({
+          disciplina: disciplina ?? "Otros",
+          diagnostico: diagnostico,
+          urgencia: Number.isFinite(urgenciaNumber) ? urgenciaNumber : null,
+        });
+        setDisciplinaIa(disciplina ?? null);
+        setDiagnosticoIa(diagnostico ?? null);
+        setUrgenciaIa(
+          Number.isFinite(urgenciaNumber) ? urgenciaNumber ?? null : null,
+        );
+        setIaStatus("success");
+
+        if (!userOverrodeService) {
+          const mappedService = mapDisciplineToServiceId(disciplina);
+          if (mappedService) {
+            setFormData((prev) => ({
+              ...prev,
+              servicio: mappedService,
+            }));
+          }
+        }
+
+        if (!userOverrodeUrgency && Number.isFinite(urgenciaNumber)) {
+          const urgencyLabel = mapUrgencyToLabel(urgenciaNumber);
+          if (urgencyLabel) {
+            setFormData((prev) => ({
+              ...prev,
+              urgencia: urgencyLabel,
+            }));
+          }
+        }
+      } catch (classificationError) {
+        console.error("❌ Error clasificando con IA:", classificationError);
+        setIaStatus("error");
+        setIaError(
+          "No pudimos sugerir automáticamente. Puedes continuar manualmente.",
+        );
+      }
+    },
+    // supabase client es un singleton estable
+    [supabase, userOverrodeService, userOverrodeUrgency],
+  );
 
   useEffect(() => {
     if (!isOpen) return;
@@ -227,6 +368,10 @@ export default function RequestServiceModal({
         servicio: serviceId,
         urgencia: isEmergencyService ? "emergencia" : prev.urgencia,
       }));
+      setUserOverrodeService(true);
+      if (isEmergencyService) {
+        setUserOverrodeUrgency(true);
+      }
 
       setCurrentStep((prev) => (prev === 1 ? 2 : prev));
       prevInitialService.current = serviceId;
@@ -237,11 +382,62 @@ export default function RequestServiceModal({
         servicio: "",
         urgencia: "normal",
       }));
+      setUserOverrodeService(false);
+      setUserOverrodeUrgency(false);
+      setIaStatus("idle");
+      setIaSuggestion(null);
+      setIaError(null);
+      setDisciplinaIa(null);
+      setUrgenciaIa(null);
+      setDiagnosticoIa(null);
+      lastClassifiedDescription.current = "";
       setCurrentStep(1);
     }
   }, [initialService, isOpen]);
 
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const description = formData.descripcion.trim();
+
+    if (aiDebounceRef.current) {
+      clearTimeout(aiDebounceRef.current);
+      aiDebounceRef.current = null;
+    }
+
+    if (description.length < 15) {
+      if (iaStatus !== "idle") {
+        setIaStatus("idle");
+        setIaError(null);
+      }
+      setIaSuggestion(null);
+      setDisciplinaIa(null);
+      setDiagnosticoIa(null);
+      setUrgenciaIa(null);
+      lastClassifiedDescription.current = "";
+      return;
+    }
+
+    if (description === lastClassifiedDescription.current) {
+      return;
+    }
+
+    setIaStatus("typing");
+
+    aiDebounceRef.current = window.setTimeout(() => {
+      classifyDescription(description);
+    }, 1000);
+
+    return () => {
+      if (aiDebounceRef.current) {
+        clearTimeout(aiDebounceRef.current);
+        aiDebounceRef.current = null;
+      }
+    };
+  }, [formData.descripcion, isOpen, classifyDescription, iaStatus]);
+
   const handleServiceSelect = (serviceId: string) => {
+    setUserOverrodeService(true);
     setFormData((prev) => ({ ...prev, servicio: serviceId }));
   };
 
@@ -526,6 +722,9 @@ export default function RequestServiceModal({
           servicio: formData.servicio, // Campo correcto según schema
           ubicacion_direccion: formData.ubicacion || null,
           cliente_id: user.id,
+          disciplina_ia: disciplinaIa,
+          urgencia_ia: urgenciaIa,
+          diagnostico_ia: diagnosticoIa,
         })
         .select()
         .maybeSingle();
@@ -762,6 +961,9 @@ export default function RequestServiceModal({
           ubicacion_lat_in: 19.4326,
           ubicacion_lng_in: -99.1332,
           ubicacion_direccion_in: formData.ubicacion || null,
+          disciplina_ia_in: disciplinaIa,
+          urgencia_ia_in: urgenciaIa,
+          diagnostico_ia_in: diagnosticoIa,
         }
       );
 
@@ -805,6 +1007,9 @@ export default function RequestServiceModal({
             servicio: formData.servicio,
             ubicacion_direccion: formData.ubicacion || null,
             cliente_id: currentUserId,
+            disciplina_ia: disciplinaIa,
+            urgencia_ia: urgenciaIa,
+            diagnostico_ia: diagnosticoIa,
           })
           .select()
           .maybeSingle();
@@ -1042,6 +1247,19 @@ export default function RequestServiceModal({
     setError(null);
     setWhatsappError(null);
     hasPrefilledWhatsapp.current = false;
+    setIaStatus("idle");
+    setIaSuggestion(null);
+    setIaError(null);
+    setDisciplinaIa(null);
+    setUrgenciaIa(null);
+    setDiagnosticoIa(null);
+    setUserOverrodeService(false);
+    setUserOverrodeUrgency(false);
+    if (aiDebounceRef.current) {
+      clearTimeout(aiDebounceRef.current);
+      aiDebounceRef.current = null;
+    }
+    lastClassifiedDescription.current = "";
   };
 
   const handleClose = () => {
@@ -1200,6 +1418,56 @@ export default function RequestServiceModal({
                     rows={5}
                     placeholder="Describe el problema en detalle. Incluye síntomas, cuándo empezó, qué has intentado, etc."
                   />
+                  <div className="mt-2">
+                    {iaStatus === "typing" && (
+                      <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-50 text-blue-700 text-xs font-medium">
+                        <FontAwesomeIcon icon={faLightbulb} className="text-sm" />
+                        Analizando descripción…
+                      </span>
+                    )}
+                    {iaStatus === "loading" && (
+                      <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-50 text-blue-700 text-xs font-medium">
+                        <FontAwesomeIcon icon={faSpinner} spin />
+                        Sugerencia inteligente en curso…
+                      </span>
+                    )}
+                    {iaStatus === "success" && iaSuggestion && (
+                      <div className="mt-2 bg-indigo-50 border border-indigo-100 rounded-lg px-3 py-3">
+                        <p className="text-xs text-indigo-700 font-semibold uppercase tracking-[0.2em]">
+                          Sugerencia automática
+                        </p>
+                        <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-indigo-900">
+                          <span className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-white text-indigo-700 border border-indigo-200 text-xs font-semibold">
+                            <FontAwesomeIcon icon={faLightbulb} className="text-yellow-400" />
+                            {iaSuggestion.disciplina || "Otros"}
+                          </span>
+                          {Number.isFinite(iaSuggestion.urgencia) && (
+                            <span className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-white text-indigo-700 border border-indigo-200 text-xs font-semibold">
+                              Urgencia {iaSuggestion.urgencia}/10
+                            </span>
+                          )}
+                        </div>
+                        {iaSuggestion.diagnostico && (
+                          <p className="mt-2 text-xs text-indigo-700">
+                            Diagnóstico sugerido:{" "}
+                            <span className="font-medium">
+                              {iaSuggestion.diagnostico}
+                            </span>
+                          </p>
+                        )}
+                        <p className="mt-2 text-[11px] text-indigo-700/80">
+                          {userOverrodeService
+                            ? "Puedes ajustar la disciplina manualmente en el Paso 1."
+                            : "Aplicamos automáticamente esta disciplina sugerida. Puedes ajustarla en el Paso 1 si prefieres otra opción."}
+                        </p>
+                      </div>
+                    )}
+                    {iaStatus === "error" && iaError && (
+                      <p className="text-xs text-red-500 mt-1">
+                        {iaError}
+                      </p>
+                    )}
+                  </div>
                 </div>
 
                 <div>
@@ -1328,10 +1596,13 @@ export default function RequestServiceModal({
                   <select
                     value={formData.urgencia}
                     onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        urgencia: e.target.value,
-                      }))
+                      {
+                        setUserOverrodeUrgency(true);
+                        setFormData((prev) => ({
+                          ...prev,
+                          urgencia: e.target.value,
+                        }));
+                      }
                     }
                     className="w-full p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   >
@@ -1389,6 +1660,28 @@ export default function RequestServiceModal({
                     {formattedWhatsappDisplay || formData.whatsapp || "—"}
                   </span>
                 </div>
+                {(disciplinaIa || urgenciaIa || diagnosticoIa) && (
+                  <div className="flex flex-col space-y-1 text-sm text-blue-800 bg-white/70 border border-blue-100 rounded-lg p-3">
+                    <div className="font-semibold text-blue-900">
+                      Inteligencia Sumee (Gemini)
+                    </div>
+                    {disciplinaIa && (
+                      <div>
+                        <strong>Disciplina sugerida:</strong> {disciplinaIa}
+                      </div>
+                    )}
+                    {Number.isFinite(urgenciaIa) && (
+                      <div>
+                        <strong>Urgencia IA:</strong> {urgenciaIa}/10
+                      </div>
+                    )}
+                    {diagnosticoIa && (
+                      <div>
+                        <strong>Diagnóstico:</strong> {diagnosticoIa}
+                      </div>
+                    )}
+                  </div>
+                )}
                 {formData.imagen && (
                   <div className="flex items-center space-x-3">
                     <FontAwesomeIcon

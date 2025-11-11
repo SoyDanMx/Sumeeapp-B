@@ -125,7 +125,10 @@ export async function submitLead(leadData: {
   ubicacion: string;
   whatsapp: string;
   nombre_cliente?: string;
-  descripcion_proyecto?: string; // Nueva opción para proyectos grandes con descripción detallada
+  descripcion_proyecto?: string;
+  disciplina_ia?: string | null;
+  urgencia_ia?: number | null;
+  diagnostico_ia?: string | null;
 }) {
   try {
     // Geocodificar la dirección proporcionada
@@ -224,9 +227,12 @@ export async function submitLead(leadData: {
       whatsapp_in: leadData.whatsapp,
       descripcion_proyecto_in: descripcion_proyecto,
       servicio_in: leadData.servicio,
-      ubicacion_lat_in: lat || 19.4326, // CDMX por defecto si no se puede geocodificar
-      ubicacion_lng_in: lng || -99.1332, // CDMX por defecto si no se puede geocodificar
+      ubicacion_lat_in: lat || 19.4326,
+      ubicacion_lng_in: lng || -99.1332,
       ubicacion_direccion_in: leadData.ubicacion || null,
+      disciplina_ia_in: leadData.disciplina_ia || null,
+      urgencia_ia_in: leadData.urgencia_ia ?? null,
+      diagnostico_ia_in: leadData.diagnostico_ia || null,
     });
 
     if (error) {
