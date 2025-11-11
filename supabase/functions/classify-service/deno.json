@@ -1,4 +1,8 @@
 {
+  "compilerOptions": {
+    "lib": ["deno.ns", "deno.window"],
+    "types": ["https://deno.land/x/deno@v1.37.0/cli/tsc/dts/lib.deno.ns.d.ts"]
+  },
   "imports": {}
 }
 
