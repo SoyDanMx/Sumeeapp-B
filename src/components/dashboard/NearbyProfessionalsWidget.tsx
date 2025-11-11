@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -12,6 +12,8 @@ import {
   faMapMarkerAlt,
 } from "@fortawesome/free-solid-svg-icons";
 import { faWhatsapp } from "@fortawesome/free-brands-svg-icons";
+import { supabase } from "@/lib/supabase/client";
+import { calculateDistance } from "@/lib/calculateDistance";
 
 // Importar el mapa dinámicamente para evitar SSR issues
 const ClientProfessionalsMapView = dynamic(
@@ -69,6 +71,69 @@ export default function NearbyProfessionalsWidget({
   const [viewMode, setViewMode] = useState<"map" | "list">("map");
   const [selectedProfession, setSelectedProfession] = useState<string | null>(null);
   const [selectedProfessional, setSelectedProfessional] = useState<Professional | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [professionals, setProfessionals] = useState<Professional[]>([]);
+
+  useEffect(() => {
+    const fetchProfessionals = async () => {
+      setLoading(true);
+      try {
+        let query = supabase
+          .from("profiles")
+          .select(
+            "user_id, full_name, email, avatar_url, profession, whatsapp, calificacion_promedio, ubicacion_lat, ubicacion_lng, areas_servicio"
+          )
+          .eq("role", "profesional")
+          .not("ubicacion_lat", "is", null)
+          .not("ubicacion_lng", "is", null)
+          .limit(100);
+
+        const { data, error } = await query;
+
+        if (error) {
+          console.error("Error fetching professionals:", error);
+          setProfessionals([]);
+          return;
+        }
+
+        const withDistance =
+          data?.map((prof) => ({
+            ...prof,
+            distance: calculateDistance(
+              clientLat,
+              clientLng,
+              prof.ubicacion_lat!,
+              prof.ubicacion_lng!
+            ),
+          })) ?? [];
+
+        setProfessionals(
+          withDistance.sort((a, b) => (a.distance ?? 0) - (b.distance ?? 0))
+        );
+      } catch (error) {
+        console.error("Error fetching professionals:", error);
+        setProfessionals([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProfessionals();
+  }, [clientLat, clientLng]);
+
+  const filteredProfessionals = useMemo(() => {
+    return professionals.filter((prof) => {
+      if (selectedProfession && prof.profession !== selectedProfession) {
+        return false;
+      }
+
+      if (searchRadius && prof.distance !== undefined && prof.distance > searchRadius) {
+        return false;
+      }
+
+      return true;
+    });
+  }, [professionals, selectedProfession, searchRadius]);
 
   const handleProfessionalClick = (professional: Professional) => {
     setSelectedProfessional(professional);
@@ -147,8 +212,10 @@ export default function NearbyProfessionalsWidget({
             <ClientProfessionalsMapView
               clientLat={clientLat}
               clientLng={clientLng}
+              professionals={filteredProfessionals}
+              selectedProfessionalId={selectedProfessional?.user_id ?? null}
               searchRadius={searchRadius}
-              professionFilter={selectedProfession}
+              loading={loading}
               onProfessionalClick={handleProfessionalClick}
             />
           </div>
