@@ -173,23 +173,24 @@ export default function TecnicosFilters({
               </div>
             </div>
 
-            {/* Radius Slider */}
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Radio de Búsqueda: {filters.radius} km
+            {/* Radius Slider - Temporalmente deshabilitado */}
+            <div className="opacity-60 pointer-events-none">
+              <label className="block text-sm font-semibold text-gray-700 mb-1">
+                Radio de Búsqueda (deshabilitado temporalmente)
               </label>
+              <p className="text-xs text-gray-500 mb-3">
+                Estamos mostrando todos los profesionales sin importar su distancia.
+              </p>
               <input
                 type="range"
                 min="5"
                 max="50"
                 step="5"
                 value={filters.radius}
-                onChange={(e) =>
-                  updateFilters({ radius: parseInt(e.target.value) })
-                }
-                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+                disabled
+                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-not-allowed accent-indigo-200"
               />
-              <div className="flex justify-between text-xs text-gray-500 mt-1">
+              <div className="flex justify-between text-xs text-gray-400 mt-1">
                 <span>5 km</span>
                 <span>25 km</span>
                 <span>50 km</span>
