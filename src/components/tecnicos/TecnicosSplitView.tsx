@@ -263,9 +263,11 @@ export default function TecnicosSplitView({
                 <ClientProfessionalsMapView
                   clientLat={userLocation.lat}
                   clientLng={userLocation.lng}
-                  searchRadius={filters.radius}
-                  professionFilter={filters.profession}
+                  professionals={filteredProfessionals}
+                  selectedProfessionalId={selectedProfessionalId}
                   onProfessionalClick={handleMapClick}
+                  searchRadius={null}
+                  loading={loading}
                 />
               )}
             </div>
@@ -288,9 +290,11 @@ export default function TecnicosSplitView({
                   <ClientProfessionalsMapView
                     clientLat={userLocation.lat}
                     clientLng={userLocation.lng}
-                    searchRadius={filters.radius}
-                    professionFilter={filters.profession}
+                    professionals={filteredProfessionals}
+                    selectedProfessionalId={selectedProfessionalId}
                     onProfessionalClick={handleMapClick}
+                    searchRadius={null}
+                    loading={loading}
                   />
                 )}
               </div>

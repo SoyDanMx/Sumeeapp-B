@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   MapContainer,
   TileLayer,
@@ -18,8 +18,6 @@ import {
   faStar,
 } from "@fortawesome/free-solid-svg-icons";
 import { faWhatsapp } from "@fortawesome/free-brands-svg-icons";
-import { calculateDistance } from "@/lib/calculateDistance";
-import { supabase } from "@/lib/supabase/client";
 
 // Fix para los iconos de Leaflet en Next.js
 if (typeof window !== "undefined") {
@@ -110,9 +108,85 @@ const createClientIcon = () => {
 };
 
 // Crear icono para profesionales
-const createProfessionalIcon = (avatarUrl: string | null | undefined, isSelected: boolean) => {
+const pastelPalettes: [string, string][] = [
+  ["#6366f1", "#a855f7"],
+  ["#0ea5e9", "#38bdf8"],
+  ["#10b981", "#22d3ee"],
+  ["#f97316", "#facc15"],
+  ["#ec4899", "#8b5cf6"],
+  ["#14b8a6", "#22d3ee"],
+  ["#8b5cf6", "#6366f1"],
+  ["#ef4444", "#f97316"],
+];
+
+const professionStyles: Record<
+  string,
+  { label: string; gradient: [string, string] }
+> = {
+  electricista: { label: "Electricista", gradient: ["#0ea5e9", "#6366f1"] },
+  plomero: { label: "Plomería", gradient: ["#14b8a6", "#22d3ee"] },
+  "técnico en aire acondicionado": {
+    label: "Aire Acon.",
+    gradient: ["#38bdf8", "#0ea5e9"],
+  },
+  "especialista en cctv y seguridad": {
+    label: "CCTV & Seg.",
+    gradient: ["#6366f1", "#a855f7"],
+  },
+  carpintero: { label: "Carpintería", gradient: ["#f97316", "#facc15"] },
+  pintor: { label: "Pintura", gradient: ["#ec4899", "#8b5cf6"] },
+  "especialista en limpieza": {
+    label: "Limpieza",
+    gradient: ["#10b981", "#34d399"],
+  },
+  jardinero: { label: "Jardinería", gradient: ["#16a34a", "#4ade80"] },
+  "técnico en wifi": { label: "WiFi", gradient: ["#0ea5e9", "#22d3ee"] },
+  "especialista en tablaroca": {
+    label: "Tablaroca",
+    gradient: ["#8b5cf6", "#6366f1"],
+  },
+};
+
+const escapeHtml = (str?: string | null) => {
+  if (!str) return "";
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+};
+
+const getInitials = (name?: string) => {
+  if (!name) return "P";
+  const parts = name.trim().split(" ");
+  if (parts.length === 1) return parts[0][0]?.toUpperCase() ?? "P";
+  return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
+};
+
+const getPaletteForId = (id: string) => {
+  const hash = id.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  return pastelPalettes[hash % pastelPalettes.length];
+};
+
+const createProfessionalIcon = (
+  avatarUrl: string | null | undefined,
+  isSelected: boolean,
+  fullName?: string,
+  userId?: string,
+  profession?: string | null
+) => {
   const size = isSelected ? 56 : 48;
   const borderWidth = isSelected ? 4 : 3;
+  const normalizedProfession = profession?.toLowerCase().trim();
+  const professionStyle =
+    (normalizedProfession && professionStyles[normalizedProfession]) || null;
+  const [startColor, endColor] = professionStyle
+    ? professionStyle.gradient
+    : getPaletteForId(userId ?? fullName ?? "default");
+  const badgeLabel = professionStyle?.label || profession || "";
+  const badgeHeight = badgeLabel ? (isSelected ? 34 : 30) : 0;
+  const containerHeight = size + badgeHeight + 6;
   
   if (avatarUrl) {
     const escapedAvatarUrl = avatarUrl
@@ -123,76 +197,158 @@ const createProfessionalIcon = (avatarUrl: string | null | undefined, isSelected
 
     return L.divIcon({
       html: `
-        <div style="
-          width: ${size}px;
-          height: ${size}px;
-          border: ${borderWidth}px solid ${isSelected ? '#3b82f6' : 'white'};
-          border-radius: 50%;
-          overflow: hidden;
-          box-shadow: 0 4px 12px rgba(0,0,0,${isSelected ? '0.5' : '0.3'});
-          background: #6366f1;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          position: relative;
-          transform: ${isSelected ? 'scale(1.1)' : 'scale(1)'};
-          transition: transform 0.2s;
-        ">
-          <img 
-            src="${escapedAvatarUrl}" 
-            alt="Profesional"
-            style="
-              width: 100%;
-              height: 100%;
-              object-fit: cover;
-            "
-            onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
-            loading="lazy"
-          />
+        <div style="position:relative;display:flex;flex-direction:column;align-items:center;">
+          ${
+            badgeLabel
+              ? `<div style="
+                  position:absolute;
+                  top:-${badgeHeight - 6}px;
+                  left:50%;
+                  transform:translateX(-50%);
+                  padding:${isSelected ? "6px 14px" : "5px 12px"};
+                  border-radius:999px;
+                  background:linear-gradient(135deg, ${startColor}, ${endColor});
+                  color:white;
+                  font-size:${isSelected ? "12px" : "11px"};
+                  font-weight:700;
+                  text-transform:uppercase;
+                  letter-spacing:0.04em;
+                  box-shadow:0 8px 18px rgba(0,0,0,0.18);
+                  display:inline-flex;
+                  align-items:center;
+                  justify-content:center;
+                  gap:6px;
+                  pointer-events:none;
+                ">
+                  ${escapeHtml(badgeLabel)}
+                  <div style="
+                    position:absolute;
+                    bottom:-6px;
+                    left:50%;
+                    transform:translateX(-50%);
+                    width:14px;
+                    height:8px;
+                    background:linear-gradient(135deg, ${startColor}, ${endColor});
+                    clip-path:polygon(50% 100%, 0 0, 100% 0);
+                  "></div>
+                </div>`
+              : ""
+          }
           <div style="
-            display: none;
-            width: 100%;
-            height: 100%;
+            width: ${size}px;
+            height: ${size}px;
+            border: ${borderWidth}px solid ${isSelected ? '#3b82f6' : 'white'};
+            border-radius: 50%;
+            overflow: hidden;
+            box-shadow: 0 6px 20px rgba(0,0,0,${isSelected ? '0.45' : '0.28'});
+            background: linear-gradient(135deg, ${startColor}, ${endColor});
+            display: flex;
             align-items: center;
             justify-content: center;
+            position: relative;
+            transform: ${isSelected ? 'scale(1.08)' : 'scale(1)'};
+            transition: transform 0.2s;
           ">
-            <svg width="28" height="28" fill="white" viewBox="0 0 20 20">
-              <path d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"/>
-            </svg>
+            <img 
+              src="${escapedAvatarUrl}" 
+              alt="${escapeHtml(fullName) || "Profesional"}"
+              style="
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+              "
+              onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
+              loading="lazy"
+            />
+            <div style="
+              display: none;
+              width: 100%;
+              height: 100%;
+              align-items: center;
+              justify-content: center;
+              color:white;
+              font-weight:700;
+              font-size:${isSelected ? "18px" : "16px"};
+            ">
+              ${getInitials(fullName)}
+            </div>
           </div>
         </div>
       `,
       className: "custom-professional-icon",
-      iconSize: [size, size],
-      iconAnchor: [size / 2, size / 2],
+      iconSize: [size, containerHeight],
+      iconAnchor: [size / 2, badgeLabel ? badgeHeight + size / 2 : size / 2],
       popupAnchor: [0, -(size / 2)],
     });
   }
 
-  // Fallback: icono genérico
+  // Fallback con iniciales y gradiente dinámico
+  const initials = getInitials(fullName);
+  const [start, end] = [startColor, endColor];
+
   return L.divIcon({
     html: `
-      <div style="
-        width: ${size}px;
-        height: ${size}px;
-        background: #6366f1;
-        border: ${borderWidth}px solid ${isSelected ? '#3b82f6' : 'white'};
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        box-shadow: 0 4px 12px rgba(0,0,0,${isSelected ? '0.5' : '0.3'});
-        transform: ${isSelected ? 'scale(1.1)' : 'scale(1)'};
-        transition: transform 0.2s;
-      ">
-        <svg width="24" height="24" fill="white" viewBox="0 0 20 20">
-          <path d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"/>
-        </svg>
+      <div style="position:relative;display:flex;flex-direction:column;align-items:center;">
+        ${
+          badgeLabel
+            ? `<div style="
+                position:absolute;
+                top:-${badgeHeight - 6}px;
+                left:50%;
+                transform:translateX(-50%);
+                padding:${isSelected ? "6px 14px" : "5px 12px"};
+                border-radius:999px;
+                background:linear-gradient(135deg, ${start}, ${end});
+                color:white;
+                font-size:${isSelected ? "12px" : "11px"};
+                font-weight:700;
+                text-transform:uppercase;
+                letter-spacing:0.04em;
+                box-shadow:0 8px 18px rgba(0,0,0,0.18);
+                display:inline-flex;
+                align-items:center;
+                justify-content:center;
+                gap:6px;
+                pointer-events:none;
+              ">
+                ${escapeHtml(badgeLabel)}
+                <div style="
+                  position:absolute;
+                  bottom:-6px;
+                  left:50%;
+                  transform:translateX(-50%);
+                  width:14px;
+                  height:8px;
+                  background:linear-gradient(135deg, ${start}, ${end});
+                  clip-path:polygon(50% 100%, 0 0, 100% 0);
+                "></div>
+              </div>`
+            : ""
+        }
+        <div style="
+          width: ${size}px;
+          height: ${size}px;
+          background: linear-gradient(135deg, ${start}, ${end});
+          border: ${borderWidth}px solid ${isSelected ? '#3b82f6' : 'white'};
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          box-shadow: 0 6px 20px rgba(0,0,0,${isSelected ? '0.45' : '0.28'});
+          color: white;
+          font-weight: 700;
+          font-size: ${isSelected ? 18 : 16}px;
+          letter-spacing: 0.5px;
+          transform: ${isSelected ? 'scale(1.08)' : 'scale(1)'};
+          transition: transform 0.2s;
+        ">
+          ${initials}
+        </div>
       </div>
     `,
     className: "custom-professional-icon",
-    iconSize: [size, size],
-    iconAnchor: [size / 2, size / 2],
+    iconSize: [size, containerHeight],
+    iconAnchor: [size / 2, badgeLabel ? badgeHeight + size / 2 : size / 2],
     popupAnchor: [0, -(size / 2)],
   });
 };
@@ -200,77 +356,39 @@ const createProfessionalIcon = (avatarUrl: string | null | undefined, isSelected
 interface ClientProfessionalsMapViewProps {
   clientLat: number;
   clientLng: number;
-  searchRadius?: number; // Radio de búsqueda en km (por defecto 15km)
-  professionFilter?: string | null; // Filtrar por profesión específica
+  professionals: Professional[];
+  selectedProfessionalId?: string | null;
+  searchRadius?: number | null; // Radio en km, null = sin límite visual
+  loading?: boolean;
   onProfessionalClick?: (professional: Professional) => void;
 }
 
 export default function ClientProfessionalsMapView({
   clientLat,
   clientLng,
-  searchRadius = 15,
-  professionFilter = null,
+  professionals,
+  selectedProfessionalId = null,
+  searchRadius = null,
+  loading = false,
   onProfessionalClick,
 }: ClientProfessionalsMapViewProps) {
-  const [professionals, setProfessionals] = useState<Professional[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [selectedProfessional, setSelectedProfessional] = useState<string | null>(null);
+  const [internalSelected, setInternalSelected] = useState<string | null>(null);
   const center: [number, number] = [clientLat, clientLng];
 
-  // Obtener profesionales cercanos
-  useEffect(() => {
-    const fetchProfessionals = async () => {
-      setLoading(true);
-      try {
-        // Query para obtener profesionales con ubicación
-        let query = supabase
-          .from('profiles')
-          .select('user_id, full_name, email, avatar_url, profession, whatsapp, calificacion_promedio, ubicacion_lat, ubicacion_lng, areas_servicio')
-          .eq('role', 'profesional')
-          .not('ubicacion_lat', 'is', null)
-          .not('ubicacion_lng', 'is', null);
+  // Derive markers from professionals provided
+  const markers = useMemo(() => {
+    return (professionals || [])
+      .filter((prof) => prof.ubicacion_lat && prof.ubicacion_lng)
+      .map((prof) => ({
+        ...prof,
+        position: [prof.ubicacion_lat!, prof.ubicacion_lng!] as [number, number],
+      }));
+  }, [professionals]);
 
-        // Filtrar por profesión si está especificado
-        if (professionFilter) {
-          query = query.eq('profession', professionFilter);
-        }
-
-        const { data, error } = await query;
-
-        if (error) {
-          console.error('Error fetching professionals:', error);
-          return;
-        }
-
-        // Calcular distancias y filtrar por radio
-        const professionalsWithDistance = (data || [])
-          .map((prof) => ({
-            ...prof,
-            distance: calculateDistance(
-              clientLat,
-              clientLng,
-              prof.ubicacion_lat!,
-              prof.ubicacion_lng!
-            ),
-          }))
-          .filter((prof) => prof.distance <= searchRadius)
-          .sort((a, b) => a.distance - b.distance);
-
-        setProfessionals(professionalsWithDistance);
-      } catch (error) {
-        console.error('Error fetching professionals:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchProfessionals();
-  }, [clientLat, clientLng, searchRadius, professionFilter]);
-
-  const radiusInMeters = searchRadius * 1000;
+  const radiusInMeters = searchRadius ? searchRadius * 1000 : null;
 
   const handleProfessionalClick = (prof: Professional) => {
-    setSelectedProfessional(prof.user_id);
+    setInternalSelected(prof.user_id);
     onProfessionalClick?.(prof);
   };
 
@@ -291,17 +409,19 @@ export default function ClientProfessionalsMapView({
         />
 
         {/* Círculo de radio de búsqueda */}
-        <Circle
-          center={center}
-          radius={radiusInMeters}
-          pathOptions={{
-            color: "#10b981",
-            fillColor: "#10b981",
-            fillOpacity: 0.1,
-            weight: 2,
-            opacity: 0.4,
-          }}
-        />
+        {radiusInMeters && (
+          <Circle
+            center={center}
+            radius={radiusInMeters}
+            pathOptions={{
+              color: "#10b981",
+              fillColor: "#10b981",
+              fillOpacity: 0.08,
+              weight: 2,
+              opacity: 0.35,
+            }}
+          />
+        )}
 
         {/* Marcador del cliente */}
         <Marker position={center} icon={createClientIcon()}>
@@ -316,17 +436,22 @@ export default function ClientProfessionalsMapView({
         </Marker>
 
         {/* Marcadores de Profesionales */}
-        {professionals.map((prof) => {
-          if (!prof.ubicacion_lat || !prof.ubicacion_lng) return null;
-          
-          const isSelected = prof.user_id === selectedProfessional;
-          const position: [number, number] = [prof.ubicacion_lat, prof.ubicacion_lng];
+        {markers.map((prof) => {
+          const isSelected =
+            prof.user_id === (selectedProfessionalId ?? internalSelected);
+          const position = prof.position;
 
           return (
             <Marker
               key={prof.user_id}
               position={position}
-              icon={createProfessionalIcon(prof.avatar_url, isSelected)}
+              icon={createProfessionalIcon(
+                prof.avatar_url,
+                isSelected,
+                prof.full_name,
+                prof.user_id,
+                prof.profession
+              )}
               eventHandlers={{
                 click: () => handleProfessionalClick(prof),
               }}
@@ -369,7 +494,7 @@ export default function ClientProfessionalsMapView({
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-gray-600">Distancia:</span>
                       <span className="text-sm font-bold text-blue-600">
-                        {prof.distance?.toFixed(1)} km
+                        {prof.distance?.toFixed(1) ?? "—"} km
                       </span>
                     </div>
                   </div>
@@ -421,12 +546,14 @@ export default function ClientProfessionalsMapView({
           </div>
           <div className="flex items-center space-x-2">
             <div className="w-4 h-4 bg-indigo-500 rounded-full"></div>
-            <span>Profesionales ({professionals.length})</span>
+            <span>Profesionales ({markers.length})</span>
           </div>
-          <div className="flex items-center space-x-2">
-            <div className="w-3 h-3 border-2 border-emerald-500 rounded-full bg-emerald-100"></div>
-            <span>Radio: {searchRadius} km</span>
-          </div>
+          {radiusInMeters && (
+            <div className="flex items-center space-x-2">
+              <div className="w-3 h-3 border-2 border-emerald-500 rounded-full bg-emerald-100"></div>
+              <span>Radio: {searchRadius} km</span>
+            </div>
+          )}
         </div>
       </div>
 
