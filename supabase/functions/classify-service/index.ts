@@ -6,7 +6,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const MODEL = Deno.env.get("GEMINI_MODEL")?.trim() || "gemini-1.5-flash-latest";
+const MODEL = Deno.env.get("GEMINI_MODEL")?.trim() || "gemini-pro";
 
 const systemPrompt =
   "Actúa como un clasificador de servicios de mantenimiento muy preciso. Analiza el problema del cliente y clasifícalo en una de las siguientes disciplinas: Electricidad, Plomería, HVAC, Carpintería, Albañilería, Otros. Tu respuesta debe ser solo un objeto JSON.";
