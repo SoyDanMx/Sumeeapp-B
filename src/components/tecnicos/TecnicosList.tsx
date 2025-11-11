@@ -1,13 +1,15 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-import TecnicoCard from "./TecnicoCard";
+import { useEffect, useRef, useState } from "react";
+import TecnicoCardCompact from "./TecnicoCardCompact";
+import TecnicoDetailsModal from "./TecnicoDetailsModal";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSpinner, faExclamationTriangle } from "@fortawesome/free-solid-svg-icons";
 
 interface Professional {
   user_id: string;
   full_name: string;
+  email?: string;
   profession?: string;
   avatar_url?: string | null;
   whatsapp?: string;
@@ -35,6 +37,8 @@ export default function TecnicosList({
 }: TecnicosListProps) {
   const listRef = useRef<HTMLDivElement>(null);
   const cardRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
+  const [detailsModalOpen, setDetailsModalOpen] = useState(false);
+  const [selectedProfessional, setSelectedProfessional] = useState<Professional | null>(null);
 
   // Auto-scroll al seleccionado
   useEffect(() => {
@@ -45,6 +49,12 @@ export default function TecnicosList({
       });
     }
   }, [selectedId]);
+
+  const handleCardClick = (professional: Professional) => {
+    onSelect?.(professional.user_id);
+    setSelectedProfessional(professional);
+    setDetailsModalOpen(true);
+  };
 
   if (loading) {
     return (
@@ -82,47 +92,58 @@ export default function TecnicosList({
   }
 
   return (
-    <div
-      ref={listRef}
-      className="h-full overflow-y-auto overscroll-contain"
-      style={{
-        scrollbarWidth: "thin",
-        scrollbarColor: "#CBD5E0 #F7FAFC",
-      }}
-    >
-      {/* Results Count */}
-      <div className="sticky top-0 bg-white/95 backdrop-blur-sm z-10 px-4 py-3 border-b border-gray-200">
-        <p className="text-sm font-semibold text-gray-700">
-          {professionals.length}{" "}
-          {professionals.length === 1 ? "profesional encontrado" : "profesionales encontrados"}
-        </p>
-      </div>
+    <>
+      <div
+        ref={listRef}
+        className="h-full overflow-y-auto overscroll-contain"
+        style={{
+          scrollbarWidth: "thin",
+          scrollbarColor: "#CBD5E0 #F7FAFC",
+        }}
+      >
+        {/* Results Count - Sticky Header */}
+        <div className="sticky top-0 bg-white/95 backdrop-blur-sm z-10 px-4 py-2.5 border-b border-gray-200 shadow-sm">
+          <p className="text-xs sm:text-sm font-semibold text-gray-700">
+            {professionals.length}{" "}
+            {professionals.length === 1 ? "profesional" : "profesionales"} cerca de ti
+          </p>
+        </div>
 
-      {/* List */}
-      <div className="p-4 space-y-4">
-        {professionals.map((professional) => (
-          <div
-            key={professional.user_id}
-            ref={(el) => {
-              cardRefs.current[professional.user_id] = el;
-            }}
-          >
-            <TecnicoCard
-              professional={professional}
-              isSelected={selectedId === professional.user_id}
-              onClick={() => onSelect?.(professional.user_id)}
-              onContactClick={() => {
-                // Track contacto
-                console.log("Contactando a:", professional.full_name);
+        {/* List - Cards Compactas */}
+        <div className="divide-y divide-gray-100">
+          {professionals.map((professional) => (
+            <div
+              key={professional.user_id}
+              ref={(el) => {
+                cardRefs.current[professional.user_id] = el;
               }}
-            />
-          </div>
-        ))}
+            >
+              <TecnicoCardCompact
+                professional={professional}
+                isSelected={selectedId === professional.user_id}
+                onClick={() => handleCardClick(professional)}
+                onContactClick={() => {
+                  // Track contacto
+                  console.log("Contactando a:", professional.full_name);
+                }}
+              />
+            </div>
+          ))}
+        </div>
+
+        {/* Bottom Padding */}
+        <div className="h-2"></div>
       </div>
 
-      {/* Bottom Padding for mobile */}
-      <div className="h-4"></div>
-    </div>
+      {/* Modal de Detalles */}
+      <TecnicoDetailsModal
+        isOpen={detailsModalOpen}
+        onClose={() => {
+          setDetailsModalOpen(false);
+          setSelectedProfessional(null);
+        }}
+        professional={selectedProfessional}
+      />
+    </>
   );
 }
-
