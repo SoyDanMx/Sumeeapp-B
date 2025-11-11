@@ -180,6 +180,9 @@ export interface Lead {
   work_completion_notes?: string | null;
   engagement_points?: number | null;
   lead_review?: LeadReview | null;
+  disciplina_ia?: string | null;
+  urgencia_ia?: number | null;
+  diagnostico_ia?: string | null;
   // Propiedad para datos del profesional asignado (obtenida via JOIN)
   profiles?: Partial<Profile> | null;
   profesional_asignado?: Partial<Profile> | null;
