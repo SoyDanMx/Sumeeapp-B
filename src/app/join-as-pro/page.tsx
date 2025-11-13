@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase/client-new";
 import { getEmailConfirmationUrl } from "@/lib/utils";
-import { geocodeAddress } from "@/lib/geocoding";
+import { geocodeAddress, reverseGeocode } from "@/lib/geocoding";
+import dynamic from "next/dynamic";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faUser,
@@ -18,6 +19,11 @@ import {
   faExclamationTriangle,
   faEye,
   faEyeSlash,
+  faLocationCrosshairs,
+  faMapLocationDot,
+  faLocationDot,
+  faRotateRight,
+  faCheck,
 } from "@fortawesome/free-solid-svg-icons";
 import {
   ProfesionalRegistrationData,
@@ -44,6 +50,31 @@ const WORK_ZONES = [
   "Xochimilco",
 ];
 
+const ProfessionalLocationMap = dynamic(
+  () => import("@/components/pro/ProfessionalLocationMap"),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex h-full items-center justify-center bg-white">
+        <div className="text-center text-sm text-gray-500">
+          <FontAwesomeIcon
+            icon={faSpinner}
+            className="mr-2 animate-spin text-indigo-500"
+          />
+          Cargando mapa interactivo...
+        </div>
+      </div>
+    ),
+  }
+);
+
+const CDMX_COORDS = {
+  lat: 19.4326,
+  lng: -99.1332,
+};
+
+type LocationSource = "manual" | "gps" | "search" | "fallback";
+
 export default function JoinAsPro() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -69,6 +100,31 @@ export default function JoinAsPro() {
 
   // Estado local para el input de ciudad cuando se selecciona "Otra"
   const [otherCityInput, setOtherCityInput] = useState("");
+  const [addressInput, setAddressInput] = useState("Ciudad de México, CDMX");
+  const [location, setLocation] = useState<{
+    lat: number;
+    lng: number;
+    address: string;
+    hasCustom: boolean;
+    source: LocationSource;
+  }>({
+    lat: CDMX_COORDS.lat,
+    lng: CDMX_COORDS.lng,
+    address: "Ciudad de México, CDMX",
+    hasCustom: false,
+    source: "fallback",
+  });
+  const [locationStatus, setLocationStatus] = useState<
+    "idle" | "loading" | "success" | "error"
+  >("idle");
+  const [locationError, setLocationError] = useState<string | null>(null);
+  const [isMapReady, setIsMapReady] = useState(false);
+
+  const clearLocationErrorState = useCallback(() => {
+    setValidationErrors((prev) =>
+      prev.location ? { ...prev, location: undefined } : prev
+    );
+  }, [setValidationErrors]);
 
   // Función genérica para actualizar el estado del formulario
   const handleChange = (
@@ -81,6 +137,165 @@ export default function JoinAsPro() {
     if (validationErrors[field as keyof ValidationErrors]) {
       setValidationErrors((prev) => ({ ...prev, [field]: undefined }));
     }
+
+    if (field === "city") {
+      clearLocationErrorState();
+
+      if (typeof value === "string") {
+        if (!location.hasCustom) {
+          const cityLabel =
+            value === "Ciudad de México"
+              ? "Ciudad de México, CDMX"
+              : value === "Otra"
+              ? ""
+              : `${value}, México`;
+
+          if (value === "Otra") {
+            setAddressInput("");
+          } else {
+            setAddressInput(cityLabel);
+            setLocation((prev) => ({
+              ...prev,
+              address: cityLabel || prev.address,
+            }));
+          }
+        }
+
+        setValidationErrors((prev) =>
+          prev.city ? { ...prev, city: undefined } : prev
+        );
+      }
+    }
+  };
+
+  const updateLocationFromCoords = useCallback(
+    async (lat: number, lng: number, source: LocationSource) => {
+      clearLocationErrorState();
+      setLocationStatus("loading");
+      setLocation((prev) => ({
+        ...prev,
+        lat,
+        lng,
+        hasCustom: true,
+        source,
+      }));
+
+      try {
+        const reverseResult = await reverseGeocode(lat, lng);
+        const resolvedAddress =
+          reverseResult?.address ||
+          reverseResult?.displayName ||
+          `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+
+        setLocation({
+          lat,
+          lng,
+          address: resolvedAddress,
+          hasCustom: true,
+          source,
+        });
+
+        setAddressInput(resolvedAddress);
+        setLocationStatus("success");
+        setLocationError(null);
+      } catch (reverseError) {
+        console.error("❌ Error al obtener dirección inversa:", reverseError);
+        setLocation((prev) => ({
+          ...prev,
+          lat,
+          lng,
+          hasCustom: true,
+          source,
+        }));
+        setLocationStatus("error");
+        setLocationError(
+          "No pudimos obtener la dirección exacta. Ajusta el marcador manualmente."
+        );
+      }
+    },
+    [clearLocationErrorState]
+  );
+
+  const handleUseGPS = async () => {
+    if (!navigator.geolocation) {
+      setLocationError(
+        "Tu navegador no soporta geolocalización. Escribe tu dirección o ajusta el mapa."
+      );
+      setLocationStatus("error");
+      return;
+    }
+
+    setLocationStatus("loading");
+    clearLocationErrorState();
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        await updateLocationFromCoords(latitude, longitude, "gps");
+      },
+      (geoError) => {
+        console.error("❌ Error obteniendo ubicación GPS:", geoError);
+        setLocationStatus("error");
+        setLocationError(
+          "No pudimos acceder a tu ubicación. Activa el GPS o permite el acceso en tu navegador."
+        );
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 15000,
+      }
+    );
+  };
+
+  const handleSearchAddress = async () => {
+    if (!addressInput.trim()) {
+      setLocationError("Escribe una dirección o colonia para buscarla en el mapa.");
+      setLocationStatus("error");
+      return;
+    }
+
+    setLocationStatus("loading");
+    clearLocationErrorState();
+
+    try {
+      const coords = await geocodeAddress(`${addressInput.trim()}, México`);
+      if (coords) {
+        await updateLocationFromCoords(coords.lat, coords.lng, "search");
+      } else {
+        setLocationStatus("error");
+        setLocationError(
+          "No encontramos la dirección. Intenta incluir colonia, ciudad y estado."
+        );
+      }
+    } catch (error) {
+      console.error("❌ Error geocodificando dirección:", error);
+      setLocationStatus("error");
+      setLocationError(
+        "Ocurrió un error al buscar la dirección. Intenta nuevamente."
+      );
+    }
+  };
+
+  const handleMapLocationChange = async (
+    lat: number,
+    lng: number,
+    source: LocationSource = "manual"
+  ) => {
+    await updateLocationFromCoords(lat, lng, source);
+  };
+
+  const handleResetLocation = () => {
+    setLocation({
+      lat: CDMX_COORDS.lat,
+      lng: CDMX_COORDS.lng,
+      address: "Ciudad de México, CDMX",
+      hasCustom: false,
+      source: "fallback",
+    });
+    setAddressInput("Ciudad de México, CDMX");
+    setLocationStatus("idle");
+    setLocationError(null);
+    clearLocationErrorState();
   };
 
   // Validación del formulario
@@ -120,16 +335,15 @@ export default function JoinAsPro() {
         "La contraseña debe contener al menos una mayúscula, una minúscula y un número";
     }
 
-    // Validar ciudad
-    if (
-      !formData.city ||
-      formData.city.trim() === "" ||
-      formData.city === "Otra"
-    ) {
-      errors.workZones =
-        formData.city === "Otra"
-          ? "Por favor escribe el nombre de tu ciudad"
-          : "Por favor selecciona tu ciudad principal";
+    if (!formData.city || formData.city.trim() === "") {
+      errors.city = "Por favor selecciona tu ciudad principal";
+    } else if (formData.city === "Otra" && !otherCityInput.trim()) {
+      errors.city = "Por favor escribe el nombre de tu ciudad";
+    }
+
+    if (!location.hasCustom) {
+      errors.location =
+        "Confirma tu ubicación usando GPS, búsqueda o moviendo el pin en el mapa.";
     }
 
     setValidationErrors(errors);
@@ -165,6 +379,15 @@ export default function JoinAsPro() {
         workZones: formData.workZones,
         work_zones_other: formData.work_zones_other,
         bio: formData.bio,
+        location: {
+          lat: location.lat,
+          lng: location.lng,
+          address: location.address,
+          hasCustom: location.hasCustom,
+          source: location.source,
+        },
+        addressInput,
+        otherCityInput,
       });
 
       // Construir dinámicamente la URL redirectTo usando window.location.origin
@@ -179,22 +402,38 @@ export default function JoinAsPro() {
           ? otherCityInput.trim() || "Ciudad de México" // Si seleccionó "Otra", usar lo que escribió
           : formData.city || "Ciudad de México";
 
-      // 🗺️ NUEVO: Geocodificar la ubicación automáticamente
-      console.log("📍 Geocodificando ubicación:", realCity);
-      let ubicacion_lat = 19.4326; // Fallback: Centro CDMX
-      let ubicacion_lng = -99.1332;
-      
-      try {
-        const coords = await geocodeAddress(`${realCity}, México`);
-        if (coords) {
-          ubicacion_lat = coords.lat;
-          ubicacion_lng = coords.lng;
-          console.log("✅ Ubicación geocodificada:", coords.displayName);
-        } else {
-          console.log("⚠️ No se pudo geocodificar, usando fallback CDMX");
+      console.log("📍 Ubicación seleccionada:", {
+        realCity,
+        location,
+        addressInput,
+      });
+
+      let ubicacion_lat = location.lat ?? CDMX_COORDS.lat;
+      let ubicacion_lng = location.lng ?? CDMX_COORDS.lng;
+      let ubicacion_direccion =
+        location.address ||
+        (addressInput.trim()
+          ? addressInput.trim()
+          : `${realCity}, México`);
+      let locationSource: LocationSource = location.hasCustom
+        ? location.source
+        : "fallback";
+
+      if (!location.hasCustom) {
+        try {
+          const coords = await geocodeAddress(`${realCity}, México`);
+          if (coords) {
+            ubicacion_lat = coords.lat;
+            ubicacion_lng = coords.lng;
+            ubicacion_direccion = coords.displayName || ubicacion_direccion;
+            locationSource = "fallback";
+            console.log("✅ Ubicación por ciudad:", coords.displayName);
+          } else {
+            console.log("⚠️ No se pudo geocodificar la ciudad, usando fallback CDMX");
+          }
+        } catch (geoError) {
+          console.warn("⚠️ Error geocodificando ciudad, usando fallback:", geoError);
         }
-      } catch (geoError) {
-        console.warn("⚠️ Error en geocoding, usando fallback:", geoError);
       }
 
       const userMetadata: Record<string, any> = {
@@ -206,8 +445,12 @@ export default function JoinAsPro() {
         whatsapp: normalizedPhone,
         phone_original: formData.phone,
         registration_type: "professional",
-        ubicacion_lat,  // ← NUEVO
-        ubicacion_lng,  // ← NUEVO
+        ubicacion_lat,
+        ubicacion_lng,
+        ubicacion_direccion,
+        location_source: locationSource,
+        location_has_custom: location.hasCustom,
+        location_address_input: addressInput.trim() || null,
       };
 
       // Añadir work_zones según la ciudad seleccionada
@@ -538,7 +781,7 @@ export default function JoinAsPro() {
                   }
                 }}
                 className={`w-full px-4 py-3 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
-                  validationErrors.workZones
+                  validationErrors.city
                     ? "border-red-300 focus:ring-red-500 focus:border-red-500"
                     : "border-gray-300"
                 }`}
@@ -547,13 +790,13 @@ export default function JoinAsPro() {
                 <option value="Ciudad de México">Ciudad de México</option>
                 <option value="Otra">Otra ciudad</option>
               </select>
-              {validationErrors.workZones && formData.city !== "Otra" && (
+              {validationErrors.city && formData.city !== "Otra" && (
                 <p className="mt-1 text-sm text-red-600 flex items-center">
                   <FontAwesomeIcon
                     icon={faExclamationTriangle}
                     className="mr-1"
                   />
-                  {validationErrors.workZones}
+                  {validationErrors.city}
                 </p>
               )}
             </div>
@@ -615,6 +858,16 @@ export default function JoinAsPro() {
                     onChange={(e) => {
                       const inputValue = e.target.value;
                       setOtherCityInput(inputValue);
+                      clearLocationErrorState();
+
+                      if (!location.hasCustom) {
+                        setAddressInput(inputValue);
+                        setLocation((prev) => ({
+                          ...prev,
+                          address: inputValue,
+                        }));
+                      }
+
                       // Cuando el usuario escribe, actualizar city directamente con el valor
                       if (inputValue.trim()) {
                         handleChange("city", inputValue.trim());
@@ -633,19 +886,19 @@ export default function JoinAsPro() {
                     }}
                     placeholder="Ej: Monterrey, Guadalajara, Puebla..."
                     className={`w-full px-4 py-3 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
-                      validationErrors.workZones
+                      validationErrors.city
                         ? "border-red-300 focus:ring-red-500 focus:border-red-500"
                         : "border-gray-300"
                     }`}
                   />
-                  {validationErrors.workZones &&
+                  {validationErrors.city &&
                     (formData.city === "Otra" || !formData.city) && (
                       <p className="mt-1 text-sm text-red-600 flex items-center">
                         <FontAwesomeIcon
                           icon={faExclamationTriangle}
                           className="mr-1"
                         />
-                        {validationErrors.workZones}
+                        {validationErrors.city}
                       </p>
                     )}
                 </div>
@@ -673,6 +926,148 @@ export default function JoinAsPro() {
                 </div>
               </div>
             )}
+
+            {/* Ubicación precisa */}
+            <div className="rounded-2xl border border-indigo-100 bg-indigo-50/40 p-5">
+              <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                <div>
+                  <h3 className="flex items-center gap-2 text-sm font-semibold text-gray-700">
+                    <FontAwesomeIcon
+                      icon={faMapLocationDot}
+                      className="text-indigo-600"
+                    />
+                    Confirma tu ubicación en el mapa *
+                  </h3>
+                  <p className="mt-1 text-xs text-gray-500">
+                    Usa tu GPS o ajusta el pin para que podamos recomendarte
+                    clientes cercanos, igual que en apps tipo Uber o Didi.
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={handleUseGPS}
+                    disabled={locationStatus === "loading"}
+                    className={`inline-flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-semibold transition-colors ${
+                      locationStatus === "loading"
+                        ? "cursor-not-allowed border-gray-200 bg-gray-100 text-gray-400"
+                        : "border-indigo-200 bg-white text-indigo-700 hover:border-indigo-300 hover:text-indigo-800"
+                    }`}
+                  >
+                    <FontAwesomeIcon icon={faLocationCrosshairs} />
+                    Usar mi GPS
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleResetLocation}
+                    className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-600 transition-colors hover:border-gray-300 hover:text-gray-800"
+                  >
+                    <FontAwesomeIcon icon={faRotateRight} />
+                    Restablecer
+                  </button>
+                </div>
+              </div>
+
+              <div className="mt-4 space-y-4">
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={addressInput}
+                    onChange={(e) => {
+                      setAddressInput(e.target.value);
+                      setLocationStatus("idle");
+                      setLocationError(null);
+                      clearLocationErrorState();
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        handleSearchAddress();
+                      }
+                    }}
+                    placeholder="Ej. Calle, número, colonia y ciudad"
+                    className="w-full rounded-lg border border-indigo-200 px-4 py-3 pr-32 text-sm shadow-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-300"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleSearchAddress}
+                    disabled={locationStatus === "loading"}
+                    className="absolute right-2 top-1/2 flex -translate-y-1/2 items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-md transition-colors hover:bg-indigo-700 disabled:cursor-not-allowed disabled:bg-indigo-300"
+                  >
+                    {locationStatus === "loading" ? (
+                      <>
+                        <FontAwesomeIcon icon={faSpinner} spin />
+                        Buscando...
+                      </>
+                    ) : (
+                      <>
+                        <FontAwesomeIcon icon={faMapLocationDot} />
+                        Buscar
+                      </>
+                    )}
+                  </button>
+                </div>
+
+                {locationStatus === "success" && !locationError && (
+                  <p className="flex items-center gap-2 text-xs font-medium text-emerald-600">
+                    <FontAwesomeIcon icon={faCheck} />
+                    Ubicación actualizada
+                  </p>
+                )}
+
+                {locationError && (
+                  <p className="flex items-center gap-2 text-sm text-red-600">
+                    <FontAwesomeIcon icon={faExclamationTriangle} />
+                    {locationError}
+                  </p>
+                )}
+
+                <div className="relative h-64 w-full overflow-hidden rounded-2xl border border-indigo-100 bg-white">
+                  <ProfessionalLocationMap
+                    lat={location.lat}
+                    lng={location.lng}
+                    onChange={handleMapLocationChange}
+                    onReady={() => setIsMapReady(true)}
+                  />
+                  {!isMapReady && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-white/80 text-sm text-gray-500">
+                      <FontAwesomeIcon
+                        icon={faSpinner}
+                        className="mr-2 animate-spin"
+                      />
+                      Preparando mapa...
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex flex-wrap gap-3 text-xs text-gray-600">
+                  <span className="inline-flex items-center gap-2 rounded-full border border-indigo-100 bg-white px-3 py-1.5 font-medium">
+                    <FontAwesomeIcon icon={faLocationDot} className="text-indigo-500" />
+                    {location.address || "Selecciona tu ubicación"}
+                  </span>
+                  <span className="inline-flex items-center gap-2 rounded-full border border-indigo-100 bg-white px-3 py-1.5">
+                    Lat {location.lat.toFixed(5)}, Lng {location.lng.toFixed(5)}
+                  </span>
+                  <span className="inline-flex items-center gap-2 rounded-full border border-indigo-100 bg-white px-3 py-1.5 capitalize">
+                    <FontAwesomeIcon icon={faCheckCircle} className="text-emerald-500" />
+                    {location.source === "gps"
+                      ? "Tomado con GPS"
+                      : location.source === "search"
+                      ? "Dirección buscada"
+                      : location.source === "manual"
+                      ? "Pin ajustado manualmente"
+                      : "Ubicación base (CDMX)"}
+                  </span>
+                </div>
+
+                {validationErrors.location && (
+                  <p className="flex items-center gap-2 text-sm text-red-600">
+                    <FontAwesomeIcon icon={faExclamationTriangle} />
+                    {validationErrors.location}
+                  </p>
+                )}
+              </div>
+            </div>
 
             {/* Biografía */}
             <div>

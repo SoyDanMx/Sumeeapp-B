@@ -260,6 +260,9 @@ export interface ProfesionalRegistrationData {
   workZones?: string[];
   city?: string;
   work_zones_other?: string;
+  locationAddress?: string;
+  ubicacionLat?: number;
+  ubicacionLng?: number;
 }
 
 /**
@@ -362,6 +365,8 @@ export interface ValidationErrors {
   password?: string;
   bio?: string;
   workZones?: string;
+  city?: string;
+  location?: string;
 }
 
 // =========================================================================
