@@ -90,7 +90,7 @@ export default function TecnicosSplitView({
         let query = supabase
           .from("profiles")
           .select(
-            "user_id, full_name, email, avatar_url, profession, whatsapp, calificacion_promedio, ubicacion_lat, ubicacion_lng, areas_servicio"
+            "user_id, full_name, email, avatar_url, profession, whatsapp, calificacion_promedio, ubicacion_lat, ubicacion_lng, areas_servicio, experience"
           )
           .eq("role", "profesional")
           .not("ubicacion_lat", "is", null)

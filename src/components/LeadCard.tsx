@@ -148,18 +148,28 @@ export default function LeadCard({
         setLeadState(updatedLead);
 
         try {
+          if (!user?.id) {
+            console.warn("Usuario no disponible para enviar credencial");
+            return;
+          }
+          
           const credentialResult = await sendCredentialToClient(
             leadInfo.id,
             user.id
           );
+          
           if (credentialResult.success && credentialResult.whatsappLink) {
             openWhatsAppLink(credentialResult.whatsappLink);
+          } else if (credentialResult.error) {
+            console.warn("No se pudo generar el link de WhatsApp:", credentialResult.error);
+            // No mostrar alerta porque el lead ya fue aceptado exitosamente
           }
-        } catch (credentialError) {
+        } catch (credentialError: any) {
           console.error(
             "Error al enviar credencial (no crítico):",
             credentialError
           );
+          // No bloquear el flujo si falla el envío de credencial
         }
 
                 if (onLeadAccepted) {

@@ -8,6 +8,7 @@ import { Lead, Profile } from "@/types/supabase";
 import { useAuth } from "@/context/AuthContext";
 import { useMembership } from "@/context/MembershipContext";
 import RequestServiceModal from "@/components/client/RequestServiceModal";
+import AISumeeAssistant from "@/components/client/AISumeeAssistant";
 import UpcomingServiceWidget from "@/components/dashboard/UpcomingServiceWidget";
 import QuickActionsWidget from "@/components/dashboard/QuickActionsWidget";
 import RecentActivityWidget from "@/components/dashboard/RecentActivityWidget";
@@ -43,6 +44,7 @@ export default function ClientDashboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isAIAssistantOpen, setIsAIAssistantOpen] = useState(false);
   const [selectedService, setSelectedService] = useState<string | null>(null);
   const [leadDetails, setLeadDetails] = useState<Lead | null>(null);
   const [isDetailsLoading, setIsDetailsLoading] = useState(false);
@@ -213,7 +215,7 @@ export default function ClientDashboardPage() {
   const handleProgrammedRequest = () => {
     setSelectedService(null);
     setIsEmergencyMenuOpen(false);
-    setIsModalOpen(true);
+    setIsAIAssistantOpen(true); // Abrir asistente IA en lugar del modal tradicional
   };
 
   // Cerrar modal y limpiar servicio seleccionado
@@ -860,6 +862,13 @@ export default function ClientDashboardPage() {
         onClose={handleModalClose}
         onLeadCreated={refreshLeads}
         initialService={selectedService}
+      />
+
+      {/* Asistente IA Conversacional + Visión */}
+      <AISumeeAssistant
+        isOpen={isAIAssistantOpen}
+        onClose={() => setIsAIAssistantOpen(false)}
+        onLeadCreated={refreshLeads}
       />
       {isDetailsOpen && leadDetails && (
         <LeadDetailsModal
