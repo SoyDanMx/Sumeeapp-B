@@ -315,9 +315,18 @@ export async function markLeadContacted(
   method: string,
   notes?: string
 ) {
+  // Verificar que haya una sesión activa
   const {
     data: { session },
+    error: sessionError,
   } = await supabase.auth.getSession();
+
+  if (sessionError || !session) {
+    console.error("Error obteniendo sesión:", sessionError);
+    throw new Error(
+      "Debes iniciar sesión para marcar el contacto. Por favor, recarga la página e inicia sesión nuevamente."
+    );
+  }
 
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
@@ -336,10 +345,16 @@ export async function markLeadContacted(
 
   if (!response.ok) {
     const payload = await response.json().catch(() => null);
-    throw new Error(
-      payload?.error ??
-        "No se pudo registrar el contacto. Intenta nuevamente."
-    );
+    const errorMessage = payload?.error ?? "No se pudo registrar el contacto. Intenta nuevamente.";
+    
+    // Mensaje más específico según el código de estado
+    if (response.status === 401) {
+      throw new Error(
+        "Tu sesión expiró. Por favor, recarga la página e inicia sesión nuevamente."
+      );
+    }
+    
+    throw new Error(errorMessage);
   }
 
   const payload = (await response.json()) as { lead: Lead };

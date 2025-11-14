@@ -263,6 +263,8 @@ export interface ProfesionalRegistrationData {
   locationAddress?: string;
   ubicacionLat?: number;
   ubicacionLng?: number;
+  experience?: number; // Años de experiencia profesional
+  areas_servicio?: string[]; // Especialidades/áreas de servicio
 }
 
 /**
@@ -367,6 +369,8 @@ export interface ValidationErrors {
   workZones?: string;
   city?: string;
   location?: string;
+  experience?: string; // Años de experiencia
+  areas_servicio?: string; // Áreas de servicio
 }
 
 // =========================================================================

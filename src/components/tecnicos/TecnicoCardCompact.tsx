@@ -20,6 +20,8 @@ interface TecnicoCardCompactProps {
     distance?: number;
     total_reviews?: number;
     verified?: boolean;
+    experience?: number | null; // Años de experiencia
+    areas_servicio?: string[] | null; // Áreas de servicio
   };
   isSelected?: boolean;
   onClick?: () => void;
@@ -41,6 +43,8 @@ export default function TecnicoCardCompact({
     distance,
     total_reviews = 0,
     verified = true,
+    experience,
+    areas_servicio,
   } = professional;
 
   const handleWhatsAppClick = (e: React.MouseEvent) => {
@@ -96,7 +100,7 @@ export default function TecnicoCardCompact({
         <div className="flex-1 min-w-0 flex items-center justify-between gap-2">
           <div className="min-w-0 flex-1">
             {/* Nombre y Profesión */}
-            <div className="flex items-baseline gap-2">
+            <div className="flex items-baseline gap-2 flex-wrap">
               <h3 className="font-bold text-sm text-gray-900 truncate">
                 {full_name}
               </h3>
@@ -105,13 +109,58 @@ export default function TecnicoCardCompact({
                   {profession}
                 </span>
               )}
+              {/* Badge de Experiencia */}
+              {experience && experience > 0 && (
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-purple-100 text-purple-700 border border-purple-200">
+                  {experience}+ años
+                </span>
+              )}
             </div>
 
             {/* Móvil: Profesión en segunda línea */}
-            {profession && (
-              <p className="text-xs text-gray-500 truncate sm:hidden">
-                {profession}
-              </p>
+            <div className="sm:hidden space-y-1">
+              {profession && (
+                <p className="text-xs text-gray-500 truncate">
+                  {profession}
+                </p>
+              )}
+              {/* Áreas de Servicio - Mobile */}
+              {areas_servicio && areas_servicio.length > 0 && (
+                <div className="flex flex-wrap gap-1">
+                  {areas_servicio.slice(0, 2).map((area, idx) => (
+                    <span
+                      key={idx}
+                      className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-indigo-50 text-indigo-700 border border-indigo-200"
+                    >
+                      {area}
+                    </span>
+                  ))}
+                  {areas_servicio.length > 2 && (
+                    <span className="text-[10px] text-gray-500">
+                      +{areas_servicio.length - 2}
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Desktop: Áreas de Servicio */}
+            {areas_servicio && areas_servicio.length > 0 && (
+              <div className="hidden sm:flex flex-wrap gap-1 mt-1">
+                {areas_servicio.slice(0, 3).map((area, idx) => (
+                  <span
+                    key={idx}
+                    className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-indigo-50 text-indigo-700 border border-indigo-200"
+                  >
+                    {area}
+                  </span>
+                ))}
+                {areas_servicio.length > 3 && (
+                  <span className="text-[10px] text-gray-500">
+                    +{areas_servicio.length - 3}
+                  </span>
+                )}
+              </div>
             )}
           </div>
 

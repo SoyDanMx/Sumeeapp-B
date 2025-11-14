@@ -75,6 +75,43 @@ const CDMX_COORDS = {
 
 type LocationSource = "manual" | "gps" | "search" | "fallback";
 
+// Áreas de servicio disponibles
+const SERVICE_AREAS = [
+  "Electricistas",
+  "CCTV y Alarmas",
+  "Redes WiFi",
+  "Plomeros",
+  "Pintores",
+  "Aire Acondicionado",
+  "Carpintería",
+  "Limpieza",
+  "Jardinería",
+  "Fumigación",
+  "Tablaroca",
+  "Construcción",
+];
+
+// Mapeo de profesiones a áreas de servicio (sincronización automática)
+const PROFESSION_TO_AREAS: Record<string, string[]> = {
+  "Electricista": ["Electricistas"],
+  "Ayudante Eléctrico": ["Electricistas"],
+  "Plomero": ["Plomeros"],
+  "Técnico en Aire Acondicionado": ["Aire Acondicionado"],
+  "Técnico en Refrigeración": ["Aire Acondicionado"],
+  "Especialista en CCTV y Seguridad": ["CCTV y Alarmas"],
+  "Técnico en Seguridad": ["CCTV y Alarmas"],
+  "Especialista en Redes y WiFi": ["Redes WiFi"],
+  "Carpintero": ["Carpintería"],
+  "Pintor": ["Pintores"],
+  "Especialista en Limpieza": ["Limpieza"],
+  "Jardinero": ["Jardinería"],
+  "Especialista en Fumigación": ["Fumigación"],
+  "Especialista en Tablaroca": ["Tablaroca"],
+  "Especialista en Construcción": ["Construcción"],
+  "Arquitecto": ["Construcción"],
+  "Ingeniero": ["Construcción"],
+};
+
 export default function JoinAsPro() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -96,6 +133,8 @@ export default function JoinAsPro() {
     workZones: [],
     city: "",
     work_zones_other: "",
+    experience: undefined,
+    areas_servicio: [],
   });
 
   // Estado local para el input de ciudad cuando se selecciona "Otra"
@@ -129,9 +168,22 @@ export default function JoinAsPro() {
   // Función genérica para actualizar el estado del formulario
   const handleChange = (
     field: keyof ProfesionalRegistrationData,
-    value: string | string[]
+    value: string | string[] | number
   ) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
+    setFormData((prev) => {
+      const updated = { ...prev, [field]: value };
+      
+      // Sincronización automática: cuando cambia profession, actualizar areas_servicio
+      if (field === "profession" && typeof value === "string") {
+        const autoAreas = PROFESSION_TO_AREAS[value] || [];
+        // Si ya hay áreas seleccionadas, mantenerlas y agregar las nuevas si no están
+        const currentAreas = prev.areas_servicio || [];
+        const newAreas = [...new Set([...autoAreas, ...currentAreas])];
+        updated.areas_servicio = newAreas;
+      }
+      
+      return updated;
+    });
 
     // Limpiar errores de validación cuando el usuario empiece a escribir
     if (validationErrors[field as keyof ValidationErrors]) {
@@ -451,6 +503,8 @@ export default function JoinAsPro() {
         location_source: locationSource,
         location_has_custom: location.hasCustom,
         location_address_input: addressInput.trim() || null,
+        experience: formData.experience || null,
+        areas_servicio: formData.areas_servicio || [],
       };
 
       // Añadir work_zones según la ciudad seleccionada
@@ -643,6 +697,103 @@ export default function JoinAsPro() {
                     className="mr-1"
                   />
                   {validationErrors.profession}
+                </p>
+              )}
+            </div>
+
+            {/* Años de Experiencia */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <FontAwesomeIcon
+                  icon={faBriefcase}
+                  className="mr-2 text-purple-600"
+                />
+                Años de Experiencia
+              </label>
+              <input
+                type="number"
+                min="0"
+                max="50"
+                value={formData.experience || ""}
+                onChange={(e) => {
+                  const value = e.target.value === "" ? undefined : parseInt(e.target.value, 10);
+                  handleChange("experience", value as any);
+                }}
+                placeholder="Ej: 5"
+                className={`w-full px-4 py-3 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors ${
+                  validationErrors.experience
+                    ? "border-red-300 focus:ring-red-500 focus:border-red-500"
+                    : "border-gray-300"
+                }`}
+              />
+              <p className="mt-1 text-xs text-gray-500">
+                Indica cuántos años de experiencia tienes en tu profesión
+              </p>
+              {validationErrors.experience && (
+                <p className="mt-1 text-sm text-red-600 flex items-center">
+                  <FontAwesomeIcon
+                    icon={faExclamationTriangle}
+                    className="mr-1"
+                  />
+                  {validationErrors.experience}
+                </p>
+              )}
+            </div>
+
+            {/* Áreas de Servicio (Especialidades) */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <FontAwesomeIcon
+                  icon={faCheckCircle}
+                  className="mr-2 text-indigo-600"
+                />
+                Áreas de Servicio (Especialidades)
+              </label>
+              <p className="text-xs text-gray-500 mb-3">
+                Selecciona todas las áreas en las que trabajas. Se seleccionaron automáticamente según tu profesión.
+              </p>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-48 overflow-y-auto border border-gray-200 rounded-lg p-3 bg-gray-50">
+                {SERVICE_AREAS.map((area) => {
+                  const isSelected = formData.areas_servicio?.includes(area) || false;
+                  return (
+                    <label
+                      key={area}
+                      className={`flex items-center space-x-2 p-2 rounded-lg cursor-pointer transition-all ${
+                        isSelected
+                          ? "bg-indigo-100 border-2 border-indigo-500 text-indigo-900"
+                          : "bg-white border-2 border-gray-200 hover:border-indigo-300 text-gray-700"
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={(e) => {
+                          const currentAreas = formData.areas_servicio || [];
+                          if (e.target.checked) {
+                            handleChange("areas_servicio", [...currentAreas, area]);
+                          } else {
+                            handleChange(
+                              "areas_servicio",
+                              currentAreas.filter((a) => a !== area)
+                            );
+                          }
+                        }}
+                        className="sr-only"
+                      />
+                      <span className="text-xs font-medium">{area}</span>
+                      {isSelected && (
+                        <FontAwesomeIcon
+                          icon={faCheckCircle}
+                          className="text-indigo-600 text-xs"
+                        />
+                      )}
+                    </label>
+                  );
+                })}
+              </div>
+              {formData.areas_servicio && formData.areas_servicio.length > 0 && (
+                <p className="mt-2 text-xs text-indigo-600 font-medium">
+                  {formData.areas_servicio.length} área{formData.areas_servicio.length !== 1 ? "s" : ""} seleccionada{formData.areas_servicio.length !== 1 ? "s" : ""}
                 </p>
               )}
             </div>

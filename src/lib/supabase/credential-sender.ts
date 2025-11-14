@@ -78,9 +78,17 @@ export async function sendCredentialToClient(
       .eq("id", leadId)
       .maybeSingle();
 
-    if (leadError || !lead) {
+    if (leadError) {
       console.error("Error al obtener el lead:", leadError);
-      return { success: false, error: "Lead no encontrado" };
+      return { 
+        success: false, 
+        error: leadError.message || "Error al obtener el lead desde la base de datos" 
+      };
+    }
+
+    if (!lead) {
+      console.error("Lead no encontrado con ID:", leadId);
+      return { success: false, error: "Lead no encontrado. Verifica que el ID sea correcto." };
     }
 
     // 2. Verificar que el lead tenga WhatsApp del cliente
