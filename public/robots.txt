@@ -4,23 +4,12 @@ Allow: /
 # Sitemap
 Sitemap: https://www.sumeeapp.com/sitemap.xml
 
-# Crawl-delay para evitar sobrecarga
-Crawl-delay: 1
-
-# Bloquear páginas de desarrollo y debug
-Disallow: /debug-*
-Disallow: /test-*
-Disallow: /admin/
-Disallow: /api/
-
-# Permitir páginas importantes
-Allow: /
-Allow: /servicios
-Allow: /professionals
-Allow: /blog
-Allow: /about
-Allow: /contact
-Allow: /help
-Allow: /join-as-pro
-Allow: /login
-Allow: /registro
+# Favicon y logos
+Allow: /logo.png
+Allow: /favicon.ico
+Allow: /favicon-16x16.png
+Allow: /favicon-32x32.png
+Allow: /apple-touch-icon.png
+Allow: /android-chrome-192x192.png
+Allow: /android-chrome-512x512.png
+Allow: /site.webmanifest
