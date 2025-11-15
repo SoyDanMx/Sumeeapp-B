@@ -5,6 +5,7 @@ import Link from "next/link";
 import DisciplineAIHelper from "@/components/services/DisciplineAIHelper";
 import ScrollToAIHelper from "@/components/services/ScrollToAIHelper";
 import AIHelperHashHandler from "@/components/services/AIHelperHashHandler";
+import VerTecnicosButton from "@/components/services/VerTecnicosButton";
 import Image from "next/image";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -391,14 +392,11 @@ export default async function ServiceDetailPage({ params }: ServicePageProps) {
                     <FontAwesomeIcon icon={faUsers} className="mr-2" />
                     Solicitar Servicio
                   </a>
-                  <a
-                    href="/tecnicos"
+                  <VerTecnicosButton
+                    serviceName={service.name}
                     className="bg-transparent border-2 border-white text-white font-bold px-8 py-4 rounded-lg hover:bg-white hover:text-gray-900 transition-all duration-300 inline-flex items-center justify-center"
                     title={`Ver técnicos especializados en ${service.name.toLowerCase()}`}
-                  >
-                    <FontAwesomeIcon icon={faStar} className="mr-2" />
-                    Ver Técnicos
-                  </a>
+                  />
                   <ScrollToAIHelper
                     serviceName={service.name}
                     discipline={slug}

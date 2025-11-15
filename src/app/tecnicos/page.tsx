@@ -1,12 +1,17 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
 import TecnicosSplitView from "@/components/tecnicos/TecnicosSplitView";
+import LoginPromptModal from "@/components/auth/LoginPromptModal";
 
-export default function TecnicosPage() {
+function TecnicosPageContent() {
   const { user, isLoading: authLoading } = useAuth();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [showLoginModal, setShowLoginModal] = useState(false);
   const [clientLocation, setClientLocation] = useState<{
     lat: number;
     lng: number;
@@ -87,7 +92,53 @@ export default function TecnicosPage() {
     }
   }, [user, authLoading]);
 
-  // OPTIMIZACIÓN: No bloquear, mostrar split view de inmediato
+  // Verificar autenticación cuando termine de cargar
+  useEffect(() => {
+    if (!authLoading) {
+      if (!user) {
+        // Mostrar modal de login en lugar de redirigir inmediatamente
+        setShowLoginModal(true);
+      }
+    }
+  }, [user, authLoading]);
+
+  // Si no está autenticado, mostrar modal de login
+  if (!authLoading && !user) {
+    return (
+      <>
+        <LoginPromptModal
+          isOpen={showLoginModal}
+          onClose={() => {
+            setShowLoginModal(false);
+            // Redirigir a la página anterior o a inicio
+            const referer = searchParams.get("from") || "/";
+            router.push(referer);
+          }}
+          redirectTo="/tecnicos"
+          title="Acceso al Directorio de Profesionales"
+          message="Para acceder al directorio completo de técnicos verificados y contactarlos directamente, necesitas iniciar sesión o crear una cuenta gratuita."
+        />
+        {/* Mostrar contenido con overlay mientras se muestra el modal */}
+        <div className="pt-[calc(var(--header-offset,72px))] opacity-30 pointer-events-none">
+          {clientLocation ? (
+            <TecnicosSplitView
+              initialLat={clientLocation.lat}
+              initialLng={clientLocation.lng}
+            />
+          ) : (
+            <div className="flex items-center justify-center h-screen bg-gray-50">
+              <div className="text-center">
+                <div className="w-16 h-16 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto mb-4"></div>
+                <p className="text-gray-600">Obteniendo tu ubicación...</p>
+              </div>
+            </div>
+          )}
+        </div>
+      </>
+    );
+  }
+
+  // Si está autenticado, mostrar contenido normal
   return (
     <div className="pt-[calc(var(--header-offset,72px))]">
       {clientLocation ? (
@@ -104,5 +155,22 @@ export default function TecnicosPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function TecnicosPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center h-screen bg-gray-50">
+          <div className="text-center">
+            <div className="w-16 h-16 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-gray-600">Cargando...</p>
+          </div>
+        </div>
+      }
+    >
+      <TecnicosPageContent />
+    </Suspense>
   );
 }
