@@ -118,10 +118,29 @@ export default function LoginForm() {
         
         console.log('Usuario:', authData.user.email, 'Rol:', profile?.role);
         
+        // Verificar si hay un redirect guardado (de sessionStorage o URL)
+        const redirectParam = searchParams.get('redirect');
+        const redirectFromStorage = typeof window !== 'undefined' 
+          ? sessionStorage.getItem('redirectAfterLogin') 
+          : null;
+        const redirectTo = redirectParam || redirectFromStorage;
+        
+        // Limpiar sessionStorage si existe
+        if (redirectFromStorage && typeof window !== 'undefined') {
+          sessionStorage.removeItem('redirectAfterLogin');
+        }
+        
         // Esperar un momento antes de redirigir (fix para móviles)
         await new Promise(resolve => setTimeout(resolve, 300));
         
-        // Redirigir basado en el rol
+        // Si hay un redirect específico, usarlo (solo para clientes)
+        if (redirectTo && profile?.role === 'client') {
+          console.log('🎯 Redirigiendo a:', redirectTo);
+          window.location.href = redirectTo;
+          return;
+        }
+        
+        // Redirigir basado en el rol (comportamiento por defecto)
         if (profile?.role === 'profesional') {
           console.log('🎯 Redirigiendo a professional-dashboard...');
           window.location.href = '/professional-dashboard';
