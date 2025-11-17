@@ -97,17 +97,19 @@ export default function sitemap(): MetadataRoute.Sitemap {
 
   // Páginas de servicios específicos
   const servicePages = [
-    "plomeros",
-    "electricistas",
+    "plomeria",
+    "electricidad",
     "aire-acondicionado",
     "carpinteria",
     "limpieza",
-    "pintores",
+    "pintura",
     "jardineria",
     "cctv",
     "fumigacion",
     "tablaroca",
     "wifi",
+    "cargadores-electricos",
+    "paneles-solares",
   ].map((service) => ({
     url: `${baseUrl}/servicios/${service}`,
     lastModified: new Date(),

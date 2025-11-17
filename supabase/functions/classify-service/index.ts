@@ -34,15 +34,25 @@ function getSystemPrompt(role: string | null, discipline: string | null, city?: 
 
       "Ingeniero en HVAC": `Eres un **Ingeniero en HVAC** especialista en climatización, refrigeración y eficiencia energética.\n\n` +
         `Analiza el problema del cliente como un ingeniero en HVAC profesional. Proporciona un diagnóstico técnico preciso y una descripción detallada del problema.`,
+
+      "Ingeniero en Carga Vehicular Eléctrica": `Eres un **Ingeniero en Carga Vehicular Eléctrica Certificado** especialista en instalación de cargadores para vehículos eléctricos. Tu expertise incluye: evaluación de capacidad eléctrica, instalación de cargadores Nivel 1, 2 y 3, cableado especializado (NEMA 14-50, 14-30), actualización de paneles eléctricos, sistemas de carga inteligente, y cumplimiento de códigos eléctricos para carga vehicular.\n\n` +
+        `IMPORTANTE: Si el cliente menciona "cargador eléctrico", "cargador para auto eléctrico", "EV charger", "cargador Tesla", "NEMA 14-50", "carga nivel 2", "estación de carga" o cualquier trabajo relacionado con carga vehicular eléctrica, DEBES clasificarlo como **Cargadores Eléctricos**.\n\n` +
+        `Analiza el problema del cliente como un ingeniero especializado en carga vehicular eléctrica. Considera: tipo de vehículo, capacidad necesaria, distancia del panel eléctrico, necesidad de actualización de panel, y tipo de cargador (Nivel 1, 2 o 3). Proporciona un diagnóstico técnico preciso y una descripción detallada del proyecto.`,
+
+      "Ingeniero en Energía Solar": `Eres un **Ingeniero en Energía Solar Fotovoltaica Certificado** especialista en instalación de sistemas solares. Tu expertise incluye: evaluación de irradiación solar, diseño de sistemas fotovoltaicos, cálculo de consumo energético, selección de paneles e inversores, interconexión con CFE, sistemas con baterías, gestión de permisos, y mantenimiento de sistemas solares.\n\n` +
+        `IMPORTANTE: Si el cliente menciona "paneles solares", "energía solar", "fotovoltaico", "sistema solar", "interconexión CFE", "ahorro energético" o cualquier trabajo relacionado con energía solar, DEBES clasificarlo como **Paneles Solares**.\n\n` +
+        `Analiza el problema del cliente como un ingeniero especializado en energía solar. Considera: consumo energético actual, orientación y espacio disponible, tipo de sistema (residencial/comercial), necesidad de baterías, y potencial de ahorro. Proporciona un diagnóstico técnico preciso y una descripción detallada del proyecto.`,
     };
 
     return rolePrompts[role] || `Eres un especialista en ${discipline}. Analiza el problema del cliente y proporciona un diagnóstico preciso.`;
   }
 
   // Prompt genérico si no hay rol
-  return "Actúa como un clasificador de servicios de mantenimiento muy preciso. Analiza el problema del cliente (texto e imagen si está disponible) y clasifícalo en una de las siguientes disciplinas: Electricidad, Plomería, HVAC (Aire Acondicionado), Carpintería, Albañilería, Pintura, Limpieza, Jardinería, Otros.\n\n" +
+  return "Actúa como un clasificador de servicios de mantenimiento muy preciso. Analiza el problema del cliente (texto e imagen si está disponible) y clasifícalo en una de las siguientes disciplinas: Electricidad, Plomería, HVAC (Aire Acondicionado), Carpintería, Albañilería, Pintura, Limpieza, Jardinería, Cargadores Eléctricos, Paneles Solares, Otros.\n\n" +
     "REGLAS IMPORTANTES DE CLASIFICACIÓN:\n" +
-    "- Si menciona 'lámpara', 'instalar lámpara', 'bombilla', 'foco', 'luz', 'cable', 'interruptor', 'contacto', 'enchufe' o cualquier trabajo eléctrico → Electricidad\n" +
+    "- Si menciona 'cargador eléctrico', 'cargador para auto eléctrico', 'EV charger', 'cargador Tesla', 'NEMA 14-50', 'carga nivel 2', 'estación de carga' o cualquier trabajo de carga vehicular → Cargadores Eléctricos\n" +
+    "- Si menciona 'paneles solares', 'energía solar', 'fotovoltaico', 'sistema solar', 'interconexión CFE', 'ahorro energético' o cualquier trabajo de energía solar → Paneles Solares\n" +
+    "- Si menciona 'lámpara', 'instalar lámpara', 'bombilla', 'foco', 'luz', 'cable', 'interruptor', 'contacto', 'enchufe' o cualquier trabajo eléctrico básico → Electricidad\n" +
     "- Si menciona 'electricista' o 'para electricista' → SIEMPRE Electricidad\n" +
     "- Si menciona 'agua', 'fuga', 'llave', 'tubería', 'drenaje' → Plomería\n" +
     "- Si menciona 'aire acondicionado', 'clima', 'refrigeración' → HVAC\n" +
@@ -52,32 +62,56 @@ function getSystemPrompt(role: string | null, discipline: string | null, city?: 
 }
 
 // Función para generar prompt de precio
-function getPriceEstimationPrompt(description: string, diagnostico: string, urgencia: string | number, city?: string | null): string {
+function getPriceEstimationPrompt(description: string, diagnostico: string, urgencia: string | number, city?: string | null, historicalData?: any, discipline?: string | null): string {
   const cityContext = city || "Ciudad de México";
   const urgencyNum = typeof urgencia === 'string' ? parseInt(urgencia) || 5 : urgencia;
+  
+  // Rangos de precios específicos por disciplina (para servicios especializados)
+  const disciplinePriceRanges: Record<string, { min: number; max: number; note: string }> = {
+    "Cargadores Eléctricos": {
+      min: 5000,
+      max: 15000,
+      note: "Rango típico: Instalaciones básicas ($5k), instalaciones comunes con ~20m de cable ($13k-$15k). Considera distancia al panel eléctrico, complejidad de instalación y calidad del equipo. Puede ser más alto para instalaciones complejas o cargadores de nivel 3."
+    },
+    "Paneles Solares": {
+      min: 80000,
+      max: 300000,
+      note: "Rango típico: Residencial 3-5kW ($80k-$150k), 5-10kW ($150k-$250k), Comercial 10+kW ($250k+). Considera kW instalados, tipo de panel, inversor, baterías opcionales."
+    }
+  };
+  
+  const disciplineRange = discipline ? disciplinePriceRanges[discipline] : null;
+  const minPrice = disciplineRange ? disciplineRange.min : 100;
+  const maxPrice = disciplineRange ? disciplineRange.max : 50000;
+  
+  // Contexto histórico si está disponible
+  let historicalContext = "";
+  if (historicalData && historicalData.avg_price) {
+    historicalContext = `\n\nCONTEXTO HISTÓRICO DE SUMEEAPP:\n- Precio promedio histórico: $${historicalData.avg_price.toLocaleString("es-MX")} MXN\n- Desviación estándar: $${historicalData.std_dev?.toLocaleString("es-MX") || "N/A"} MXN\n- Rango histórico: $${historicalData.min_price?.toLocaleString("es-MX") || "N/A"} - $${historicalData.max_price?.toLocaleString("es-MX") || "N/A"} MXN\n- Muestras: ${historicalData.sample_size || 0}\n\nUSA ESTE CONTEXTO para ajustar tu estimación. Si tu estimación está muy lejos del histórico, ajusta hacia el rango histórico pero considera las características específicas del trabajo actual.`;
+  }
   
   return `
 Basándote en el diagnóstico y la descripción del trabajo, estima un rango de precio JUSTO en MXN para el mercado mexicano (${cityContext}).
 
 Considera:
 - Costo de materiales básicos necesarios
-- Mano de obra profesional (2-4 horas típicas para trabajos estándar)
+- Mano de obra profesional (2-4 horas típicas para trabajos estándar${disciplineRange ? ", pero puede ser más para servicios especializados" : ""})
 - Ubicación: ${cityContext} (ajusta según costo de vida)
 - Urgencia: ${urgencyNum}/10 (mayor urgencia puede aumentar precio)
 - Complejidad del trabajo descrito
-- Precios de mercado actuales en México
+- Precios de mercado actuales en México${disciplineRange ? `\n- ${disciplineRange.note}` : ""}${historicalContext}
 
 IMPORTANTE:
 - Precios deben ser REALISTAS y JUSTOS
-- Mínimo: $100 MXN (trabajos muy simples)
-- Máximo: $50,000 MXN (trabajos complejos)
-- El rango debe tener sentido (max >= min, diferencia razonable)
+- Mínimo: $${minPrice.toLocaleString("es-MX")} MXN${disciplineRange ? ` (servicios especializados de ${discipline})` : " (trabajos muy simples)"}
+- Máximo: $${maxPrice.toLocaleString("es-MX")} MXN${disciplineRange ? ` (servicios especializados de ${discipline}, puede ser mayor para sistemas grandes/comerciales)` : " (trabajos complejos)"}
+- El rango debe tener sentido (max >= min, diferencia razonable)${historicalContext ? "\n- DEBES considerar el contexto histórico de SumeeApp arriba" : ""}${disciplineRange ? `\n- Para ${discipline}, el precio puede ser mayor que $${maxPrice.toLocaleString("es-MX")} si es un sistema grande o comercial. Ajusta el máximo según la complejidad.` : ""}
 
 Responde SOLO con un JSON válido que incluya:
 {
-  "precio_estimado_min": 800.00,
-  "precio_estimado_max": 1200.00,
-  "justificacion_precio": "Breve explicación del rango basado en materiales, mano de obra y complejidad"
+  "precio_estimado_min": ${disciplineRange ? disciplineRange.min : 800}.00,
+  "precio_estimado_max": ${disciplineRange ? Math.min(disciplineRange.max, disciplineRange.max * 1.2) : 1200}.00,
+  "justificacion_precio": "Breve explicación del rango basado en materiales, mano de obra y complejidad${disciplineRange ? `, considerando que es un servicio especializado de ${discipline}` : ""}"
 }
 `;
 }
@@ -235,6 +269,8 @@ serve(async (req) => {
           "fumigacion": "Fumigación",
           "tablaroca": "Tablaroca",
           "cerrajeria": "Cerrajería",
+          "cargadores-electricos": "Cargadores Eléctricos",
+          "paneles-solares": "Paneles Solares",
         };
         
         const disciplinaNombre = disciplineMap[discipline] || discipline;
@@ -250,13 +286,13 @@ serve(async (req) => {
       }
       
       // Agregar prompt de estimación de precio al final del texto (con datos históricos)
-      const pricePrompt = getPriceEstimationPrompt(description, "", "5", city, historicalPriceData);
+      const pricePrompt = getPriceEstimationPrompt(description, "", "5", city, historicalPriceData, discipline);
       const fullTextPrompt = textPrompt + (pricePrompt ? "\n\n" + pricePrompt : "");
       
       parts.push({ text: fullTextPrompt });
     } else {
       // Si no hay descripción, agregar solo el prompt de precio (con datos históricos)
-      const pricePrompt = getPriceEstimationPrompt(description || "Servicio general", "", "5", city, historicalPriceData);
+      const pricePrompt = getPriceEstimationPrompt(description || "Servicio general", "", "5", city, historicalPriceData, discipline);
       if (pricePrompt) {
         parts.push({ text: pricePrompt });
       }
@@ -365,17 +401,21 @@ serve(async (req) => {
       // Si no hay precios sugeridos pero hay histórico, usar histórico como fallback
       if (!precioMin && !precioMax && historicalAvg > 0) {
         console.log("📊 Usando datos históricos como fallback para precios sugeridos");
+        const maxPriceLimit = (disciplina === "Cargadores Eléctricos" || disciplina === "Paneles Solares") ? 1000000 : 50000;
         precioMin = Math.max(100, historicalAvg - historicalStdDev);
-        precioMax = Math.min(50000, historicalAvg + historicalStdDev);
+        precioMax = Math.min(maxPriceLimit, historicalAvg + historicalStdDev);
       }
     }
     
-    // Validar rango razonable
-    if (precioMin && (precioMin < 100 || precioMin > 50000)) {
+    // Validar rango razonable (ajustado para servicios especializados)
+    const maxPriceLimit = (disciplina === "Cargadores Eléctricos" || disciplina === "Paneles Solares") ? 1000000 : 50000;
+    const minPriceLimit = 100;
+    
+    if (precioMin && (precioMin < minPriceLimit || precioMin > maxPriceLimit)) {
       console.warn("⚠️ Precio mínimo fuera de rango, usando null:", precioMin);
       precioMin = null;
     }
-    if (precioMax && (precioMax < 100 || precioMax > 50000)) {
+    if (precioMax && (precioMax < minPriceLimit || precioMax > maxPriceLimit)) {
       console.warn("⚠️ Precio máximo fuera de rango, usando null:", precioMax);
       precioMax = null;
     }
