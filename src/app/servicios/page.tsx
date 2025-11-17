@@ -26,6 +26,8 @@ import {
   faWifi,
   faBug,
   faHardHat,
+  faBolt,
+  faSun,
 } from "@fortawesome/free-solid-svg-icons";
 import { faWhatsapp as faWhatsappBrand } from "@fortawesome/free-brands-svg-icons";
 
@@ -190,6 +192,30 @@ const SERVICES_DATA = [
     serviceType: "pro",
     thumbnail_image_url: "/images/services/arquitectos.jpg",
     background_color: "#6366F1",
+  },
+  {
+    id: "14",
+    name: "Cargadores Eléctricos",
+    slug: "cargadores-electricos",
+    description: "Instalación de cargadores para vehículos eléctricos y estaciones de carga",
+    icon_name: "faBolt",
+    is_popular: true,
+    category: "Especializado",
+    serviceType: "pro",
+    thumbnail_image_url: "/images/services/cargadores-electricos.jpg",
+    background_color: "#10B981",
+  },
+  {
+    id: "15",
+    name: "Paneles Solares",
+    slug: "paneles-solares",
+    description: "Instalación de sistemas fotovoltaicos y energía renovable",
+    icon_name: "faSun",
+    is_popular: true,
+    category: "Especializado",
+    serviceType: "pro",
+    thumbnail_image_url: "/images/services/paneles-solares.jpg",
+    background_color: "#F59E0B",
   },
 ];
 

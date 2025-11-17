@@ -16,7 +16,9 @@ import {
   faWifi,
   faBug,
   faHardHat,
-  faCubes
+  faCubes,
+  faBolt,
+  faSun
 } from '@fortawesome/free-solid-svg-icons';
 
 interface PopularService {
@@ -150,6 +152,26 @@ const popularServices: PopularService[] = [
     color: 'text-orange-600',
     bgColor: 'bg-orange-50',
     hoverColor: 'hover:bg-orange-100'
+  },
+  {
+    name: 'Cargadores Eléctricos',
+    icon: faBolt,
+    href: '/servicios/cargadores-electricos',
+    description: 'Carga para vehículos eléctricos',
+    color: 'text-green-600',
+    bgColor: 'bg-green-50',
+    hoverColor: 'hover:bg-green-100',
+    isPopular: true
+  },
+  {
+    name: 'Paneles Solares',
+    icon: faSun,
+    href: '/servicios/paneles-solares',
+    description: 'Energía solar fotovoltaica',
+    color: 'text-yellow-600',
+    bgColor: 'bg-yellow-50',
+    hoverColor: 'hover:bg-yellow-100',
+    isPopular: true
   }
 ];
 

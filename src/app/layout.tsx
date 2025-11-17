@@ -41,6 +41,14 @@ export const metadata: Metadata = {
     "mantenimiento del hogar Ciudad de México",
     "Sumee App",
     "servicios profesionales CDMX",
+    "cargadores eléctricos CDMX",
+    "instalación cargador eléctrico",
+    "cargador para auto eléctrico",
+    "paneles solares CDMX",
+    "energía solar CDMX",
+    "instalación paneles solares",
+    "sistema fotovoltaico CDMX",
+    "energía renovable CDMX",
   ],
   icons: {
     icon: [

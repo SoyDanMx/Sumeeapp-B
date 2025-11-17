@@ -42,6 +42,8 @@ import {
   faHistory,
   faQuestionCircle,
   faArrowLeft,
+  faBolt,
+  faSun,
 } from "@fortawesome/free-solid-svg-icons";
 import { faWhatsapp as faWhatsappBrand } from "@fortawesome/free-brands-svg-icons";
 
@@ -169,6 +171,40 @@ const DISCIPLINE_CONFIG = {
       "Tratamiento preventivo",
     ],
   },
+  "cargadores-electricos": {
+    name: "Cargadores Eléctricos",
+    icon: faBolt,
+    gradient: "from-green-500 to-emerald-600",
+    specialistRole: "Ingeniero en Carga Vehicular Eléctrica",
+    description: "Instalación de cargadores para vehículos eléctricos y estaciones de carga",
+    services: [
+      "Instalación cargador Nivel 1 (120V)",
+      "Instalación cargador Nivel 2 (240V)",
+      "Instalación cargador rápido (DC)",
+      "Evaluación de capacidad eléctrica",
+      "Actualización de panel eléctrico",
+      "Cableado especializado (NEMA 14-50)",
+      "Estaciones de carga comerciales",
+      "Sistemas de carga inteligente",
+    ],
+  },
+  "paneles-solares": {
+    name: "Paneles Solares",
+    icon: faSun,
+    gradient: "from-yellow-400 to-orange-500",
+    specialistRole: "Ingeniero en Energía Solar",
+    description: "Instalación de sistemas fotovoltaicos y energía renovable",
+    services: [
+      "Sistemas solares residenciales",
+      "Sistemas solares comerciales",
+      "Interconexión con CFE",
+      "Sistemas con baterías",
+      "Evaluación de irradiación solar",
+      "Cálculo de ahorro energético",
+      "Gestión de permisos CFE",
+      "Mantenimiento y monitoreo",
+    ],
+  },
   pintura: {
     name: "Pintura",
     icon: faPaintRoller,
@@ -263,6 +299,12 @@ const DISCIPLINE_CONFIG = {
 
 // 1. OBTENCIÓN DE DATOS SEGURA
 async function getServiceData(slug: string): Promise<Service | null> {
+  // Si el servicio está definido en DISCIPLINE_CONFIG, no buscar en BD
+  // (estos servicios usan configuración estática)
+  if (DISCIPLINE_CONFIG[slug as keyof typeof DISCIPLINE_CONFIG]) {
+    return null; // Retornar null para usar el fallback de DISCIPLINE_CONFIG
+  }
+
   try {
     const supabase = await createSupabaseServerClient();
     const { data, error } = await supabase
@@ -272,11 +314,14 @@ async function getServiceData(slug: string): Promise<Service | null> {
       .single();
 
     if (error) {
-      // Imprime el error en los logs del servidor para depuración
-      console.error(
-        `Error fetching service with slug "${slug}":`,
-        error.message
-      );
+      // Solo loggear errores si no es un error de "no encontrado" (PGRST116)
+      // y si el servicio no está en DISCIPLINE_CONFIG
+      if (error.code !== "PGRST116") {
+        console.error(
+          `Error fetching service with slug "${slug}":`,
+          error.message
+        );
+      }
       return null;
     }
 
@@ -302,16 +347,32 @@ export async function generateMetadata({ params }: ServicePageProps) {
     };
   }
 
+  // Keywords específicos por servicio
+  const getServiceKeywords = (slug: string, name: string) => {
+    const baseKeywords = `${name.toLowerCase()}, servicios, técnicos, CDMX, reparación, instalación`;
+    
+    if (slug === "cargadores-electricos") {
+      return `${baseKeywords}, cargador eléctrico, cargador auto eléctrico, EV charger, estación de carga, carga vehicular, NEMA 14-50, energía limpia`;
+    }
+    
+    if (slug === "paneles-solares") {
+      return `${baseKeywords}, energía solar, fotovoltaico, sistema solar, interconexión CFE, ahorro energético, energía renovable, paneles fotovoltaicos`;
+    }
+    
+    return baseKeywords;
+  };
+
   return {
     title: `${config.name} - Servicios Profesionales en CDMX | Sumee App`,
     description: `${
       config.description
-    }. Técnicos verificados y especializados en ${config.name.toLowerCase()}.`,
-    keywords: `${config.name.toLowerCase()}, servicios, técnicos, CDMX, reparación, instalación`,
+    }. Técnicos verificados y especializados en ${config.name.toLowerCase()}. Cotización gratuita y respuesta rápida.`,
+    keywords: getServiceKeywords(slug, config.name),
     openGraph: {
       title: `${config.name} - Sumee App`,
       description: config.description,
       type: "website",
+      url: `https://www.sumeeapp.com/servicios/${slug}`,
     },
     twitter: {
       card: "summary_large_image",

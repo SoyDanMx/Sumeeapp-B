@@ -21,6 +21,8 @@ import {
   faHardHat,
   faCubes,
   faBug,
+  faBolt,
+  faSun,
 } from "@fortawesome/free-solid-svg-icons";
 import { faWhatsapp } from "@fortawesome/free-brands-svg-icons";
 import { submitLead } from "@/lib/supabase/data";
@@ -126,6 +128,22 @@ const SERVICES = [
     description: "Control de plagas y fumigación",
     color: "yellow",
     priceRange: "Desde $350 MXN",
+  },
+  {
+    id: "cargadores-electricos",
+    name: "Cargadores Eléctricos",
+    icon: faBolt,
+    description: "Instalación de cargadores para vehículos eléctricos",
+    color: "green",
+    priceRange: "Desde $5,000 MXN",
+  },
+  {
+    id: "paneles-solares",
+    name: "Paneles Solares",
+    icon: faSun,
+    description: "Instalación de sistemas fotovoltaicos",
+    color: "yellow",
+    priceRange: "Desde $80,000 MXN",
   },
 ];
 

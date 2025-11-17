@@ -24,6 +24,8 @@ import {
   faBug,
   faKey,
   faCubes,
+  faBolt,
+  faSun,
 } from "@fortawesome/free-solid-svg-icons";
 import { faWhatsapp } from "@fortawesome/free-brands-svg-icons";
 import { supabase } from "@/lib/supabase/client";
@@ -183,6 +185,24 @@ const DISCIPLINE_OPTIONS: DisciplineOption[] = [
     description: "Cerraduras, sistemas de seguridad y control de acceso",
     gradient: "from-gray-600 to-zinc-700",
     color: "text-gray-700",
+  },
+  {
+    id: "cargadores-electricos",
+    name: "Cargadores Eléctricos",
+    icon: faBolt,
+    role: "Ingeniero en Carga Vehicular Eléctrica",
+    description: "Instalación de cargadores para vehículos eléctricos y estaciones de carga",
+    gradient: "from-green-500 to-emerald-600",
+    color: "text-green-600",
+  },
+  {
+    id: "paneles-solares",
+    name: "Paneles Solares",
+    icon: faSun,
+    role: "Ingeniero en Energía Solar",
+    description: "Instalación de sistemas fotovoltaicos y energía renovable",
+    gradient: "from-yellow-400 to-orange-500",
+    color: "text-yellow-600",
   },
 ];
 
@@ -578,6 +598,8 @@ export default function AISumeeAssistant({
         "fumigacion": "Fumigación",
         "tablaroca": "Tablaroca",
         "cerrajeria": "Cerrajería",
+        "cargadores-electricos": "Cargadores Eléctricos",
+        "paneles-solares": "Paneles Solares",
       };
       
       const disciplina = disciplineMap[selectedDiscipline.id] || selectedDiscipline.name;
@@ -591,6 +613,26 @@ export default function AISumeeAssistant({
           diagnostico = "Reparación eléctrica";
         } else {
           diagnostico = "Servicio de electricidad";
+        }
+      } else if (selectedDiscipline.id === "cargadores-electricos") {
+        if (descLower.includes("nivel 1") || descLower.includes("nivel1") || descLower.includes("120v")) {
+          diagnostico = "Instalación cargador Nivel 1";
+        } else if (descLower.includes("nivel 2") || descLower.includes("nivel2") || descLower.includes("240v")) {
+          diagnostico = "Instalación cargador Nivel 2";
+        } else if (descLower.includes("nivel 3") || descLower.includes("nivel3") || descLower.includes("rapido") || descLower.includes("dc")) {
+          diagnostico = "Instalación cargador rápido";
+        } else {
+          diagnostico = "Instalación cargador eléctrico";
+        }
+      } else if (selectedDiscipline.id === "paneles-solares") {
+        if (descLower.includes("residencial") || descLower.includes("casa") || descLower.includes("hogar")) {
+          diagnostico = "Sistema solar residencial";
+        } else if (descLower.includes("comercial") || descLower.includes("negocio") || descLower.includes("empresa")) {
+          diagnostico = "Sistema solar comercial";
+        } else if (descLower.includes("bateria") || descLower.includes("almacenamiento")) {
+          diagnostico = "Sistema solar con baterías";
+        } else {
+          diagnostico = "Instalación sistema fotovoltaico";
         }
       } else {
         diagnostico = `Servicio de ${selectedDiscipline.name}`;
@@ -687,8 +729,40 @@ export default function AISumeeAssistant({
       descLower.includes(keyword)
     ).length;
     
+    // CARGADORES ELÉCTRICOS - Palabras clave específicas
+    const cargadoresKeywords = [
+      "cargador electrico", "cargador eléctrico", "cargador para auto electrico",
+      "cargador vehicular", "estacion de carga", "estación de carga",
+      "ev charger", "cargador tesla", "cargador nissan", "cargador chevrolet",
+      "nema 14-50", "nema 14-30", "carga nivel 1", "carga nivel 2", "carga nivel 3",
+      "cargador rapido", "cargador rápido", "dc fast charge", "carga rapida",
+      "instalar cargador", "instalacion cargador", "cargador wallbox",
+      "cargador para coche electrico", "punto de carga", "carga vehicular"
+    ];
+    
+    const cargadoresScore = cargadoresKeywords.filter(keyword => 
+      descLower.includes(keyword)
+    ).length;
+    
+    // PANELES SOLARES - Palabras clave específicas
+    const panelesSolaresKeywords = [
+      "panel solar", "paneles solares", "energia solar", "energía solar",
+      "fotovoltaico", "fotovoltaicos", "sistema solar", "sistema fotovoltaico",
+      "instalacion solar", "instalación solar", "energia renovable", "energía renovable",
+      "ahorro energetico", "ahorro energético", "interconexion cfe", "interconexión cfe",
+      "sistema fotovoltaico", "paneles fotovoltaicos", "instalar paneles",
+      "energia limpia", "energía limpia", "solar power", "sistema de paneles",
+      "kw solar", "kilowatts solares", "inversor solar", "bateria solar", "batería solar"
+    ];
+    
+    const panelesSolaresScore = panelesSolaresKeywords.filter(keyword => 
+      descLower.includes(keyword)
+    ).length;
+    
     // Determinar disciplina con mayor score
     const scores = {
+      "Cargadores Eléctricos": cargadoresScore,
+      "Paneles Solares": panelesSolaresScore,
       "Electricidad": electricidadScore,
       "Plomería": plomeriaScore,
       "HVAC": hvacScore,
