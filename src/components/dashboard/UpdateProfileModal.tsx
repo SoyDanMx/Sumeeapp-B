@@ -305,9 +305,12 @@ export default function UpdateProfileModal({
     onClose();
   };
 
+  // Si no está abierto, no renderizar nada
+  if (!isOpen) return null;
+
   return (
     <Transition appear show={isOpen} as={Fragment}>
-      <Dialog as="div" className="relative z-[200]" onClose={handleClose}>
+      <Dialog as="div" className="relative z-[9999]" onClose={handleClose}>
         <Transition.Child
           as={Fragment}
           enter="ease-out duration-300"
@@ -331,26 +334,37 @@ export default function UpdateProfileModal({
               leaveFrom="opacity-100 scale-100"
               leaveTo="opacity-0 scale-95"
             >
-              <Dialog.Panel className="w-full max-w-2xl transform overflow-hidden rounded-2xl bg-white shadow-xl transition-all">
-                {/* Header */}
-                <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-4 text-white">
-                  <div className="flex items-center justify-between">
-                    <Dialog.Title className="text-xl font-bold flex items-center">
-                      <FontAwesomeIcon icon={faUser} className="mr-3" />
-                      Actualizar Mi Perfil
-                    </Dialog.Title>
+              <Dialog.Panel className="w-full max-w-2xl transform overflow-hidden rounded-2xl bg-white shadow-2xl transition-all z-[10000]">
+                {/* Header mejorado */}
+                <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 px-6 py-5 text-white relative overflow-hidden">
+                  {/* Elementos decorativos */}
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16"></div>
+                  <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/10 rounded-full -ml-12 -mb-12"></div>
+                  
+                  <div className="relative z-10 flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center">
+                        <FontAwesomeIcon icon={faUser} className="text-xl" />
+                      </div>
+                      <div>
+                        <Dialog.Title className="text-2xl font-bold flex items-center">
+                          Actualizar Mi Perfil
+                        </Dialog.Title>
+                        <p className="text-sm text-white/90 mt-0.5">
+                          {userRole === "professional"
+                            ? "Mantén tu perfil profesional actualizado"
+                            : "Actualiza tu información de contacto"}
+                        </p>
+                      </div>
+                    </div>
                     <button
                       onClick={handleClose}
-                      className="text-white/80 hover:text-white transition-colors"
+                      className="w-10 h-10 rounded-lg bg-white/20 hover:bg-white/30 backdrop-blur-sm transition-all flex items-center justify-center"
+                      aria-label="Cerrar"
                     >
-                      <FontAwesomeIcon icon={faTimes} className="text-xl" />
+                      <FontAwesomeIcon icon={faTimes} className="text-lg" />
                     </button>
                   </div>
-                  <p className="text-sm text-white/80 mt-1">
-                    {userRole === "professional"
-                      ? "Mantén tu perfil profesional actualizado"
-                      : "Actualiza tu información de contacto"}
-                  </p>
                 </div>
 
                 {/* Content */}

@@ -84,30 +84,33 @@ export function MembershipProvider({ children }: { children: React.ReactNode }) 
     }
   }, [profile]);
 
-  // Calcular permisos basados en el membership_status
+  // Calcular permisos basados en el plan (express_free o pro_annual)
+  // Si no hay plan, usar membership_status como fallback para compatibilidad
+  const userPlan = profile?.plan || (profile?.membership_status === 'premium' ? 'pro_annual' : 'express_free');
+  
   const permissions: MembershipPermissions = {
-    canRequestUnlimited: profile?.membership_status === 'premium',
-    maxRequests: profile?.membership_status === 'basic' ? 5 : 
-                 profile?.membership_status === 'premium' ? 999 : 1,
-    canSeeFullProfile: profile?.membership_status !== 'free',
-    canUseConcierge: profile?.membership_status === 'premium',
-    canSeeAllTechnicians: profile?.membership_status !== 'free',
-    maxTechniciansVisible: profile?.membership_status === 'free' ? 5 : 999,
-    canUsePrioritySupport: profile?.membership_status === 'premium',
-    canUseAdvancedFilters: profile?.membership_status !== 'free',
-    canSeeRatings: profile?.membership_status !== 'free',
-    canSeeReviews: profile?.membership_status !== 'free',
-    canUseWhatsAppDirect: profile?.membership_status !== 'free',
-    canUseAIAssistant: profile?.membership_status !== 'free',
-    canUseEmergencyService: profile?.membership_status === 'premium',
-    canUseScheduledService: profile?.membership_status !== 'free',
-    canUsePhotoUpload: profile?.membership_status !== 'free',
-    canUseVideoCall: profile?.membership_status === 'premium',
+    canRequestUnlimited: userPlan === 'pro_annual',
+    maxRequests: userPlan === 'pro_annual' ? 999 : 
+                 userPlan === 'express_free' ? 3 : 1,
+    canSeeFullProfile: userPlan === 'pro_annual',
+    canUseConcierge: userPlan === 'pro_annual',
+    canSeeAllTechnicians: userPlan === 'pro_annual',
+    maxTechniciansVisible: userPlan === 'express_free' ? 5 : 999,
+    canUsePrioritySupport: userPlan === 'pro_annual',
+    canUseAdvancedFilters: userPlan === 'pro_annual',
+    canSeeRatings: userPlan === 'pro_annual',
+    canSeeReviews: userPlan === 'pro_annual',
+    canUseWhatsAppDirect: true, // Todos pueden usar WhatsApp
+    canUseAIAssistant: true, // Todos pueden usar el asistente de texto
+    canUseEmergencyService: userPlan === 'pro_annual',
+    canUseScheduledService: true, // Todos pueden agendar servicios
+    canUsePhotoUpload: userPlan === 'pro_annual',
+    canUseVideoCall: userPlan === 'pro_annual',
   };
 
-  const isFreeUser = profile?.membership_status === 'free' || !profile?.membership_status;
-  const isBasicUser = profile?.membership_status === 'basic';
-  const isPremiumUser = profile?.membership_status === 'premium';
+  const isFreeUser = userPlan === 'express_free' || !profile?.plan;
+  const isBasicUser = false; // Ya no usamos basic, solo express_free y pro_annual
+  const isPremiumUser = userPlan === 'pro_annual';
 
   const requestsRemaining = Math.max(0, permissions.maxRequests - requestsUsed);
   const upgradeUrl = '/membresia';

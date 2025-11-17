@@ -121,7 +121,18 @@ export default function ClientDashboardPage() {
           .single();
 
         if (error) {
-          console.error('Error fetching profile for onboarding:', error);
+          // Si el error es porque no existe el perfil (PGRST116), no es un error crítico
+          const isNotFoundError = error.code === 'PGRST116' || error.message?.includes('No rows') || error.message?.includes('not found');
+          
+          if (isNotFoundError) {
+            console.log('ℹ️ Perfil no encontrado para onboarding - se creará cuando sea necesario');
+            setHasCheckedOnboarding(true);
+            return;
+          }
+          
+          // Para otros errores, loguear pero no bloquear
+          console.warn('⚠️ Error al verificar perfil para onboarding:', error.message || error);
+          setHasCheckedOnboarding(true);
           return;
         }
 
@@ -140,9 +151,13 @@ export default function ClientDashboardPage() {
           }
           
           setHasCheckedOnboarding(true);
+        } else {
+          // Si no hay perfil pero tampoco hay error, marcar como verificado
+          setHasCheckedOnboarding(true);
         }
-      } catch (err) {
-        console.error('Error checking onboarding:', err);
+      } catch (err: any) {
+        // Manejar errores inesperados sin bloquear la UI
+        console.warn('⚠️ Error inesperado al verificar onboarding:', err?.message || err);
         setHasCheckedOnboarding(true);
       }
     };
@@ -502,7 +517,7 @@ export default function ClientDashboardPage() {
                     icon={faExclamationTriangle}
                     className="mr-2"
                   />
-                  Upgrade a Premium
+                  Upgrade a PRO
                 </Link>
               )}
               <Link
@@ -528,7 +543,7 @@ export default function ClientDashboardPage() {
                     Has alcanzado tu límite mensual
                   </h3>
                   <p className="text-sm">
-                    Upgrade a Premium para solicitudes ilimitadas y más
+                    Upgrade a PRO para solicitudes ilimitadas y más
                     beneficios
                   </p>
                 </div>
@@ -537,7 +552,7 @@ export default function ClientDashboardPage() {
                 href={upgradeUrl}
                 className="bg-white text-orange-600 px-6 py-2 rounded-lg font-semibold hover:bg-gray-100 transition-colors whitespace-nowrap"
               >
-                Ver Planes Premium
+                Ver Planes PRO (Ilimitado)
               </Link>
             </div>
           </div>
@@ -604,9 +619,14 @@ export default function ClientDashboardPage() {
                 onClick={handleProgrammedRequest}
                 className="w-full inline-flex items-center justify-between gap-3 bg-white/10 text-white font-semibold text-sm sm:text-base px-4 sm:px-5 py-3 sm:py-3.5 rounded-xl border border-white/20 hover:bg-white/15 transition-all duration-200"
               >
-                <span className="flex items-center gap-2">
-                  <FontAwesomeIcon icon={faWrench} className="text-white text-base sm:text-lg" />
-                  Agendar Proyecto Pro
+                <span className="flex flex-col items-start gap-1">
+                  <span className="flex items-center gap-2">
+                    <FontAwesomeIcon icon={faWrench} className="text-white text-base sm:text-lg" />
+                    Agendar Proyecto Pro
+                  </span>
+                  <span className="text-[10px] sm:text-xs text-white/60 italic">
+                    (Con Asistencia de IA)
+                  </span>
                 </span>
                 <span className="text-[10px] sm:text-xs uppercase tracking-[0.3em] text-white/70">
                   Programado

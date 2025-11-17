@@ -56,7 +56,7 @@ function MembresiaSuccessContent() {
               ¡Membresía Activada!
             </h1>
             <p className="text-xl text-gray-600 mb-8">
-              Bienvenido a Sumee Premium. Ya tienes acceso completo a nuestra red de profesionales verificados.
+              Bienvenido a Sumee PRO. Ya tienes acceso completo a nuestra red de profesionales verificados.
             </p>
 
             {/* Session Info */}
