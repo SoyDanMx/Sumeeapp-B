@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, Fragment } from "react";
+import { useState, useEffect, Fragment, useRef, useCallback } from "react";
 import { Dialog, Transition } from "@headlessui/react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -13,6 +13,7 @@ import { faWhatsapp } from "@fortawesome/free-brands-svg-icons";
 import { supabase } from "@/lib/supabase/client";
 import { geocodeAddress } from "@/lib/geocoding";
 import { Profile } from "@/types/supabase";
+import { getAddressSuggestions, formatAddressSuggestion, AddressSuggestion } from "@/lib/address-autocomplete";
 
 interface ClientOnboardingModalProps {
   isOpen: boolean;
@@ -42,6 +43,7 @@ export default function ClientOnboardingModal({
     whatsapp: "",
     city: "Ciudad de México",
     otherCity: "",
+    address: "",
   });
   
   const [loading, setLoading] = useState(false);
@@ -49,6 +51,16 @@ export default function ClientOnboardingModal({
   const [whatsappError, setWhatsappError] = useState<string | null>(null);
   const [useGPS, setUseGPS] = useState(false);
   const [gpsLoading, setGpsLoading] = useState(false);
+  const [selectedAddressCoords, setSelectedAddressCoords] = useState<{ lat: number; lng: number } | null>(null);
+  
+  // Estados para autocompletado de direcciones
+  const [addressSuggestions, setAddressSuggestions] = useState<AddressSuggestion[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState(-1);
+  const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
+  const addressInputRef = useRef<HTMLDivElement>(null);
+  const suggestionsRef = useRef<HTMLDivElement>(null);
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Prefill WhatsApp si ya existe en el perfil
   useEffect(() => {
@@ -56,6 +68,131 @@ export default function ClientOnboardingModal({
       setFormData((prev) => ({ ...prev, whatsapp: userProfile.whatsapp || "" }));
     }
   }, [userProfile]);
+
+  // Cerrar sugerencias al hacer clic fuera
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        addressInputRef.current &&
+        !addressInputRef.current.contains(event.target as Node) &&
+        suggestionsRef.current &&
+        !suggestionsRef.current.contains(event.target as Node)
+      ) {
+        setShowSuggestions(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  // Función para buscar sugerencias de direcciones
+  const fetchAddressSuggestions = useCallback(async (query: string) => {
+    if (!query || query.length < 3) {
+      setAddressSuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
+
+    setIsLoadingSuggestions(true);
+    
+    // Limpiar timeout anterior
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+
+    // Debounce: esperar 500ms antes de buscar
+    searchTimeoutRef.current = setTimeout(async () => {
+      try {
+        const suggestions = await getAddressSuggestions(query, 5);
+        setAddressSuggestions(suggestions);
+        setShowSuggestions(suggestions.length > 0);
+        setSelectedSuggestionIndex(-1);
+      } catch (error) {
+        console.error("Error al obtener sugerencias:", error);
+        setAddressSuggestions([]);
+        setShowSuggestions(false);
+      } finally {
+        setIsLoadingSuggestions(false);
+      }
+    }, 500);
+  }, []);
+
+  // Manejar cambio en el input de dirección
+  const handleAddressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setFormData((prev) => ({ ...prev, address: value }));
+    setShowSuggestions(false);
+    setSelectedSuggestionIndex(-1);
+    
+    // Si se limpia el campo, limpiar también las coordenadas seleccionadas
+    if (value.length === 0) {
+      setSelectedAddressCoords(null);
+    }
+    
+    if (value.length >= 3) {
+      fetchAddressSuggestions(value);
+    } else {
+      setAddressSuggestions([]);
+    }
+  };
+
+  // Manejar selección de sugerencia
+  const handleSelectSuggestion = (suggestion: AddressSuggestion) => {
+    const formatted = formatAddressSuggestion(suggestion);
+    setFormData((prev) => {
+      const updated = { ...prev, address: formatted };
+      
+      // Si la sugerencia tiene coordenadas, guardarlas
+      if (suggestion.lat && suggestion.lon) {
+        const lat = parseFloat(suggestion.lat);
+        const lng = parseFloat(suggestion.lon);
+        if (!isNaN(lat) && !isNaN(lng)) {
+          setSelectedAddressCoords({ lat, lng });
+          setUseGPS(false); // No usar GPS, usar coordenadas de la sugerencia
+        }
+      }
+      
+      // Si la sugerencia tiene información de ciudad, actualizarla
+      if (suggestion.address?.city) {
+        const cityName = suggestion.address.city;
+        // Verificar si la ciudad está en la lista de CITIES
+        if (CITIES.includes(cityName)) {
+          updated.city = cityName;
+        } else {
+          updated.city = "Otra";
+          updated.otherCity = cityName;
+        }
+      }
+      
+      return updated;
+    });
+    
+    setShowSuggestions(false);
+    setAddressSuggestions([]);
+  };
+
+  // Manejar navegación con teclado en sugerencias
+  const handleAddressKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!showSuggestions || addressSuggestions.length === 0) return;
+
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setSelectedSuggestionIndex((prev) =>
+        prev < addressSuggestions.length - 1 ? prev + 1 : prev
+      );
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setSelectedSuggestionIndex((prev) => (prev > 0 ? prev - 1 : -1));
+    } else if (e.key === "Enter" && selectedSuggestionIndex >= 0) {
+      e.preventDefault();
+      handleSelectSuggestion(addressSuggestions[selectedSuggestionIndex]);
+    } else if (e.key === "Escape") {
+      setShowSuggestions(false);
+    }
+  };
 
   // Validación de WhatsApp en tiempo real
   const validateWhatsapp = (value: string): boolean => {
@@ -131,6 +268,7 @@ export default function ClientOnboardingModal({
     setGpsLoading(true);
     setError(null);
     setUseGPS(true);
+    setSelectedAddressCoords(null); // Limpiar coordenadas de dirección seleccionada
 
     try {
       const position = await new Promise<GeolocationPosition>(
@@ -193,7 +331,7 @@ export default function ClientOnboardingModal({
         return;
       }
 
-      // Obtener coordenadas
+      // Obtener coordenadas (prioridad: GPS > Sugerencia seleccionada > Dirección manual > Ciudad)
       if (useGPS && navigator.geolocation) {
         // Usar GPS
         console.log("📍 Usando coordenadas GPS...");
@@ -209,6 +347,30 @@ export default function ClientOnboardingModal({
         ubicacion_lat = position.coords.latitude;
         ubicacion_lng = position.coords.longitude;
         console.log("✅ Coordenadas GPS:", { ubicacion_lat, ubicacion_lng });
+      } else if (selectedAddressCoords) {
+        // Usar coordenadas de la sugerencia seleccionada
+        console.log("📍 Usando coordenadas de dirección seleccionada:", selectedAddressCoords);
+        ubicacion_lat = selectedAddressCoords.lat;
+        ubicacion_lng = selectedAddressCoords.lng;
+      } else if (formData.address && formData.address.length >= 3) {
+        // Si hay dirección manual, geocodificarla
+        console.log("🗺️ Geocodificando dirección manual:", formData.address);
+        const addressCoords = await geocodeAddress(formData.address);
+        if (addressCoords) {
+          ubicacion_lat = addressCoords.lat;
+          ubicacion_lng = addressCoords.lng;
+          console.log("✅ Coordenadas de dirección:", { ubicacion_lat, ubicacion_lng });
+        } else {
+          // Fallback: geocodificar ciudad
+          console.log("⚠️ No se pudo geocodificar dirección, usando ciudad:", finalCity);
+          const coords = await geocodeAddress(`${finalCity}, México`);
+          if (coords) {
+            ubicacion_lat = coords.lat;
+            ubicacion_lng = coords.lng;
+          } else {
+            console.warn("⚠️ No se pudo geocodificar, usando fallback CDMX");
+          }
+        }
       } else {
         // Geocodificar ciudad
         console.log("🗺️ Geocodificando ciudad:", finalCity);
@@ -424,6 +586,82 @@ export default function ClientOnboardingModal({
                       />
                     </div>
                   )}
+
+                  {/* Campo de dirección con autocompletado */}
+                  <div className="relative" ref={addressInputRef}>
+                    <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+                      <FontAwesomeIcon
+                        icon={faMapMarkerAlt}
+                        className="mr-2 text-red-600"
+                      />
+                      Dirección Completa (Opcional)
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.address}
+                      onChange={handleAddressChange}
+                      onKeyDown={handleAddressKeyDown}
+                      onFocus={() => {
+                        if (addressSuggestions.length > 0) {
+                          setShowSuggestions(true);
+                        }
+                      }}
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 pr-10"
+                      placeholder="Ej: Calle Principal 123, Col. Centro, CDMX"
+                      disabled={loading || (useGPS && !gpsLoading)}
+                      autoComplete="off"
+                    />
+                    {isLoadingSuggestions && (
+                      <div className="absolute right-3 top-9 transform -translate-y-1/2">
+                        <FontAwesomeIcon
+                          icon={faSpinner}
+                          className="animate-spin text-gray-400"
+                        />
+                      </div>
+                    )}
+                    
+                    {/* Dropdown de sugerencias */}
+                    {showSuggestions && addressSuggestions.length > 0 && (
+                      <div
+                        ref={suggestionsRef}
+                        className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto"
+                      >
+                        {addressSuggestions.map((suggestion, index) => (
+                          <button
+                            key={index}
+                            type="button"
+                            onClick={() => handleSelectSuggestion(suggestion)}
+                            className={`w-full text-left px-4 py-3 hover:bg-blue-50 focus:bg-blue-50 focus:outline-none transition-colors ${
+                              index === selectedSuggestionIndex
+                                ? "bg-blue-50 border-l-4 border-blue-500"
+                                : "border-l-4 border-transparent"
+                            }`}
+                          >
+                            <div className="flex items-start">
+                              <FontAwesomeIcon
+                                icon={faMapMarkerAlt}
+                                className="mr-2 text-blue-600 mt-1 flex-shrink-0"
+                              />
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm text-gray-900 truncate">
+                                  {formatAddressSuggestion(suggestion)}
+                                </p>
+                                {suggestion.address?.city && (
+                                  <p className="text-xs text-gray-500 mt-1">
+                                    {suggestion.address.city}
+                                    {suggestion.address.state && `, ${suggestion.address.state}`}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                    <p className="text-xs text-gray-500 mt-1">
+                      Escribe tu dirección y selecciona una sugerencia para mayor precisión
+                    </p>
+                  </div>
 
                   {/* Botón GPS */}
                   <div>
