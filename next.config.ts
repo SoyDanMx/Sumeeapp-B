@@ -126,6 +126,20 @@ const nextConfig = {
     config: any,
     { dev, isServer }: { dev: boolean; isServer: boolean }
   ) => {
+    // Excluir archivos de ejemplo de Deno del build
+    config.resolve = config.resolve || {};
+    config.resolve.alias = config.resolve.alias || {};
+    config.resolve.alias["CODIGO_COMPLETO_NOTIFY_PROS.ts"] = false;
+    config.resolve.alias["CODIGO_EDGE_FUNCTION_NOTIFY_PROS.ts"] = false;
+    
+    // Ignorar archivos de ejemplo en el build
+    config.module = config.module || {};
+    config.module.rules = config.module.rules || [];
+    config.module.rules.push({
+      test: /CODIGO_(COMPLETO_)?(EDGE_FUNCTION_)?NOTIFY_PROS\.ts$/,
+      use: "ignore-loader",
+    });
+
     if (!dev && !isServer) {
       config.optimization.splitChunks = {
         chunks: "all",

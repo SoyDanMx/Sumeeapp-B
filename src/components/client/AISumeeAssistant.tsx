@@ -27,6 +27,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { supabase } from "@/lib/supabase/client";
 import { useAuth } from "@/context/AuthContext";
+import { useMembership } from "@/context/MembershipContext";
 import { geocodeAddress } from "@/lib/geocoding";
 
 interface Message {
@@ -187,11 +188,14 @@ export default function AISumeeAssistant({
   onLeadCreated,
 }: AISumeeAssistantProps) {
   const { user } = useAuth();
+  const { permissions, profile } = useMembership();
+  const isProUser = profile?.plan === 'pro_annual' || profile?.membership_status === 'premium';
   const [selectedDiscipline, setSelectedDiscipline] = useState<DisciplineOption | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState("");
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [uploadedImageUrl, setUploadedImageUrl] = useState<string | null>(null); // URL de la imagen subida a Storage
   const [isLoading, setIsLoading] = useState(false);
   const [classification, setClassification] = useState<AIClassification | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -203,6 +207,9 @@ export default function AISumeeAssistant({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const chatAreaRef = useRef<HTMLDivElement>(null);
+  const [isHeaderVisible, setIsHeaderVisible] = useState(true);
+  const lastScrollTopRef = useRef(0);
 
   // Scroll automático al final del chat
   const scrollToBottom = () => {
@@ -212,6 +219,48 @@ export default function AISumeeAssistant({
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // Hook para detectar scroll y ocultar/mostrar header
+  useEffect(() => {
+    const chatArea = chatAreaRef.current;
+    if (!chatArea) return;
+
+    // Resetear estado cuando cambia la disciplina o se resetea el chat
+    setIsHeaderVisible(true);
+    lastScrollTopRef.current = 0;
+    chatArea.scrollTop = 0;
+
+    const handleScroll = () => {
+      const currentScrollTop = chatArea.scrollTop;
+      const scrollThreshold = 30; // Umbral mínimo para activar el comportamiento (reducido para mejor UX en móviles)
+      const lastScroll = lastScrollTopRef.current;
+      const scrollDelta = Math.abs(currentScrollTop - lastScroll);
+
+      // Solo actualizar si hay un cambio significativo (evitar micro-movimientos)
+      if (scrollDelta < 5) return;
+
+      // Si estamos cerca del top, siempre mostrar el header
+      if (currentScrollTop < scrollThreshold) {
+        setIsHeaderVisible(true);
+      } else {
+        // Si scrolleamos hacia abajo, ocultar header
+        // Si scrolleamos hacia arriba, mostrar header
+        if (currentScrollTop > lastScroll && currentScrollTop > scrollThreshold) {
+          setIsHeaderVisible(false);
+        } else if (currentScrollTop < lastScroll) {
+          setIsHeaderVisible(true);
+        }
+      }
+
+      lastScrollTopRef.current = currentScrollTop;
+    };
+
+    chatArea.addEventListener('scroll', handleScroll, { passive: true });
+    
+    return () => {
+      chatArea.removeEventListener('scroll', handleScroll);
+    };
+  }, [selectedDiscipline]);
 
   // Mensaje inicial cuando se selecciona una disciplina
   useEffect(() => {
@@ -354,6 +403,19 @@ export default function AISumeeAssistant({
 
   // Manejar selección de imagen
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // Verificar si el usuario es PRO antes de permitir subir imagen
+    if (!isProUser) {
+      e.target.value = ""; // Limpiar el input
+      const upsellMessage: Message = {
+        id: Date.now().toString(),
+        role: "assistant",
+        content: "📸 La funcionalidad de diagnóstico con foto está disponible solo para usuarios del Plan PRO. Puedes usar el chat de texto para obtener clasificación básica, o actualiza a PRO para acceso completo.",
+        timestamp: new Date(),
+      };
+      setMessages((prev) => [...prev, upsellMessage]);
+      return;
+    }
+
     const file = e.target.files?.[0];
     if (file) {
       if (file.size > 5 * 1024 * 1024) {
@@ -646,6 +708,7 @@ export default function AISumeeAssistant({
       // Subir imagen si existe
       if (selectedImage) {
         imageUrl = await uploadImageToStorage(selectedImage);
+        setUploadedImageUrl(imageUrl); // Guardar URL para usar al crear el lead
         setSelectedImage(null);
         setImagePreview(null);
       }
@@ -782,21 +845,21 @@ export default function AISumeeAssistant({
     setIsSubmitting(true);
     try {
       // Obtener perfil completo del cliente (opcional, no bloquear si falla)
-      let profile = null;
+      let profileData = null;
       try {
         const { data, error: profileError } = await supabase
           .from("profiles")
-          .select("full_name, ubicacion_lat, ubicacion_lng, ubicacion_direccion, phone, whatsapp")
+          .select("full_name, ubicacion_lat, ubicacion_lng, ubicacion_direccion, phone, whatsapp, plan, membership_status")
           .eq("user_id", user.id)
           .single();
         
         if (profileError) {
           console.warn("No se pudo obtener perfil (continuando):", profileError);
         } else {
-          profile = data;
+          profileData = data;
           // Inicializar WhatsApp del cliente si no está en el estado pero sí en el perfil
-          if (!clientWhatsApp.trim() && (profile.whatsapp || profile.phone)) {
-            setClientWhatsApp(profile.whatsapp || profile.phone || "");
+          if (!clientWhatsApp.trim() && (profileData.whatsapp || profileData.phone)) {
+            setClientWhatsApp(profileData.whatsapp || profileData.phone || "");
           }
         }
       } catch (error) {
@@ -826,18 +889,23 @@ export default function AISumeeAssistant({
         : classification.disciplina || "General";
       
       // Usar coordenadas del servicio (prioridad) o del perfil del cliente
-      const ubicacionLat = serviceLocationCoords?.lat || profile?.ubicacion_lat || 19.4326; // CDMX por defecto
-      const ubicacionLng = serviceLocationCoords?.lng || profile?.ubicacion_lng || -99.1332; // CDMX por defecto
-      const ubicacionDireccion = serviceLocation.trim() || profile?.ubicacion_direccion || "Ubicación no especificada";
+      const ubicacionLat = serviceLocationCoords?.lat || profileData?.ubicacion_lat || profile?.ubicacion_lat || 19.4326; // CDMX por defecto
+      const ubicacionLng = serviceLocationCoords?.lng || profileData?.ubicacion_lng || profile?.ubicacion_lng || -99.1332; // CDMX por defecto
+      const ubicacionDireccion = serviceLocation.trim() || profileData?.ubicacion_direccion || profile?.ubicacion_direccion || "Ubicación no especificada";
       
       // Preparar datos para crear el lead según la firma de la función actualizada
       // Orden según la firma: nombre_cliente_in, whatsapp_in, descripcion_proyecto_in, ubicacion_lat_in, ubicacion_lng_in, servicio_in, urgencia_in, ubicacion_direccion_in, imagen_url_in, photos_urls_in, disciplina_ia_in, urgencia_ia_in, diagnostico_ia_in
       const urgenciaValue = classification.urgencia || "5";
       // Usar WhatsApp del cliente capturado en el formulario, o del perfil como fallback
-      const whatsappFinal = clientWhatsApp.trim() || profile?.whatsapp || profile?.phone || user.user_metadata?.phone || "";
+      const whatsappFinal = clientWhatsApp.trim() || profileData?.whatsapp || profileData?.phone || profile?.whatsapp || profile?.phone || user.user_metadata?.phone || "";
       
+      // Determinar priority_boost: TRUE si el usuario tiene plan PRO
+      // Usar profile del contexto (MembershipContext) que ya tiene plan, o profileData de la query
+      const userPlan = profile?.plan || profileData?.plan || (profile?.membership_status === 'premium' || profileData?.membership_status === 'premium' ? 'pro_annual' : 'express_free');
+      const priorityBoost = userPlan === 'pro_annual';
+
       const leadData = {
-        nombre_cliente_in: profile?.full_name || user.user_metadata?.full_name || user.email?.split("@")[0] || "Cliente",
+        nombre_cliente_in: profileData?.full_name || profile?.full_name || user.user_metadata?.full_name || user.email?.split("@")[0] || "Cliente",
         whatsapp_in: whatsappFinal, // Usar WhatsApp capturado en el formulario
         descripcion_proyecto_in: classification.descripcion_final || inputText || "Solicitud de servicio",
         ubicacion_lat_in: Number(ubicacionLat), // Convertir a número explícitamente
@@ -845,11 +913,12 @@ export default function AISumeeAssistant({
         servicio_in: disciplinaFinal,
         urgencia_in: urgenciaValue, // Parámetro para compatibilidad
         ubicacion_direccion_in: ubicacionDireccion,
-        imagen_url_in: null, // Por ahora null, se puede agregar después
-        photos_urls_in: null, // Por ahora null, se puede agregar después
+        imagen_url_in: uploadedImageUrl || null, // URL de la imagen subida durante el chat
+        photos_urls_in: uploadedImageUrl ? [uploadedImageUrl] : null, // Array con la URL de la foto
         disciplina_ia_in: disciplinaFinal,
         urgencia_ia_in: urgenciaValue, // Este es el que realmente se guarda en la BD
         diagnostico_ia_in: classification.diagnostico || `Servicio de ${disciplinaFinal}`,
+        priority_boost_in: priorityBoost, // TRUE si el usuario tiene plan PRO
       };
 
       console.log("📤 Enviando lead con datos:", leadData);
@@ -921,49 +990,46 @@ export default function AISumeeAssistant({
 
   if (!isOpen) return null;
 
-  // Pantalla de selección de disciplinas - Diseño Ultra Compacto
+  // Pantalla de selección de disciplinas - Diseño Minimalista Grok Style
   if (!selectedDiscipline) {
     return (
-      <div className="fixed inset-0 z-50 bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 backdrop-blur-sm overflow-y-auto">
-        <div className="relative w-full max-w-5xl mx-auto px-2 sm:px-3 py-2 sm:py-3">
-          {/* Header Compacto - Sin sticky para evitar que tape contenido */}
-          <div className="flex items-center justify-between mb-3 sm:mb-4 pb-2 border-b border-gray-200/50">
-            <div className="flex-1 min-w-0">
-              <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mb-0.5 leading-tight truncate">
-                SUMEE AI te guía
+      <div className="fixed inset-0 z-50 bg-white flex items-center justify-center p-4 sm:p-6">
+        <div className="w-full max-w-md mx-auto">
+          {/* Header Minimalista */}
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-semibold text-gray-900 mb-1">
+                Sumee AI
               </h1>
-              <p className="text-[10px] sm:text-xs text-gray-600 truncate">
-                Selecciona el servicio que necesitas
+              <p className="text-sm text-gray-500">
+                ¿Qué servicio necesitas?
               </p>
             </div>
             <button
               onClick={onClose}
-              className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white/90 hover:bg-white shadow-md flex items-center justify-center transition-all ml-2 flex-shrink-0"
+              className="w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center transition-colors"
             >
-              <FontAwesomeIcon icon={faTimes} className="text-gray-600 text-xs sm:text-sm" />
+              <FontAwesomeIcon icon={faTimes} className="text-gray-500 text-lg" />
             </button>
           </div>
 
-          {/* Grid de Disciplinas - Ultra Compacto */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-1.5 sm:gap-2 pb-2">
+          {/* Grid de Disciplinas - Minimalista */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
             {DISCIPLINE_OPTIONS.map((discipline) => (
               <button
                 key={discipline.id}
                 onClick={() => setSelectedDiscipline(discipline)}
-                className="group relative bg-white/95 backdrop-blur-sm rounded-lg sm:rounded-xl p-2 sm:p-2.5 border border-gray-200/60 hover:border-gray-300 hover:shadow-md transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98]"
+                className="group relative bg-white rounded-xl p-3 sm:p-4 border border-gray-200 hover:border-gray-300 hover:shadow-sm transition-all duration-200 text-left"
               >
-                <div className={`w-8 h-8 sm:w-10 sm:h-10 mx-auto mb-1.5 rounded-lg bg-gradient-to-br ${discipline.gradient} flex items-center justify-center shadow-sm group-hover:shadow-md transition-all`}>
-                  <FontAwesomeIcon icon={discipline.icon} className="text-white text-sm sm:text-base" />
+                <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-gradient-to-br ${discipline.gradient} flex items-center justify-center mb-2`}>
+                  <FontAwesomeIcon icon={discipline.icon} className="text-white text-base sm:text-lg" />
                 </div>
-                <h3 className={`font-semibold text-[10px] sm:text-[11px] ${discipline.color} mb-0.5 text-center leading-tight line-clamp-1`}>
+                <h3 className={`font-semibold text-sm ${discipline.color} mb-1`}>
                   {discipline.name}
                 </h3>
-                <p className="text-[8px] sm:text-[9px] text-gray-500 text-center line-clamp-2 mb-0.5 leading-tight min-h-[2rem] sm:min-h-[2.25rem]">
+                <p className="text-xs text-gray-500 line-clamp-2">
                   {discipline.description}
                 </p>
-                <div className="text-[7px] sm:text-[8px] text-gray-400 text-center leading-tight line-clamp-1">
-                  {discipline.role}
-                </div>
               </button>
             ))}
           </div>
@@ -972,41 +1038,82 @@ export default function AISumeeAssistant({
     );
   }
 
-  // Pantalla del chat (cuando ya se seleccionó una disciplina) - Diseño Compacto y Responsive
+  // Pantalla del chat - Diseño Minimalista Grok Style
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 backdrop-blur-sm p-2 sm:p-4">
-      <div className="relative w-full max-w-2xl h-full sm:h-[90vh] sm:max-h-[800px] bg-white/95 backdrop-blur-md rounded-xl sm:rounded-2xl shadow-2xl flex flex-col border border-gray-200/50">
-        {/* Header Compacto */}
-        <div className="flex items-center justify-between p-3 sm:p-4 border-b border-gray-200/50 flex-shrink-0">
-          <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
-            <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-gradient-to-br ${selectedDiscipline.gradient} flex items-center justify-center shadow-sm flex-shrink-0`}>
-              <FontAwesomeIcon icon={selectedDiscipline.icon} className="text-white text-sm sm:text-base" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <h2 className="font-bold text-sm sm:text-base text-gray-900 truncate">{selectedDiscipline.role}</h2>
-              <p className="text-[10px] sm:text-xs text-gray-500 truncate">{selectedDiscipline.name}</p>
-            </div>
+    <div className="fixed inset-0 z-50 bg-white flex flex-col">
+      {/* Header Minimalista - Auto-hide on scroll */}
+      <div 
+        className={`fixed top-0 left-0 right-0 z-10 flex items-center justify-between p-3 sm:p-4 border-b border-gray-200 bg-white/95 backdrop-blur-sm transition-all duration-300 ease-in-out ${
+          isHeaderVisible 
+            ? 'translate-y-0 shadow-sm' 
+            : '-translate-y-full shadow-none'
+        }`}
+        style={{
+          willChange: 'transform',
+        }}
+      >
+        <div className="flex items-center gap-3 min-w-0 flex-1">
+          <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-gradient-to-br ${selectedDiscipline.gradient} flex items-center justify-center flex-shrink-0`}>
+            <FontAwesomeIcon icon={selectedDiscipline.icon} className="text-white text-sm sm:text-base" />
           </div>
-          <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
-            <button
-              onClick={() => setSelectedDiscipline(null)}
-              className="px-2 py-1 sm:px-3 sm:py-1.5 text-[10px] sm:text-xs text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
-              title="Cambiar disciplina"
-            >
-              Cambiar
-            </button>
-            <button
-              onClick={onClose}
-              className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors"
-            >
-              <FontAwesomeIcon icon={faTimes} className="text-gray-600 text-xs sm:text-sm" />
-            </button>
+          <div className="min-w-0 flex-1">
+            <h2 className="font-semibold text-sm sm:text-base text-gray-900 truncate">{selectedDiscipline.name}</h2>
+            <p className="text-xs text-gray-500 truncate">{selectedDiscipline.role}</p>
           </div>
         </div>
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <button
+            onClick={() => {
+              setSelectedDiscipline(null);
+              setMessages([]);
+              setClassification(null);
+              setInputText("");
+              setImagePreview(null);
+              setSelectedImage(null);
+              setUploadedImageUrl(null);
+            }}
+            className="px-3 py-1.5 text-xs text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+          >
+            Cambiar
+          </button>
+          <button
+            onClick={onClose}
+            className="w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center transition-colors"
+          >
+            <FontAwesomeIcon icon={faTimes} className="text-gray-500 text-base" />
+          </button>
+        </div>
+      </div>
 
-        {/* Chat Area - Compacto */}
-        <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-3 bg-white">
-          {messages.map((message) => (
+      {/* Spacer para compensar el header fijo cuando está visible */}
+      <div 
+        className={`transition-all duration-300 ${
+          isHeaderVisible 
+            ? 'h-[60px] sm:h-[72px] opacity-100' 
+            : 'h-0 opacity-0'
+        }`}
+      />
+
+      {/* Chat Area - Minimalista */}
+      <div 
+        ref={chatAreaRef}
+        className="flex-1 overflow-y-auto px-4 py-6 space-y-4 bg-white"
+      >
+        {messages.length === 0 && (
+          <div className="flex flex-col items-center justify-center h-full text-center px-4">
+            <div className={`w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-br ${selectedDiscipline.gradient} flex items-center justify-center mb-4`}>
+              <FontAwesomeIcon icon={selectedDiscipline.icon} className="text-white text-2xl sm:text-3xl" />
+            </div>
+            <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2">
+              {selectedDiscipline.role}
+            </h3>
+            <p className="text-sm text-gray-500 max-w-sm">
+              {selectedDiscipline.description}
+            </p>
+          </div>
+        )}
+        
+        {messages.map((message) => (
             <div
               key={message.id}
               className={`flex gap-3 ${
@@ -1014,18 +1121,18 @@ export default function AISumeeAssistant({
               }`}
             >
               {message.role === "assistant" && (
-                <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center flex-shrink-0 ${selectedDiscipline ? `bg-gradient-to-br ${selectedDiscipline.gradient} bg-opacity-20` : 'bg-indigo-100'}`}>
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 bg-gradient-to-br ${selectedDiscipline.gradient}`}>
                   <FontAwesomeIcon 
-                    icon={selectedDiscipline?.icon || faRobot} 
-                    className={`text-xs sm:text-sm ${selectedDiscipline?.color || 'text-indigo-600'}`} 
+                    icon={selectedDiscipline.icon} 
+                    className="text-white text-sm" 
                   />
                 </div>
               )}
               <div
-                className={`max-w-[85%] rounded-xl sm:rounded-2xl p-3 sm:p-4 ${
+                className={`max-w-[80%] sm:max-w-[75%] rounded-2xl p-3 sm:p-4 ${
                   message.role === "user"
-                    ? `bg-gradient-to-br ${selectedDiscipline.gradient} text-white shadow-md`
-                    : "bg-gray-50 text-gray-900 border border-gray-200/50"
+                    ? `bg-gradient-to-br ${selectedDiscipline.gradient} text-white`
+                    : "bg-gray-100 text-gray-900"
                 }`}
               >
                 {message.imageUrl && (
@@ -1035,261 +1142,237 @@ export default function AISumeeAssistant({
                     className="w-full max-w-xs rounded-lg mb-2"
                   />
                 )}
-                <p className="whitespace-pre-wrap text-xs sm:text-sm leading-relaxed">{message.content}</p>
-                <p className="text-[10px] sm:text-xs mt-1 opacity-70">
-                  {message.timestamp.toLocaleTimeString()}
-                </p>
+                <p className="whitespace-pre-wrap text-sm sm:text-base leading-relaxed">{message.content}</p>
               </div>
               {message.role === "user" && (
-                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-indigo-100 flex items-center justify-center flex-shrink-0">
-                  <FontAwesomeIcon icon={faUser} className="text-indigo-600 text-xs sm:text-sm" />
+                <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
+                  <FontAwesomeIcon icon={faUser} className="text-gray-600 text-sm" />
                 </div>
               )}
             </div>
-          ))}
+        ))}
 
-          {isLoading && (
-            <div className="flex gap-3 justify-start">
-              <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center">
-                <FontAwesomeIcon icon={faRobot} className="text-indigo-600 text-sm" />
-              </div>
-              <div className="bg-white rounded-lg p-3 shadow-sm border border-gray-200">
-                <FontAwesomeIcon icon={faSpinner} className="animate-spin text-indigo-600" />
-                <span className="ml-2 text-sm text-gray-600">Analizando...</span>
-              </div>
+        {isLoading && (
+          <div className="flex gap-3 justify-start">
+            <div className={`w-8 h-8 rounded-full bg-gradient-to-br ${selectedDiscipline.gradient} flex items-center justify-center`}>
+              <FontAwesomeIcon icon={selectedDiscipline.icon} className="text-white text-sm" />
             </div>
-          )}
+            <div className="bg-gray-100 rounded-2xl p-3">
+              <FontAwesomeIcon icon={faSpinner} className="animate-spin text-gray-600" />
+            </div>
+          </div>
+        )}
 
-          {/* Botón de envío si hay clasificación - Compacto */}
-          {classification && !isSubmitting && (
-            <div className={`bg-gradient-to-br ${selectedDiscipline.gradient} bg-opacity-10 border border-gray-200 rounded-xl sm:rounded-2xl p-3 sm:p-4 backdrop-blur-sm`}>
-              <div className="flex items-start gap-2 sm:gap-3">
-                <FontAwesomeIcon icon={faCheckCircle} className={`${selectedDiscipline.color} mt-0.5 sm:mt-1 text-base sm:text-lg flex-shrink-0`} />
-                <div className="flex-1 space-y-3 min-w-0">
-                  <div>
-                    <p className="font-semibold text-gray-900 mb-1.5 text-xs sm:text-sm leading-tight">
-                      ¡Perfecto! Confirmamos un trabajo de{" "}
-                      <span className={`${selectedDiscipline.color} font-bold`}>{classification.disciplina}</span> con
-                      urgencia <span className={`${selectedDiscipline.color} font-bold`}>{classification.urgencia}/10</span>.
-                    </p>
-                    <p className="text-[11px] sm:text-xs text-gray-700 mb-2">
-                      Para asignar el técnico más cercano, necesitamos la ubicación del servicio:
-                    </p>
-                  </div>
+        {/* Botón de envío si hay clasificación - Minimalista */}
+        {classification && !isSubmitting && (
+            <div className="bg-gray-50 rounded-2xl p-4 sm:p-6 border border-gray-200">
+              <div className="space-y-4">
+                <div>
+                  <p className="font-semibold text-gray-900 mb-2 text-sm sm:text-base">
+                    ✅ Confirmado: <span className={`${selectedDiscipline.color} font-bold`}>{classification.disciplina}</span> - Urgencia {classification.urgencia}/10
+                  </p>
+                  <p className="text-sm text-gray-600 mb-4">
+                    Necesitamos tu ubicación para encontrar el técnico más cercano:
+                  </p>
+                </div>
                   
-                  {/* Campo de ubicación del servicio - Simplificado */}
-                  <div className="space-y-2">
-                    <label className="block text-[11px] sm:text-xs font-medium text-gray-700">
-                      📍 Ubicación del servicio *
-                    </label>
-                    
-                    {/* Botón de usar ubicación actual */}
-                    <button
-                      type="button"
-                      onClick={handleUseCurrentLocation}
-                      disabled={isGettingLocation || isSubmitting}
-                      className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg sm:rounded-xl transition-colors text-[11px] sm:text-xs font-medium text-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {isGettingLocation ? (
-                        <>
-                          <FontAwesomeIcon icon={faSpinner} className="animate-spin" />
-                          Obteniendo ubicación...
-                        </>
-                      ) : (
-                        <>
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                          </svg>
-                          Usar mi ubicación actual
-                        </>
-                      )}
-                    </button>
-                    
-                    <div className="relative flex items-center gap-2">
-                      <div className="flex-1">
-                        <input
-                          type="text"
-                          value={serviceLocation}
-                          onChange={(e) => {
-                            setServiceLocation(e.target.value);
-                            // Geocodificar después de 1 segundo de inactividad
-                            if (debounceTimerRef.current) {
-                              clearTimeout(debounceTimerRef.current);
-                            }
-                            debounceTimerRef.current = setTimeout(() => {
-                              if (e.target.value.trim()) {
-                                handleLocationGeocode(e.target.value);
-                              }
-                            }, 1000);
-                          }}
-                          placeholder="O ingresa una dirección (ej: Calle Principal 123, CDMX)"
-                          className="w-full px-3 py-2 sm:px-4 sm:py-2.5 border-2 border-gray-200 rounded-lg sm:rounded-xl focus:outline-none focus:border-gray-400 transition-colors text-xs sm:text-sm"
-                          disabled={isSubmitting || isGeocoding}
-                        />
-                      </div>
-                      {serviceLocationCoords && (
-                        <div className="flex-shrink-0">
-                          <a
-                            href={`https://www.google.com/maps?q=${serviceLocationCoords.lat},${serviceLocationCoords.lng}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center bg-green-50 hover:bg-green-100 border border-green-200 rounded-lg sm:rounded-xl transition-colors"
-                            title="Ver en Google Maps"
-                          >
-                            <svg className="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                              <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
-                            </svg>
-                          </a>
-                        </div>
-                      )}
-                    </div>
-                    
-                    {isGeocoding && (
-                      <p className="text-[10px] sm:text-xs text-gray-500 flex items-center gap-1.5">
-                        <FontAwesomeIcon icon={faSpinner} className="animate-spin text-[10px]" />
-                        Buscando dirección en Google Maps...
-                      </p>
-                    )}
-                    {serviceLocationCoords && !isGeocoding && (
-                      <p className="text-[10px] sm:text-xs text-green-600 flex items-center gap-1.5">
-                        ✅ Ubicación verificada - {serviceLocationCoords.lat.toFixed(6)}, {serviceLocationCoords.lng.toFixed(6)}
-                      </p>
-                    )}
-                    {serviceLocation && !serviceLocationCoords && !isGeocoding && serviceLocation.length > 5 && (
-                      <p className="text-[10px] sm:text-xs text-yellow-600">
-                        ⚠️ No se pudo verificar la dirección automáticamente. Puedes continuar o usar "Usar mi ubicación actual" para mayor precisión.
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Campo de WhatsApp del cliente */}
-                  <div className="space-y-2">
-                    <label className="block text-[11px] sm:text-xs font-medium text-gray-700">
-                      📱 WhatsApp de contacto *
-                    </label>
-                    <input
-                      type="tel"
-                      value={clientWhatsApp}
-                      onChange={(e) => {
-                        // Permitir solo números, espacios y guiones
-                        const value = e.target.value.replace(/[^\d\s-+]/g, "");
-                        setClientWhatsApp(value);
-                      }}
-                      placeholder="Ej: 55 1234 5678 o +52 55 1234 5678"
-                      className="w-full px-3 py-2 sm:px-4 sm:py-2.5 border-2 border-gray-200 rounded-lg sm:rounded-xl focus:outline-none focus:border-gray-400 transition-colors text-xs sm:text-sm"
-                      disabled={isSubmitting}
-                      required
-                    />
-                    <p className="text-[10px] sm:text-xs text-gray-500">
-                      Este número se compartirá con profesionales verificados para coordinar el servicio por WhatsApp.
-                    </p>
-                  </div>
-
+                {/* Campo de ubicación */}
+                <div className="space-y-2">
                   <button
-                    onClick={handleSubmitRequest}
-                    disabled={(!serviceLocation.trim() && !serviceLocationCoords) || !clientWhatsApp.trim() || isGeocoding || isSubmitting}
-                    className={`w-full bg-gradient-to-r ${selectedDiscipline.gradient} hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-2.5 sm:py-3 px-4 sm:px-6 rounded-lg sm:rounded-xl transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2 text-xs sm:text-sm transform hover:scale-[1.01] active:scale-[0.99]`}
+                    type="button"
+                    onClick={handleUseCurrentLocation}
+                    disabled={isGettingLocation || isSubmitting}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors text-sm font-medium text-gray-700 disabled:opacity-50"
                   >
-                    {isSubmitting ? (
+                    {isGettingLocation ? (
                       <>
-                        <FontAwesomeIcon icon={faSpinner} className="animate-spin text-xs sm:text-sm" />
-                        Enviando...
+                        <FontAwesomeIcon icon={faSpinner} className="animate-spin" />
+                        Obteniendo ubicación...
                       </>
                     ) : (
                       <>
-                        <FontAwesomeIcon icon={faPaperPlane} className="text-xs sm:text-sm" />
-                        Enviar Solicitud
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                        Usar mi ubicación actual
                       </>
                     )}
                   </button>
+                  
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={serviceLocation}
+                      onChange={(e) => {
+                        setServiceLocation(e.target.value);
+                        if (debounceTimerRef.current) {
+                          clearTimeout(debounceTimerRef.current);
+                        }
+                        debounceTimerRef.current = setTimeout(() => {
+                          if (e.target.value.trim()) {
+                            handleLocationGeocode(e.target.value);
+                          }
+                        }, 1000);
+                      }}
+                      placeholder="O ingresa una dirección"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-400 transition-all text-sm"
+                      disabled={isSubmitting || isGeocoding}
+                    />
+                    {serviceLocationCoords && (
+                      <div className="absolute right-2 top-1/2 -translate-y-1/2">
+                        <a
+                          href={`https://www.google.com/maps?q=${serviceLocationCoords.lat},${serviceLocationCoords.lng}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="w-8 h-8 flex items-center justify-center bg-green-100 hover:bg-green-200 rounded-lg transition-colors"
+                        >
+                          <svg className="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
+                          </svg>
+                        </a>
+                      </div>
+                    )}
+                  </div>
+                  
+                  {isGeocoding && (
+                    <p className="text-xs text-gray-500 flex items-center gap-2">
+                      <FontAwesomeIcon icon={faSpinner} className="animate-spin" />
+                      Buscando dirección...
+                    </p>
+                  )}
                 </div>
+
+                {/* Campo de WhatsApp */}
+                <div className="space-y-2">
+                  <input
+                    type="tel"
+                    value={clientWhatsApp}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/[^\d\s-+]/g, "");
+                      setClientWhatsApp(value);
+                    }}
+                    placeholder="WhatsApp (ej: 55 1234 5678)"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-400 transition-all text-sm"
+                    disabled={isSubmitting}
+                    required
+                  />
+                </div>
+
+                <button
+                  onClick={handleSubmitRequest}
+                  disabled={(!serviceLocation.trim() && !serviceLocationCoords) || !clientWhatsApp.trim() || isGeocoding || isSubmitting}
+                  className={`w-full bg-gradient-to-r ${selectedDiscipline.gradient} hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-3 px-6 rounded-xl transition-all flex items-center justify-center gap-2 text-sm`}
+                >
+                  {isSubmitting ? (
+                    <>
+                      <FontAwesomeIcon icon={faSpinner} className="animate-spin" />
+                      Enviando...
+                    </>
+                  ) : (
+                    <>
+                      <FontAwesomeIcon icon={faPaperPlane} />
+                      Enviar Solicitud
+                    </>
+                  )}
+                </button>
               </div>
             </div>
-          )}
+        )}
 
-          {isSubmitting && (
-            <div className="flex gap-3 justify-center">
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <FontAwesomeIcon icon={faSpinner} className="animate-spin text-blue-600 mr-2" />
-                <span className="text-sm text-blue-900">Enviando solicitud...</span>
-              </div>
-            </div>
-          )}
+        <div ref={messagesEndRef} />
+      </div>
 
-          <div ref={messagesEndRef} />
-        </div>
-
-        {/* Input Area - Compacto */}
-        <div className="p-3 sm:p-4 border-t border-gray-200/50 bg-white/50 backdrop-blur-sm rounded-b-xl sm:rounded-b-2xl flex-shrink-0">
-          {/* Preview de imagen */}
-          {imagePreview && (
-            <div className="mb-2 sm:mb-3 relative inline-block">
-              <img
-                src={imagePreview}
-                alt="Preview"
-                className="w-16 h-16 sm:w-20 sm:h-20 object-cover rounded-lg sm:rounded-xl border-2 border-gray-200 shadow-sm"
-              />
-              <button
-                onClick={() => {
-                  setImagePreview(null);
-                  setSelectedImage(null);
-                  if (fileInputRef.current) fileInputRef.current.value = "";
-                }}
-                className="absolute -top-1.5 -right-1.5 w-5 h-5 sm:w-6 sm:h-6 bg-red-500 text-white rounded-full flex items-center justify-center text-[10px] hover:bg-red-600 shadow-md transition-all"
-              >
-                <FontAwesomeIcon icon={faTimes} />
-              </button>
-            </div>
-          )}
-
-          {/* Input compacto */}
-          <div className="relative">
-            <div className="flex items-center gap-2 sm:gap-3 bg-white rounded-xl sm:rounded-2xl border-2 border-gray-200/50 shadow-md hover:shadow-lg transition-all focus-within:border-gray-300 focus-within:shadow-xl">
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                onChange={handleImageSelect}
-                className="hidden"
-                id="image-upload"
-              />
-              <label
-                htmlFor="image-upload"
-                className="flex-shrink-0 w-9 h-9 sm:w-10 sm:h-10 ml-2 sm:ml-3 bg-gray-50 hover:bg-gray-100 rounded-lg sm:rounded-xl flex items-center justify-center cursor-pointer transition-colors"
-              >
-                <FontAwesomeIcon icon={faImage} className="text-gray-500 text-sm sm:text-base" />
-              </label>
-              <input
-                type="text"
-                value={inputText}
-                onChange={(e) => setInputText(e.target.value)}
-                onKeyPress={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey) {
-                    e.preventDefault();
-                    sendMessage();
-                  }
-                }}
-                placeholder="Describe tu problema o pregunta..."
-                className="flex-1 px-2 sm:px-3 py-2.5 sm:py-3 text-sm sm:text-base bg-transparent border-0 focus:outline-none focus:ring-0 placeholder-gray-400"
-                disabled={isLoading || isSubmitting}
-              />
-              <button
-                onClick={sendMessage}
-                disabled={(!inputText.trim() && !selectedImage) || isLoading || isSubmitting}
-                className={`flex-shrink-0 w-9 h-9 sm:w-10 sm:h-10 mr-2 sm:mr-3 bg-gradient-to-r ${selectedDiscipline.gradient} hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg sm:rounded-xl flex items-center justify-center transition-all shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95`}
-              >
-                {isLoading ? (
-                  <FontAwesomeIcon icon={faSpinner} className="animate-spin text-sm" />
-                ) : (
-                  <FontAwesomeIcon icon={faPaperPlane} className="text-sm" />
-                )}
-              </button>
-            </div>
-            <p className="text-[10px] sm:text-xs text-gray-400 mt-1.5 ml-2 sm:ml-3">
-              Presiona Enter para enviar • Puedes adjuntar una foto
-            </p>
+      {/* Input Area - Minimalista Grok Style */}
+      <div className="p-4 sm:p-6 border-t border-gray-200 bg-white flex-shrink-0">
+        {/* Preview de imagen */}
+        {imagePreview && (
+          <div className="mb-3 relative inline-block">
+            <img
+              src={imagePreview}
+              alt="Preview"
+              className="w-20 h-20 object-cover rounded-xl border-2 border-gray-200"
+            />
+            <button
+              onClick={() => {
+                setImagePreview(null);
+                setSelectedImage(null);
+                if (fileInputRef.current) fileInputRef.current.value = "";
+              }}
+              className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors"
+            >
+              <FontAwesomeIcon icon={faTimes} className="text-xs" />
+            </button>
           </div>
+        )}
+
+        {/* Input grande tipo Grok */}
+        <div className="relative">
+          <div className="flex items-center gap-2 bg-gray-50 rounded-2xl border border-gray-200 hover:border-gray-300 focus-within:border-gray-400 focus-within:ring-2 focus-within:ring-gray-200 transition-all">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleImageSelect}
+              className="hidden"
+              id="image-upload"
+              disabled={!isProUser}
+            />
+            <label
+              htmlFor={isProUser ? "image-upload" : undefined}
+              onClick={!isProUser ? (e) => {
+                e.preventDefault();
+                const upsellMessage: Message = {
+                  id: Date.now().toString(),
+                  role: "assistant",
+                  content: "📸 Solo para Plan PRO: Sube una foto para diagnóstico con IA. Actualiza a PRO para desbloquear esta funcionalidad.",
+                  timestamp: new Date(),
+                };
+                setMessages((prev) => [...prev, upsellMessage]);
+              } : undefined}
+              className={`flex-shrink-0 w-10 h-10 ml-3 rounded-xl flex items-center justify-center transition-colors ${
+                isProUser 
+                  ? "hover:bg-gray-200 cursor-pointer" 
+                  : "opacity-50 cursor-not-allowed"
+              }`}
+              title={!isProUser ? "Solo para Plan PRO" : "Subir foto"}
+            >
+              <FontAwesomeIcon 
+                icon={faImage} 
+                className={`text-base ${isProUser ? "text-gray-500" : "text-gray-400"}`} 
+              />
+            </label>
+            <input
+              type="text"
+              value={inputText}
+              onChange={(e) => setInputText(e.target.value)}
+              onKeyPress={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  sendMessage();
+                }
+              }}
+              placeholder="Describe tu problema o pregunta..."
+              className="flex-1 px-2 py-4 text-base bg-transparent border-0 focus:outline-none focus:ring-0 placeholder-gray-400"
+              disabled={isLoading || isSubmitting}
+            />
+            <button
+              onClick={sendMessage}
+              disabled={(!inputText.trim() && !selectedImage) || isLoading || isSubmitting}
+              className={`flex-shrink-0 w-10 h-10 mr-3 bg-gradient-to-r ${selectedDiscipline.gradient} hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl flex items-center justify-center transition-all`}
+            >
+              {isLoading ? (
+                <FontAwesomeIcon icon={faSpinner} className="animate-spin" />
+              ) : (
+                <FontAwesomeIcon icon={faPaperPlane} />
+              )}
+            </button>
+          </div>
+          {!isProUser && (
+            <p className="text-xs text-blue-600 mt-2 ml-3 font-medium">
+              💡 Solo para Plan PRO: Sube una foto para diagnóstico con IA
+            </p>
+          )}
         </div>
       </div>
     </div>

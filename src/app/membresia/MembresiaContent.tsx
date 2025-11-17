@@ -18,7 +18,12 @@ import {
   faHeadset,
   faConciergeBell,
   faTrophy,
-  faInfinity
+  faInfinity,
+  faCreditCard,
+  faBolt,
+  faAward,
+  faChartLine,
+  faRocket
 } from '@fortawesome/free-solid-svg-icons';
 import Link from 'next/link';
 import StripeBuyButton from '@/components/stripe/StripeBuyButton';
@@ -29,34 +34,49 @@ export default function MembresiaContent() {
   
   const benefits = [
     {
-      icon: faCheck,
-      title: 'Acceso a Técnicos Verificados',
-      description: 'Solo profesionales con licencia y experiencia comprobada'
+      icon: faTrophy,
+      title: 'Los Mejores Técnicos para Ti',
+      description: 'Acceso exclusivo a técnicos "Sumee Pro Elite" con las mejores calificaciones y desempeño comprobado'
+    },
+    {
+      icon: faBolt,
+      title: 'Respuesta Prioritaria',
+      description: 'Tus solicitudes se procesan primero. Asignación inmediata y atención 24/7 sin esperas'
+    },
+    {
+      icon: faCreditCard,
+      title: 'Múltiples Medios de Pago',
+      description: 'Paga con tarjeta, transferencia, efectivo o métodos electrónicos. Flexibilidad total'
+    },
+    {
+      icon: faChartLine,
+      title: 'Técnicos con Mejor Desempeño',
+      description: 'Solo profesionales con calificación superior a 4.8 estrellas y más de 50 trabajos completados'
     },
     {
       icon: faShieldAlt,
-      title: 'Garantía Total',
-      description: 'Cobertura completa en todos los trabajos realizados'
+      title: 'Garantía Extendida de 90 Días',
+      description: 'Cobertura completa en todos los trabajos. Protección total para tu tranquilidad'
     },
     {
-      icon: faClock,
-      title: 'Respuesta en 2 Horas',
-      description: 'Técnicos disponibles las 24 horas del día'
+      icon: faRocket,
+      title: 'Asignación Inteligente',
+      description: 'Sistema de matching avanzado que conecta tu proyecto con el técnico perfecto en minutos'
     },
     {
       icon: faUsers,
-      title: 'Red de Profesionales',
-      description: 'Más de 500 técnicos verificados en CDMX'
+      title: 'Red de 500+ Profesionales',
+      description: 'La mayor red de técnicos verificados en CDMX. Siempre hay alguien cerca de ti'
     },
     {
       icon: faPhone,
-      title: 'Soporte Prioritario',
-      description: 'Atención personalizada por WhatsApp y teléfono'
+      title: 'Soporte VIP 24/7',
+      description: 'Línea directa de atención prioritaria. WhatsApp y teléfono con respuesta inmediata'
     },
     {
-      icon: faCrown,
-      title: 'Servicio Premium',
-      description: 'Experiencia de lujo para tu hogar'
+      icon: faAward,
+      title: 'Experiencia PRO Completa',
+      description: 'Servicio de conserjería, múltiples cotizaciones y supervisor InSite para proyectos grandes'
     }
   ];
 
@@ -144,32 +164,86 @@ export default function MembresiaContent() {
         </div>
       </div>
 
-      {/* Benefits Section */}
-      <div id="beneficios" className="py-20 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      {/* Benefits Section - Mejorado como CTA */}
+      <div id="beneficios" className="py-20 bg-gradient-to-br from-blue-50 via-white to-purple-50 relative overflow-hidden">
+        {/* Elementos decorativos de fondo */}
+        <div className="absolute top-0 right-0 w-96 h-96 bg-blue-200 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse"></div>
+        <div className="absolute bottom-0 left-0 w-96 h-96 bg-purple-200 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse" style={{ animationDelay: '2s' }}></div>
+        
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              ¿Por qué elegir Sumee?
+            <div className="inline-block mb-4">
+              <span className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-2 rounded-full text-sm font-semibold">
+                Plan PRO
+              </span>
+            </div>
+            <h2 className="text-3xl md:text-5xl font-bold text-gray-900 mb-4">
+              ¿Por qué elegir Sumee PRO?
             </h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Respuesta rápida para emergencias y soluciones completas para tus proyectos
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto mb-8">
+              Respuesta prioritaria, los mejores técnicos y experiencia premium para tu hogar
             </p>
+            <Link 
+              href="#planes"
+              className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-4 rounded-xl font-bold text-lg hover:from-blue-700 hover:to-purple-700 transition-all shadow-lg hover:shadow-xl transform hover:scale-105"
+            >
+              Ver Planes PRO
+              <FontAwesomeIcon icon={faArrowRight} />
+            </Link>
           </div>
           
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
             {benefits.map((benefit, index) => (
-              <div key={index} className="text-center p-6 rounded-xl bg-gray-50 hover:bg-blue-50 transition-colors">
-                <div className="w-16 h-16 bg-blue-600 text-white rounded-full flex items-center justify-center mx-auto mb-4">
-                  <FontAwesomeIcon icon={benefit.icon} className="text-2xl" />
+              <div 
+                key={index} 
+                className="group relative bg-white rounded-2xl p-6 shadow-md hover:shadow-xl transition-all duration-300 border border-gray-100 hover:border-blue-300 transform hover:-translate-y-1"
+              >
+                <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-blue-100 to-purple-100 rounded-bl-2xl rounded-tr-2xl opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                <div className="relative">
+                  <div className="w-14 h-14 bg-gradient-to-br from-blue-600 to-purple-600 text-white rounded-xl flex items-center justify-center mb-4 shadow-lg group-hover:scale-110 transition-transform">
+                    <FontAwesomeIcon icon={benefit.icon} className="text-xl" />
+                  </div>
+                  <h3 className="text-lg font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors">
+                    {benefit.title}
+                  </h3>
+                  <p className="text-gray-600 text-sm leading-relaxed">
+                    {benefit.description}
+                  </p>
                 </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                  {benefit.title}
-                </h3>
-                <p className="text-gray-600">
-                  {benefit.description}
-                </p>
               </div>
             ))}
+          </div>
+
+          {/* CTA destacado después de beneficios */}
+          <div className="mt-16 bg-gradient-to-r from-blue-600 via-purple-600 to-blue-600 rounded-3xl p-8 md:p-12 text-center text-white shadow-2xl relative overflow-hidden">
+            <div className="absolute inset-0 bg-black opacity-10"></div>
+            <div className="relative z-10">
+              <div className="flex items-center justify-center mb-4">
+                <FontAwesomeIcon icon={faCrown} className="text-4xl text-yellow-300 mr-3" />
+                <h3 className="text-2xl md:text-3xl font-bold">
+                  Experiencia PRO para tu Hogar
+                </h3>
+              </div>
+              <p className="text-lg md:text-xl text-blue-100 mb-6 max-w-2xl mx-auto">
+                Únete a miles de familias que confían en Sumee PRO. Acceso inmediato a los mejores técnicos, respuesta prioritaria y garantía extendida.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <Link 
+                  href="#planes"
+                  className="bg-white text-blue-600 px-8 py-4 rounded-xl font-bold text-lg hover:bg-gray-100 transition-all shadow-lg hover:shadow-xl transform hover:scale-105 inline-flex items-center justify-center gap-2"
+                >
+                  <span>Elegir Plan PRO</span>
+                  <FontAwesomeIcon icon={faArrowRight} />
+                </Link>
+                <Link 
+                  href="/dashboard/client"
+                  className="border-2 border-white text-white px-8 py-4 rounded-xl font-bold text-lg hover:bg-white hover:text-blue-600 transition-all inline-flex items-center justify-center gap-2"
+                >
+                  <span>Ver Dashboard</span>
+                  <FontAwesomeIcon icon={faRocket} />
+                </Link>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -197,9 +271,9 @@ export default function MembresiaContent() {
                 }`}
               >
                 {plan.popular && (
-                  <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                    <span className="bg-blue-600 text-white px-4 py-2 rounded-full text-sm font-semibold">
-                      Más Popular
+                  <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 z-20">
+                    <span className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-2 rounded-full text-sm font-bold shadow-lg">
+                      ⭐ Más Popular
                     </span>
                   </div>
                 )}

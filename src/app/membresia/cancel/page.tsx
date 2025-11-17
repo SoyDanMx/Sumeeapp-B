@@ -36,7 +36,7 @@ export default function MembresiaCancelPage() {
 
             {/* Benefits Reminder */}
             <div className="text-left mb-8">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Recuerda los beneficios de Sumee Premium:</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Recuerda los beneficios de Sumee PRO:</h3>
               <ul className="space-y-2 text-gray-700 text-left">
                 <li className="flex items-center">
                   <div className="w-2 h-2 bg-indigo-500 rounded-full mr-3"></div>

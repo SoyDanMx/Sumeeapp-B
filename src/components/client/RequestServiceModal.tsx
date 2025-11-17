@@ -363,6 +363,12 @@ export default function RequestServiceModal({
       const isEmergencyService =
         serviceId === "electricidad" || serviceId === "plomeria";
 
+      // Mapeo de servicio a disciplina_ia para prellenado
+      const disciplinaMap: Record<string, string> = {
+        "electricidad": "Electricidad",
+        "plomeria": "Plomería",
+      };
+
       setFormData((prev) => ({
         ...prev,
         servicio: serviceId,
@@ -371,6 +377,10 @@ export default function RequestServiceModal({
       setUserOverrodeService(true);
       if (isEmergencyService) {
         setUserOverrodeUrgency(true);
+        // Prellenar disciplina_ia para urgencias
+        if (disciplinaMap[serviceId]) {
+          setDisciplinaIa(disciplinaMap[serviceId]);
+        }
       }
 
       setCurrentStep((prev) => (prev === 1 ? 2 : prev));

@@ -15,6 +15,7 @@ import ProfessionalTabs from "@/components/dashboard/ProfessionalTabs";
 import MobileBottomNav from "@/components/dashboard/MobileBottomNav";
 import NewLeadAlertModal from "@/components/dashboard/NewLeadAlertModal";
 import RequiredWhatsAppModal from "@/components/dashboard/RequiredWhatsAppModal";
+import RealtimeLeadNotifier from "@/components/dashboard/RealtimeLeadNotifier";
 import { Profesional, Lead } from "@/types/supabase";
 import ProfessionalVerificationID from "@/components/ProfessionalVerificationID";
 import { useRouter } from "next/navigation";
@@ -101,6 +102,12 @@ export default function ProfesionalDashboardPage() {
 
   // Callback para cuando se recibe un lead nuevo en tiempo real
   const handleNewLeadReceived = useCallback((lead: Lead) => {
+    setNewLeadAlert(lead);
+    setIsNewLeadModalOpen(true);
+  }, []);
+
+  // Callback para el componente RealtimeLeadNotifier
+  const handleRealtimeLeadNotification = useCallback((lead: Lead) => {
     setNewLeadAlert(lead);
     setIsNewLeadModalOpen(true);
   }, []);
@@ -420,6 +427,15 @@ export default function ProfesionalDashboardPage() {
             userEmail={profesional.email}
             userName={profesional.full_name || 'Profesional'}
             onSuccess={handleWhatsAppSuccess}
+          />
+        )}
+
+        {/* Componente de Notificaciones en Tiempo Real */}
+        {profesional && (
+          <RealtimeLeadNotifier
+            profesional={profesional}
+            onNewLead={handleRealtimeLeadNotification}
+            isOnline={isOnline}
           />
         )}
       </div>

@@ -15,9 +15,11 @@ import {
   faListAlt,
   faWrench,
   faUserEdit,
+  faSpinner,
 } from "@fortawesome/free-solid-svg-icons";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/lib/supabase/client";
+import { Profile } from "@/types/supabase";
 import UpdateProfileModal from "./dashboard/UpdateProfileModal";
 
 interface UserPanelMenuProps {
@@ -31,8 +33,10 @@ export default function UserPanelMenu({
 }: UserPanelMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
+  const [isLoadingProfile, setIsLoadingProfile] = useState(false);
+  const [loadedProfile, setLoadedProfile] = useState<Profile | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const { user, profile, isProfessional, isClient } = useAuth();
+  const { user, profile, isProfessional, isClient, isLoading: authLoading } = useAuth();
 
   // Cerrar dropdown cuando se hace clic fuera
   useEffect(() => {
@@ -201,20 +205,93 @@ export default function UserPanelMenu({
               
               {/* Botón Actualizar Perfil */}
               <button
-                onClick={() => {
-                  console.log("🔵 Click en Actualizar Mi Perfil");
-                  console.log("🔵 Profile actual:", profile);
-                  console.log("🔵 isProfessional:", isProfessional);
-                  setShowProfileModal(true);
+                onClick={async (e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  
+                  setIsLoadingProfile(true);
                   setIsOpen(false);
+                  
+                  try {
+                    // Si no hay perfil en el contexto, intentar cargarlo directamente
+                    let currentProfile = profile;
+                    
+                    if (!currentProfile && user) {
+                      console.log("🔍 Perfil no encontrado en contexto, cargando desde BD...");
+                      const { data: profileData, error: profileError } = await supabase
+                        .from("profiles")
+                        .select("*")
+                        .eq("user_id", user.id)
+                        .single();
+                      
+                      if (profileError) {
+                        console.error("❌ Error al cargar perfil:", profileError);
+                        // Si el perfil no existe, crear uno básico
+                        const { data: newProfile, error: createError } = await supabase
+                          .from("profiles")
+                          .insert({
+                            user_id: user.id,
+                            full_name: user.email?.split("@")[0] || "Usuario",
+                            role: isProfessional ? "profesional" : "client",
+                            email: user.email || "",
+                          })
+                          .select()
+                          .single();
+                        
+                        if (createError) {
+                          console.error("❌ Error al crear perfil:", createError);
+                          alert("No se pudo cargar o crear tu perfil. Por favor, recarga la página.");
+                          setIsLoadingProfile(false);
+                          return;
+                        }
+                        
+                        currentProfile = newProfile;
+                      } else {
+                        currentProfile = profileData;
+                      }
+                    }
+                    
+                    if (!currentProfile) {
+                      console.error("❌ No se pudo obtener el perfil");
+                      alert("No se pudo cargar tu perfil. Por favor, recarga la página.");
+                      setIsLoadingProfile(false);
+                      return;
+                    }
+                    
+                    // Guardar el perfil cargado y abrir el modal
+                    setLoadedProfile(currentProfile);
+                    setTimeout(() => {
+                      setShowProfileModal(true);
+                      setIsLoadingProfile(false);
+                    }, 100);
+                  } catch (error) {
+                    console.error("❌ Error al procesar perfil:", error);
+                    alert("Ocurrió un error. Por favor, recarga la página.");
+                    setIsLoadingProfile(false);
+                  }
                 }}
-                className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors"
+                disabled={isLoadingProfile}
+                className={`flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors ${
+                  isLoadingProfile ? "opacity-50 cursor-not-allowed" : ""
+                }`}
               >
-                <FontAwesomeIcon
-                  icon={faUserEdit}
-                  className="mr-3 text-gray-400 w-4"
-                />
-                Actualizar Mi Perfil
+                {isLoadingProfile ? (
+                  <>
+                    <FontAwesomeIcon
+                      icon={faSpinner}
+                      className="mr-3 text-gray-400 w-4 animate-spin"
+                    />
+                    Cargando...
+                  </>
+                ) : (
+                  <>
+                    <FontAwesomeIcon
+                      icon={faUserEdit}
+                      className="mr-3 text-gray-400 w-4"
+                    />
+                    Actualizar Mi Perfil
+                  </>
+                )}
               </button>
               
               <Link
@@ -246,34 +323,31 @@ export default function UserPanelMenu({
     </div>
 
     {/* Modal de Actualizar Perfil - FUERA del dropdown para evitar desmontaje */}
-    {(() => {
-      console.log("🟢 Renderizando UserPanelMenu:");
-      console.log("   - showProfileModal:", showProfileModal);
-      console.log("   - profile existe:", !!profile);
-      console.log("   - isProfessional:", isProfessional);
+    {showProfileModal && (() => {
+      const currentProfile = loadedProfile || profile;
+      if (!currentProfile) return null;
       
-      if (showProfileModal && profile) {
-        console.log("✅ Renderizando UpdateProfileModal");
-        return (
-          <UpdateProfileModal
-            isOpen={showProfileModal}
-            onClose={() => {
-              console.log("🔴 Cerrando modal");
-              setShowProfileModal(false);
-            }}
-            userRole={isProfessional ? "professional" : "client"}
-            currentProfile={profile}
-            onSuccess={() => {
-              console.log("✅ Perfil actualizado exitosamente");
-              setShowProfileModal(false);
+      return (
+        <UpdateProfileModal
+          isOpen={showProfileModal}
+          onClose={() => {
+            console.log("🔴 Cerrando modal");
+            setShowProfileModal(false);
+            setLoadedProfile(null);
+          }}
+          userRole={isProfessional ? "professional" : "client"}
+          currentProfile={currentProfile}
+          onSuccess={() => {
+            console.log("✅ Perfil actualizado exitosamente");
+            setShowProfileModal(false);
+            setLoadedProfile(null);
+            // Recargar después de un pequeño delay para que el usuario vea el mensaje de éxito
+            setTimeout(() => {
               window.location.reload();
-            }}
-          />
-        );
-      } else {
-        console.log("⚠️ No se renderiza modal:", { showProfileModal, hasProfile: !!profile });
-        return null;
-      }
+            }, 500);
+          }}
+        />
+      );
     })()}
     </>
   );
