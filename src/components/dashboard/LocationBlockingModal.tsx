@@ -13,6 +13,8 @@ import {
 import { supabase } from "@/lib/supabase/client";
 import { geocodeAddress } from "@/lib/geocoding";
 import { Profile } from "@/types/supabase";
+import { getAddressSuggestions, formatAddressSuggestion, AddressSuggestion } from "@/lib/address-autocomplete";
+import { useRef, useEffect, useCallback } from "react";
 
 interface LocationBlockingModalProps {
   isOpen: boolean;
@@ -50,6 +52,155 @@ export default function LocationBlockingModal({
   const [gpsLoading, setGpsLoading] = useState(false);
   const [gpsSuccess, setGpsSuccess] = useState(false);
   const [gpsCoords, setGpsCoords] = useState<{ lat: number; lng: number } | null>(null);
+  
+  // Estados para autocompletado
+  const [addressSuggestions, setAddressSuggestions] = useState<AddressSuggestion[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState(-1);
+  const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
+  const addressInputRef = useRef<HTMLInputElement>(null);
+  const suggestionsRef = useRef<HTMLDivElement>(null);
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Función para buscar sugerencias de direcciones
+  const fetchAddressSuggestions = useCallback(async (query: string) => {
+    if (!query || query.length < 3) {
+      setAddressSuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
+
+    setIsLoadingSuggestions(true);
+    
+    // Limpiar timeout anterior
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+
+    // Debounce: esperar 500ms antes de buscar
+    searchTimeoutRef.current = setTimeout(async () => {
+      try {
+        const suggestions = await getAddressSuggestions(query, 5);
+        setAddressSuggestions(suggestions);
+        setShowSuggestions(suggestions.length > 0);
+        setSelectedSuggestionIndex(-1);
+      } catch (error) {
+        console.error("Error al obtener sugerencias:", error);
+        setAddressSuggestions([]);
+        setShowSuggestions(false);
+      } finally {
+        setIsLoadingSuggestions(false);
+      }
+    }, 500);
+  }, []);
+
+  // Manejar cambio en el input de dirección
+  const handleAddressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setFormData((prev) => ({ ...prev, address: value }));
+    setShowSuggestions(false);
+    setSelectedSuggestionIndex(-1);
+    
+    if (value.length >= 3) {
+      fetchAddressSuggestions(value);
+    } else {
+      setAddressSuggestions([]);
+    }
+  };
+
+  // Manejar selección de sugerencia
+  const handleSelectSuggestion = (suggestion: AddressSuggestion) => {
+    const formatted = formatAddressSuggestion(suggestion);
+    setFormData((prev) => ({ ...prev, address: formatted }));
+    setShowSuggestions(false);
+    setAddressSuggestions([]);
+    setSelectedSuggestionIndex(-1);
+    
+    // Si la sugerencia tiene coordenadas, usarlas
+    if (suggestion.lat && suggestion.lon) {
+      setGpsCoords({
+        lat: parseFloat(suggestion.lat),
+        lng: parseFloat(suggestion.lon),
+      });
+      setUseGPS(true);
+      setGpsSuccess(true);
+    }
+  };
+
+  // Manejar teclado en el input de dirección
+  const handleAddressKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!showSuggestions || addressSuggestions.length === 0) return;
+
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setSelectedSuggestionIndex((prev) =>
+        prev < addressSuggestions.length - 1 ? prev + 1 : prev
+      );
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setSelectedSuggestionIndex((prev) => (prev > 0 ? prev - 1 : -1));
+    } else if (e.key === "Enter" && selectedSuggestionIndex >= 0) {
+      e.preventDefault();
+      handleSelectSuggestion(addressSuggestions[selectedSuggestionIndex]);
+    } else if (e.key === "Escape") {
+      setShowSuggestions(false);
+    }
+  };
+
+  // Cerrar sugerencias al hacer click fuera
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        addressInputRef.current &&
+        !addressInputRef.current.contains(event.target as Node) &&
+        suggestionsRef.current &&
+        !suggestionsRef.current.contains(event.target as Node)
+      ) {
+        setShowSuggestions(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  /**
+   * Llama a la Edge Function reverse-geocode para enriquecer datos geográficos
+   * Se ejecuta de forma asíncrona sin bloquear al usuario
+   */
+  const callReverseGeocode = async (userId: string, lat: number, lng: number) => {
+    try {
+      console.log("🗺️ Llamando a Edge Function reverse-geocode...", { userId, lat, lng });
+      
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        console.warn("⚠️ No hay sesión, no se puede llamar a reverse-geocode");
+        return;
+      }
+
+      // Usar la API de Supabase para invocar la Edge Function (más confiable)
+      const { data, error } = await supabase.functions.invoke("reverse-geocode", {
+        body: {
+          user_id: userId,
+          lat,
+          lng,
+        },
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      console.log("✅ reverse-geocode completado:", data);
+    } catch (error: any) {
+      // No lanzar error, solo loguear (proceso de background)
+      // Este es un proceso no crítico, no debe bloquear al usuario
+      console.error("❌ Error en reverse-geocode (no crítico):", error);
+      // No re-lanzar el error para que no interrumpa el flujo principal
+    }
+  };
 
   const handleUseGPS = async () => {
     if (!navigator.geolocation) {
@@ -166,10 +317,11 @@ export default function LocationBlockingModal({
       // Actualizar perfil en Supabase
       console.log("📤 Actualizando perfil con ubicación...");
       
+      // NOTA: ubicacion_direccion NO existe en la tabla profiles
+      // Solo guardamos las coordenadas y la ciudad
       const updateData: any = {
         ubicacion_lat,
         ubicacion_lng,
-        ubicacion_direccion: ubicacion_direccion || null,
       };
       
       // Intentar incluir 'city' si existe
@@ -185,14 +337,13 @@ export default function LocationBlockingModal({
 
       if (updateError) {
         // Si falla por 'city', reintentar sin ella
-        if (updateError.message?.includes("city")) {
-          console.warn("⚠️ Columna 'city' no existe, reintentando sin ella...");
+        if (updateError.message?.includes("city") || updateError.message?.includes("ubicacion_direccion")) {
+          console.warn("⚠️ Columna no existe, reintentando solo con coordenadas...");
           const { error: retryError } = await supabase
             .from("profiles")
             .update({
               ubicacion_lat,
               ubicacion_lng,
-              ubicacion_direccion: ubicacion_direccion || null,
             })
             .eq("user_id", userProfile.user_id);
           
@@ -206,7 +357,17 @@ export default function LocationBlockingModal({
 
       console.log("✅ Ubicación guardada exitosamente");
       
-      // Callback para refrescar el dashboard
+      // 🆕 Llamar a la Edge Function de geocodificación inversa de forma asíncrona
+      // No bloquea al usuario, se ejecuta en background
+      if (ubicacion_lat && ubicacion_lng) {
+        callReverseGeocode(userProfile.user_id, ubicacion_lat, ubicacion_lng)
+          .catch((err) => {
+            console.error("⚠️ Error al enriquecer datos geográficos (no crítico):", err);
+            // No mostrar error al usuario, es un proceso de background
+          });
+      }
+      
+      // Callback para refrescar el dashboard (no espera a la Edge Function)
       onLocationSaved();
       
     } catch (err: any) {
@@ -315,8 +476,8 @@ export default function LocationBlockingModal({
                     </div>
                   </div>
 
-                  {/* Campo de dirección manual */}
-                  <div>
+                  {/* Campo de dirección manual con autocompletado */}
+                  <div className="relative">
                     <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
                       <FontAwesomeIcon
                         icon={faMapMarkerAlt}
@@ -324,18 +485,74 @@ export default function LocationBlockingModal({
                       />
                       Dirección Completa (Opcional)
                     </label>
-                    <input
-                      type="text"
-                      value={formData.address}
-                      onChange={(e) =>
-                        setFormData((prev) => ({ ...prev, address: e.target.value }))
-                      }
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="Ej: Calle Principal 123, Col. Centro, CDMX"
-                      disabled={loading || gpsSuccess}
-                    />
+                    <div className="relative" ref={addressInputRef}>
+                      <input
+                        type="text"
+                        value={formData.address}
+                        onChange={handleAddressChange}
+                        onKeyDown={handleAddressKeyDown}
+                        onFocus={() => {
+                          if (addressSuggestions.length > 0) {
+                            setShowSuggestions(true);
+                          }
+                        }}
+                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 pr-10"
+                        placeholder="Ej: Calle Principal 123, Col. Centro, CDMX"
+                        disabled={loading || gpsSuccess}
+                        autoComplete="off"
+                      />
+                      {isLoadingSuggestions && (
+                        <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                          <FontAwesomeIcon
+                            icon={faSpinner}
+                            className="animate-spin text-gray-400"
+                          />
+                        </div>
+                      )}
+                      
+                      {/* Dropdown de sugerencias */}
+                      {showSuggestions && addressSuggestions.length > 0 && (
+                        <div
+                          ref={suggestionsRef}
+                          className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto"
+                        >
+                          {addressSuggestions.map((suggestion, index) => (
+                            <button
+                              key={index}
+                              type="button"
+                              onClick={() => handleSelectSuggestion(suggestion)}
+                              className={`w-full text-left px-4 py-3 hover:bg-blue-50 focus:bg-blue-50 focus:outline-none transition-colors ${
+                                index === selectedSuggestionIndex
+                                  ? "bg-blue-50 border-l-4 border-blue-500"
+                                  : "border-l-4 border-transparent"
+                              }`}
+                            >
+                              <div className="flex items-start">
+                                <FontAwesomeIcon
+                                  icon={faMapMarkerAlt}
+                                  className="mr-2 text-blue-600 mt-1 flex-shrink-0"
+                                />
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm text-gray-900 truncate">
+                                    {formatAddressSuggestion(suggestion)}
+                                  </p>
+                                  {suggestion.address?.city && (
+                                    <p className="text-xs text-gray-500 mt-1">
+                                      {suggestion.address.city}
+                                      {suggestion.address.state && `, ${suggestion.address.state}`}
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                     <p className="text-xs text-gray-500 mt-1">
-                      Mientras más específica, mejor será el matching
+                      {formData.address.length > 0 && formData.address.length < 3
+                        ? "Escribe al menos 3 caracteres para ver sugerencias"
+                        : "Mientras más específica, mejor será el matching"}
                     </p>
                   </div>
 
