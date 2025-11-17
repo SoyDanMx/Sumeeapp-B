@@ -60,11 +60,11 @@ export default function LoginForm() {
     setError(null);
     setLoading(true);
 
-    // Timeout de seguridad aumentado para dar más tiempo a la carga de componentes (15 segundos)
+    // Timeout de seguridad aumentado a 25 segundos para conexiones lentas
     const timeoutId = setTimeout(() => {
       setLoading(false);
-      setError('La autenticación está tardando demasiado. Por favor, verifica tu conexión e intenta de nuevo.');
-    }, 15000);
+      setError('La autenticación está tardando demasiado. Por favor, verifica tu conexión e intenta de nuevo. Si el problema persiste, intenta refrescar la página.');
+    }, 25000);
 
     try {
       console.log('🔐 Intentando login...');
@@ -74,6 +74,7 @@ export default function LoginForm() {
         password,
       });
 
+      // Limpiar timeout si el login se completa
       clearTimeout(timeoutId);
 
       if (error) {
@@ -101,6 +102,12 @@ export default function LoginForm() {
       // Si el login es exitoso, obtener el perfil del usuario para redirigir correctamente
       console.log('✅ Login exitoso, obteniendo perfil del usuario...');
       
+      // Nuevo timeout para la obtención del perfil (15 segundos)
+      const profileTimeoutId = setTimeout(() => {
+        console.warn('⚠️ Timeout al obtener perfil, redirigiendo con fallback...');
+        // No lanzar error, solo redirigir con fallback
+      }, 15000);
+      
       try {
         // Obtener el perfil para saber el rol con timeout aumentado
         const profilePromise = supabase
@@ -109,17 +116,23 @@ export default function LoginForm() {
           .eq('user_id', authData.user.id)
           .single()
           .then(({ data, error }) => {
-            if (error) throw error;
+            clearTimeout(profileTimeoutId);
+            if (error) {
+              // Si el perfil no existe, no es crítico, podemos continuar
+              if (error.code === 'PGRST116') {
+                console.warn('⚠️ Perfil no encontrado, continuando sin perfil...');
+                return null;
+              }
+              throw error;
+            }
             return data;
           });
 
-        const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Timeout al obtener perfil')), 8000)
-        );
-
-        const profile = await Promise.race([profilePromise, timeoutPromise]) as any;
+        const profile = await profilePromise;
         
-        console.log('Usuario:', authData.user.email, 'Rol:', profile?.role);
+        clearTimeout(profileTimeoutId);
+        
+        console.log('Usuario:', authData.user.email, 'Rol:', profile?.role || 'sin perfil');
         
         // Verificar si hay un redirect guardado (de sessionStorage o URL)
         const redirectParam = searchParams.get('redirect');
@@ -148,10 +161,21 @@ export default function LoginForm() {
           console.log('🎯 Redirigiendo a professional-dashboard...');
           router.push('/professional-dashboard');
         } else {
+          // Si no hay perfil o es cliente, redirigir al dashboard de cliente
           console.log('🎯 Redirigiendo a client dashboard...');
           router.push('/dashboard/client');
         }
-      } catch (profileError) {
+      } catch (profileError: any) {
+        clearTimeout(profileTimeoutId);
+        
+        // Si el perfil no existe, no es crítico, redirigir al dashboard de cliente
+        if (profileError?.code === 'PGRST116' || profileError?.message?.includes('No rows')) {
+          console.warn('⚠️ Perfil no encontrado, redirigiendo a dashboard de cliente...');
+          await new Promise(resolve => setTimeout(resolve, 500));
+          router.push('/dashboard/client');
+          return;
+        }
+        
         // Fallback: redirigir a /dashboard que usa el RoleRouter
         console.warn('⚠️ Error al obtener perfil, usando RoleRouter...', profileError);
         await new Promise(resolve => setTimeout(resolve, 500));
