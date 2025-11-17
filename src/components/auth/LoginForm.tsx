@@ -102,21 +102,14 @@ export default function LoginForm() {
       // Si el login es exitoso, obtener el perfil del usuario para redirigir correctamente
       console.log('✅ Login exitoso, obteniendo perfil del usuario...');
       
-      // Nuevo timeout para la obtención del perfil (15 segundos)
-      const profileTimeoutId = setTimeout(() => {
-        console.warn('⚠️ Timeout al obtener perfil, redirigiendo con fallback...');
-        // No lanzar error, solo redirigir con fallback
-      }, 15000);
-      
       try {
-        // Obtener el perfil para saber el rol con timeout aumentado
+        // Obtener el perfil para saber el rol con timeout de 10 segundos
         const profilePromise = supabase
           .from('profiles')
           .select('role')
           .eq('user_id', authData.user.id)
           .single()
           .then(({ data, error }) => {
-            clearTimeout(profileTimeoutId);
             if (error) {
               // Si el perfil no existe, no es crítico, podemos continuar
               if (error.code === 'PGRST116') {
@@ -128,9 +121,12 @@ export default function LoginForm() {
             return data;
           });
 
-        const profile = await profilePromise;
-        
-        clearTimeout(profileTimeoutId);
+        // Timeout de 10 segundos para la obtención del perfil
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('TIMEOUT_PROFILE')), 10000)
+        );
+
+        const profile = await Promise.race([profilePromise, timeoutPromise]) as any;
         
         console.log('Usuario:', authData.user.email, 'Rol:', profile?.role || 'sin perfil');
         
@@ -166,11 +162,11 @@ export default function LoginForm() {
           router.push('/dashboard/client');
         }
       } catch (profileError: any) {
-        clearTimeout(profileTimeoutId);
-        
-        // Si el perfil no existe, no es crítico, redirigir al dashboard de cliente
-        if (profileError?.code === 'PGRST116' || profileError?.message?.includes('No rows')) {
-          console.warn('⚠️ Perfil no encontrado, redirigiendo a dashboard de cliente...');
+        // Si el perfil no existe o hay timeout, no es crítico, redirigir al dashboard de cliente
+        if (profileError?.code === 'PGRST116' || 
+            profileError?.message?.includes('No rows') || 
+            profileError?.message === 'TIMEOUT_PROFILE') {
+          console.warn('⚠️ Perfil no encontrado o timeout, redirigiendo a dashboard de cliente...');
           await new Promise(resolve => setTimeout(resolve, 500));
           router.push('/dashboard/client');
           return;
