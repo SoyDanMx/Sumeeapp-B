@@ -12,6 +12,7 @@ import {
   faTimes,
   faBriefcase,
   faCamera,
+  faExclamationTriangle,
 } from "@fortawesome/free-solid-svg-icons";
 import { faWhatsapp } from "@fortawesome/free-brands-svg-icons";
 import { supabase } from "@/lib/supabase/client";
@@ -242,51 +243,76 @@ export default function UpdateProfileModal({
 
       console.log("📤 Actualizando perfil...", updateData);
 
-      // Actualizar en profiles
-      const { error: updateError } = await supabase
+      // Remover updated_at si puede causar problemas (algunos esquemas no lo tienen)
+      const { updated_at, ...updateDataWithoutTimestamp } = updateData;
+      
+      // Actualizar en profiles con verificación
+      let updateResult = await supabase
         .from("profiles")
-        .update(updateData)
-        .eq("user_id", currentProfile.user_id);
+        .update(updateDataWithoutTimestamp)
+        .eq("user_id", currentProfile.user_id)
+        .select(); // CRÍTICO: Verificar que se actualizó
 
-      if (updateError) {
-        // Si falla por city, reintentar sin city
-        if (updateError.message?.includes("city")) {
+      // Si falla por city, reintentar sin city
+      if (updateResult.error) {
+        if (updateResult.error.message?.includes("city") || updateResult.error.message?.includes("column") && updateResult.error.message?.includes("city")) {
           console.warn("⚠️ Reintentando sin columna city...");
-          delete updateData.city;
-          const { error: retryError } = await supabase
+          const { city, ...updateDataWithoutCity } = updateDataWithoutTimestamp;
+          updateResult = await supabase
             .from("profiles")
-            .update(updateData)
-            .eq("user_id", currentProfile.user_id);
-
-          if (retryError) throw retryError;
-        } else {
-          throw updateError;
+            .update(updateDataWithoutCity)
+            .eq("user_id", currentProfile.user_id)
+            .select();
+        }
+        
+        if (updateResult.error) {
+          console.error("❌ Error de Supabase:", updateResult.error);
+          throw new Error(updateResult.error.message || "Error al actualizar el perfil en la base de datos");
         }
       }
 
-      // Actualizar metadata de auth
-      await supabase.auth.updateUser({
-        data: {
-          full_name: formData.full_name,
-          whatsapp: formData.whatsapp,
-          city: finalCity,
-          ubicacion_lat,
-          ubicacion_lng,
-          ...(userRole === "professional" && {
-            bio: formData.bio,
-            profession: formData.profession,
-          }),
-        },
-      });
+      // Verificar que realmente se actualizó
+      if (!updateResult.data || updateResult.data.length === 0) {
+        console.error("❌ No se actualizó ningún registro");
+        throw new Error("No se pudo actualizar el perfil. Verifica que tengas permisos para editar tu perfil.");
+      }
+
+      console.log("✅ Perfil actualizado en BD:", updateResult.data[0]);
+
+      // Actualizar metadata de auth (opcional, no crítico)
+      try {
+        await supabase.auth.updateUser({
+          data: {
+            full_name: formData.full_name,
+            whatsapp: formData.whatsapp,
+            city: finalCity,
+            ubicacion_lat,
+            ubicacion_lng,
+            ...(userRole === "professional" && {
+              bio: formData.bio,
+              profession: formData.profession,
+            }),
+          },
+        });
+        console.log("✅ Metadata de auth actualizada");
+      } catch (authError: any) {
+        console.warn("⚠️ Error actualizando auth metadata (no crítico):", authError);
+        // No lanzar error, la actualización en profiles ya fue exitosa
+      }
 
       console.log("✅ Perfil actualizado exitosamente");
       setSuccess(true);
+      setError(null); // Limpiar cualquier error previo
 
-      // Esperar 1 segundo y cerrar
+      // Mostrar mensaje de éxito por 1.5 segundos antes de cerrar
       setTimeout(() => {
+        // Llamar onSuccess primero para refrescar datos
         onSuccess();
-        onClose();
-      }, 1000);
+        // Cerrar después de un pequeño delay para que el usuario vea el mensaje
+        setTimeout(() => {
+          onClose();
+        }, 300);
+      }, 1500);
     } catch (err: any) {
       console.error("❌ Error actualizando perfil:", err);
       setError(err.message || "Error al actualizar el perfil");
@@ -369,16 +395,32 @@ export default function UpdateProfileModal({
 
                 {/* Content */}
                 <div className="px-6 py-4 max-h-[70vh] overflow-y-auto">
-                  {error && (
-                    <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
-                      {error}
+                  {/* Mensaje de éxito */}
+                  {success && (
+                    <div className="mb-4 p-4 bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-400 rounded-lg text-sm text-green-800 flex items-center shadow-lg">
+                      <FontAwesomeIcon icon={faCheckCircle} className="mr-3 text-green-600 text-xl flex-shrink-0" />
+                      <div>
+                        <strong className="text-base">¡Perfil actualizado exitosamente! ✅</strong>
+                        <p className="text-xs text-green-600 mt-1">Los cambios se han guardado correctamente en la base de datos.</p>
+                      </div>
                     </div>
                   )}
 
-                  {success && (
-                    <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg text-sm text-green-700 flex items-center">
-                      <FontAwesomeIcon icon={faCheckCircle} className="mr-2" />
-                      ¡Perfil actualizado exitosamente!
+                  {/* Mensaje de error */}
+                  {error && !success && (
+                    <div className="mb-4 p-4 bg-red-50 border-2 border-red-400 rounded-lg text-sm text-red-800 flex items-start shadow-lg">
+                      <FontAwesomeIcon icon={faExclamationTriangle} className="mr-3 text-red-600 text-xl mt-0.5 flex-shrink-0" />
+                      <div className="flex-1">
+                        <strong className="text-base block mb-1">Error al guardar cambios:</strong>
+                        <p className="text-sm text-red-700 mb-2">{error}</p>
+                        <button
+                          type="button"
+                          onClick={() => setError(null)}
+                          className="text-xs text-red-600 hover:text-red-800 underline font-medium"
+                        >
+                          Cerrar mensaje
+                        </button>
+                      </div>
                     </div>
                   )}
 
@@ -752,4 +794,5 @@ export default function UpdateProfileModal({
     </Transition>
   );
 }
+
 

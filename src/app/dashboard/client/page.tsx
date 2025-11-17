@@ -31,6 +31,8 @@ import {
   faTimes,
 } from "@fortawesome/free-solid-svg-icons";
 import { faWhatsapp } from "@fortawesome/free-brands-svg-icons";
+import { useAgreementSubscription } from "@/hooks/useAgreementSubscription";
+import AgreementNotificationBanner from "@/components/client/AgreementNotificationBanner";
 
 export default function ClientDashboardPage() {
   const { user, isLoading: userLoading, isAuthenticated } = useAuth();
@@ -44,6 +46,7 @@ export default function ClientDashboardPage() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [agreementConfirmedLead, setAgreementConfirmedLead] = useState<Lead | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isAIAssistantOpen, setIsAIAssistantOpen] = useState(false);
   const [selectedService, setSelectedService] = useState<string | null>(null);
@@ -112,6 +115,18 @@ export default function ClientDashboardPage() {
 
     fetchLeads();
   }, [user, userLoading]);
+
+  // Suscripción Realtime para cambios en negotiation_status
+  useAgreementSubscription({
+    clientId: user?.id || "",
+    onAgreementConfirmed: (lead: Lead) => {
+      console.log("✅ Acuerdo confirmado recibido:", lead);
+      setAgreementConfirmedLead(lead);
+      // Refrescar leads para mostrar el estado actualizado
+      refreshLeads();
+    },
+    enabled: !!user && !userLoading,
+  });
 
   // 🆕 VERIFICAR SI NECESITA ONBOARDING
   useEffect(() => {
@@ -589,6 +604,21 @@ export default function ClientDashboardPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 pt-[calc(var(--header-offset,72px)+2rem)]">
+      {/* Banner de notificación de acuerdo confirmado */}
+      {agreementConfirmedLead && (
+        <div className="container mx-auto px-4 py-4 max-w-7xl">
+          <AgreementNotificationBanner
+            lead={agreementConfirmedLead}
+            onDismiss={() => setAgreementConfirmedLead(null)}
+            onViewDetails={() => {
+              setLeadDetails(agreementConfirmedLead);
+              setIsDetailsOpen(true);
+              setAgreementConfirmedLead(null);
+            }}
+          />
+        </div>
+      )}
+
       {/* 🚫 BLOQUEO DE DASHBOARD SI NO HAY UBICACIÓN */}
       {!hasLocation && userProfile && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[9998] flex items-center justify-center">

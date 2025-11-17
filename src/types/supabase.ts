@@ -183,6 +183,15 @@ export interface Lead {
   disciplina_ia?: string | null;
   urgencia_ia?: number | null;
   diagnostico_ia?: string | null;
+  // Campos de confirmación de acuerdo final
+  agreed_price?: number | null;
+  agreed_scope?: string | null;
+  negotiation_status?: 'asignado' | 'acuerdo_confirmado' | 'cancelado_pro' | 'cancelado_cliente' | 'rechazado_cliente' | null;
+  agreed_at?: string | null;
+  agreed_by?: string | null;
+  // Campos de control de precios (sugerencia por IA)
+  ai_suggested_price_min?: number | null;
+  ai_suggested_price_max?: number | null;
   // Propiedad para datos del profesional asignado (obtenida via JOIN)
   profiles?: Partial<Profile> | null;
   profesional_asignado?: Partial<Profile> | null;
