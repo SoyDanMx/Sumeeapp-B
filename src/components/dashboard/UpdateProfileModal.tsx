@@ -159,6 +159,42 @@ export default function UpdateProfileModal({
     validateWhatsapp(value);
   };
 
+  /**
+   * Llama a la Edge Function reverse-geocode para enriquecer datos geográficos
+   * Se ejecuta de forma asíncrona sin bloquear al usuario
+   */
+  const callReverseGeocode = async (userId: string, lat: number, lng: number) => {
+    try {
+      console.log("🗺️ Llamando a Edge Function reverse-geocode...", { userId, lat, lng });
+      
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        console.warn("⚠️ No hay sesión, no se puede llamar a reverse-geocode");
+        return;
+      }
+
+      // Usar la API de Supabase para invocar la Edge Function (más confiable)
+      const { data, error } = await supabase.functions.invoke("reverse-geocode", {
+        body: {
+          user_id: userId,
+          lat,
+          lng,
+        },
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      console.log("✅ reverse-geocode completado:", data);
+    } catch (error: any) {
+      // No lanzar error, solo loguear (proceso de background)
+      // Este es un proceso no crítico, no debe bloquear al usuario
+      console.error("❌ Error en reverse-geocode (no crítico):", error);
+      // No re-lanzar el error para que no interrumpa el flujo principal
+    }
+  };
+
   const handleUseGPS = async () => {
     if (!navigator.geolocation) {
       setError("La geolocalización no está disponible en tu navegador");
@@ -337,6 +373,17 @@ export default function UpdateProfileModal({
       }
 
       console.log("✅ Perfil actualizado exitosamente");
+      
+      // 🆕 Llamar a la Edge Function de geocodificación inversa de forma asíncrona
+      // Solo si se actualizaron las coordenadas
+      if ((ubicacion_lat !== currentProfile.ubicacion_lat || ubicacion_lng !== currentProfile.ubicacion_lng) && ubicacion_lat && ubicacion_lng) {
+        callReverseGeocode(currentProfile.user_id, ubicacion_lat, ubicacion_lng)
+          .catch((err) => {
+            console.error("⚠️ Error al enriquecer datos geográficos (no crítico):", err);
+            // No mostrar error al usuario, es un proceso de background
+          });
+      }
+      
       setSuccess(true);
       setError(null); // Limpiar cualquier error previo
 

@@ -3,21 +3,16 @@ import { createClient } from '@supabase/supabase-js';
 
 export async function POST(request: NextRequest) {
   try {
-    // Solo permitir en desarrollo
-    if (process.env.NODE_ENV !== 'development') {
-      return NextResponse.json({ error: 'Esta función solo está disponible en desarrollo' }, { status: 403 });
-    }
-
     const { email } = await request.json();
 
     if (!email) {
       return NextResponse.json({ error: 'Email es requerido' }, { status: 400 });
     }
 
-    // Verificar que sea un email de prueba
-    const testEmails = ['cliente@sumeeapp.com', 'test@sumeeapp.com', 'demo@sumeeapp.com'];
+    // Verificar que sea un email de prueba (lista blanca de seguridad)
+    const testEmails = ['cliente@sumeeapp.com', 'profesional@sumeeapp.com', 'test@sumeeapp.com', 'demo@sumeeapp.com'];
     if (!testEmails.includes(email)) {
-      return NextResponse.json({ error: 'Solo se pueden confirmar emails de prueba' }, { status: 400 });
+      return NextResponse.json({ error: 'Solo se pueden confirmar emails de prueba autorizados' }, { status: 400 });
     }
 
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;

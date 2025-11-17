@@ -123,6 +123,8 @@ export interface Profile {
   requests_used?: number | null;
   last_free_request_date?: string | null;
   city?: string | null;
+  sub_city_zone?: string | null; // Delegación, alcaldía o zona específica (ej: Coyoacán, Benito Juárez)
+  postal_code?: string | null; // Código postal del usuario
   onboarding_status?:
     | "approved"
     | "pending_review"

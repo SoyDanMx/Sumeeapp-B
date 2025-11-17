@@ -86,6 +86,42 @@ export default function ClientOnboardingModal({
     validateWhatsapp(value);
   };
 
+  /**
+   * Llama a la Edge Function reverse-geocode para enriquecer datos geográficos
+   * Se ejecuta de forma asíncrona sin bloquear al usuario
+   */
+  const callReverseGeocode = async (userId: string, lat: number, lng: number) => {
+    try {
+      console.log("🗺️ Llamando a Edge Function reverse-geocode...", { userId, lat, lng });
+      
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        console.warn("⚠️ No hay sesión, no se puede llamar a reverse-geocode");
+        return;
+      }
+
+      // Usar la API de Supabase para invocar la Edge Function (más confiable)
+      const { data, error } = await supabase.functions.invoke("reverse-geocode", {
+        body: {
+          user_id: userId,
+          lat,
+          lng,
+        },
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      console.log("✅ reverse-geocode completado:", data);
+    } catch (error: any) {
+      // No lanzar error, solo loguear (proceso de background)
+      // Este es un proceso no crítico, no debe bloquear al usuario
+      console.error("❌ Error en reverse-geocode (no crítico):", error);
+      // No re-lanzar el error para que no interrumpa el flujo principal
+    }
+  };
+
   const handleUseGPS = async () => {
     if (!navigator.geolocation) {
       setError("La geolocalización no está disponible en tu navegador");
@@ -248,7 +284,17 @@ export default function ClientOnboardingModal({
 
       console.log("✅ Perfil actualizado exitosamente");
       
-      // Callback para refrescar el dashboard
+      // 🆕 Llamar a la Edge Function de geocodificación inversa de forma asíncrona
+      // No bloquea al usuario, se ejecuta en background
+      if (ubicacion_lat && ubicacion_lng) {
+        callReverseGeocode(userProfile.user_id, ubicacion_lat, ubicacion_lng)
+          .catch((err) => {
+            console.error("⚠️ Error al enriquecer datos geográficos (no crítico):", err);
+            // No mostrar error al usuario, es un proceso de background
+          });
+      }
+      
+      // Callback para refrescar el dashboard (no espera a la Edge Function)
       onComplete();
       
     } catch (err: any) {
