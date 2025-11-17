@@ -5,6 +5,7 @@ import React, { useState, useMemo, useEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faCheck,
+  faCheckCircle,
   faSpinner,
   faUser,
   faQuestion,
@@ -28,6 +29,8 @@ import {
   openWhatsAppLink,
 } from "@/lib/supabase/credential-sender";
 import { useCountdown } from "@/hooks/useCountdown";
+import ConfirmAgreementModal from "@/components/dashboard/ConfirmAgreementModal";
+import { useAuth } from "@/context/AuthContext";
 
 interface LeadCardProps {
     lead: Lead;
@@ -69,6 +72,8 @@ export default function LeadCard({
   const [appointmentNotes, setAppointmentNotes] = useState<string>(
     lead.appointment_notes ?? ""
   );
+  const [showAgreementModal, setShowAgreementModal] = useState(false);
+  const { user } = useAuth();
 
   useEffect(() => {
     setLeadState(lead);
@@ -567,6 +572,61 @@ export default function LeadCard({
       {accepted && (
         <div className="space-y-4 mt-4">
           {renderContactBanner()}
+          
+          {/* Botón de Confirmar Acuerdo Final */}
+          {user?.id === leadInfo.profesional_asignado_id && 
+           (leadInfo.negotiation_status === null || 
+            leadInfo.negotiation_status === 'asignado') && (
+            <div className="rounded-xl border-2 border-purple-300 bg-gradient-to-r from-purple-50 to-indigo-50 p-4">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <FontAwesomeIcon icon={faCheckCircle} className="text-purple-600" />
+                  <p className="font-semibold text-purple-900">
+                    Confirmar Acuerdo Final
+                  </p>
+                </div>
+              </div>
+              <p className="text-sm text-purple-700 mb-3">
+                Captura el precio y alcance del trabajo acordado con el cliente.
+              </p>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowAgreementModal(true);
+                }}
+                className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white py-2 px-4 rounded-lg font-semibold hover:from-purple-700 hover:to-indigo-700 transition-all flex items-center justify-center gap-2"
+              >
+                <FontAwesomeIcon icon={faCheckCircle} />
+                Confirmar Acuerdo Final
+              </button>
+            </div>
+          )}
+
+          {/* Badge de Acuerdo Confirmado */}
+          {leadInfo.negotiation_status === 'acuerdo_confirmado' && (
+            <div className="rounded-xl border-2 border-green-300 bg-green-50 p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <FontAwesomeIcon icon={faCheckCircle} className="text-green-600" />
+                <p className="font-semibold text-green-900">
+                  Acuerdo Confirmado
+                </p>
+              </div>
+              {leadInfo.agreed_price && (
+                <p className="text-sm text-green-700">
+                  <strong>Precio acordado:</strong> ${leadInfo.agreed_price.toLocaleString("es-MX", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} MXN
+                </p>
+              )}
+              {leadInfo.agreed_at && (
+                <p className="text-xs text-green-600 mt-1">
+                  Confirmado el {new Date(leadInfo.agreed_at).toLocaleString("es-MX", {
+                    dateStyle: "medium",
+                    timeStyle: "short",
+                  })}
+                </p>
+              )}
+            </div>
+          )}
+
           {renderAppointmentSection()}
           {renderCompletionSection()}
           <div className="grid grid-cols-3 gap-2 md:gap-2">
@@ -918,7 +978,30 @@ export default function LeadCard({
             </div>
           </div>
         </div>
-            )}
-        </div>
-    );
+      )}
+
+      {/* Modal de Confirmar Acuerdo Final */}
+      <ConfirmAgreementModal
+        isOpen={showAgreementModal}
+        onClose={() => setShowAgreementModal(false)}
+        lead={leadInfo}
+        onSuccess={() => {
+          // Refrescar el lead después de confirmar
+          if (onLeadUpdated) {
+            // Recargar el lead desde la BD
+            supabase
+              .from("leads")
+              .select("*")
+              .eq("id", leadInfo.id)
+              .single()
+              .then(({ data, error }) => {
+                if (!error && data) {
+                  emitLeadUpdate(data as Lead);
+                }
+              });
+          }
+        }}
+      />
+    </div>
+  );
 }

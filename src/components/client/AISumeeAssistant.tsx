@@ -44,6 +44,9 @@ interface AIClassification {
   urgencia?: string;
   diagnostico?: string;
   descripcion_final?: string;
+  precio_estimado_min?: number | null;
+  precio_estimado_max?: number | null;
+  justificacion_precio?: string | null;
 }
 
 interface DisciplineOption {
@@ -491,12 +494,28 @@ export default function AISumeeAssistant({
     imageUrl?: string
   ): Promise<AIClassification> => {
     try {
+      // Obtener ciudad del perfil para contexto de precio
+      let userCity = null;
+      if (user) {
+        try {
+          const { data: profileData } = await supabase
+            .from("profiles")
+            .select("city")
+            .eq("user_id", user.id)
+            .single();
+          userCity = profileData?.city || null;
+        } catch (e) {
+          // Ignorar error, continuar sin ciudad
+        }
+      }
+
       const { data, error } = await supabase.functions.invoke("classify-service", {
         body: {
           description,
           image_url: imageUrl || null,
           discipline: selectedDiscipline?.id || null, // Enviar disciplina seleccionada
           role: selectedDiscipline?.role || null, // Enviar rol del asistente
+          city: userCity, // Enviar ciudad para contexto de precio
         },
       });
 
@@ -964,6 +983,10 @@ export default function AISumeeAssistant({
       const userPlan = profile?.plan || profileData?.plan || (profile?.membership_status === 'premium' || profileData?.membership_status === 'premium' ? 'pro_annual' : 'express_free');
       const priorityBoost = userPlan === 'pro_annual';
 
+      // Obtener precios sugeridos por IA (si están disponibles)
+      const precioMin = classification.precio_estimado_min || null;
+      const precioMax = classification.precio_estimado_max || null;
+
       const leadData = {
         nombre_cliente_in: profileData?.full_name || profile?.full_name || user.user_metadata?.full_name || user.email?.split("@")[0] || "Cliente",
         whatsapp_in: whatsappFinal, // Usar WhatsApp capturado en el formulario
@@ -979,6 +1002,8 @@ export default function AISumeeAssistant({
         urgencia_ia_in: urgenciaValue, // Este es el que realmente se guarda en la BD
         diagnostico_ia_in: classification.diagnostico || `Servicio de ${disciplinaFinal}`,
         priority_boost_in: priorityBoost, // TRUE si el usuario tiene plan PRO
+        ai_suggested_price_min_in: precioMin ? Number(precioMin) : null, // Precio mínimo sugerido por IA
+        ai_suggested_price_max_in: precioMax ? Number(precioMax) : null, // Precio máximo sugerido por IA
       };
 
       console.log("📤 Enviando lead con datos:", leadData);
