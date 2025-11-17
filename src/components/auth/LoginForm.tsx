@@ -60,22 +60,28 @@ export default function LoginForm() {
     setError(null);
     setLoading(true);
 
-    // Timeout de seguridad aumentado a 25 segundos para conexiones lentas
-    const timeoutId = setTimeout(() => {
-      setLoading(false);
-      setError('La autenticación está tardando demasiado. Por favor, verifica tu conexión e intenta de nuevo. Si el problema persiste, intenta refrescar la página.');
-    }, 25000);
+    // Timeout de seguridad de 20 segundos solo para signInWithPassword
+    let timeoutId: NodeJS.Timeout | null = null;
+    let loginCompleted = false;
 
     try {
       console.log('🔐 Intentando login...');
+      
+      // Timeout solo para la llamada de autenticación
+      timeoutId = setTimeout(() => {
+        if (!loginCompleted) {
+          setLoading(false);
+          setError('La autenticación está tardando demasiado. Por favor, verifica tu conexión e intenta de nuevo.');
+        }
+      }, 20000);
       
       const { data: authData, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
-      // Limpiar timeout si el login se completa
-      clearTimeout(timeoutId);
+      loginCompleted = true;
+      if (timeoutId) clearTimeout(timeoutId);
 
       if (error) {
         // Manejar específicamente el error de email no confirmado
@@ -99,87 +105,48 @@ export default function LoginForm() {
         throw new Error('No se pudo autenticar al usuario');
       }
 
-      // Si el login es exitoso, obtener el perfil del usuario para redirigir correctamente
-      console.log('✅ Login exitoso, obteniendo perfil del usuario...');
+      console.log('✅ Login exitoso, redirigiendo...');
       
-      try {
-        // Obtener el perfil para saber el rol con timeout de 10 segundos
-        const profilePromise = supabase
-          .from('profiles')
-          .select('role')
-          .eq('user_id', authData.user.id)
-          .single()
-          .then(({ data, error }) => {
-            if (error) {
-              // Si el perfil no existe, no es crítico, podemos continuar
-              if (error.code === 'PGRST116') {
-                console.warn('⚠️ Perfil no encontrado, continuando sin perfil...');
-                return null;
-              }
-              throw error;
-            }
-            return data;
-          });
-
-        // Timeout de 10 segundos para la obtención del perfil
-        const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('TIMEOUT_PROFILE')), 10000)
-        );
-
-        const profile = await Promise.race([profilePromise, timeoutPromise]) as any;
-        
-        console.log('Usuario:', authData.user.email, 'Rol:', profile?.role || 'sin perfil');
-        
-        // Verificar si hay un redirect guardado (de sessionStorage o URL)
-        const redirectParam = searchParams.get('redirect');
-        const redirectFromStorage = typeof window !== 'undefined' 
-          ? sessionStorage.getItem('redirectAfterLogin') 
-          : null;
-        const redirectTo = redirectParam || redirectFromStorage;
-        
-        // Limpiar sessionStorage si existe
-        if (redirectFromStorage && typeof window !== 'undefined') {
-          sessionStorage.removeItem('redirectAfterLogin');
-        }
-        
-        // Esperar un momento antes de redirigir (fix para móviles y carga de componentes)
-        await new Promise(resolve => setTimeout(resolve, 500));
-        
-        // Si hay un redirect específico, usarlo (solo para clientes)
-        if (redirectTo && profile?.role === 'client') {
-          console.log('🎯 Redirigiendo a:', redirectTo);
-          router.push(redirectTo);
-          return;
-        }
-        
-        // Redirigir basado en el rol (comportamiento por defecto)
-        if (profile?.role === 'profesional') {
-          console.log('🎯 Redirigiendo a professional-dashboard...');
-          router.push('/professional-dashboard');
-        } else {
-          // Si no hay perfil o es cliente, redirigir al dashboard de cliente
-          console.log('🎯 Redirigiendo a client dashboard...');
-          router.push('/dashboard/client');
-        }
-      } catch (profileError: any) {
-        // Si el perfil no existe o hay timeout, no es crítico, redirigir al dashboard de cliente
-        if (profileError?.code === 'PGRST116' || 
-            profileError?.message?.includes('No rows') || 
-            profileError?.message === 'TIMEOUT_PROFILE') {
-          console.warn('⚠️ Perfil no encontrado o timeout, redirigiendo a dashboard de cliente...');
-          await new Promise(resolve => setTimeout(resolve, 500));
-          router.push('/dashboard/client');
-          return;
-        }
-        
-        // Fallback: redirigir a /dashboard que usa el RoleRouter
-        console.warn('⚠️ Error al obtener perfil, usando RoleRouter...', profileError);
-        await new Promise(resolve => setTimeout(resolve, 500));
+      // Obtener perfil de forma no bloqueante (opcional)
+      // No esperamos a que termine, solo intentamos obtenerlo en background
+      supabase
+        .from('profiles')
+        .select('role')
+        .eq('user_id', authData.user.id)
+        .single()
+        .then(({ data: profile }) => {
+          console.log('Usuario:', authData.user.email, 'Rol:', profile?.role || 'sin perfil');
+        })
+        .catch((err) => {
+          console.warn('⚠️ No se pudo obtener perfil (no crítico):', err);
+        });
+      
+      // Verificar si hay un redirect guardado (de sessionStorage o URL)
+      const redirectParam = searchParams.get('redirect');
+      const redirectFromStorage = typeof window !== 'undefined' 
+        ? sessionStorage.getItem('redirectAfterLogin') 
+        : null;
+      const redirectTo = redirectParam || redirectFromStorage;
+      
+      // Limpiar sessionStorage si existe
+      if (redirectFromStorage && typeof window !== 'undefined') {
+        sessionStorage.removeItem('redirectAfterLogin');
+      }
+      
+      // Redirigir inmediatamente sin esperar el perfil
+      // El dashboard determinará el rol automáticamente
+      if (redirectTo) {
+        console.log('🎯 Redirigiendo a:', redirectTo);
+        router.push(redirectTo);
+      } else {
+        // Redirigir a /dashboard que maneja el routing automáticamente
+        console.log('🎯 Redirigiendo a dashboard...');
         router.push('/dashboard');
       }
 
     } catch (error: any) {
-      clearTimeout(timeoutId);
+      if (timeoutId) clearTimeout(timeoutId);
+      loginCompleted = true;
       
       if (error.message === 'EMAIL_NOT_CONFIRMED') {
         setError('Tu correo electrónico no ha sido confirmado. Haz clic en "Reenviar confirmación" para recibir el enlace de activación.');
