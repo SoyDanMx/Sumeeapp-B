@@ -54,6 +54,7 @@
     "jsdom": "^27.1.0",
     "tailwindcss": "^4",
     "typescript": "^5",
+    "vercel": "^48.10.2",
     "vitest": "^4.0.7"
   }
 }

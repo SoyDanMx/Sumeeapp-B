@@ -25,6 +25,7 @@ import {
   faKey,
   faCubes,
 } from "@fortawesome/free-solid-svg-icons";
+import { faWhatsapp } from "@fortawesome/free-brands-svg-icons";
 import { supabase } from "@/lib/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { useMembership } from "@/context/MembershipContext";
@@ -204,6 +205,9 @@ export default function AISumeeAssistant({
   const [isGeocoding, setIsGeocoding] = useState(false);
   const [isGettingLocation, setIsGettingLocation] = useState(false);
   const [clientWhatsApp, setClientWhatsApp] = useState<string>("");
+  const [needsContactInfo, setNeedsContactInfo] = useState(false);
+  const [contactInfoError, setContactInfoError] = useState<string | null>(null);
+  const [isUpdatingContact, setIsUpdatingContact] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -292,6 +296,26 @@ export default function AISumeeAssistant({
     }
   }, [selectedDiscipline]);
 
+  // 🆕 Verificar contacto al abrir el asistente (Fase 2)
+  useEffect(() => {
+    if (isOpen && user && profile) {
+      const hasContact = profile.whatsapp || profile.phone;
+      if (!hasContact) {
+        console.log('📞 Cliente necesita WhatsApp/Teléfono - Activando gating');
+        setNeedsContactInfo(true);
+        // Prefill con WhatsApp del perfil si existe
+        if (profile.whatsapp) {
+          setClientWhatsApp(profile.whatsapp);
+        } else if (profile.phone) {
+          setClientWhatsApp(profile.phone);
+        }
+      } else {
+        setNeedsContactInfo(false);
+        setClientWhatsApp(profile.whatsapp || profile.phone || "");
+      }
+    }
+  }, [isOpen, user, profile]);
+
   // Limpiar estado al cerrar
   useEffect(() => {
     if (!isOpen) {
@@ -308,6 +332,8 @@ export default function AISumeeAssistant({
       setIsGeocoding(false);
       setIsGettingLocation(false);
       setClientWhatsApp("");
+      setNeedsContactInfo(false);
+      setContactInfoError(null);
     }
   }, [isOpen]);
 
@@ -815,16 +841,50 @@ export default function AISumeeAssistant({
       return;
     }
 
-    // Validar que haya WhatsApp del cliente
-    if (!clientWhatsApp.trim()) {
+    // 🆕 FASE 2: Validar y actualizar contacto (Gating de WhatsApp/Teléfono)
+    const cleanedWhatsApp = clientWhatsApp.replace(/\D/g, "");
+    if (!cleanedWhatsApp || cleanedWhatsApp.length < 10) {
+      setContactInfoError("El número de contacto es obligatorio y debe tener al menos 10 dígitos");
       const errorMessage: Message = {
         id: Date.now().toString(),
         role: "assistant",
-        content: "⚠️ Por favor, ingresa tu número de WhatsApp para que los profesionales puedan contactarte.",
+        content: "⚠️ Por favor, ingresa tu número de WhatsApp o Teléfono (mínimo 10 dígitos) para que los profesionales puedan contactarte.",
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, errorMessage]);
       return;
+    }
+
+    // Actualizar perfil con el contacto antes de enviar
+    if (needsContactInfo && user) {
+      setIsUpdatingContact(true);
+      try {
+        const { error: updateError } = await supabase
+          .from("profiles")
+          .update({
+            whatsapp: cleanedWhatsApp,
+            phone: cleanedWhatsApp, // También actualizar phone como fallback
+          })
+          .eq("user_id", user.id);
+
+        if (updateError) {
+          console.error("Error actualizando contacto:", updateError);
+          setContactInfoError("Error al guardar tu número. Por favor, intenta de nuevo.");
+          setIsUpdatingContact(false);
+          return;
+        }
+
+        console.log("✅ Contacto actualizado en perfil");
+        setNeedsContactInfo(false);
+        setContactInfoError(null);
+      } catch (err: any) {
+        console.error("Error actualizando contacto:", err);
+        setContactInfoError(err.message || "Error al guardar tu número");
+        setIsUpdatingContact(false);
+        return;
+      } finally {
+        setIsUpdatingContact(false);
+      }
     }
 
     // Si hay texto pero no coordenadas, intentar geocodificar (pero no bloquear si falla)
@@ -896,8 +956,8 @@ export default function AISumeeAssistant({
       // Preparar datos para crear el lead según la firma de la función actualizada
       // Orden según la firma: nombre_cliente_in, whatsapp_in, descripcion_proyecto_in, ubicacion_lat_in, ubicacion_lng_in, servicio_in, urgencia_in, ubicacion_direccion_in, imagen_url_in, photos_urls_in, disciplina_ia_in, urgencia_ia_in, diagnostico_ia_in
       const urgenciaValue = classification.urgencia || "5";
-      // Usar WhatsApp del cliente capturado en el formulario, o del perfil como fallback
-      const whatsappFinal = clientWhatsApp.trim() || profileData?.whatsapp || profileData?.phone || profile?.whatsapp || profile?.phone || user.user_metadata?.phone || "";
+      // Usar WhatsApp del cliente capturado en el formulario (ya limpiado arriba), o del perfil como fallback
+      const whatsappFinal = cleanedWhatsApp || profileData?.whatsapp || profileData?.phone || profile?.whatsapp || profile?.phone || user.user_metadata?.phone || "";
       
       // Determinar priority_boost: TRUE si el usuario tiene plan PRO
       // Usar profile del contexto (MembershipContext) que ya tiene plan, o profileData de la query
@@ -1243,25 +1303,65 @@ export default function AISumeeAssistant({
                   )}
                 </div>
 
-                {/* Campo de WhatsApp */}
+                {/* 🆕 Campo de Contacto (Fase 2: Gating de WhatsApp/Teléfono) */}
                 <div className="space-y-2">
+                  <label className="flex items-center text-sm font-semibold text-gray-700">
+                    <FontAwesomeIcon icon={faWhatsapp} className="mr-2 text-green-600" />
+                    Tu Número de Contacto {needsContactInfo && <span className="text-red-500 ml-1">*</span>}
+                    {needsContactInfo && (
+                      <span className="ml-2 text-xs text-orange-600 font-normal">
+                        (Preferimos WhatsApp)
+                      </span>
+                    )}
+                  </label>
                   <input
                     type="tel"
                     value={clientWhatsApp}
                     onChange={(e) => {
                       const value = e.target.value.replace(/[^\d\s-+]/g, "");
                       setClientWhatsApp(value);
+                      setContactInfoError(null); // Limpiar error al escribir
                     }}
-                    placeholder="WhatsApp (ej: 55 1234 5678)"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-400 transition-all text-sm"
-                    disabled={isSubmitting}
-                    required
+                    placeholder={needsContactInfo ? "5512345678 (10 dígitos) - OBLIGATORIO" : "5512345678 (10 dígitos)"}
+                    className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 transition-all text-sm ${
+                      needsContactInfo
+                        ? contactInfoError
+                          ? "border-red-500 focus:ring-red-500 bg-red-50"
+                          : "border-orange-400 focus:ring-orange-500 bg-orange-50"
+                        : "border-gray-300 focus:ring-gray-400"
+                    }`}
+                    disabled={isSubmitting || isUpdatingContact}
+                    required={needsContactInfo}
                   />
+                  {contactInfoError && (
+                    <p className="text-xs text-red-600 flex items-center gap-1">
+                      <FontAwesomeIcon icon={faExclamationTriangle} />
+                      {contactInfoError}
+                    </p>
+                  )}
+                  {needsContactInfo && !contactInfoError && (
+                    <p className="text-xs text-orange-600">
+                      ⚠️ Este campo es obligatorio para que los profesionales puedan contactarte
+                    </p>
+                  )}
+                  {isUpdatingContact && (
+                    <p className="text-xs text-blue-600 flex items-center gap-1">
+                      <FontAwesomeIcon icon={faSpinner} className="animate-spin" />
+                      Guardando tu número de contacto...
+                    </p>
+                  )}
                 </div>
 
                 <button
                   onClick={handleSubmitRequest}
-                  disabled={(!serviceLocation.trim() && !serviceLocationCoords) || !clientWhatsApp.trim() || isGeocoding || isSubmitting}
+                  disabled={
+                    (!serviceLocation.trim() && !serviceLocationCoords) || 
+                    !clientWhatsApp.trim() || 
+                    isGeocoding || 
+                    isSubmitting || 
+                    isUpdatingContact ||
+                    (needsContactInfo && clientWhatsApp.replace(/\D/g, "").length < 10)
+                  }
                   className={`w-full bg-gradient-to-r ${selectedDiscipline.gradient} hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-3 px-6 rounded-xl transition-all flex items-center justify-center gap-2 text-sm`}
                 >
                   {isSubmitting ? (
