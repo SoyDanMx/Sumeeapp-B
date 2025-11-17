@@ -90,11 +90,30 @@ export default function UpdateProfileModal({
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [whatsappError, setWhatsappError] = useState<string | null>(null);
-  const [useGPS, setUseGPS] = useState(false);
+  // Inicializar useGPS en true si ya hay coordenadas GPS en el perfil
+  const [useGPS, setUseGPS] = useState(
+    !!(currentProfile.ubicacion_lat && currentProfile.ubicacion_lng)
+  );
   const [gpsLoading, setGpsLoading] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
+  
+  // Resetear formData cuando cambia currentProfile
+  useEffect(() => {
+    setFormData({
+      full_name: currentProfile.full_name || "",
+      whatsapp: currentProfile.whatsapp || "",
+      city: currentProfile.city || "Ciudad de México",
+      otherCity: "",
+      ubicacion_lat: currentProfile.ubicacion_lat || null,
+      ubicacion_lng: currentProfile.ubicacion_lng || null,
+      bio: currentProfile.bio || "",
+      profession: currentProfile.profession || "",
+      work_zones: currentProfile.work_zones || [],
+    });
+    setUseGPS(!!(currentProfile.ubicacion_lat && currentProfile.ubicacion_lng));
+  }, [currentProfile]);
 
-  // Detectar cambios
+  // Detectar cambios (incluyendo ubicación)
   useEffect(() => {
     const hasChanged =
       formData.full_name !== (currentProfile.full_name || "") ||
@@ -102,10 +121,14 @@ export default function UpdateProfileModal({
       formData.city !== (currentProfile.city || "Ciudad de México") ||
       formData.bio !== (currentProfile.bio || "") ||
       formData.profession !== (currentProfile.profession || "") ||
-      JSON.stringify(formData.work_zones) !== JSON.stringify(currentProfile.work_zones || []);
+      JSON.stringify(formData.work_zones) !== JSON.stringify(currentProfile.work_zones || []) ||
+      // Verificar cambios en ubicación GPS
+      formData.ubicacion_lat !== (currentProfile.ubicacion_lat ?? null) ||
+      formData.ubicacion_lng !== (currentProfile.ubicacion_lng ?? null) ||
+      useGPS; // Si se activó GPS, hay cambios
 
     setHasChanges(hasChanged);
-  }, [formData, currentProfile]);
+  }, [formData, currentProfile, useGPS]);
 
   // Validación de WhatsApp
   const validateWhatsapp = (value: string): boolean => {
@@ -156,13 +179,17 @@ export default function UpdateProfileModal({
         }
       );
 
+      const newLat = position.coords.latitude;
+      const newLng = position.coords.longitude;
+      
       setFormData((prev) => ({
         ...prev,
-        ubicacion_lat: position.coords.latitude,
-        ubicacion_lng: position.coords.longitude,
+        ubicacion_lat: newLat,
+        ubicacion_lng: newLng,
       }));
       setUseGPS(true);
-      console.log("✅ Ubicación GPS obtenida:", position.coords);
+      setHasChanges(true); // Forzar detección de cambios
+      console.log("✅ Ubicación GPS obtenida:", { lat: newLat, lng: newLng });
     } catch (err: any) {
       console.error("❌ Error obteniendo GPS:", err);
       setUseGPS(false);
@@ -205,17 +232,26 @@ export default function UpdateProfileModal({
       let ubicacion_lng = formData.ubicacion_lng;
       const finalCity = formData.city === "Otra" ? formData.otherCity : formData.city;
 
-      // Geocodificar si no hay coordenadas o si cambió la ciudad
-      if (!useGPS && (!ubicacion_lat || !ubicacion_lng || formData.city !== currentProfile.city)) {
+      // Si se usó GPS, usar las coordenadas del formData
+      // Si no se usó GPS pero hay coordenadas existentes y no cambió la ciudad, mantenerlas
+      // Si no hay coordenadas o cambió la ciudad, geocodificar
+      if (useGPS && ubicacion_lat && ubicacion_lng) {
+        console.log("📍 Usando coordenadas GPS:", { lat: ubicacion_lat, lng: ubicacion_lng });
+        // Ya tenemos las coordenadas del GPS, no hacer nada más
+      } else if (!ubicacion_lat || !ubicacion_lng || formData.city !== currentProfile.city) {
         console.log("🗺️ Geocodificando ciudad:", finalCity);
         const coords = await geocodeAddress(`${finalCity}, México`);
         if (coords) {
           ubicacion_lat = coords.lat;
           ubicacion_lng = coords.lng;
+          console.log("✅ Coordenadas geocodificadas:", { lat: ubicacion_lat, lng: ubicacion_lng });
         } else {
+          console.warn("⚠️ No se pudo geocodificar, usando coordenadas por defecto de CDMX");
           ubicacion_lat = 19.4326;
           ubicacion_lng = -99.1332;
         }
+      } else {
+        console.log("📍 Manteniendo coordenadas existentes:", { lat: ubicacion_lat, lng: ubicacion_lng });
       }
 
       // Preparar datos de actualización
@@ -509,14 +545,18 @@ export default function UpdateProfileModal({
                                 />
                                 Ciudad *
                               </label>
-                              <select
-                                value={formData.city}
-                                onChange={(e) =>
-                                  setFormData((prev) => ({ ...prev, city: e.target.value }))
-                                }
-                                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                required
-                              >
+                        <select
+                          value={formData.city}
+                          onChange={(e) => {
+                            setFormData((prev) => ({ ...prev, city: e.target.value }));
+                            // Si cambia la ciudad, resetear GPS para que se geocodifique la nueva ciudad
+                            if (e.target.value !== currentProfile.city) {
+                              setUseGPS(false);
+                            }
+                          }}
+                          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          required
+                        >
                                 {CITIES.map((city) => (
                                   <option key={city} value={city}>
                                     {city}
@@ -699,9 +739,13 @@ export default function UpdateProfileModal({
                         </label>
                         <select
                           value={formData.city}
-                          onChange={(e) =>
-                            setFormData((prev) => ({ ...prev, city: e.target.value }))
-                          }
+                          onChange={(e) => {
+                            setFormData((prev) => ({ ...prev, city: e.target.value }));
+                            // Si cambia la ciudad, resetear GPS para que se geocodifique la nueva ciudad
+                            if (e.target.value !== currentProfile.city) {
+                              setUseGPS(false);
+                            }
+                          }}
                           className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                           required
                         >

@@ -2,23 +2,65 @@
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
+import dynamic from "next/dynamic";
 import { useProfesionalData } from "@/hooks/useProfesionalData";
 import { useGeolocation } from "@/hooks/useGeolocation";
 import { useNewLeadsSubscription } from "@/hooks/useNewLeadsSubscription";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faBars, faTimes } from "@fortawesome/free-solid-svg-icons";
-import ProfesionalHeader from "@/components/ProfesionalHeader";
-import EditProfileModal from "@/components/EditProfileModal";
-import WorkFeed from "@/components/dashboard/WorkFeed";
-import ControlPanel from "@/components/dashboard/ControlPanel";
-import ProfessionalTabs from "@/components/dashboard/ProfessionalTabs";
-import MobileBottomNav from "@/components/dashboard/MobileBottomNav";
-import NewLeadAlertModal from "@/components/dashboard/NewLeadAlertModal";
-import RequiredWhatsAppModal from "@/components/dashboard/RequiredWhatsAppModal";
-import RealtimeLeadNotifier from "@/components/dashboard/RealtimeLeadNotifier";
 import { Profesional, Lead } from "@/types/supabase";
-import ProfessionalVerificationID from "@/components/ProfessionalVerificationID";
 import { useRouter } from "next/navigation";
+
+// Componentes pesados cargados dinámicamente para mejorar performance
+const ProfesionalHeader = dynamic(
+  () => import("@/components/ProfesionalHeader"),
+  { ssr: true }
+);
+
+const EditProfileModal = dynamic(
+  () => import("@/components/EditProfileModal"),
+  { ssr: false }
+);
+
+const WorkFeed = dynamic(
+  () => import("@/components/dashboard/WorkFeed"),
+  { ssr: true }
+);
+
+const ControlPanel = dynamic(
+  () => import("@/components/dashboard/ControlPanel"),
+  { ssr: true }
+);
+
+const ProfessionalTabs = dynamic(
+  () => import("@/components/dashboard/ProfessionalTabs"),
+  { ssr: true }
+);
+
+const MobileBottomNav = dynamic(
+  () => import("@/components/dashboard/MobileBottomNav"),
+  { ssr: false }
+);
+
+const NewLeadAlertModal = dynamic(
+  () => import("@/components/dashboard/NewLeadAlertModal"),
+  { ssr: false }
+);
+
+const RequiredWhatsAppModal = dynamic(
+  () => import("@/components/dashboard/RequiredWhatsAppModal"),
+  { ssr: false }
+);
+
+const RealtimeLeadNotifier = dynamic(
+  () => import("@/components/dashboard/RealtimeLeadNotifier"),
+  { ssr: false }
+);
+
+const ProfessionalVerificationID = dynamic(
+  () => import("@/components/ProfessionalVerificationID"),
+  { ssr: false }
+);
 
 export default function ProfesionalDashboardPage() {
   // --- HOOKS Y ESTADO ---
@@ -598,18 +640,21 @@ export default function ProfesionalDashboardPage() {
       )}
 
       {showCredential && profesional && (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden relative">
+        <div className="fixed inset-0 z-[70] flex items-start justify-center bg-black/60 backdrop-blur-sm p-2 sm:p-4 pt-16 sm:pt-20 overflow-y-auto">
+          <div className="bg-white rounded-xl sm:rounded-2xl shadow-2xl max-w-md sm:max-w-lg w-full overflow-hidden relative my-4">
             <button
               onClick={closeCredential}
-              className="absolute top-3 right-3 bg-gray-900/70 text-white rounded-full w-8 h-8 flex items-center justify-center hover:bg-gray-900 transition"
+              className="absolute top-2 right-2 sm:top-3 sm:right-3 bg-gray-900/70 text-white rounded-full w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center hover:bg-gray-900 transition z-10"
               aria-label="Cerrar credencial"
             >
               ×
             </button>
-            <ProfessionalVerificationID
-              profesional={profesional as Profesional}
-            />
+            <div className="overflow-y-auto max-h-[calc(100vh-8rem)]">
+              <ProfessionalVerificationID
+                profesional={profesional as Profesional}
+                showCustomization={false}
+              />
+            </div>
           </div>
         </div>
       )}

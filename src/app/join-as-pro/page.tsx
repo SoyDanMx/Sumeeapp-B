@@ -6,6 +6,7 @@ import { supabase } from "@/lib/supabase/client-new";
 import { getEmailConfirmationUrl } from "@/lib/utils";
 import { geocodeAddress, reverseGeocode } from "@/lib/geocoding";
 import dynamic from "next/dynamic";
+import Image from "next/image";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faUser,
@@ -69,8 +70,8 @@ const ProfessionalLocationMap = dynamic(
 );
 
 const CDMX_COORDS = {
-  lat: 19.4326,
-  lng: -99.1332,
+  lat: 19.410894,
+  lng: -99.170816,
 };
 
 type LocationSource = "manual" | "gps" | "search" | "fallback";
@@ -139,7 +140,7 @@ export default function JoinAsPro() {
 
   // Estado local para el input de ciudad cuando se selecciona "Otra"
   const [otherCityInput, setOtherCityInput] = useState("");
-  const [addressInput, setAddressInput] = useState("Ciudad de México, CDMX");
+  const [addressInput, setAddressInput] = useState("Colonia Condesa, CDMX");
   const [location, setLocation] = useState<{
     lat: number;
     lng: number;
@@ -149,7 +150,7 @@ export default function JoinAsPro() {
   }>({
     lat: CDMX_COORDS.lat,
     lng: CDMX_COORDS.lng,
-    address: "Ciudad de México, CDMX",
+    address: "Colonia Condesa, CDMX",
     hasCustom: false,
     source: "fallback",
   });
@@ -621,17 +622,52 @@ export default function JoinAsPro() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 pt-28 md:pt-32 pb-12">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">
-            Únete como Profesional
-          </h1>
-          <p className="text-xl text-gray-600">
-            Conecta con clientes y haz crecer tu negocio. Disponible en toda
-            México.
-          </p>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 pt-20 md:pt-24 pb-8">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6">
+        {/* Hero Section Compacto con Imagen Full Width */}
+        <div className="mb-8">
+          {/* Imagen Full Width */}
+          <div className="relative w-full aspect-[16/9] md:aspect-[21/9] rounded-2xl overflow-hidden shadow-xl mb-6">
+            <Image
+              src="/images/banners/join-as-pro-worker.jpg"
+              alt="Profesionales trabajando - Únete a Sumee App"
+              fill
+              className="object-cover"
+              priority
+              sizes="100vw"
+            />
+            {/* Overlay para legibilidad del texto */}
+            <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/40 to-black/20" />
+            
+            {/* Contenido sobre la imagen - Posicionado abajo a la izquierda */}
+            <div className="absolute inset-0 flex flex-col justify-end items-start p-4 md:p-6 lg:p-8 text-white">
+              <div className="w-full max-w-md md:max-w-lg">
+                <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-white/20 backdrop-blur-sm rounded-full text-white text-xs md:text-sm font-semibold mb-3">
+                  <FontAwesomeIcon icon={faBriefcase} />
+                  <span>Para Profesionales</span>
+                </div>
+                <p className="text-sm md:text-base text-white/95 max-w-md leading-relaxed mb-3 drop-shadow-lg">
+                  Conecta con clientes verificados y haz crecer tu negocio. Disponible en toda México.
+                </p>
+                
+                {/* Beneficios compactos */}
+                <div className="flex flex-wrap gap-2 md:gap-3">
+                  <div className="flex items-center gap-1.5 px-2.5 py-1 bg-white/20 backdrop-blur-sm rounded-lg text-xs md:text-sm">
+                    <FontAwesomeIcon icon={faCheckCircle} className="text-green-300" />
+                    <span>Registro gratuito</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 px-2.5 py-1 bg-white/20 backdrop-blur-sm rounded-lg text-xs md:text-sm">
+                    <FontAwesomeIcon icon={faCheckCircle} className="text-blue-300" />
+                    <span>Clientes verificados</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 px-2.5 py-1 bg-white/20 backdrop-blur-sm rounded-lg text-xs md:text-sm">
+                    <FontAwesomeIcon icon={faCheckCircle} className="text-purple-300" />
+                    <span>Pago seguro</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Formulario */}
