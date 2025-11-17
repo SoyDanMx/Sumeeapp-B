@@ -111,19 +111,47 @@ export default function LocationBlockingModal({
   // Manejar selección de sugerencia
   const handleSelectSuggestion = (suggestion: AddressSuggestion) => {
     const formatted = formatAddressSuggestion(suggestion);
-    setFormData((prev) => ({ ...prev, address: formatted }));
+    setFormData((prev) => {
+      const updated = { ...prev, address: formatted };
+      
+      // Si la sugerencia tiene información de ciudad, actualizarla automáticamente
+      if (suggestion.address?.city) {
+        const cityName = suggestion.address.city;
+        // Verificar si la ciudad está en la lista de ciudades
+        const cityExists = CITIES.some(city => 
+          city.toLowerCase().includes(cityName.toLowerCase()) || 
+          cityName.toLowerCase().includes(city.toLowerCase())
+        );
+        
+        if (cityExists) {
+          updated.city = CITIES.find(city => 
+            city.toLowerCase().includes(cityName.toLowerCase()) || 
+            cityName.toLowerCase().includes(city.toLowerCase())
+          ) || prev.city;
+        } else if (cityName) {
+          // Si no está en la lista, usar "Otra" y poner el nombre en otherCity
+          updated.city = "Otra";
+          updated.otherCity = cityName;
+        }
+      }
+      
+      return updated;
+    });
+    
     setShowSuggestions(false);
     setAddressSuggestions([]);
     setSelectedSuggestionIndex(-1);
     
-    // Si la sugerencia tiene coordenadas, usarlas
+    // Si la sugerencia tiene coordenadas, usarlas (esto prellenará el GPS)
     if (suggestion.lat && suggestion.lon) {
-      setGpsCoords({
+      const coords = {
         lat: parseFloat(suggestion.lat),
         lng: parseFloat(suggestion.lon),
-      });
+      };
+      setGpsCoords(coords);
       setUseGPS(true);
       setGpsSuccess(true);
+      console.log("✅ Dirección seleccionada con coordenadas:", { coords, address: formatted });
     }
   };
 
