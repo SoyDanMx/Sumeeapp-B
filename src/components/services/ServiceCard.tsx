@@ -31,6 +31,8 @@ export default function ServiceCard({ service }: ServiceCardProps) {
             fill
             className="object-cover group-hover:scale-110 transition-transform duration-500"
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            loading="lazy"
+            quality={85}
             onError={(e) => {
               // Si la imagen falla, mostrar un placeholder con color
               const target = e.target as HTMLImageElement;

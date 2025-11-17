@@ -2,24 +2,88 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { getClientLeadDetails, getClientLeads } from "@/lib/supabase/data";
 import { supabase } from "@/lib/supabase/client";
 import { Lead, Profile } from "@/types/supabase";
 import { useAuth } from "@/context/AuthContext";
 import { useMembership } from "@/context/MembershipContext";
-import RequestServiceModal from "@/components/client/RequestServiceModal";
-import AISumeeAssistant from "@/components/client/AISumeeAssistant";
-import UpcomingServiceWidget from "@/components/dashboard/UpcomingServiceWidget";
-import QuickActionsWidget from "@/components/dashboard/QuickActionsWidget";
-import RecentActivityWidget from "@/components/dashboard/RecentActivityWidget";
-import NearbyProfessionalsWidget from "@/components/dashboard/NearbyProfessionalsWidget";
-import ExploreMapCTA from "@/components/dashboard/ExploreMapCTA";
-import ClientOnboardingModal from "@/components/dashboard/ClientOnboardingModal";
-import LocationBlockingModal from "@/components/dashboard/LocationBlockingModal";
-import ClientProfileWidget from "@/components/dashboard/ClientProfileWidget";
-import ClientProfileWidgetCompact from "@/components/dashboard/ClientProfileWidgetCompact";
-import ExploreMapCTACompact from "@/components/dashboard/ExploreMapCTACompact";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+
+// Componentes pesados cargados dinámicamente para mejorar performance
+const AISumeeAssistant = dynamic(
+  () => import("@/components/client/AISumeeAssistant"),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex items-center justify-center p-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500"></div>
+      </div>
+    ),
+  }
+);
+
+const RequestServiceModal = dynamic(
+  () => import("@/components/client/RequestServiceModal"),
+  { ssr: false }
+);
+
+const LocationBlockingModal = dynamic(
+  () => import("@/components/dashboard/LocationBlockingModal"),
+  { ssr: false }
+);
+
+const ClientOnboardingModal = dynamic(
+  () => import("@/components/dashboard/ClientOnboardingModal"),
+  { ssr: false }
+);
+
+// Widgets cargados dinámicamente (below-the-fold)
+const UpcomingServiceWidget = dynamic(
+  () => import("@/components/dashboard/UpcomingServiceWidget"),
+  { ssr: true }
+);
+
+const QuickActionsWidget = dynamic(
+  () => import("@/components/dashboard/QuickActionsWidget"),
+  { ssr: true }
+);
+
+const RecentActivityWidget = dynamic(
+  () => import("@/components/dashboard/RecentActivityWidget"),
+  { ssr: true }
+);
+
+const NearbyProfessionalsWidget = dynamic(
+  () => import("@/components/dashboard/NearbyProfessionalsWidget"),
+  { ssr: true }
+);
+
+const ExploreMapCTA = dynamic(
+  () => import("@/components/dashboard/ExploreMapCTA"),
+  { ssr: true }
+);
+
+const ClientProfileWidget = dynamic(
+  () => import("@/components/dashboard/ClientProfileWidget"),
+  { ssr: true }
+);
+
+const ClientProfileWidgetCompact = dynamic(
+  () => import("@/components/dashboard/ClientProfileWidgetCompact"),
+  { ssr: true }
+);
+
+const ExploreMapCTACompact = dynamic(
+  () => import("@/components/dashboard/ExploreMapCTACompact"),
+  { ssr: true }
+);
+
+const AgreementNotificationBanner = dynamic(
+  () => import("@/components/client/AgreementNotificationBanner"),
+  { ssr: true }
+);
+
 import {
   faSpinner,
   faExclamationTriangle,
@@ -32,7 +96,6 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { faWhatsapp } from "@fortawesome/free-brands-svg-icons";
 import { useAgreementSubscription } from "@/hooks/useAgreementSubscription";
-import AgreementNotificationBanner from "@/components/client/AgreementNotificationBanner";
 
 export default function ClientDashboardPage() {
   const { user, isLoading: userLoading, isAuthenticated } = useAuth();

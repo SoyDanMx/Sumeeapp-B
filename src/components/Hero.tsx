@@ -198,9 +198,12 @@ export const Hero = () => {
           alt="Profesional electricista trabajando - Sumee App"
           fill
           priority
-          quality={80}
+          quality={85}
           className="-z-10 object-cover"
-          sizes="100vw"
+          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 100vw, 100vw"
+          style={{
+            objectPosition: "center center",
+          }}
         />
         {/* Overlay mejorado - Más sutil para mejor visibilidad de la imagen */}
         <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/20 via-black/10 to-transparent md:bg-gradient-to-r md:from-black/30 md:via-black/10 md:to-transparent"></div>

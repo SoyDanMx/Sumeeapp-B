@@ -42,28 +42,106 @@ export function useProfesionalData(): UseProfesionalDataReturn {
       setError(null);
 
       try {
-        const [profesionalResult, openLeadsResult] = await Promise.all([
-          supabase
-            .from("profiles")
-            .select("*")
-            .eq("user_id", currentUserId)
-            .single(),
-          supabase.rpc("get_open_leads_for_professional", {
-            professional_id: currentUserId,
-          }),
-        ]);
+        // Primero obtener el perfil del profesional
+        const profesionalResult = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("user_id", currentUserId)
+          .single();
 
         if (profesionalResult.error) {
+          // Si el perfil no existe, es un error crítico
+          if (profesionalResult.error.code === "PGRST116") {
+            throw new Error(
+              "No se encontró tu perfil de profesional. Por favor, completa tu registro."
+            );
+          }
           throw profesionalResult.error;
         }
-        if (openLeadsResult.error) {
-          throw openLeadsResult.error;
+
+        let profesionalData = profesionalResult.data as Profesional;
+
+        // Verificar que el usuario tiene rol de profesional
+        // Si no tiene el rol correcto, intentar corregirlo automáticamente
+        if (profesionalData.role !== "profesional") {
+          // Si el rol es null o undefined, intentar actualizarlo automáticamente
+          if (!profesionalData.role || profesionalData.role === null) {
+            console.warn("⚠️ Perfil sin rol asignado, intentando actualizar a 'profesional'...");
+            try {
+              const { error: updateError } = await supabase
+                .from("profiles")
+                .update({ role: "profesional" })
+                .eq("user_id", currentUserId);
+
+              if (updateError) {
+                console.error("❌ Error al actualizar rol:", updateError);
+                // Continuar de todas formas, el usuario puede completar su perfil
+              } else {
+                // Recargar el perfil con el rol actualizado
+                const { data: updatedProfile } = await supabase
+                  .from("profiles")
+                  .select("*")
+                  .eq("user_id", currentUserId)
+                  .single();
+                
+                if (updatedProfile) {
+                  profesionalData = updatedProfile as Profesional;
+                }
+              }
+            } catch (updateErr) {
+              console.error("❌ Error al actualizar rol:", updateErr);
+              // Continuar de todas formas
+            }
+          } else if (profesionalData.role === "client") {
+            // Si el usuario es cliente, no es un error crítico, solo mostrar mensaje
+            console.warn("⚠️ Usuario con rol 'client' intentando acceder al dashboard profesional");
+            // Permitir acceso pero el dashboard mostrará un mensaje apropiado
+            // No lanzar error, permitir que el usuario vea el dashboard
+          }
         }
 
-        const profesionalData = profesionalResult.data as Profesional;
-        const leadsData = ((openLeadsResult.data as Lead[]) || []).map(
-          normalizeLead
+        // Intentar obtener los leads usando la función RPC
+        let leadsData: Lead[] = [];
+        const openLeadsResult = await supabase.rpc(
+          "get_open_leads_for_professional",
+          {
+            professional_id: currentUserId,
+          }
         );
+
+        if (openLeadsResult.error) {
+          // Si la función RPC falla, intentar obtener leads directamente
+          console.warn(
+            "⚠️ Error al obtener leads con RPC, intentando método alternativo:",
+            openLeadsResult.error
+          );
+
+          // Método alternativo: obtener leads directamente
+          const directLeadsResult = await supabase
+            .from("leads")
+            .select("*")
+            .or(
+              `profesional_asignado_id.is.null,profesional_asignado_id.eq.${currentUserId}`
+            )
+            .order("fecha_creacion", { ascending: false });
+
+          if (directLeadsResult.error) {
+            console.error(
+              "❌ Error al obtener leads directamente:",
+              directLeadsResult.error
+            );
+            // Continuar sin leads, pero mostrar el perfil
+            leadsData = [];
+          } else {
+            leadsData = ((directLeadsResult.data as Lead[]) || []).map(
+              normalizeLead
+            );
+          }
+        } else {
+          leadsData = ((openLeadsResult.data as Lead[]) || []).map(
+            normalizeLead
+          );
+        }
 
         setProfesional(profesionalData);
         setLeads(leadsData);
@@ -93,10 +171,38 @@ export function useProfesionalData(): UseProfesionalDataReturn {
           }
         }
       } catch (err) {
-        const errorMessage =
-          err instanceof Error ? err.message : "Error al obtener los datos.";
+        console.error("❌ Error en useProfesionalData:", err);
+        
+        let errorMessage = "Error al obtener los datos.";
+        
+        if (err instanceof Error) {
+          errorMessage = err.message;
+        } else if (typeof err === "object" && err !== null) {
+          // Manejar PostgrestError
+          const postgresError = err as PostgrestError;
+          if (postgresError.message) {
+            errorMessage = postgresError.message;
+          } else if (postgresError.code) {
+            switch (postgresError.code) {
+              case "PGRST116":
+                errorMessage =
+                  "No se encontró tu perfil. Por favor, completa tu registro.";
+                break;
+              case "42501":
+                errorMessage =
+                  "No tienes permisos para acceder a estos datos. Por favor, contacta al soporte.";
+                break;
+              default:
+                errorMessage = `Error de base de datos: ${postgresError.code}`;
+            }
+          }
+        } else if (typeof err === "string") {
+          errorMessage = err;
+        }
+
         setError(errorMessage);
         setProfesional(null);
+        setLeads([]);
       } finally {
         setIsLoading(false);
       }

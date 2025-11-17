@@ -60,11 +60,11 @@ export default function LoginForm() {
     setError(null);
     setLoading(true);
 
-    // Timeout de seguridad para móviles (10 segundos)
+    // Timeout de seguridad aumentado para dar más tiempo a la carga de componentes (15 segundos)
     const timeoutId = setTimeout(() => {
       setLoading(false);
       setError('La autenticación está tardando demasiado. Por favor, verifica tu conexión e intenta de nuevo.');
-    }, 10000);
+    }, 15000);
 
     try {
       console.log('🔐 Intentando login...');
@@ -102,16 +102,19 @@ export default function LoginForm() {
       console.log('✅ Login exitoso, obteniendo perfil del usuario...');
       
       try {
-        // Obtener el perfil para saber el rol con timeout
+        // Obtener el perfil para saber el rol con timeout aumentado
         const profilePromise = supabase
           .from('profiles')
           .select('role')
           .eq('user_id', authData.user.id)
           .single()
-          .then(({ data }) => data);
+          .then(({ data, error }) => {
+            if (error) throw error;
+            return data;
+          });
 
         const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Timeout al obtener perfil')), 5000)
+          setTimeout(() => reject(new Error('Timeout al obtener perfil')), 8000)
         );
 
         const profile = await Promise.race([profilePromise, timeoutPromise]) as any;
@@ -130,29 +133,29 @@ export default function LoginForm() {
           sessionStorage.removeItem('redirectAfterLogin');
         }
         
-        // Esperar un momento antes de redirigir (fix para móviles)
-        await new Promise(resolve => setTimeout(resolve, 300));
+        // Esperar un momento antes de redirigir (fix para móviles y carga de componentes)
+        await new Promise(resolve => setTimeout(resolve, 500));
         
         // Si hay un redirect específico, usarlo (solo para clientes)
         if (redirectTo && profile?.role === 'client') {
           console.log('🎯 Redirigiendo a:', redirectTo);
-          window.location.href = redirectTo;
+          router.push(redirectTo);
           return;
         }
         
         // Redirigir basado en el rol (comportamiento por defecto)
         if (profile?.role === 'profesional') {
           console.log('🎯 Redirigiendo a professional-dashboard...');
-          window.location.href = '/professional-dashboard';
+          router.push('/professional-dashboard');
         } else {
           console.log('🎯 Redirigiendo a client dashboard...');
-          window.location.href = '/dashboard/client';
+          router.push('/dashboard/client');
         }
       } catch (profileError) {
         // Fallback: redirigir a /dashboard que usa el RoleRouter
         console.warn('⚠️ Error al obtener perfil, usando RoleRouter...', profileError);
-        await new Promise(resolve => setTimeout(resolve, 300));
-        window.location.href = '/dashboard';
+        await new Promise(resolve => setTimeout(resolve, 500));
+        router.push('/dashboard');
       }
 
     } catch (error: any) {
