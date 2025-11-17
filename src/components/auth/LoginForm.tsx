@@ -109,17 +109,23 @@ export default function LoginForm() {
       
       // Obtener perfil de forma no bloqueante (opcional)
       // No esperamos a que termine, solo intentamos obtenerlo en background
-      supabase
-        .from('profiles')
-        .select('role')
-        .eq('user_id', authData.user.id)
-        .single()
-        .then(({ data: profile }) => {
-          console.log('Usuario:', authData.user.email, 'Rol:', profile?.role || 'sin perfil');
-        })
-        .catch((err) => {
-          console.warn('⚠️ No se pudo obtener perfil (no crítico):', err);
-        });
+      (async () => {
+        try {
+          const { data: profile, error } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('user_id', authData.user.id)
+            .single();
+          
+          if (error) {
+            console.warn('⚠️ No se pudo obtener perfil (no crítico):', error);
+          } else {
+            console.log('Usuario:', authData.user.email, 'Rol:', profile?.role || 'sin perfil');
+          }
+        } catch (err) {
+          console.warn('⚠️ Error al obtener perfil (no crítico):', err);
+        }
+      })();
       
       // Verificar si hay un redirect guardado (de sessionStorage o URL)
       const redirectParam = searchParams.get('redirect');
