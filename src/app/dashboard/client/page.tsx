@@ -15,6 +15,7 @@ import RecentActivityWidget from "@/components/dashboard/RecentActivityWidget";
 import NearbyProfessionalsWidget from "@/components/dashboard/NearbyProfessionalsWidget";
 import ExploreMapCTA from "@/components/dashboard/ExploreMapCTA";
 import ClientOnboardingModal from "@/components/dashboard/ClientOnboardingModal";
+import LocationBlockingModal from "@/components/dashboard/LocationBlockingModal";
 import ClientProfileWidget from "@/components/dashboard/ClientProfileWidget";
 import ClientProfileWidgetCompact from "@/components/dashboard/ClientProfileWidgetCompact";
 import ExploreMapCTACompact from "@/components/dashboard/ExploreMapCTACompact";
@@ -61,6 +62,10 @@ export default function ClientDashboardPage() {
   const [userProfile, setUserProfile] = useState<Profile | null>(null);
   const [hasCheckedOnboarding, setHasCheckedOnboarding] = useState(false);
   const [isEmergencyMenuOpen, setIsEmergencyMenuOpen] = useState(false);
+  
+  // 🆕 MODAL DE BLOQUEO DE UBICACIÓN (Fase 1)
+  const [showLocationBlocking, setShowLocationBlocking] = useState(false);
+  const [hasLocation, setHasLocation] = useState(false);
 
   // Función para refrescar los leads
   const refreshLeads = async () => {
@@ -139,12 +144,22 @@ export default function ClientDashboardPage() {
         if (profile) {
           setUserProfile(profile);
           
-          // Verificar si necesita onboarding (falta WhatsApp o ubicación)
-          const needsOnboarding = !profile.whatsapp || !profile.ubicacion_lat;
+          // FASE 1: Verificar si falta ubicación (BLOQUEO CRÍTICO)
+          const needsLocation = !profile.ubicacion_lat || !profile.ubicacion_lng;
+          if (needsLocation && profile.role === 'client') {
+            console.log('🚫 Cliente necesita ubicación - BLOQUEANDO DASHBOARD');
+            setHasLocation(false);
+            setTimeout(() => {
+              setShowLocationBlocking(true);
+            }, 500);
+          } else {
+            setHasLocation(true);
+          }
           
-          if (needsOnboarding) {
-            console.log('🆕 Cliente necesita onboarding');
-            // Delay de 500ms para mejor UX (evitar flash)
+          // FASE 2: Verificar si falta WhatsApp (onboarding no bloqueante)
+          const needsWhatsApp = !profile.whatsapp && !profile.phone;
+          if (needsWhatsApp && !needsLocation) {
+            console.log('🆕 Cliente necesita WhatsApp');
             setTimeout(() => {
               setShowOnboarding(true);
             }, 500);
@@ -165,10 +180,111 @@ export default function ClientDashboardPage() {
     checkOnboarding();
   }, [user, hasCheckedOnboarding]);
 
+  // Callback cuando se guarda la ubicación
+  const handleLocationSaved = async () => {
+    console.log('✅ Ubicación guardada, refrescando perfil...');
+    setShowLocationBlocking(false);
+    setHasLocation(true);
+    
+    // Refrescar perfil
+    if (user) {
+      const { data: updatedProfile } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+      
+      if (updatedProfile) {
+        setUserProfile(updatedProfile);
+        if (updatedProfile.ubicacion_lat && updatedProfile.ubicacion_lng) {
+          setClientLocation({
+            lat: updatedProfile.ubicacion_lat,
+            lng: updatedProfile.ubicacion_lng,
+          });
+        }
+      }
+    }
+  };
+
+  // 🆕 ACTUALIZACIÓN PASIVA DE UBICACIÓN (Tarea 3)
+  useEffect(() => {
+    if (!user || !hasLocation) return;
+
+    const updateLocationPassively = async () => {
+      try {
+        // Obtener ubicación actual del navegador
+        if (!navigator.geolocation) return;
+
+        const position = await new Promise<GeolocationPosition>(
+          (resolve, reject) => {
+            navigator.geolocation.getCurrentPosition(
+              resolve,
+              reject,
+              {
+                enableHighAccuracy: false, // No necesitamos alta precisión para actualización pasiva
+                timeout: 10000,
+                maximumAge: 300000, // Cache de 5 minutos
+              }
+            );
+          }
+        );
+
+        const newLat = position.coords.latitude;
+        const newLng = position.coords.longitude;
+
+        // Obtener ubicación guardada
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('ubicacion_lat, ubicacion_lng')
+          .eq('user_id', user.id)
+          .single();
+
+        if (!profile?.ubicacion_lat || !profile?.ubicacion_lng) return;
+
+        // Calcular distancia usando fórmula de Haversine
+        const R = 6371; // Radio de la Tierra en km
+        const dLat = ((newLat - profile.ubicacion_lat) * Math.PI) / 180;
+        const dLon = ((newLng - profile.ubicacion_lng) * Math.PI) / 180;
+        const a =
+          Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+          Math.cos((profile.ubicacion_lat * Math.PI) / 180) *
+            Math.cos((newLat * Math.PI) / 180) *
+            Math.sin(dLon / 2) *
+            Math.sin(dLon / 2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        const distance = R * c;
+
+        // Si la distancia es mayor a 1 km, actualizar silenciosamente
+        if (distance > 1) {
+          console.log(`📍 Actualizando ubicación pasivamente (${distance.toFixed(2)} km de diferencia)`);
+          await supabase
+            .from('profiles')
+            .update({
+              ubicacion_lat: newLat,
+              ubicacion_lng: newLng,
+            })
+            .eq('user_id', user.id);
+          
+          setClientLocation({ lat: newLat, lng: newLng });
+        }
+      } catch (err) {
+        // Error silencioso - no interrumpir la experiencia
+        console.log('ℹ️ No se pudo actualizar ubicación pasivamente:', err);
+      }
+    };
+
+    // Ejecutar después de 3 segundos del login (no bloqueante)
+    const timer = setTimeout(() => {
+      updateLocationPassively();
+    }, 3000);
+
+    return () => clearTimeout(timer);
+  }, [user, hasLocation]);
+
   // Obtener ubicación del cliente desde su perfil
   useEffect(() => {
     const fetchClientLocation = async () => {
-      if (!user) return;
+      if (!user || !hasLocation) return;
 
       try {
         const { data, error } = await supabase
@@ -473,6 +589,21 @@ export default function ClientDashboardPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 pt-[calc(var(--header-offset,72px)+2rem)]">
+      {/* 🚫 BLOQUEO DE DASHBOARD SI NO HAY UBICACIÓN */}
+      {!hasLocation && userProfile && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[9998] flex items-center justify-center">
+          <div className="text-center text-white p-6">
+            <FontAwesomeIcon
+              icon={faExclamationTriangle}
+              className="text-6xl mb-4 text-yellow-400"
+            />
+            <h2 className="text-2xl font-bold mb-2">Ubicación Requerida</h2>
+            <p className="text-lg opacity-90">
+              Por favor, completa tu ubicación para continuar
+            </p>
+          </div>
+        </div>
+      )}
       {/* Header con Hero Section */}
       <div className="bg-gradient-to-r from-blue-600 via-blue-700 to-purple-700 text-white shadow-lg">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -903,8 +1034,17 @@ export default function ClientDashboardPage() {
         />
       )}
 
-      {/* 🆕 ONBOARDING MODAL */}
-      {showOnboarding && userProfile && (
+      {/* 🚫 MODAL DE BLOQUEO DE UBICACIÓN (Fase 1) */}
+      {showLocationBlocking && userProfile && (
+        <LocationBlockingModal
+          isOpen={showLocationBlocking}
+          userProfile={userProfile}
+          onLocationSaved={handleLocationSaved}
+        />
+      )}
+
+      {/* 🆕 ONBOARDING MODAL (Fase 2 - WhatsApp) */}
+      {showOnboarding && userProfile && hasLocation && (
         <ClientOnboardingModal
           isOpen={showOnboarding}
           userProfile={userProfile}
