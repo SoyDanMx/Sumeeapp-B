@@ -120,7 +120,7 @@ export default function LoginForm() {
           if (error) {
             console.warn('⚠️ No se pudo obtener perfil (no crítico):', error);
           } else {
-            console.log('Usuario:', authData.user.email, 'Rol:', profile?.role || 'sin perfil');
+            console.log('Usuario:', authData.user.email, 'Rol:', (profile as any)?.role || 'sin perfil');
           }
         } catch (err) {
           console.warn('⚠️ Error al obtener perfil (no crítico):', err);
