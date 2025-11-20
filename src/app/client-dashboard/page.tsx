@@ -44,7 +44,6 @@ export default function ClientDashboardPage() {
     useState<Profesional | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [userMembership, setUserMembership] = useState<string>("free");
   const [selectedService, setSelectedService] = useState<string>("Todos");
 
   // Servicios disponibles para filtrar - Lista completa
@@ -75,51 +74,6 @@ export default function ClientDashboardPage() {
         if (userError) throw userError;
 
         setUser(user);
-
-        // Verificar membresía del usuario desde la base de datos
-        if (user) {
-          try {
-            // Para usuarios de prueba, permitir acceso premium automáticamente
-            const testEmails = [
-              "cliente@sumeeapp.com",
-              "test@sumeeapp.com",
-              "demo@sumeeapp.com",
-            ];
-            const isTestUser = testEmails.includes(user.email || "");
-
-            if (isTestUser) {
-              setUserMembership("premium");
-            } else {
-              // Intentar obtener el perfil desde la base de datos
-              const { data: profile, error: profileError } = await supabase
-                .from("profiles")
-                .select("membership_status, role")
-                .eq("user_id", user.id)
-                .single();
-
-              if (profileError) {
-                console.warn(
-                  "Profile not found or error:",
-                  profileError.message
-                );
-                setUserMembership("free");
-              } else {
-                setUserMembership(
-                  profile?.membership_status === "premium" ? "premium" : "free"
-                );
-              }
-            }
-          } catch (profileErr: any) {
-            // Si hay error al obtener el perfil, usar configuración por defecto
-            console.warn(
-              "Error getting profile:",
-              profileErr?.message || profileErr
-            );
-            setUserMembership("free");
-          }
-        } else {
-          setUserMembership("free");
-        }
 
         if (user) {
           try {
@@ -301,66 +255,6 @@ export default function ClientDashboardPage() {
           >
             Iniciar Sesión
           </Link>
-        </div>
-      </div>
-    );
-  }
-
-  if (userMembership === "free") {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-yellow-50 via-orange-50 to-red-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-lg w-full text-center relative overflow-hidden">
-          {/* Decoración de fondo */}
-          <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-yellow-200 to-orange-200 rounded-full blur-3xl opacity-30"></div>
-          <div className="absolute bottom-0 left-0 w-48 h-48 bg-gradient-to-tr from-purple-200 to-pink-200 rounded-full blur-3xl opacity-30"></div>
-
-          <div className="relative z-10">
-            <div className="w-24 h-24 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
-              <FontAwesomeIcon icon={faCrown} className="text-5xl text-white" />
-            </div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-3">
-              ¡Desbloquea tu Acceso Premium!
-            </h1>
-            <p className="text-gray-700 mb-2 text-lg">
-              Accede a profesionales verificados y de alta calidad
-            </p>
-            <div className="flex flex-col space-y-2 mb-8 text-left bg-gray-50 rounded-lg p-4">
-              <div className="flex items-center space-x-3">
-                <FontAwesomeIcon
-                  icon={faCheckCircle}
-                  className="text-green-500"
-                />
-                <span className="text-gray-700">
-                  Acceso ilimitado a profesionales
-                </span>
-              </div>
-              <div className="flex items-center space-x-3">
-                <FontAwesomeIcon
-                  icon={faCheckCircle}
-                  className="text-green-500"
-                />
-                <span className="text-gray-700">
-                  Contacto directo con técnicos
-                </span>
-              </div>
-              <div className="flex items-center space-x-3">
-                <FontAwesomeIcon
-                  icon={faCheckCircle}
-                  className="text-green-500"
-                />
-                <span className="text-gray-700">
-                  Garantía de calidad verificada
-                </span>
-              </div>
-            </div>
-            <Link
-              href="/pago-de-servicios"
-              className="inline-block bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white px-10 py-4 rounded-xl font-bold text-lg transition-all shadow-xl hover:shadow-2xl transform hover:-translate-y-1 hover:scale-105"
-            >
-              Configurar Método de Pago
-              <FontAwesomeIcon icon={faArrowRight} className="ml-2" />
-            </Link>
-          </div>
         </div>
       </div>
     );
