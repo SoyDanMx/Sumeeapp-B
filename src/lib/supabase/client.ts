@@ -27,37 +27,38 @@ const createSupabaseClient = () => {
   }
 
   supabaseInstance = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    // CONFIGURACIÓN PKCE ESPECÍFICA PARA RESOLVER EL ERROR
-    flowType: "pkce",
-    autoRefreshToken: true,
-    persistSession: true,
-    detectSessionInUrl: true,
-    // Configuraciones de almacenamiento específicas para PKCE
-    storage: typeof window !== "undefined" ? window.localStorage : undefined,
-    storageKey: "sb-auth-token",
-    // Configuración de debug para desarrollo
-    debug: process.env.NODE_ENV === "development",
-    // Configuraciones adicionales para PKCE
-    ...(typeof window !== "undefined" && {
-      // Forzar regeneración de code_verifier si es necesario
-      refreshToken: true,
-      // Configuración específica para el navegador
-      browser: {
-        localStorage: window.localStorage,
-        sessionStorage: window.sessionStorage,
+    auth: {
+      // CONFIGURACIÓN PKCE ESPECÍFICA PARA RESOLVER EL ERROR
+      flowType: "pkce",
+      autoRefreshToken: true,
+      persistSession: true,
+      detectSessionInUrl: true,
+      // Configuraciones de almacenamiento específicas para PKCE
+      storage: typeof window !== "undefined" ? window.localStorage : undefined,
+      storageKey: "sb-auth-token",
+      // Configuración de debug para desarrollo
+      debug: process.env.NODE_ENV === "development",
+      // Configuraciones adicionales para PKCE
+      ...(typeof window !== "undefined" ? {
+        // Forzar regeneración de code_verifier si es necesario
+        refreshToken: true,
+        // Configuración específica para el navegador
+        browser: {
+          localStorage: window.localStorage,
+          sessionStorage: window.sessionStorage,
+        },
+      } : {}),
+    },
+    db: {
+      schema: "public" as any,
+    },
+    global: {
+      headers: {
+        "X-Client-Info": "sumee-app",
+        "X-Requested-With": "XMLHttpRequest",
+        // Headers adicionales para PKCE
+        "X-PKCE-Flow": "enabled",
       },
-    }),
-  },
-  db: {
-    schema: "public",
-  },
-  global: {
-    headers: {
-      "X-Client-Info": "sumee-app",
-      "X-Requested-With": "XMLHttpRequest",
-      // Headers adicionales para PKCE
-      "X-PKCE-Flow": "enabled",
     },
   });
 
