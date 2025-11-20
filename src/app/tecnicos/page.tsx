@@ -40,10 +40,11 @@ function TecnicosPageContent() {
             .eq("user_id", user.id)
             .single()
             .then(({ data, error }) => {
-              if (error || !data?.ubicacion_lat || !data?.ubicacion_lng) {
+              const locationData = data as any;
+              if (error || !locationData?.ubicacion_lat || !locationData?.ubicacion_lng) {
                 return null;
               }
-              return { lat: data.ubicacion_lat, lng: data.ubicacion_lng };
+              return { lat: locationData.ubicacion_lat, lng: locationData.ubicacion_lng };
             }),
           new Promise<null>((resolve) => setTimeout(() => resolve(null), 2000)), // Timeout 2s
         ]);
