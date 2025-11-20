@@ -44,13 +44,15 @@ export default function ConfirmProfilePage() {
         }
 
         if (existingProfile) {
-          console.log('✅ Perfil ya existe:', existingProfile.role);
+          // @ts-ignore - Supabase type inference issue
+          const profile = existingProfile as any;
+          console.log('✅ Perfil ya existe:', profile.role);
           setStatus('success');
           setMessage('¡Tu perfil ya está creado! Redirigiendo...');
           
           // Redirigir basado en el rol
           setTimeout(() => {
-            if (existingProfile.role === 'profesional') {
+            if (profile.role === 'profesional') {
               router.push('/professional-dashboard');
             } else {
               router.push('/dashboard/client');
