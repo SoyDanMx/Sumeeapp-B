@@ -105,13 +105,14 @@ export default function TestRPCRegistrationPage() {
       console.log('🧪 TESTING RPC FUNCTION DIRECTLY...');
 
       // Probar la función RPC directamente
-      const { data, error: rpcError } = await supabase.rpc('create_professional_complete', {
+      const rpcPayload: any = {
         p_full_name: 'Test RPC Direct',
         p_email: 'test-rpc-direct@sumeeapp.com',
         p_profession: 'Plomero',
         p_whatsapp: '+52 55 9999 8888',
         p_descripcion_perfil: 'Prueba directa de RPC'
-      });
+      };
+      const { data, error: rpcError } = await (supabase.rpc as any)('create_professional_complete', rpcPayload);
 
       if (rpcError) {
         setResult({
