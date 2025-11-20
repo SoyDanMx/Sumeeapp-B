@@ -44,6 +44,61 @@ export function getEmailConfirmationUrl(): string {
 }
 
 /**
+ * Normaliza un número de WhatsApp a formato estándar (52XXXXXXXXXX)
+ */
+export function normalizeWhatsappNumber(input: string): { normalized: string; isValid: boolean } {
+  const digits = (input || "").replace(/\D/g, "");
+
+  if (digits.length === 0) {
+    return { normalized: "", isValid: false };
+  }
+
+  if (digits.startsWith("521") && digits.length === 13) {
+    return { normalized: `52${digits.slice(3)}`, isValid: true };
+  }
+
+  if (digits.startsWith("52") && digits.length === 12) {
+    return { normalized: digits, isValid: true };
+  }
+
+  if (digits.length === 11 && digits.startsWith("1")) {
+    const trimmed = digits.slice(1);
+    return {
+      normalized: trimmed.length === 10 ? `52${trimmed}` : digits,
+      isValid: trimmed.length === 10,
+    };
+  }
+
+  if (digits.length === 10) {
+    return { normalized: `52${digits}`, isValid: true };
+  }
+
+  if (digits.length > 12 && digits.startsWith("52")) {
+    const trimmed = digits.slice(0, 12);
+    return { normalized: trimmed, isValid: trimmed.length === 12 };
+  }
+
+  return { normalized: digits, isValid: false };
+}
+
+/**
+ * Formatea un número de WhatsApp normalizado para mostrar (XX XXXX XXXX)
+ */
+export function formatWhatsappForDisplay(normalized: string): string {
+  if (!normalized) return "";
+
+  const localDigits = normalized.startsWith("52")
+    ? normalized.slice(2)
+    : normalized;
+
+  if (localDigits.length === 10) {
+    return localDigits.replace(/(\d{2})(\d{4})(\d{4})/, "$1 $2 $3");
+  }
+
+  return normalized;
+}
+
+/**
  * Construye la URL de redirección después del login exitoso
  * Redirige al dashboard apropiado basado en el rol del usuario
  */
