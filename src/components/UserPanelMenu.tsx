@@ -11,7 +11,6 @@ import {
   faSignOutAlt,
   faBell,
   faQuestionCircle,
-  faCrown,
   faListAlt,
   faWrench,
   faUserEdit,
@@ -186,17 +185,6 @@ export default function UserPanelMenu({
                     />
                     Buscar Profesionales
                   </Link>
-                  <Link
-                    href="/membresia"
-                    onClick={closeMenu}
-                    className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors"
-                  >
-                    <FontAwesomeIcon
-                      icon={faCrown}
-                      className="mr-3 text-gray-400 w-4"
-                    />
-                    Membresía
-                  </Link>
                 </>
               )}
 
@@ -227,8 +215,8 @@ export default function UserPanelMenu({
                       if (profileError) {
                         console.error("❌ Error al cargar perfil:", profileError);
                         // Si el perfil no existe, crear uno básico
-                        const { data: newProfile, error: createError } = await supabase
-                          .from("profiles")
+                        const { data: newProfile, error: createError } = await (supabase
+                          .from("profiles") as any)
                           .insert({
                             user_id: user.id,
                             full_name: user.email?.split("@")[0] || "Usuario",
