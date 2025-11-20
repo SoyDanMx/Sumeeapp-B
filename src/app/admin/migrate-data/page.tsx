@@ -40,8 +40,15 @@ export default function MigrateDataPage() {
 
       addResult('info', `Encontrados ${allUsers?.length || 0} usuarios en la base de datos`);
 
+      if (!allUsers || allUsers.length === 0) {
+        addResult('info', 'No se encontraron usuarios para migrar');
+        setLoading(false);
+        return;
+      }
+
       // 2. Identificar usuarios que deberían ser profesionales
-      const professionalUsers = allUsers?.filter(user => {
+      // @ts-ignore - Supabase type inference issue
+      const professionalUsers: any[] = (allUsers as any[]).filter((user: any) => {
         // Criterios para identificar profesionales
         const emailIndicators = user.email?.includes('profesional') || 
                                user.email?.includes('pro') ||
@@ -53,7 +60,7 @@ export default function MigrateDataPage() {
                               user.full_name?.toLowerCase().includes('plomero');
 
         return emailIndicators || nameIndicators || user.role === 'profesional';
-      }) || [];
+      });
 
       addResult('info', `Identificados ${professionalUsers.length} usuarios como profesionales`);
 
@@ -61,12 +68,13 @@ export default function MigrateDataPage() {
       for (const user of professionalUsers) {
         try {
           // Actualizar rol a profesional
-          const { error: updateError } = await supabase
-            .from('profiles')
-            .update({ 
-              role: 'profesional',
-              updated_at: new Date().toISOString()
-            })
+          const updatePayload: any = { 
+            role: 'profesional',
+            updated_at: new Date().toISOString()
+          };
+          const { error: updateError } = await (supabase
+            .from('profiles') as any)
+            .update(updatePayload)
             .eq('user_id', user.user_id);
 
           if (updateError) {
@@ -101,8 +109,8 @@ export default function MigrateDataPage() {
               updated_at: new Date().toISOString()
             };
 
-            const { error: insertError } = await supabase
-              .from('profesionales')
+            const { error: insertError } = await (supabase
+              .from('profesionales') as any)
               .insert([professionalData]);
 
             if (insertError) {
@@ -146,12 +154,13 @@ export default function MigrateDataPage() {
     try {
       addResult('info', 'Reseteando todos los roles a "client"...');
 
-      const { error } = await supabase
-        .from('profiles')
-        .update({ 
-          role: 'client',
-          updated_at: new Date().toISOString()
-        })
+      const updatePayload: any = { 
+        role: 'client',
+        updated_at: new Date().toISOString()
+      };
+      const { error } = await (supabase
+        .from('profiles') as any)
+        .update(updatePayload)
         .neq('user_id', '00000000-0000-0000-0000-000000000000'); // Update all except dummy
 
       if (error) {
