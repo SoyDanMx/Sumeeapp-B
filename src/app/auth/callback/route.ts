@@ -57,10 +57,11 @@ export async function GET(request: NextRequest) {
         }
         
         console.log('✅ PROFILE FETCHED SUCCESSFULLY');
-        console.log('- User role:', profile.role);
+        const profileData = profile as any;
+        console.log('- User role:', profileData.role);
         
         // 5. REDIRIGIMOS BASADO EN EL ROL.
-        if (profile.role === 'profesional') {
+        if (profileData.role === 'profesional') {
           console.log('🎯 REDIRECTING PROFESSIONAL USER TO PROFESSIONAL DASHBOARD...');
           return NextResponse.redirect(`${origin}/professional-dashboard`);
         } else {

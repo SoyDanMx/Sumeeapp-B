@@ -358,8 +358,8 @@ export default function LocationBlockingModal({
         updateData.city = finalCity;
       }
 
-      const { error: updateError } = await supabase
-        .from("profiles")
+      const { error: updateError } = await (supabase
+        .from("profiles") as any)
         .update(updateData)
         .eq("user_id", userProfile.user_id);
 
@@ -367,8 +367,8 @@ export default function LocationBlockingModal({
         // Si falla por 'city', reintentar sin ella
         if (updateError.message?.includes("city") || updateError.message?.includes("ubicacion_direccion")) {
           console.warn("⚠️ Columna no existe, reintentando solo con coordenadas...");
-          const { error: retryError } = await supabase
-            .from("profiles")
+          const { error: retryError } = await (supabase
+            .from("profiles") as any)
             .update({
               ubicacion_lat,
               ubicacion_lng,

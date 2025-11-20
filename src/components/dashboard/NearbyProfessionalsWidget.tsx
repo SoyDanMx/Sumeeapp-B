@@ -97,7 +97,7 @@ export default function NearbyProfessionalsWidget({
         }
 
         const withDistance =
-          data?.map((prof) => ({
+          data?.map((prof: any) => ({
             ...prof,
             distance: calculateDistance(
               clientLat,

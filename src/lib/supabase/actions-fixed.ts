@@ -58,8 +58,8 @@ export async function updateUserProfile(
     console.log('📝 Datos a actualizar:', filteredUpdates);
 
     // 3. Actualización usando UPDATE con .eq() para RLS
-    const { data, error } = await supabase
-      .from('profiles')
+    const { data, error } = await (supabase
+      .from('profiles') as any)
       .update(filteredUpdates)
       .eq('user_id', userId) // CRÍTICO: Filtro para RLS
       .select()
@@ -159,8 +159,8 @@ export async function updateUserProfileUpsert(
     console.log('📝 Datos para UPSERT:', dataToUpsert);
 
     // 3. UPSERT usando onConflict
-    const { data, error } = await supabase
-      .from('profiles')
+    const { data, error } = await (supabase
+      .from('profiles') as any)
       .upsert([dataToUpsert], { onConflict: 'user_id' })
       .select()
       .single();

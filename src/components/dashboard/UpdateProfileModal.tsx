@@ -319,8 +319,8 @@ export default function UpdateProfileModal({
       const { updated_at, ...updateDataWithoutTimestamp } = updateData;
       
       // Actualizar en profiles con verificación
-      let updateResult = await supabase
-        .from("profiles")
+      let updateResult = await (supabase
+        .from("profiles") as any)
         .update(updateDataWithoutTimestamp)
         .eq("user_id", currentProfile.user_id)
         .select(); // CRÍTICO: Verificar que se actualizó
@@ -330,8 +330,8 @@ export default function UpdateProfileModal({
         if (updateResult.error.message?.includes("city") || updateResult.error.message?.includes("column") && updateResult.error.message?.includes("city")) {
           console.warn("⚠️ Reintentando sin columna city...");
           const { city, ...updateDataWithoutCity } = updateDataWithoutTimestamp;
-          updateResult = await supabase
-            .from("profiles")
+          updateResult = await (supabase
+            .from("profiles") as any)
             .update(updateDataWithoutCity)
             .eq("user_id", currentProfile.user_id)
             .select();

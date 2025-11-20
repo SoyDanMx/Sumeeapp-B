@@ -35,8 +35,9 @@ export default function AgreementNotificationBanner({
         .eq("user_id", lead.profesional_asignado_id)
         .single()
         .then(({ data }) => {
-          if (data?.full_name) {
-            setProfessionalName(data.full_name);
+          const profileData = data as any;
+          if (profileData?.full_name) {
+            setProfessionalName(profileData.full_name);
           }
         });
     }

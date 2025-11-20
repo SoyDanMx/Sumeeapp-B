@@ -43,14 +43,9 @@ export default function ClientProfileWidgetCompact({
   const missingWhatsApp = !profile.whatsapp;
   const missingLocation = !profile.ubicacion_lat || !profile.ubicacion_lng;
 
-  // Determinar plan del cliente
-  const planName = profile.membership_status === "premium"
-    ? "Sumee Pro"
-    : "Sumee Express";
-
-  const planColor = profile.membership_status === "premium"
-    ? "from-purple-600 to-indigo-600"
-    : "from-blue-500 to-cyan-500";
+  // Ya no hay membership - todos los clientes tienen acceso completo
+  const planName = "Sumee";
+  const planColor = "from-blue-500 to-cyan-500";
 
   const handleSuccess = () => {
     console.log("✅ Perfil actualizado exitosamente");

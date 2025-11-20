@@ -55,7 +55,7 @@ export default function ConfirmAgreementModal({
         .select("pro_tier")
         .eq("user_id", user.id)
         .single()
-        .then(({ data }) => {
+        .then(({ data }: any) => {
           if (data?.pro_tier) {
             setProTier(data.pro_tier as any);
           }
@@ -105,8 +105,8 @@ export default function ConfirmAgreementModal({
       }
 
       // Actualizar el lead
-      const { error: updateError } = await supabase
-        .from("leads")
+      const { error: updateError } = await (supabase
+        .from("leads") as any)
         .update({
           agreed_price: priceValue,
           agreed_scope: agreedScope.trim(),
