@@ -26,7 +26,7 @@ interface Message {
   role: 'user' | 'assistant';
   content: string;
   timestamp: Date;
-  showMembershipCTA?: boolean;
+  showPaymentCTA?: boolean;
 }
 
 interface DisciplineAIHelperProps {
@@ -34,7 +34,7 @@ interface DisciplineAIHelperProps {
   disciplineName: string;
   disciplineIcon: any;
   disciplineColor: string;
-  onMembershipRedirect?: () => void;
+  onPaymentRedirect?: () => void;
 }
 
 const DISCIPLINE_EXPERTS = {
@@ -113,13 +113,13 @@ export default function DisciplineAIHelper({
   disciplineName, 
   disciplineIcon, 
   disciplineColor,
-  onMembershipRedirect 
+  onPaymentRedirect 
 }: DisciplineAIHelperProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
-  const [showMembershipCTA, setShowMembershipCTA] = useState(false);
+  const [showPaymentCTA, setShowPaymentCTA] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatRef = useRef<HTMLDivElement>(null);
 
@@ -133,7 +133,7 @@ export default function DisciplineAIHelper({
     scrollToBottom();
   }, [messages]);
 
-  const generateAIResponse = async (query: string): Promise<{ response: string; showMembershipCTA: boolean }> => {
+  const generateAIResponse = async (query: string): Promise<{ response: string; showPaymentCTA: boolean }> => {
     // Simular delay de IA
     await new Promise(resolve => setTimeout(resolve, 1500));
     
@@ -160,8 +160,8 @@ Nuestros ${disciplineName}s están verificados, tienen licencias vigentes y ofre
 ✅ Precios transparentes sin sorpresas
 ✅ Seguimiento completo del servicio
 
-¿Te gustaría activar tu membresía para conectar con el mejor ${disciplineName} de tu zona?`,
-        showMembershipCTA: true
+¿Te gustaría configurar tu método de pago para conectar con el mejor ${disciplineName} de tu zona?`,
+        showPaymentCTA: true
       };
     }
 
@@ -174,7 +174,7 @@ Nuestros ${disciplineName}s están verificados, tienen licencias vigentes y ofre
 
     return {
       response: technicalResponses[Math.floor(Math.random() * technicalResponses.length)],
-      showMembershipCTA: false
+      showPaymentCTA: false
     };
   };
 
@@ -200,11 +200,11 @@ Nuestros ${disciplineName}s están verificados, tienen licencias vigentes y ofre
         role: 'assistant',
         content: aiResponse.response,
         timestamp: new Date(),
-        showMembershipCTA: aiResponse.showMembershipCTA
+        showPaymentCTA: aiResponse.showPaymentCTA
       };
 
       setMessages(prev => [...prev, assistantMessage]);
-      setShowMembershipCTA(aiResponse.showMembershipCTA);
+      setShowPaymentCTA(aiResponse.showPaymentCTA);
     } catch (error) {
       console.error('Error generating AI response:', error);
     } finally {
@@ -219,9 +219,9 @@ Nuestros ${disciplineName}s están verificados, tienen licencias vigentes y ofre
     }
   };
 
-  const handleMembershipRedirect = () => {
-    if (onMembershipRedirect) {
-      onMembershipRedirect();
+  const handlePaymentRedirect = () => {
+    if (onPaymentRedirect) {
+      onPaymentRedirect();
     } else {
       window.location.href = '/pago-de-servicios';
     }
@@ -230,7 +230,7 @@ Nuestros ${disciplineName}s están verificados, tienen licencias vigentes y ofre
   const startNewConversation = () => {
     setMessages([]);
     setInputValue('');
-    setShowMembershipCTA(false);
+    setShowPaymentCTA(false);
   };
 
   // Función para enviar un mensaje con un prompt específico
@@ -255,11 +255,11 @@ Nuestros ${disciplineName}s están verificados, tienen licencias vigentes y ofre
         role: 'assistant',
         content: aiResponse.response,
         timestamp: new Date(),
-        showMembershipCTA: aiResponse.showMembershipCTA
+        showPaymentCTA: aiResponse.showPaymentCTA
       };
 
       setMessages(prev => [...prev, assistantMessage]);
-      setShowMembershipCTA(aiResponse.showMembershipCTA);
+      setShowPaymentCTA(aiResponse.showPaymentCTA);
     } catch (error) {
       console.error('Error generating AI response:', error);
     } finally {
@@ -398,7 +398,7 @@ Nuestros ${disciplineName}s están verificados, tienen licencias vigentes y ofre
           </div>
 
           {/* Payment Setup CTA */}
-          {showMembershipCTA && (
+          {showPaymentCTA && (
             <div className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white p-4 border-t">
               <div className="flex items-center space-x-2 mb-2">
                 <FontAwesomeIcon icon={faCrown} className="text-lg" />
@@ -408,7 +408,7 @@ Nuestros ${disciplineName}s están verificados, tienen licencias vigentes y ofre
                 Conecta con {expert.name}s verificados y recibe respuesta en {expert.averageResponseTime}
               </p>
               <button
-                onClick={handleMembershipRedirect}
+                onClick={handlePaymentRedirect}
                 className="w-full bg-white text-orange-600 py-2 px-4 rounded-lg font-semibold hover:bg-gray-100 transition-colors flex items-center justify-center space-x-2"
               >
                 <FontAwesomeIcon icon={faCreditCard} />

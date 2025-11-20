@@ -118,12 +118,14 @@ export default function TecnicosSplitView({
           const distance = calculateDistance(
             userLocation.lat,
             userLocation.lng,
+            // @ts-ignore - Supabase types inference issue
             prof.ubicacion_lat!,
+            // @ts-ignore - Supabase types inference issue
             prof.ubicacion_lng!
           );
 
           professionalsWithDistance.push({
-            ...prof,
+            ...(prof as any),
             distance,
             verified: true,
             total_reviews: Math.floor(Math.random() * 150),

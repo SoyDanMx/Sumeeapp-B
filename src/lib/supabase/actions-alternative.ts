@@ -134,8 +134,8 @@ export async function updateUserProfileSafe(
     if (existingProfile) {
       // Si el perfil existe, hacer UPDATE
       console.log("📝 Perfil existe, haciendo UPDATE...");
-      ({ data, error } = await supabase
-        .from("profiles")
+      ({ data, error } = await (supabase
+        .from("profiles") as any)
         .update(filteredData)
         .eq("user_id", userId)
         .select()
@@ -143,8 +143,8 @@ export async function updateUserProfileSafe(
     } else {
       // Si el perfil no existe, intentar INSERT (no debería pasar en flujo normal)
       console.log("⚠️ Perfil no existe, intentando INSERT...");
-      ({ data, error } = await supabase
-        .from("profiles")
+      ({ data, error } = await (supabase
+        .from("profiles") as any)
         .insert([filteredData])
         .select()
         .single());
@@ -209,8 +209,8 @@ export async function updateUserProfileFallback(
         email: updates.email || "",
       };
 
-      const { data, error: minimalError } = await supabase
-        .from("profiles")
+      const { data, error: minimalError } = await (supabase
+        .from("profiles") as any)
         .upsert([minimalData], { onConflict: "user_id" })
         .select()
         .single();

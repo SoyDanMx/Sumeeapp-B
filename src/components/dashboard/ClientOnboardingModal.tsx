@@ -142,14 +142,19 @@ export default function ClientOnboardingModal({
   // Manejar selección de sugerencia
   const handleSelectSuggestion = (suggestion: AddressSuggestion) => {
     const formatted = formatAddressSuggestion(suggestion);
+    console.log("✅ Sugerencia seleccionada:", formatted);
+    console.log("📋 Datos completos de sugerencia:", suggestion);
+    
     setFormData((prev) => {
       const updated = { ...prev, address: formatted };
+      console.log("📝 Prellenando dirección desde sugerencia:", formatted);
       
       // Si la sugerencia tiene coordenadas, guardarlas
       if (suggestion.lat && suggestion.lon) {
         const lat = parseFloat(suggestion.lat);
         const lng = parseFloat(suggestion.lon);
         if (!isNaN(lat) && !isNaN(lng)) {
+          console.log("📍 Guardando coordenadas de sugerencia:", { lat, lng });
           setSelectedAddressCoords({ lat, lng });
           setUseGPS(false); // No usar GPS, usar coordenadas de la sugerencia
         }
@@ -158,15 +163,23 @@ export default function ClientOnboardingModal({
       // Si la sugerencia tiene información de ciudad, actualizarla
       if (suggestion.address?.city) {
         const cityName = suggestion.address.city;
-        // Verificar si la ciudad está en la lista de CITIES
-        if (CITIES.includes(cityName)) {
-          updated.city = cityName;
+        console.log("🏙️ Ciudad detectada desde sugerencia:", cityName);
+        
+        // Buscar ciudad en la lista (case insensitive)
+        const cityMatch = CITIES.find(c => c.toLowerCase() === cityName.toLowerCase());
+        
+        if (cityMatch) {
+          console.log("✅ Ciudad encontrada en lista:", cityMatch);
+          updated.city = cityMatch;
+          updated.otherCity = "";
         } else {
+          console.log("⚠️ Ciudad no está en lista, usando 'Otra':", cityName);
           updated.city = "Otra";
           updated.otherCity = cityName;
         }
       }
       
+      console.log("📝 formData actualizado:", updated);
       return updated;
     });
     
@@ -287,9 +300,84 @@ export default function ClientOnboardingModal({
 
       console.log("✅ Ubicación GPS obtenida:", position.coords);
       
+      const latitude = position.coords.latitude;
+      const longitude = position.coords.longitude;
+      
+      // Guardar coordenadas
+      setSelectedAddressCoords({ lat: latitude, lng: longitude });
+      
+      // Hacer reverse geocoding para obtener la dirección y prellenar el campo
+      try {
+        console.log("🗺️ Obteniendo dirección desde coordenadas GPS...");
+        
+        // Agregar un pequeño delay para evitar rate limiting
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        const response = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&addressdetails=1&accept-language=es&zoom=18`,
+          {
+            headers: {
+              "User-Agent": "SumeeApp/1.0 (https://sumeeapp.com; contact@sumeeapp.com)",
+              "Accept-Language": "es-MX,es;q=0.9",
+            },
+          }
+        );
+        
+        console.log("📡 Respuesta OpenStreetMap desde GPS:", response.status);
+
+        if (response.ok) {
+          const data = await response.json();
+          console.log("📋 Datos OpenStreetMap desde GPS:", data);
+          
+          if (data && data.display_name) {
+            const address = data.display_name;
+            console.log("✅ Dirección obtenida desde GPS:", address);
+            console.log("📝 Prellenando dirección en formulario...");
+            
+            // Actualizar el estado de forma explícita y completa
+            setFormData((prev) => {
+              const updated = { ...prev, address };
+              console.log("📝 formData actualizado con dirección:", updated);
+              return updated;
+            });
+            
+            // Si la dirección tiene información de ciudad, actualizarla
+            if (data.address) {
+              const cityName = data.address.city || data.address.town || data.address.municipality || data.address.county;
+              console.log("🏙️ Ciudad detectada desde GPS:", cityName);
+              
+              if (cityName) {
+                // Buscar ciudad en la lista (case insensitive)
+                const cityMatch = CITIES.find(c => c.toLowerCase() === cityName.toLowerCase());
+                
+                if (cityMatch) {
+                  console.log("✅ Ciudad encontrada en lista:", cityMatch);
+                  setFormData((prev) => ({ ...prev, city: cityMatch, otherCity: "" }));
+                } else {
+                  console.log("⚠️ Ciudad no está en lista, usando 'Otra':", cityName);
+                  setFormData((prev) => ({ 
+                    ...prev, 
+                    city: "Otra",
+                    otherCity: cityName 
+                  }));
+                }
+              }
+            }
+            
+            setError(null); // Limpiar cualquier error previo
+          } else {
+            console.warn("⚠️ No se pudo obtener dirección desde GPS, datos:", data);
+          }
+        } else {
+          console.error("❌ Error en respuesta de OpenStreetMap:", response.status);
+        }
+      } catch (geocodeError) {
+        console.warn("⚠️ Error al obtener dirección desde GPS:", geocodeError);
+        // No es crítico, el usuario puede ingresar la dirección manualmente
+      }
+      
       // Mostrar feedback visual
       setError(null);
-      alert(`✅ Ubicación GPS obtenida: ${position.coords.latitude.toFixed(4)}, ${position.coords.longitude.toFixed(4)}`);
       
     } catch (err: any) {
       console.error("❌ Error obteniendo GPS:", err);
@@ -398,8 +486,8 @@ export default function ClientOnboardingModal({
       
       // Intentar incluir 'city' (podría no existir en schema antiguo)
       try {
-        const result = await supabase
-          .from("profiles")
+        const result = await (supabase
+          .from("profiles") as any)
           .update({
             ...updateData,
             city: finalCity,
@@ -411,8 +499,8 @@ export default function ClientOnboardingModal({
         // Si error es por columna 'city', reintentar sin ella
         if (updateError && updateError.message?.includes("city")) {
           console.warn("⚠️ Columna 'city' no existe, reintentando sin ella...");
-          const retryResult = await supabase
-            .from("profiles")
+          const retryResult = await (supabase
+            .from("profiles") as any)
             .update(updateData)
             .eq("user_id", userProfile.user_id);
           

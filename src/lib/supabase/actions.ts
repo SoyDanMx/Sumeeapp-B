@@ -48,8 +48,8 @@ export async function updateUserProfile(
     console.log('📝 Datos a actualizar:', dataToUpdate);
 
     // 3. Actualización usando UPDATE con .eq() para RLS
-    const { data, error } = await supabase
-      .from('profiles')
+    const { data, error } = await (supabase
+      .from('profiles') as any)
       .update(dataToUpdate)
       .eq('user_id', userId) // CRÍTICO: Filtro para RLS
       .select()

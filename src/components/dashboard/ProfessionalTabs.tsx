@@ -99,10 +99,8 @@ export default function ProfessionalTabs({
     typeof profesional.review_count === "number"
       ? profesional.review_count
       : null;
-  const membershipLabel =
-    profesional.membership_status === "premium"
-      ? "Sumee Pro Premium"
-      : "Sumee Pro";
+  // Ya no hay membership - todos son profesionales Sumee Pro
+  const membershipLabel = "Sumee Pro";
   const specialties =
     profesional.areas_servicio ||
     (profesional.profession ? [profesional.profession] : []);

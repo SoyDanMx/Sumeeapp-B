@@ -80,8 +80,8 @@ export function useProfesionalData(): UseProfesionalDataReturn {
           if (!profesionalData.role || profesionalData.role === null) {
             console.warn("⚠️ Perfil sin rol asignado, intentando actualizar a 'profesional'...");
             try {
-              const { error: updateError } = await supabase
-                .from("profiles")
+              const { error: updateError } = await (supabase
+                .from("profiles") as any)
                 .update({ role: "profesional" })
                 .eq("user_id", currentUserId);
 
@@ -114,7 +114,7 @@ export function useProfesionalData(): UseProfesionalDataReturn {
 
         // Intentar obtener los leads usando la función RPC
         let leadsData: Lead[] = [];
-        const openLeadsResult = await supabase.rpc(
+        const openLeadsResult = await (supabase.rpc as any)(
           "get_open_leads_for_professional",
           {
             professional_id: currentUserId,
@@ -173,8 +173,8 @@ export function useProfesionalData(): UseProfesionalDataReturn {
 
         if (profesionalData?.disponibilidad !== "disponible") {
           try {
-            await supabase
-              .from("profiles")
+            await (supabase
+              .from("profiles") as any)
               .update({ disponibilidad: "disponible" })
               .eq("user_id", currentUserId)
               .throwOnError();
@@ -281,7 +281,8 @@ export function useProfesionalData(): UseProfesionalDataReturn {
             .eq("user_id", currentUser.id)
             .single();
           
-          if (profileCheck?.role === 'client') {
+          // @ts-ignore - Supabase types inference issue
+          if ((profileCheck as any)?.role === 'client') {
             // Usuario es cliente, no cargar datos de profesional
             setProfesional(null);
             setLeads([]);
@@ -320,7 +321,8 @@ export function useProfesionalData(): UseProfesionalDataReturn {
             .eq("user_id", currentUser.id)
             .single();
           
-          if (profileCheck?.role === 'client') {
+          // @ts-ignore - Supabase types inference issue
+          if ((profileCheck as any)?.role === 'client') {
             // Usuario es cliente, no cargar datos de profesional
             setProfesional(null);
             setLeads([]);
