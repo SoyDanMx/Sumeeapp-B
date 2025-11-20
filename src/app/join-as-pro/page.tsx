@@ -2,7 +2,7 @@
 
 import { useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabase/client-new";
+import { supabase } from "@/lib/supabase/client";
 import { getEmailConfirmationUrl } from "@/lib/utils";
 import { geocodeAddress, reverseGeocode } from "@/lib/geocoding";
 import dynamic from "next/dynamic";

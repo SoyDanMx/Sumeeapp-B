@@ -1,4 +1,5 @@
 // src/lib/supabase/client.ts
+'use client';
 
 import { createClient } from "@supabase/supabase-js";
 
@@ -15,8 +16,17 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 import { getRedirectUrl, getEmailConfirmationUrl } from "@/lib/utils";
 
+// SINGLETON: Asegurar que solo se cree una instancia del cliente
+// Esto previene el warning "Multiple GoTrueClient instances detected"
+let supabaseInstance: ReturnType<typeof createClient> | null = null;
+
 // Inicializa el cliente Supabase con configuración PKCE específica para resolver el error
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+const createSupabaseClient = () => {
+  if (supabaseInstance) {
+    return supabaseInstance;
+  }
+
+  supabaseInstance = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     // CONFIGURACIÓN PKCE ESPECÍFICA PARA RESOLVER EL ERROR
     flowType: "pkce",
@@ -49,8 +59,13 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
       // Headers adicionales para PKCE
       "X-PKCE-Flow": "enabled",
     },
-  },
-});
+  });
+
+  return supabaseInstance;
+};
+
+// Exportar instancia singleton
+export const supabase = createSupabaseClient();
 
 // Manejo global de errores de refresh token (solo en el navegador)
 if (typeof window !== "undefined") {
