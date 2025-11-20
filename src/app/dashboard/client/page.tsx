@@ -501,9 +501,11 @@ export default function ClientDashboardPage() {
   };
 
   const handleProgrammedRequest = () => {
+    // Usar el mismo flujo simple que los botones Express
+    // El usuario puede elegir el servicio en el modal
     setSelectedService(null);
     setIsEmergencyMenuOpen(false);
-    setIsAIAssistantOpen(true); // Abrir asistente IA en lugar del modal tradicional
+    setIsModalOpen(true); // Abrir modal tradicional (funciona correctamente)
   };
 
   // Cerrar modal y limpiar servicio seleccionado
@@ -851,18 +853,24 @@ export default function ClientDashboardPage() {
               </button>
               <button
                 onClick={handleProgrammedRequest}
-                className="w-full inline-flex items-center justify-between gap-3 bg-white/10 text-white font-semibold text-sm sm:text-base px-4 sm:px-5 py-3 sm:py-3.5 rounded-xl border border-white/20 hover:bg-white/15 transition-all duration-200"
+                className="group relative w-full inline-flex items-center justify-between gap-3 bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 text-white font-semibold text-sm sm:text-base px-4 sm:px-5 py-3 sm:py-3.5 rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 overflow-hidden"
               >
-                <span className="flex flex-col items-start gap-1">
+                {/* Efecto de brillo animado */}
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transform -skew-x-12 translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000"></div>
+                
+                <span className="relative flex flex-col items-start gap-1 z-10">
                   <span className="flex items-center gap-2">
-                    <FontAwesomeIcon icon={faWrench} className="text-white text-base sm:text-lg" />
-                    Agendar Proyecto Pro
+                    <FontAwesomeIcon 
+                      icon={faWrench} 
+                      className="text-white text-base sm:text-lg group-hover:rotate-12 transition-transform duration-300" 
+                    />
+                    <span>Agendar Proyecto Pro</span>
                   </span>
-                  <span className="text-[10px] sm:text-xs text-white/60 italic">
-                    (Con Asistencia de IA)
+                  <span className="text-[10px] sm:text-xs text-white/80 italic">
+                    Proyectos planificados con visita diagnóstica
                   </span>
                 </span>
-                <span className="text-[10px] sm:text-xs uppercase tracking-[0.3em] text-white/70">
+                <span className="relative text-[10px] sm:text-xs uppercase tracking-[0.3em] text-white/90 font-bold bg-white/20 px-2 py-1 rounded-full z-10">
                   Programado
                 </span>
               </button>
@@ -1093,11 +1101,20 @@ export default function ClientDashboardPage() {
           </button>
           <button
             onClick={handleProgrammedRequest}
-            className="w-full inline-flex items-center justify-between px-4 py-3 rounded-xl border border-white/70 bg-white/80 text-gray-900 font-semibold"
+            className="group relative w-full inline-flex items-center justify-between px-4 py-3 rounded-xl bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 text-white font-semibold shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 overflow-hidden"
           >
-            <span className="flex items-center gap-2">
-              <FontAwesomeIcon icon={faWrench} className="text-indigo-600" />
-              Proyecto programado
+            {/* Efecto de brillo animado */}
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transform -skew-x-12 translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000"></div>
+            
+            <span className="relative flex items-center gap-2 z-10">
+              <FontAwesomeIcon 
+                icon={faWrench} 
+                className="text-white group-hover:rotate-12 transition-transform duration-300" 
+              />
+              <span>Proyecto Programado</span>
+            </span>
+            <span className="relative text-[10px] uppercase tracking-[0.3em] text-white/90 font-bold bg-white/20 px-2 py-1 rounded-full z-10">
+              Pro
             </span>
             <span className="text-[10px] uppercase tracking-[0.3em]">Pro</span>
           </button>
