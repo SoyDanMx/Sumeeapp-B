@@ -12,7 +12,8 @@ import { Header } from "@/components/Header";
 import { LocationProvider } from "@/context/LocationContext";
 import { AuthProvider } from "@/context/AuthContext";
 import { UserProvider } from "@/context/UserContext";
-import { MembershipProvider } from "@/context/MembershipContext";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { QueryProvider } from "@/providers/QueryProvider";
 
 // Fuente optimizada para CLS - auto-hospedada con next/font
 const inter = Inter({
@@ -130,21 +131,23 @@ export default function RootLayout({
         <CriticalCSS />
       </head>
       <body className={inter.className}>
-        <SkipLinks />
-        <ClientAnalytics />
-        <LocationProvider>
-          <AuthProvider>
-            <UserProvider>
-              <MembershipProvider>
-                <Header />
-                <main id="main-content" className="pt-0">
-                  {children}
-                </main>
-              </MembershipProvider>
-            </UserProvider>
-          </AuthProvider>
-        </LocationProvider>
-        <ClientWhatsAppWidget />
+        <ErrorBoundary>
+          <QueryProvider>
+            <SkipLinks />
+            <ClientAnalytics />
+            <LocationProvider>
+              <AuthProvider>
+                <UserProvider>
+                  <Header />
+                  <main id="main-content" className="pt-0">
+                    {children}
+                  </main>
+                </UserProvider>
+              </AuthProvider>
+            </LocationProvider>
+            <ClientWhatsAppWidget />
+          </QueryProvider>
+        </ErrorBoundary>
       </body>
     </html>
   );
