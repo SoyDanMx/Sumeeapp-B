@@ -60,14 +60,16 @@ export default function VerifySessionPage() {
           return;
         }
 
-        console.log('✅ Profile verified:', profile.role);
+        // @ts-ignore - Supabase type inference issue
+        const profileData = profile as any;
+        console.log('✅ Profile verified:', profileData.role);
         
         setStatus('success');
-        setMessage(`¡Bienvenido ${profile.full_name}! Redirigiendo a tu panel...`);
+        setMessage(`¡Bienvenido ${profileData.full_name}! Redirigiendo a tu panel...`);
         
         // Redirigir basado en el rol
         setTimeout(() => {
-          if (profile.role === 'profesional') {
+          if (profileData.role === 'profesional') {
             router.push('/professional-dashboard');
           } else {
             router.push('/dashboard/client');
