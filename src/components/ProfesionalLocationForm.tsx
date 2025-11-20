@@ -22,8 +22,8 @@ export default function ProfesionalLocationForm({ userId }: { userId: string }) 
         setStatus('Guardando ubicación...');
         
         // 1. Guardar las coordenadas en la tabla profiles
-        const { error } = await supabase
-            .from('profiles')
+        const { error } = await (supabase
+            .from('profiles') as any)
             .update({ 
                 ubicacion_lat: coords.lat, 
                 ubicacion_lng: coords.lng 
