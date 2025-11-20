@@ -9,30 +9,68 @@ import {
   faChevronRight,
   faUser,
   faWrench,
+  faPlus,
+  faArrowRight,
 } from "@fortawesome/free-solid-svg-icons";
 
 interface UpcomingServiceWidgetProps {
   upcomingLead: Lead | null;
   onViewDetails?: (lead: Lead) => void;
+  onRequestService?: () => void;
 }
 
 export default function UpcomingServiceWidget({
   upcomingLead,
   onViewDetails,
+  onRequestService,
 }: UpcomingServiceWidgetProps) {
   if (!upcomingLead) {
     return (
-      <div className="bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl p-6 text-white">
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="text-lg font-semibold mb-2">Próximo Servicio</h3>
-            <p className="text-blue-100">
-              No tienes servicios agendados. ¡Solicita uno ahora!
-            </p>
+      <div className="bg-gradient-to-r from-blue-500 via-indigo-600 to-purple-600 rounded-xl p-6 sm:p-8 text-white shadow-xl relative overflow-hidden">
+        {/* Efecto de brillo animado de fondo */}
+        <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 transform -skew-x-12 animate-shimmer"></div>
+        
+        <div className="relative z-10">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center backdrop-blur-sm">
+                  <FontAwesomeIcon icon={faClock} className="text-xl" />
+                </div>
+                <h3 className="text-xl font-bold">Próximo Servicio</h3>
+              </div>
+              <p className="text-blue-100 text-sm sm:text-base mb-4">
+                No tienes servicios agendados. ¡Solicita uno ahora y te conectaremos con especialistas verificados!
+              </p>
+            </div>
+            <div className="w-16 h-16 sm:w-20 sm:h-20 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm flex-shrink-0">
+              <FontAwesomeIcon icon={faWrench} className="text-2xl sm:text-3xl" />
+            </div>
           </div>
-          <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center">
-            <FontAwesomeIcon icon={faClock} className="text-2xl" />
-          </div>
+          
+          {/* Botón CTA Moderno */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              if (onRequestService) {
+                onRequestService();
+              }
+            }}
+            className="group relative w-full sm:w-auto inline-flex items-center justify-center gap-3 bg-white text-indigo-700 font-bold text-sm sm:text-base px-6 py-3.5 rounded-xl shadow-lg hover:shadow-2xl transform hover:scale-[1.02] transition-all duration-300 hover:bg-indigo-50 overflow-hidden"
+          >
+            {/* Efecto de brillo en hover */}
+            <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent transform -skew-x-12 translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000"></span>
+            
+            <FontAwesomeIcon 
+              icon={faPlus} 
+              className="text-lg group-hover:rotate-90 transition-transform duration-300" 
+            />
+            <span className="relative z-10">Solicitar Servicio Ahora</span>
+            <FontAwesomeIcon 
+              icon={faArrowRight} 
+              className="text-sm group-hover:translate-x-1 transition-transform duration-300 relative z-10" 
+            />
+          </button>
         </div>
       </div>
     );
