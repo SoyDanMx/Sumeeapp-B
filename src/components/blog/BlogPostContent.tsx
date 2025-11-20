@@ -216,7 +216,7 @@ export function BlogPostContent({ post }: BlogPostContentProps) {
                   </p>
 
                   <a
-                    href="/membresia"
+                    href="/pago-de-servicios"
                     className="inline-flex items-center bg-white text-green-600 hover:text-green-700 font-bold text-lg px-8 py-4 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200"
                   >
                     ¡Quiero un Técnico Verificado Ahora Mismo!
@@ -248,7 +248,7 @@ export function BlogPostContent({ post }: BlogPostContentProps) {
                   </p>
 
                   <a
-                    href="/membresia"
+                    href="/pago-de-servicios"
                     className="inline-flex items-center bg-white text-blue-600 hover:text-blue-700 font-bold text-lg px-8 py-4 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200"
                   >
                     ¡Instalar Sistema de Seguridad Ahora!
@@ -280,7 +280,7 @@ export function BlogPostContent({ post }: BlogPostContentProps) {
                   </p>
 
                   <a
-                    href="/membresia"
+                    href="/pago-de-servicios"
                     className="inline-flex items-center bg-white text-cyan-600 hover:text-cyan-700 font-bold text-lg px-8 py-4 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200"
                   >
                     ¡Instalar Bomba de Agua Ahora!
@@ -310,7 +310,7 @@ export function BlogPostContent({ post }: BlogPostContentProps) {
                   </p>
 
                   <a
-                    href="/membresia"
+                    href="/pago-de-servicios"
                     className="inline-flex items-center bg-white text-red-600 hover:text-red-700 font-bold text-lg px-8 py-4 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200"
                   >
                     ¡Revisar Instalación Eléctrica Ya!

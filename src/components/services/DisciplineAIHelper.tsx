@@ -223,7 +223,7 @@ Nuestros ${disciplineName}s están verificados, tienen licencias vigentes y ofre
     if (onMembershipRedirect) {
       onMembershipRedirect();
     } else {
-      window.location.href = '/membresia';
+      window.location.href = '/pago-de-servicios';
     }
   };
 

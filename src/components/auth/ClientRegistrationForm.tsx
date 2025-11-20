@@ -81,9 +81,9 @@ export default function ClientRegistrationForm() {
 
       if (data.user) {
         setSuccess(true);
-        // Redirigir a página de confirmación o membresía
+        // Redirigir a página de confirmación o pago de servicios
         setTimeout(() => {
-          router.push('/membresia');
+          router.push('/pago-de-servicios');
         }, 2000);
       }
 

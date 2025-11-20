@@ -21,7 +21,7 @@ export default async function PagoExitosoPage({ searchParams }: PagoExitosoPageP
   const leadId = params.lead_id as string;
 
   if (!sessionId) {
-    redirect('/membresia?error=no_session');
+    redirect('/pago-de-servicios?error=no_session');
   }
 
   const supabase = await createSupabaseServerClient();
@@ -91,7 +91,7 @@ export default async function PagoExitosoPage({ searchParams }: PagoExitosoPageP
         </h1>
         
         <p className="text-gray-600 mb-6">
-          Tu membresía ha sido activada exitosamente. Ahora puedes acceder a todos los servicios de Sumee App.
+          Tu pago ha sido procesado exitosamente. Ahora puedes acceder a todos los servicios de Sumee App.
         </p>
 
         {/* Benefits List */}
@@ -127,17 +127,17 @@ export default async function PagoExitosoPage({ searchParams }: PagoExitosoPageP
           )}
           
           <Link
-            href="/membresia"
+            href="/pago-de-servicios"
             className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 py-3 px-6 rounded-lg font-medium transition-colors"
           >
-            Ver Detalles de mi Membresía
+            Ver Detalles del Sistema de Pago
           </Link>
         </div>
 
         {/* Additional Info */}
         <div className="mt-6 p-4 bg-blue-50 rounded-lg">
           <p className="text-sm text-blue-800">
-            <strong>¿Necesitas ayuda?</strong> Contacta a nuestro equipo de soporte si tienes alguna pregunta sobre tu membresía.
+            <strong>¿Necesitas ayuda?</strong> Contacta a nuestro equipo de soporte si tienes alguna pregunta sobre el pago.
           </p>
         </div>
       </div>

@@ -354,10 +354,10 @@ export default function ClientDashboardPage() {
               </div>
             </div>
             <Link
-              href="/membresia"
+              href="/pago-de-servicios"
               className="inline-block bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white px-10 py-4 rounded-xl font-bold text-lg transition-all shadow-xl hover:shadow-2xl transform hover:-translate-y-1 hover:scale-105"
             >
-              Obtener Membresía Premium
+              Configurar Método de Pago
               <FontAwesomeIcon icon={faArrowRight} className="ml-2" />
             </Link>
           </div>
