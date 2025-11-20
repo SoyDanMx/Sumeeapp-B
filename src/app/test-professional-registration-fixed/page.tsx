@@ -106,11 +106,11 @@ export default function TestProfessionalRegistrationFixedPage() {
         },
         profile: profile || null,
         profileError: profileError?.message || null,
-        currentRole: profile?.role || 'No encontrado',
-        expectedRedirect: profile?.role === 'profesional' ? 
+        currentRole: (profile as any)?.role || 'No encontrado',
+        expectedRedirect: (profile as any)?.role === 'profesional' ? 
           'Debería ser redirigido a /professional-dashboard' : 
           'Debería ser redirigido a /dashboard/client',
-        isCorrect: profile?.role === 'profesional',
+        isCorrect: (profile as any)?.role === 'profesional',
         debugUrl: '/debug-professional-registration'
       });
     } catch (err: any) {
