@@ -85,8 +85,8 @@ export default function DebugProfessionalRegistrationPage() {
                                  emailIndicators.containsPro ||
                                  nameIndicators.containsProfesional
           },
-          currentRole: profile?.role || 'No encontrado',
-          expectedRedirect: profile?.role === 'profesional' ? 
+          currentRole: (profile as any)?.role || 'No encontrado',
+          expectedRedirect: (profile as any)?.role === 'profesional' ? 
             '/professional-dashboard' : 
             '/dashboard/client'
         });
@@ -108,12 +108,13 @@ export default function DebugProfessionalRegistrationPage() {
       setLoading(true);
       
       // Intentar corregir el rol del usuario
-      const { data, error } = await supabase
-        .from('profiles')
-        .update({ 
-          role: 'profesional',
-          updated_at: new Date().toISOString()
-        })
+      const updatePayload: any = { 
+        role: 'profesional',
+        updated_at: new Date().toISOString()
+      };
+      const { data, error } = await (supabase
+        .from('profiles') as any)
+        .update(updatePayload)
         .eq('user_id', debugInfo.user.id)
         .select();
 
@@ -220,26 +221,26 @@ export default function DebugProfessionalRegistrationPage() {
                       <p className="text-sm text-green-800">
                         <strong>Rol Actual:</strong> 
                         <span className={`ml-2 px-2 py-1 rounded text-xs font-semibold ${
-                          debugInfo.profile.role === 'profesional' 
+                          (debugInfo.profile as any).role === 'profesional' 
                             ? 'bg-blue-100 text-blue-800' 
                             : 'bg-gray-100 text-gray-800'
                         }`}>
-                          {debugInfo.profile.role}
+                          {(debugInfo.profile as any).role}
                         </span>
                       </p>
                       <p className="text-sm text-green-800">
-                        <strong>Nombre:</strong> {debugInfo.profile.full_name}
+                        <strong>Nombre:</strong> {(debugInfo.profile as any).full_name}
                       </p>
                       <p className="text-sm text-green-800">
-                        <strong>Email:</strong> {debugInfo.profile.email}
+                        <strong>Email:</strong> {(debugInfo.profile as any).email}
                       </p>
                     </div>
                     <div>
                       <p className="text-sm text-green-800">
-                        <strong>Creado:</strong> {new Date(debugInfo.profile.created_at).toLocaleString()}
+                        <strong>Creado:</strong> {new Date((debugInfo.profile as any).created_at).toLocaleString()}
                       </p>
                       <p className="text-sm text-green-800">
-                        <strong>Actualizado:</strong> {new Date(debugInfo.profile.updated_at).toLocaleString()}
+                        <strong>Actualizado:</strong> {new Date((debugInfo.profile as any).updated_at).toLocaleString()}
                       </p>
                     </div>
                   </div>
