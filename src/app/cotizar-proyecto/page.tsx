@@ -157,10 +157,12 @@ ARCHIVOS: ${formData.archivos.length} archivo(s) adjunto(s)`;
         // Redirigir a WhatsApp después de 2 segundos
         setTimeout(() => {
           const whatsappPhone = "525636741156"; // Número de soporte de Sumee App
+          // @ts-ignore - Supabase type inference issue
+          const leadIdStr = String(result.leadId || '');
           const message = encodeURIComponent(
             `Hola, acabo de solicitar una cotización para mi proyecto: ${formData.tipoProyecto}. ` +
               `Presupuesto estimado: ${formData.presupuesto}. ` +
-              `Mi solicitud ID: ${result.leadId.substring(0, 8)}`
+              `Mi solicitud ID: ${leadIdStr.substring(0, 8)}`
           );
           const whatsappUrl = `https://wa.me/${whatsappPhone}?text=${message}`;
           window.open(whatsappUrl, "_blank");
