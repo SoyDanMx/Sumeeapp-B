@@ -319,19 +319,20 @@ export default function AISumeeAssistant({
   // 🆕 Verificar contacto al abrir el asistente (Fase 2)
   useEffect(() => {
     if (isOpen && user && profile) {
-      const hasContact = profile.whatsapp || profile.phone;
+      const profileTyped = profile as any;
+      const hasContact = profileTyped.whatsapp || profileTyped.phone;
       if (!hasContact) {
         console.log('📞 Cliente necesita WhatsApp/Teléfono - Activando gating');
         setNeedsContactInfo(true);
         // Prefill con WhatsApp del perfil si existe
-        if (profile.whatsapp) {
-          setClientWhatsApp(profile.whatsapp);
-        } else if (profile.phone) {
-          setClientWhatsApp(profile.phone);
+        if (profileTyped.whatsapp) {
+          setClientWhatsApp(profileTyped.whatsapp);
+        } else if (profileTyped.phone) {
+          setClientWhatsApp(profileTyped.phone);
         }
       } else {
         setNeedsContactInfo(false);
-        setClientWhatsApp(profile.whatsapp || profile.phone || "");
+        setClientWhatsApp(profileTyped.whatsapp || profileTyped.phone || "");
       }
     }
   }, [isOpen, user, profile]);
@@ -507,7 +508,7 @@ export default function AISumeeAssistant({
             .select("city")
             .eq("user_id", user.id)
             .single();
-          userCity = profileData?.city || null;
+          userCity = (profileData as any)?.city || null;
         } catch (e) {
           // Ignorar error, continuar sin ciudad
         }
@@ -936,12 +937,13 @@ export default function AISumeeAssistant({
     if (needsContactInfo && user) {
       setIsUpdatingContact(true);
       try {
-        const { error: updateError } = await supabase
-          .from("profiles")
-          .update({
-            whatsapp: cleanedWhatsApp,
-            phone: cleanedWhatsApp, // También actualizar phone como fallback
-          })
+        const updatePayload: any = {
+          whatsapp: cleanedWhatsApp,
+          phone: cleanedWhatsApp, // También actualizar phone como fallback
+        };
+        const { error: updateError } = await (supabase
+          .from("profiles") as any)
+          .update(updatePayload)
           .eq("user_id", user.id);
 
         if (updateError) {
@@ -995,8 +997,9 @@ export default function AISumeeAssistant({
         } else {
           profileData = data;
           // Inicializar WhatsApp del cliente si no está en el estado pero sí en el perfil
-          if (!clientWhatsApp.trim() && (profileData.whatsapp || profileData.phone)) {
-            setClientWhatsApp(profileData.whatsapp || profileData.phone || "");
+          const profileDataTyped = profileData as any;
+          if (!clientWhatsApp.trim() && (profileDataTyped.whatsapp || profileDataTyped.phone)) {
+            setClientWhatsApp(profileDataTyped.whatsapp || profileDataTyped.phone || "");
           }
         }
       } catch (error) {
@@ -1026,15 +1029,17 @@ export default function AISumeeAssistant({
         : classification.disciplina || "General";
       
       // Usar coordenadas del servicio (prioridad) o del perfil del cliente
-      const ubicacionLat = serviceLocationCoords?.lat || profileData?.ubicacion_lat || profile?.ubicacion_lat || 19.4326; // CDMX por defecto
-      const ubicacionLng = serviceLocationCoords?.lng || profileData?.ubicacion_lng || profile?.ubicacion_lng || -99.1332; // CDMX por defecto
-      const ubicacionDireccion = serviceLocation.trim() || (profileData as any)?.ubicacion_direccion || (profile as any)?.ubicacion_direccion || "Ubicación no especificada";
+      const profileTyped = profile as any;
+      const profileDataTyped = profileData as any;
+      const ubicacionLat = serviceLocationCoords?.lat || profileDataTyped?.ubicacion_lat || profileTyped?.ubicacion_lat || 19.4326; // CDMX por defecto
+      const ubicacionLng = serviceLocationCoords?.lng || profileDataTyped?.ubicacion_lng || profileTyped?.ubicacion_lng || -99.1332; // CDMX por defecto
+      const ubicacionDireccion = serviceLocation.trim() || profileDataTyped?.ubicacion_direccion || profileTyped?.ubicacion_direccion || "Ubicación no especificada";
       
       // Preparar datos para crear el lead según la firma de la función actualizada
       // Orden según la firma: nombre_cliente_in, whatsapp_in, descripcion_proyecto_in, ubicacion_lat_in, ubicacion_lng_in, servicio_in, urgencia_in, ubicacion_direccion_in, imagen_url_in, photos_urls_in, disciplina_ia_in, urgencia_ia_in, diagnostico_ia_in
       const urgenciaValue = classification.urgencia || "5";
       // Usar WhatsApp del cliente capturado en el formulario (ya limpiado arriba), o del perfil como fallback
-      const whatsappFinal = cleanedWhatsApp || profileData?.whatsapp || profileData?.phone || profile?.whatsapp || profile?.phone || user.user_metadata?.phone || "";
+      const whatsappFinal = cleanedWhatsApp || profileDataTyped?.whatsapp || profileDataTyped?.phone || profileTyped?.whatsapp || profileTyped?.phone || user.user_metadata?.phone || "";
       
       // priority_boost siempre false (ya no hay sistema de membresías)
       const priorityBoost = false;
@@ -1044,7 +1049,7 @@ export default function AISumeeAssistant({
       const precioMax = classification.precio_estimado_max || null;
 
       const leadData = {
-        nombre_cliente_in: profileData?.full_name || profile?.full_name || user.user_metadata?.full_name || user.email?.split("@")[0] || "Cliente",
+        nombre_cliente_in: profileDataTyped?.full_name || profileTyped?.full_name || user.user_metadata?.full_name || user.email?.split("@")[0] || "Cliente",
         whatsapp_in: whatsappFinal, // Usar WhatsApp capturado en el formulario
         descripcion_proyecto_in: classification.descripcion_final || inputText || "Solicitud de servicio",
         ubicacion_lat_in: Number(ubicacionLat), // Convertir a número explícitamente
@@ -1065,7 +1070,7 @@ export default function AISumeeAssistant({
       console.log("📤 Enviando lead con datos:", leadData);
 
       // Llamar al RPC create_lead
-      const { data, error } = await supabase.rpc("create_lead", leadData);
+      const { data, error } = await (supabase.rpc as any)("create_lead", leadData);
 
       if (error) {
         console.error("❌ Error creando lead:", error);
