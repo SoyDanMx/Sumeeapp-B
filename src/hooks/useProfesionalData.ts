@@ -42,7 +42,7 @@ export function useProfesionalData(): UseProfesionalDataReturn {
       setError(null);
 
       try {
-        // Primero obtener el perfil del profesional
+        // Primero obtener el perfil para verificar el rol
         const profesionalResult = await supabase
           .from("profiles")
           .select("*")
@@ -52,14 +52,26 @@ export function useProfesionalData(): UseProfesionalDataReturn {
         if (profesionalResult.error) {
           // Si el perfil no existe, es un error crítico
           if (profesionalResult.error.code === "PGRST116") {
-            throw new Error(
-              "No se encontró tu perfil de profesional. Por favor, completa tu registro."
-            );
+            // Si no hay perfil, retornar sin error (puede ser cliente)
+            console.warn("⚠️ useProfesionalData - No se encontró perfil, puede ser cliente");
+            setProfesional(null);
+            setLeads([]);
+            setIsLoading(false);
+            return;
           }
           throw profesionalResult.error;
         }
 
         let profesionalData = profesionalResult.data as Profesional;
+        
+        // IMPORTANTE: Si el usuario es cliente, retornar inmediatamente sin hacer más queries
+        if (profesionalData.role === 'client') {
+          console.log("ℹ️ useProfesionalData - Usuario es cliente, retornando sin datos de profesional");
+          setProfesional(null);
+          setLeads([]);
+          setIsLoading(false);
+          return;
+        }
 
         // Verificar que el usuario tiene rol de profesional
         // Si no tiene el rol correcto, intentar corregirlo automáticamente
@@ -222,6 +234,15 @@ export function useProfesionalData(): UseProfesionalDataReturn {
       null;
     let timeoutId: NodeJS.Timeout | null = null;
 
+    // Timeout de seguridad más agresivo (3 segundos)
+    timeoutId = setTimeout(() => {
+      if (isMounted) {
+        console.warn("⚠️ useProfesionalData - Timeout de 3 segundos, forzando setIsLoading(false)");
+        setIsLoading(false);
+        // No establecer error, solo dejar de cargar
+      }
+    }, 3000); // 3 segundos máximo (reducido de 10)
+
     try {
       const cached = sessionStorage.getItem(cacheKey);
       if (cached) {
@@ -233,18 +254,12 @@ export function useProfesionalData(): UseProfesionalDataReturn {
         setProfesional(parsed.profesional);
         setLeads(parsed.leads.map(normalizeLead));
         setIsLoading(false);
+        if (timeoutId) clearTimeout(timeoutId);
+        return; // Salir temprano si hay cache
       }
     } catch {
       /* ignore cache read failures */
     }
-
-    // Timeout de seguridad para evitar que se quede cargando indefinidamente
-    timeoutId = setTimeout(() => {
-      if (isMounted) {
-        setIsLoading(false);
-        setError("Tiempo de espera agotado. Por favor, recarga la página.");
-      }
-    }, 10000); // 10 segundos máximo
 
     // Obtener sesión inicial
     supabase.auth
@@ -258,6 +273,22 @@ export function useProfesionalData(): UseProfesionalDataReturn {
         setUser(currentUser);
 
         if (currentUser) {
+          // Verificar el rol antes de hacer fetchData
+          // Si es cliente, no hacer fetchData y establecer loading=false inmediatamente
+          const { data: profileCheck } = await supabase
+            .from("profiles")
+            .select("role")
+            .eq("user_id", currentUser.id)
+            .single();
+          
+          if (profileCheck?.role === 'client') {
+            // Usuario es cliente, no cargar datos de profesional
+            setProfesional(null);
+            setLeads([]);
+            setIsLoading(false);
+            return;
+          }
+          
           await fetchData(currentUser.id);
         } else {
           setProfesional(null);
@@ -282,6 +313,21 @@ export function useProfesionalData(): UseProfesionalDataReturn {
         setUser(currentUser);
 
         if (currentUser) {
+          // Verificar el rol antes de hacer fetchData
+          const { data: profileCheck } = await supabase
+            .from("profiles")
+            .select("role")
+            .eq("user_id", currentUser.id)
+            .single();
+          
+          if (profileCheck?.role === 'client') {
+            // Usuario es cliente, no cargar datos de profesional
+            setProfesional(null);
+            setLeads([]);
+            setIsLoading(false);
+            return;
+          }
+          
           await fetchData(currentUser.id);
         } else {
           setProfesional(null);

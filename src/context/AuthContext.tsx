@@ -16,7 +16,6 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isProfessional: boolean;
   isClient: boolean;
-  hasActiveMembership: boolean;
 }
 
 // =========================================================================
@@ -45,47 +44,85 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [isLoading, setIsLoading] = useState(true);
 
   // =========================================================================
-  // LÓGICA DE OBTENCIÓN DE PERFIL
+  // LÓGICA DE OBTENCIÓN DE PERFIL (OPTIMIZADA PARA EVITAR LOOPS)
   // =========================================================================
   useEffect(() => {
-    const updateProfile = async () => {
-      console.log('🔍 AuthContext - updateProfile iniciado');
-      console.log('🔍 AuthContext - userLoading:', userLoading);
-      console.log('🔍 AuthContext - professionalLoading:', professionalLoading);
-      console.log('🔍 AuthContext - clientLoading:', clientLoading);
-      console.log('🔍 AuthContext - user:', user?.id || 'No hay usuario');
-      
-      if (userLoading || professionalLoading || clientLoading) {
-        console.log('🔍 AuthContext - Aún cargando, estableciendo isLoading=true');
+    let timeoutId: NodeJS.Timeout | null = null;
+    let isMounted = true;
+
+    const updateProfile = () => {
+      // Si aún está cargando el usuario, esperar
+      if (userLoading) {
         setIsLoading(true);
         return;
       }
 
       if (!user) {
-        console.log('🔍 AuthContext - No hay usuario, estableciendo profile=null');
         setProfile(null);
         setIsLoading(false);
         return;
       }
 
-      // Determinar el perfil según el rol del usuario
-      if (user.role === 'profesional') {
-        console.log('🔍 AuthContext - Usuario es profesional, profile:', profesional?.id || 'No hay perfil');
-        setProfile(profesional);
-      } else if (user.role === 'client') {
-        console.log('🔍 AuthContext - Usuario es cliente, profile:', clientProfile?.id || 'No hay perfil');
+      // CRÍTICO: Para clientes, IGNORAR completamente professionalLoading
+      // Para profesionales, solo esperar professionalLoading
+      const isClient = user.role === 'client';
+      const isProfessional = user.role === 'profesional';
+      
+      if (isClient) {
+        // Para clientes: solo esperar clientLoading, ignorar professionalLoading
+        if (clientLoading) {
+          setIsLoading(true);
+          return;
+        }
+        // Cliente: establecer perfil y finalizar (ignorar professionalLoading)
         setProfile(clientProfile);
-      } else {
-        console.log('🔍 AuthContext - Rol desconocido:', user.role);
-        setProfile(null);
+        setIsLoading(false);
+        return;
       }
 
-      console.log('🔍 AuthContext - Finalizando carga, estableciendo isLoading=false');
+      if (isProfessional) {
+        // Para profesionales: esperar professionalLoading
+        if (professionalLoading) {
+          setIsLoading(true);
+          return;
+        }
+        setProfile(profesional);
+        setIsLoading(false);
+        return;
+      }
+
+      // Rol desconocido
+      setProfile(null);
       setIsLoading(false);
     };
 
+    // Ejecutar actualización
     updateProfile();
-  }, [user, profesional, clientProfile, userLoading, professionalLoading, clientLoading]);
+
+    // Timeout de seguridad: forzar finalización después de 2 segundos
+    timeoutId = setTimeout(() => {
+      if (isMounted && isLoading) {
+        console.warn('⚠️ AuthContext - Timeout de seguridad: forzando isLoading=false');
+        setIsLoading(false);
+      }
+    }, 2000);
+
+    return () => {
+      isMounted = false;
+      if (timeoutId) clearTimeout(timeoutId);
+    };
+  }, [
+    user?.id, // Solo usar user.id para evitar re-renders por cambios en el objeto user
+    user?.role, // Solo usar role para detectar cambios de rol
+    profesional?.id, // Solo usar id para evitar re-renders por cambios en el objeto
+    clientProfile?.id, // Solo usar id para evitar re-renders por cambios en el objeto
+    userLoading,
+    // IMPORTANTE: Solo incluir professionalLoading si el usuario ES profesional
+    // Usar una condición para evitar que afecte a clientes
+    user?.role === 'profesional' ? professionalLoading : false,
+    // IMPORTANTE: Solo incluir clientLoading si el usuario ES cliente
+    user?.role === 'client' ? clientLoading : false,
+  ]);
 
   // =========================================================================
   // CÁLCULO DE PROPIEDADES DERIVADAS
@@ -93,7 +130,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const isAuthenticated = !!user;
   const isProfessional = user?.role === 'profesional';
   const isClient = user?.role === 'client';
-  const hasActiveMembership = profile?.membership_status === 'basic' || profile?.membership_status === 'premium';
 
   // =========================================================================
   // VALOR DEL CONTEXTO
@@ -104,8 +140,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     isLoading,
     isAuthenticated,
     isProfessional,
-    isClient,
-    hasActiveMembership
+    isClient
   };
 
   return (
