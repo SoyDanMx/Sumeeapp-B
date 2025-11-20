@@ -1,14 +1,16 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
+import { useQuery } from "@tanstack/react-query";
 import { getClientLeadDetails, getClientLeads } from "@/lib/supabase/data";
 import { supabase } from "@/lib/supabase/client";
 import { Lead, Profile } from "@/types/supabase";
 import { useAuth } from "@/context/AuthContext";
-import { useMembership } from "@/context/MembershipContext";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { DashboardSkeleton } from "@/components/dashboard/DashboardSkeleton";
+import { ErrorState } from "@/components/dashboard/ErrorState";
 
 // Componentes pesados cargados dinámicamente para mejorar performance
 const AISumeeAssistant = dynamic(
@@ -99,13 +101,6 @@ import { useAgreementSubscription } from "@/hooks/useAgreementSubscription";
 
 export default function ClientDashboardPage() {
   const { user, isLoading: userLoading, isAuthenticated } = useAuth();
-  const {
-    permissions,
-    isFreeUser,
-    requestsUsed,
-    requestsRemaining,
-    upgradeUrl,
-  } = useMembership();
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -133,62 +128,146 @@ export default function ClientDashboardPage() {
   const [showLocationBlocking, setShowLocationBlocking] = useState(false);
   const [hasLocation, setHasLocation] = useState(false);
 
-  // Función para refrescar los leads
-  const refreshLeads = async () => {
-    if (!user) return;
-
-    try {
-      console.log("🔍 Dashboard - Refrescando leads...");
-      const userLeads = await getClientLeads(user.id);
-      console.log("🔍 Dashboard - Leads refrescados:", userLeads.length);
-      setLeads(userLeads);
-    } catch (error) {
-      console.error("Error refreshing leads:", error);
-    }
-  };
-
-  useEffect(() => {
-    const fetchLeads = async () => {
-      if (userLoading) {
-        setLoading(true);
-        return;
-      }
-
+  // React Query para data fetching con timeout agresivo
+  // IMPORTANTE: Definir esto ANTES de refreshLeads para evitar el error de inicialización
+  const {
+    data: userLeads,
+    isLoading: leadsLoading,
+    isFetching: leadsFetching, // Estado de refetch (no bloquea UI)
+    error: leadsError,
+    refetch: refetchLeads,
+  } = useQuery({
+    queryKey: ['client-leads', user?.id],
+    queryFn: async () => {
       if (!user) {
-        setError("Usuario no autenticado");
-        setLoading(false);
-        return;
+        console.warn("⚠️ Dashboard - No hay usuario, retornando array vacío");
+        return []; // Retornar array vacío en lugar de lanzar error
       }
-
-      try {
-        setLoading(true);
-        setError(null);
-        console.log("🔍 Dashboard - Obteniendo leads para usuario:", user.id);
-        const userLeads = await getClientLeads(user.id);
-        console.log("🔍 Dashboard - Leads obtenidos:", userLeads.length);
-        setLeads(userLeads);
-      } catch (leadError) {
-        console.error("Error fetching client leads:", leadError);
-        setLeads([]);
-        setError("Error al cargar los leads");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchLeads();
-  }, [user, userLoading]);
-
-  // Suscripción Realtime para cambios en negotiation_status
-  useAgreementSubscription({
-    clientId: user?.id || "",
-    onAgreementConfirmed: (lead: Lead) => {
-      console.log("✅ Acuerdo confirmado recibido:", lead);
-      setAgreementConfirmedLead(lead);
-      // Refrescar leads para mostrar el estado actualizado
-      refreshLeads();
+      console.log("🔍 Dashboard - Obteniendo leads para usuario:", user.id);
+      const leads = await getClientLeads(user.id);
+      console.log("✅ Dashboard - Leads obtenidos:", leads.length);
+      return leads;
     },
     enabled: !!user && !userLoading,
+    retry: 0, // NO reintentar - si falla, mostrar array vacío
+    staleTime: 5 * 60 * 1000, // 5 minutos
+    gcTime: 10 * 60 * 1000, // 10 minutos
+    refetchOnWindowFocus: false, // Evitar refetch automático
+    // Si hay error, retornar array vacío en lugar de fallar
+    throwOnError: false,
+  });
+
+  // Función para refrescar los leads usando React Query (no bloqueante)
+  // Envuelta en useCallback para evitar recreaciones innecesarias
+  // IMPORTANTE: Definir DESPUÉS de useQuery para tener acceso a refetchLeads
+  const refreshLeads = useCallback(async () => {
+    try {
+      console.log("🔄 Dashboard - Refrescando leads...");
+      // Usar refetch sin await para que no bloquee
+      // Esto evita que el dashboard se quede en loading
+      refetchLeads().catch((error) => {
+        console.error("❌ Dashboard - Error al refrescar leads:", error);
+        // No mostrar error al usuario, solo loguear
+      });
+      console.log("✅ Dashboard - Refresco de leads iniciado (no bloqueante)");
+    } catch (error) {
+      console.error("❌ Dashboard - Error al iniciar refresco de leads:", error);
+      // No mostrar error al usuario, solo loguear
+    }
+  }, [refetchLeads]);
+
+  // Actualizar estado local cuando cambian los datos de React Query
+  useEffect(() => {
+    if (userLeads) {
+      setLeads(userLeads);
+    }
+  }, [userLeads]);
+
+  // Timeout de seguridad MUY agresivo (3 segundos)
+  useEffect(() => {
+    if (userLoading || leadsLoading) {
+      const timeoutId = setTimeout(() => {
+        console.warn("⚠️ Timeout agresivo: Forzando reset de loading después de 3 segundos");
+        setError(null); // Limpiar error previo
+        setLoading(false);
+        // Forzar que el dashboard muestre contenido (aunque sea vacío)
+        // Esto es mejor que quedarse en loading indefinidamente
+      }, 3000); // 3 segundos - MUY agresivo
+
+      return () => clearTimeout(timeoutId);
+    } else {
+      // Si no está en loading, asegurar que el estado de loading esté en false
+      setLoading(false);
+    }
+  }, [userLoading, leadsLoading]);
+
+  // Actualizar loading state basado en React Query y auth
+  // IMPORTANTE: Solo mostrar loading en la carga inicial, no en refetches
+  useEffect(() => {
+    // Solo mostrar loading si es la carga inicial (no hay datos previos)
+    // Usar `isLoading` para carga inicial, `isFetching` para refetches (no bloquea UI)
+    if (userLoading) {
+      setLoading(true);
+    } else if (leadsLoading && !userLeads) {
+      // Solo mostrar loading si no hay datos previos (carga inicial)
+      // `leadsLoading` es true solo en la primera carga
+      setLoading(true);
+    } else {
+      // Si hay datos previos, no mostrar loading (es un refetch en background)
+      // `leadsFetching` puede ser true pero no bloquea la UI
+      setLoading(false);
+    }
+  }, [userLoading, leadsLoading, userLeads]);
+
+  // Safety: Forzar reset de loading después de 2 segundos si aún está en true
+  useEffect(() => {
+    if (loading) {
+      const safetyTimeout = setTimeout(() => {
+        if (loading && !userLoading) {
+          console.warn("⚠️ Safety timeout: Forzando reset de loading después de 2 segundos");
+          setLoading(false);
+          // Asegurar que los leads se muestren (aunque sea array vacío)
+          if (!userLeads) {
+            setLeads([]);
+          }
+        }
+      }, 2000); // 2 segundos - MUY agresivo
+
+      return () => clearTimeout(safetyTimeout);
+    }
+  }, [loading, userLoading, userLeads]);
+
+  // Actualizar error state
+  useEffect(() => {
+    if (leadsError) {
+      setError(
+        leadsError instanceof Error
+          ? leadsError.message
+          : "Error al cargar los leads"
+      );
+    }
+  }, [leadsError]);
+
+  // Callback para cuando se confirma un acuerdo (envuelto en useCallback para evitar loops)
+  const handleAgreementConfirmed = useCallback((lead: Lead) => {
+    console.log("✅ Acuerdo confirmado recibido:", lead);
+    setAgreementConfirmedLead(lead);
+    // Refrescar leads para mostrar el estado actualizado (no bloqueante)
+    // Usar setTimeout para que no bloquee la UI
+    setTimeout(() => {
+      refreshLeads();
+    }, 500);
+  }, [refreshLeads]);
+
+  // Suscripción Realtime para cambios en negotiation_status
+  // IMPORTANTE: Solo se activa cuando el dashboard está completamente cargado
+  // para evitar interferir con la creación de leads
+  useAgreementSubscription({
+    clientId: user?.id || "",
+    onAgreementConfirmed: handleAgreementConfirmed,
+    // Solo habilitar cuando el dashboard está completamente cargado
+    // Esto evita que interfiera con la creación de leads
+    enabled: !!user && !userLoading && !loading,
   });
 
   // 🆕 VERIFICAR SI NECESITA ONBOARDING
@@ -617,48 +696,25 @@ export default function ClientDashboardPage() {
   const hasLeads = leads.length > 0;
   const showWelcomeCard = !hasLeads;
 
-  // Loading State
+  // Loading State con Skeleton
   if (userLoading || loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center pt-[calc(var(--header-offset,72px)+2rem)]">
-        <div className="text-center">
-          <FontAwesomeIcon
-            icon={faSpinner}
-            spin
-            className="text-4xl text-blue-600 mb-4"
-          />
-          <p className="text-gray-600">Cargando tu dashboard...</p>
-        </div>
-      </div>
-    );
+    return <DashboardSkeleton />;
   }
 
-  // Error State
+  // Error State mejorado
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center pt-[calc(var(--header-offset,72px)+2rem)]">
-        <div className="text-center">
-          <FontAwesomeIcon
-            icon={faExclamationTriangle}
-            className="text-4xl text-red-600 mb-4"
-          />
-          <p className="text-red-600 mb-4">{error}</p>
-          <div className="space-y-2">
-            <button
-              onClick={() => window.location.reload()}
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 mr-2"
-            >
-              Reintentar
-            </button>
-            <Link
-              href="/login"
-              className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 inline-block"
-            >
-              Iniciar Sesión
-            </Link>
-          </div>
-        </div>
-      </div>
+      <ErrorState
+        message={error}
+        onRetry={() => {
+          setError(null);
+          if (user) {
+            refetchLeads();
+          } else {
+            window.location.reload();
+          }
+        }}
+      />
     );
   }
 
@@ -713,37 +769,18 @@ export default function ClientDashboardPage() {
                   <FontAwesomeIcon icon={faWrench} className="mr-2" />
                   {leads.length} solicitud{leads.length !== 1 ? "es" : ""}
                 </div>
-                <div className="flex items-center bg-white/20 backdrop-blur-sm px-3 py-1.5 rounded-full">
-                  Solicitudes este mes: {requestsUsed} /{" "}
-                  {permissions.maxRequests === 999
-                    ? "∞"
-                    : permissions.maxRequests}
-                </div>
               </div>
             </div>
 
             {/* CTA Principal */}
             <div className="flex flex-col sm:flex-row gap-3">
-              {requestsRemaining > 0 ? (
-                <button
-                  onClick={() => setIsModalOpen(true)}
-                  className="bg-white text-blue-600 px-6 py-3 rounded-lg hover:bg-blue-50 transition-colors font-semibold flex items-center justify-center shadow-lg"
-                >
-                  <FontAwesomeIcon icon={faPlus} className="mr-2" />
-                  Solicitar un Servicio
-                </button>
-              ) : (
-                <Link
-                  href={upgradeUrl}
-                  className="bg-yellow-400 text-gray-900 px-6 py-3 rounded-lg hover:bg-yellow-300 transition-colors font-semibold flex items-center justify-center shadow-lg text-center"
-                >
-                  <FontAwesomeIcon
-                    icon={faExclamationTriangle}
-                    className="mr-2"
-                  />
-                  Upgrade a PRO
-                </Link>
-              )}
+              <button
+                onClick={() => setIsModalOpen(true)}
+                className="bg-white text-blue-600 px-6 py-3 rounded-lg hover:bg-blue-50 transition-colors font-semibold flex items-center justify-center shadow-lg"
+              >
+                <FontAwesomeIcon icon={faPlus} className="mr-2" />
+                Solicitar un Servicio
+              </button>
               <Link
                 href="/tecnicos"
                 className="bg-white/20 backdrop-blur-sm text-white px-6 py-3 rounded-lg hover:bg-white/30 transition-colors font-semibold flex items-center justify-center border border-white/30"
@@ -755,33 +792,6 @@ export default function ClientDashboardPage() {
         </div>
       </div>
 
-      {/* Banner de Upgrade (solo para usuarios gratuitos) */}
-      {isFreeUser && requestsRemaining === 0 && (
-        <div className="bg-gradient-to-r from-yellow-400 to-orange-500 text-gray-900 py-4">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex items-center justify-between flex-wrap gap-4">
-              <div className="flex items-center space-x-3">
-                <FontAwesomeIcon icon={faWrench} className="text-2xl" />
-                <div>
-                  <h3 className="font-bold text-lg">
-                    Has alcanzado tu límite mensual
-                  </h3>
-                  <p className="text-sm">
-                    Upgrade a PRO para solicitudes ilimitadas y más
-                    beneficios
-                  </p>
-                </div>
-              </div>
-              <Link
-                href={upgradeUrl}
-                className="bg-white text-orange-600 px-6 py-2 rounded-lg font-semibold hover:bg-gray-100 transition-colors whitespace-nowrap"
-              >
-                Ver Planes PRO (Ilimitado)
-              </Link>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Contenido Principal - Grid de Widgets COMPACTO RESPONSIVE */}
       <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 md:py-8">

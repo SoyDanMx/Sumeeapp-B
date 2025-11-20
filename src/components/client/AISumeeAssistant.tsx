@@ -30,7 +30,6 @@ import {
 import { faWhatsapp } from "@fortawesome/free-brands-svg-icons";
 import { supabase } from "@/lib/supabase/client";
 import { useAuth } from "@/context/AuthContext";
-import { useMembership } from "@/context/MembershipContext";
 import { geocodeAddress } from "@/lib/geocoding";
 
 interface Message {
@@ -211,9 +210,7 @@ export default function AISumeeAssistant({
   onClose,
   onLeadCreated,
 }: AISumeeAssistantProps) {
-  const { user } = useAuth();
-  const { permissions, profile } = useMembership();
-  const isProUser = profile?.plan === 'pro_annual' || profile?.membership_status === 'premium';
+  const { user, profile } = useAuth();
   const [selectedDiscipline, setSelectedDiscipline] = useState<DisciplineOption | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState("");
@@ -452,19 +449,6 @@ export default function AISumeeAssistant({
 
   // Manejar selección de imagen
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // Verificar si el usuario es PRO antes de permitir subir imagen
-    if (!isProUser) {
-      e.target.value = ""; // Limpiar el input
-      const upsellMessage: Message = {
-        id: Date.now().toString(),
-        role: "assistant",
-        content: "📸 La funcionalidad de diagnóstico con foto está disponible solo para usuarios del Plan PRO. Puedes usar el chat de texto para obtener clasificación básica, o actualiza a PRO para acceso completo.",
-        timestamp: new Date(),
-      };
-      setMessages((prev) => [...prev, upsellMessage]);
-      return;
-    }
-
     const file = e.target.files?.[0];
     if (file) {
       if (file.size > 5 * 1024 * 1024) {
@@ -1002,7 +986,7 @@ export default function AISumeeAssistant({
       try {
         const { data, error: profileError } = await supabase
           .from("profiles")
-          .select("full_name, ubicacion_lat, ubicacion_lng, ubicacion_direccion, phone, whatsapp, plan, membership_status")
+          .select("full_name, ubicacion_lat, ubicacion_lng, ubicacion_direccion, phone, whatsapp, plan")
           .eq("user_id", user.id)
           .single();
         
@@ -1044,7 +1028,7 @@ export default function AISumeeAssistant({
       // Usar coordenadas del servicio (prioridad) o del perfil del cliente
       const ubicacionLat = serviceLocationCoords?.lat || profileData?.ubicacion_lat || profile?.ubicacion_lat || 19.4326; // CDMX por defecto
       const ubicacionLng = serviceLocationCoords?.lng || profileData?.ubicacion_lng || profile?.ubicacion_lng || -99.1332; // CDMX por defecto
-      const ubicacionDireccion = serviceLocation.trim() || profileData?.ubicacion_direccion || profile?.ubicacion_direccion || "Ubicación no especificada";
+      const ubicacionDireccion = serviceLocation.trim() || (profileData as any)?.ubicacion_direccion || (profile as any)?.ubicacion_direccion || "Ubicación no especificada";
       
       // Preparar datos para crear el lead según la firma de la función actualizada
       // Orden según la firma: nombre_cliente_in, whatsapp_in, descripcion_proyecto_in, ubicacion_lat_in, ubicacion_lng_in, servicio_in, urgencia_in, ubicacion_direccion_in, imagen_url_in, photos_urls_in, disciplina_ia_in, urgencia_ia_in, diagnostico_ia_in
@@ -1052,10 +1036,8 @@ export default function AISumeeAssistant({
       // Usar WhatsApp del cliente capturado en el formulario (ya limpiado arriba), o del perfil como fallback
       const whatsappFinal = cleanedWhatsApp || profileData?.whatsapp || profileData?.phone || profile?.whatsapp || profile?.phone || user.user_metadata?.phone || "";
       
-      // Determinar priority_boost: TRUE si el usuario tiene plan PRO
-      // Usar profile del contexto (MembershipContext) que ya tiene plan, o profileData de la query
-      const userPlan = profile?.plan || profileData?.plan || (profile?.membership_status === 'premium' || profileData?.membership_status === 'premium' ? 'pro_annual' : 'express_free');
-      const priorityBoost = userPlan === 'pro_annual';
+      // priority_boost siempre false (ya no hay sistema de membresías)
+      const priorityBoost = false;
 
       // Obtener precios sugeridos por IA (si están disponibles)
       const precioMin = classification.precio_estimado_min || null;
@@ -1515,30 +1497,15 @@ export default function AISumeeAssistant({
               onChange={handleImageSelect}
               className="hidden"
               id="image-upload"
-              disabled={!isProUser}
             />
             <label
-              htmlFor={isProUser ? "image-upload" : undefined}
-              onClick={!isProUser ? (e) => {
-                e.preventDefault();
-                const upsellMessage: Message = {
-                  id: Date.now().toString(),
-                  role: "assistant",
-                  content: "📸 Solo para Plan PRO: Sube una foto para diagnóstico con IA. Actualiza a PRO para desbloquear esta funcionalidad.",
-                  timestamp: new Date(),
-                };
-                setMessages((prev) => [...prev, upsellMessage]);
-              } : undefined}
-              className={`flex-shrink-0 w-10 h-10 ml-3 rounded-xl flex items-center justify-center transition-colors ${
-                isProUser 
-                  ? "hover:bg-gray-200 cursor-pointer" 
-                  : "opacity-50 cursor-not-allowed"
-              }`}
-              title={!isProUser ? "Solo para Plan PRO" : "Subir foto"}
+              htmlFor="image-upload"
+              className="flex-shrink-0 w-10 h-10 ml-3 rounded-xl flex items-center justify-center transition-colors hover:bg-gray-200 cursor-pointer"
+              title="Subir foto"
             >
               <FontAwesomeIcon 
                 icon={faImage} 
-                className={`text-base ${isProUser ? "text-gray-500" : "text-gray-400"}`} 
+                className="text-base text-gray-500" 
               />
             </label>
             <input
@@ -1567,11 +1534,6 @@ export default function AISumeeAssistant({
               )}
             </button>
           </div>
-          {!isProUser && (
-            <p className="text-xs text-blue-600 mt-2 ml-3 font-medium">
-              💡 Solo para Plan PRO: Sube una foto para diagnóstico con IA
-            </p>
-          )}
         </div>
       </div>
     </div>

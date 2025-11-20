@@ -29,9 +29,9 @@ import {
 import { faWhatsapp as faWhatsappBrand } from "@fortawesome/free-brands-svg-icons";
 import { supabase } from "@/lib/supabase/client";
 import { useAuth } from "@/context/AuthContext";
-import { useMembership } from "@/context/MembershipContext";
-import StripeBuyButton from "@/components/stripe/StripeBuyButton";
 import Link from "next/link";
+import { sanitizeInput, sanitizePhone } from "@/lib/sanitize";
+import { getAddressSuggestions, formatAddressSuggestion, AddressSuggestion } from "@/lib/address-autocomplete";
 
 interface RequestServiceModalProps {
   isOpen: boolean;
@@ -257,10 +257,7 @@ export default function RequestServiceModal({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const hasPrefilledWhatsapp = useRef(false);
   const router = useRouter();
-  const { user, profile, isAuthenticated, isLoading, hasActiveMembership } =
-    useAuth();
-  const { isFreeUser, isBasicUser, isPremiumUser, requestsRemaining } =
-    useMembership();
+  const { user, profile, isAuthenticated, isLoading } = useAuth();
   const [whatsappError, setWhatsappError] = useState<string | null>(null);
   const [iaStatus, setIaStatus] = useState<AiStatus>("idle");
   const [iaSuggestion, setIaSuggestion] = useState<AiSuggestion | null>(null);
@@ -272,6 +269,16 @@ export default function RequestServiceModal({
   const lastClassifiedDescription = useRef<string>("");
   const [userOverrodeService, setUserOverrodeService] = useState(false);
   const [userOverrodeUrgency, setUserOverrodeUrgency] = useState(false);
+
+  // Estados para autocompletado de direcciones
+  const [addressSuggestions, setAddressSuggestions] = useState<AddressSuggestion[]>([]);
+  const [showAddressSuggestions, setShowAddressSuggestions] = useState(false);
+  const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState(-1);
+  const [isLoadingAddressSuggestions, setIsLoadingAddressSuggestions] = useState(false);
+  const [selectedAddressCoords, setSelectedAddressCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const addressInputRef = useRef<HTMLDivElement>(null);
+  const addressSuggestionsRef = useRef<HTMLDivElement>(null);
+  const addressSearchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const totalSteps = 4;
   const prevInitialService = useRef<string | null>(null);
@@ -446,6 +453,21 @@ export default function RequestServiceModal({
     };
   }, [formData.descripcion, isOpen, classifyDescription, iaStatus]);
 
+  // Safety timeout: Reset isSubmittingFreeRequest si se queda atascado
+  useEffect(() => {
+    if (!isSubmittingFreeRequest) return;
+
+    const safetyTimeout = setTimeout(() => {
+      console.warn("⚠️ Safety timeout: isSubmittingFreeRequest estaba atascado, reseteando...");
+      setIsSubmittingFreeRequest(false);
+      setError("La solicitud está tardando demasiado. Por favor, intenta de nuevo.");
+    }, 30000); // 30 segundos
+
+    return () => {
+      clearTimeout(safetyTimeout);
+    };
+  }, [isSubmittingFreeRequest]);
+
   const handleServiceSelect = (serviceId: string) => {
     setUserOverrodeService(true);
     setFormData((prev) => ({ ...prev, servicio: serviceId }));
@@ -457,6 +479,137 @@ export default function RequestServiceModal({
       setFormData((prev) => ({ ...prev, imagen: file }));
     }
   };
+
+  // Función para buscar sugerencias de direcciones
+  const fetchAddressSuggestions = useCallback(async (query: string) => {
+    if (!query || query.length < 3) {
+      setAddressSuggestions([]);
+      setShowAddressSuggestions(false);
+      return;
+    }
+
+    setIsLoadingAddressSuggestions(true);
+    
+    // Limpiar timeout anterior
+    if (addressSearchTimeoutRef.current) {
+      clearTimeout(addressSearchTimeoutRef.current);
+    }
+
+    // Debounce: esperar 400ms antes de buscar
+    addressSearchTimeoutRef.current = setTimeout(async () => {
+      try {
+        const suggestions = await getAddressSuggestions(query, 5);
+        setAddressSuggestions(suggestions);
+        setShowAddressSuggestions(suggestions.length > 0);
+        setSelectedSuggestionIndex(-1);
+      } catch (error) {
+        console.error("Error al obtener sugerencias de dirección:", error);
+        setAddressSuggestions([]);
+        setShowAddressSuggestions(false);
+      } finally {
+        setIsLoadingAddressSuggestions(false);
+      }
+    }, 400);
+  }, []);
+
+  // Manejar cambio en el input de dirección con autocompletado
+  const handleAddressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setFormData((prev) => ({ ...prev, ubicacion: value }));
+    
+    // Si se limpia el campo, limpiar también las coordenadas seleccionadas
+    if (value.length === 0) {
+      setSelectedAddressCoords(null);
+      setShowAddressSuggestions(false);
+      setAddressSuggestions([]);
+    } else if (value.length >= 3) {
+      // Buscar sugerencias mientras el usuario escribe
+      fetchAddressSuggestions(value);
+    } else {
+      setAddressSuggestions([]);
+      setShowAddressSuggestions(false);
+    }
+  };
+
+  // Manejar selección de sugerencia de dirección
+  const handleSelectAddressSuggestion = (suggestion: AddressSuggestion) => {
+    const formatted = formatAddressSuggestion(suggestion);
+    console.log("✅ Sugerencia de dirección seleccionada:", formatted);
+    
+    setFormData((prev) => {
+      const updated = { ...prev, ubicacion: formatted };
+      console.log("📝 Prellenando dirección:", formatted);
+      return updated;
+    });
+    
+    // Si la sugerencia tiene coordenadas, guardarlas
+    if (suggestion.lat && suggestion.lon) {
+      const lat = parseFloat(suggestion.lat);
+      const lng = parseFloat(suggestion.lon);
+      if (!isNaN(lat) && !isNaN(lng)) {
+        console.log("📍 Guardando coordenadas de dirección:", { lat, lng });
+        setSelectedAddressCoords({ lat, lng });
+      }
+    }
+    
+    setShowAddressSuggestions(false);
+    setAddressSuggestions([]);
+  };
+
+  // Manejar navegación con teclado en sugerencias de dirección
+  const handleAddressKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!showAddressSuggestions || addressSuggestions.length === 0) return;
+
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setSelectedSuggestionIndex((prev) =>
+        prev < addressSuggestions.length - 1 ? prev + 1 : prev
+      );
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setSelectedSuggestionIndex((prev) => (prev > 0 ? prev - 1 : -1));
+    } else if (e.key === "Enter" && selectedSuggestionIndex >= 0) {
+      e.preventDefault();
+      handleSelectAddressSuggestion(addressSuggestions[selectedSuggestionIndex]);
+    } else if (e.key === "Escape") {
+      setShowAddressSuggestions(false);
+    }
+  };
+
+  // Cerrar sugerencias al hacer clic fuera
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        addressInputRef.current &&
+        !addressInputRef.current.contains(event.target as Node) &&
+        addressSuggestionsRef.current &&
+        !addressSuggestionsRef.current.contains(event.target as Node)
+      ) {
+        setShowAddressSuggestions(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  // Limpiar estado de autocompletado cuando el modal se cierra
+  useEffect(() => {
+    if (!isOpen) {
+      setAddressSuggestions([]);
+      setShowAddressSuggestions(false);
+      setSelectedSuggestionIndex(-1);
+      setSelectedAddressCoords(null);
+      setIsLoadingAddressSuggestions(false);
+      // Limpiar timeout si existe
+      if (addressSearchTimeoutRef.current) {
+        clearTimeout(addressSearchTimeoutRef.current);
+        addressSearchTimeoutRef.current = null;
+      }
+    }
+  }, [isOpen]);
 
   const handleUseMyLocation = async () => {
     console.log("🔍 Iniciando geolocalización...");
@@ -505,22 +658,63 @@ export default function RequestServiceModal({
       if (!googleMapsApiKey) {
         // Fallback: usar OpenStreetMap Nominatim (gratuito)
         console.log("🗺️ Usando OpenStreetMap Nominatim...");
+        try {
+          // Agregar un pequeño delay para evitar rate limiting
+          await new Promise(resolve => setTimeout(resolve, 500));
+          
         const response = await fetch(
-          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&addressdetails=1&accept-language=es&zoom=18`
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&addressdetails=1&accept-language=es&zoom=18`,
+            {
+              headers: {
+                "User-Agent": "SumeeApp/1.0 (https://sumeeapp.com; contact@sumeeapp.com)",
+                "Accept-Language": "es-MX,es;q=0.9",
+              },
+            }
         );
 
         console.log("📡 Respuesta OpenStreetMap:", response.status);
+          
+          if (!response.ok) {
+            console.error("❌ Error en respuesta de OpenStreetMap:", response.status);
+            setError(
+              "No se pudo obtener la dirección. Por favor, ingrésala manualmente."
+            );
+            return;
+          }
+
         const data = await response.json();
         console.log("📋 Datos OpenStreetMap:", data);
 
         if (data && data.display_name) {
           const address = data.display_name;
           console.log("✅ Dirección obtenida:", address);
-          setFormData((prev) => ({ ...prev, ubicacion: address }));
+            console.log("📝 Actualizando formData.ubicacion con:", address);
+            
+            // Actualizar el estado de forma explícita
+            setFormData((prev) => {
+              const updated = { ...prev, ubicacion: address };
+              console.log("📝 formData actualizado:", updated);
+              return updated;
+            });
+            
+            // Guardar coordenadas para uso posterior
+            setSelectedAddressCoords({ lat: latitude, lng: longitude });
+            
+            // Cerrar sugerencias si estaban abiertas
+            setShowAddressSuggestions(false);
+            setAddressSuggestions([]);
+            
+            setError(null); // Limpiar cualquier error previo
         } else {
-          console.error("❌ No se pudo obtener dirección de OpenStreetMap");
+            console.error("❌ No se pudo obtener dirección de OpenStreetMap. Datos:", data);
           setError(
             "No se pudo obtener la dirección. Por favor, ingrésala manualmente."
+            );
+          }
+        } catch (fetchError) {
+          console.error("❌ Error al hacer fetch a OpenStreetMap:", fetchError);
+          setError(
+            "Error de conexión al obtener la dirección. Por favor, ingrésala manualmente."
           );
         }
       } else {
@@ -817,403 +1011,131 @@ export default function RequestServiceModal({
 
   // Función específica para manejar la solicitud gratuita
   const handleFreeRequestSubmit = async () => {
-    console.log("🔍 handleFreeRequestSubmit - Iniciando solicitud gratuita");
-    console.log(
-      "🔍 handleFreeRequestSubmit - user:",
-      user?.id || "No hay usuario"
-    );
-    console.log(
-      "🔍 handleFreeRequestSubmit - isAuthenticated:",
-      isAuthenticated
-    );
-    console.log("🔍 handleFreeRequestSubmit - profile:", profile);
-    console.log("🔍 handleFreeRequestSubmit - formData:", formData);
+    console.log("🔍 handleFreeRequestSubmit - Iniciando proceso simplificado");
 
-    if (!user || !isAuthenticated) {
-      console.log(
-        "🔍 handleFreeRequestSubmit - Error: No hay usuario autenticado"
-      );
-      setError(
-        "Debes estar logueado para solicitar un servicio. Por favor, inicia sesión e intenta de nuevo."
-      );
+    // 1. Validaciones iniciales
+    if (!user || !isAuthenticated || !user.id) {
+      setError("Debes estar logueado para solicitar un servicio.");
       return;
     }
 
-    // Verificar que el usuario tenga un ID válido
-    if (!user.id) {
-      console.log("🔍 handleFreeRequestSubmit - Error: Usuario sin ID");
-      setError(
-        "Error de autenticación: Usuario sin ID válido. Por favor, cierra sesión y vuelve a iniciar sesión."
-      );
-      return;
-    }
-
-    // Verificar la sesión de Supabase antes de intentar crear el lead
-    try {
-      const {
-        data: { session },
-        error: sessionError,
-      } = await supabase.auth.getSession();
-
-      console.log("🔍 handleFreeRequestSubmit - Sesión de Supabase:", {
-        hasSession: !!session,
-        userId: session?.user?.id,
-        contextUserId: user.id,
-        match: session?.user?.id === user.id,
-        sessionError: sessionError
-          ? JSON.stringify(sessionError, null, 2)
-          : null,
-      });
-
-      if (sessionError || !session) {
-        console.error("❌ Error al obtener sesión de Supabase:", sessionError);
-        setError(
-          "Error de autenticación. Por favor, cierra sesión y vuelve a iniciar sesión."
-        );
-        return;
-      }
-
-      if (session.user.id !== user.id) {
-        console.error("❌ ID de usuario no coincide con la sesión", {
-          sessionUserId: session.user.id,
-          contextUserId: user.id,
-        });
-        setError(
-          "Error de autenticación: ID de usuario no coincide. Por favor, cierra sesión y vuelve a iniciar sesión."
-        );
-        return;
-      }
-
-      // Usar el user.id de la sesión para asegurar consistencia
-      const currentUserId = session.user.id;
-      console.log("🔍 handleFreeRequestSubmit - Usando userId:", currentUserId);
-    } catch (sessionCheckError) {
-      console.error("❌ Error al verificar sesión:", sessionCheckError);
-      setError(
-        "Error al verificar tu sesión. Por favor, intenta de nuevo o contacta a soporte."
-      );
-      return;
-    }
-
-    // Verificar si ya usó su solicitud gratuita este mes
-    // TODO: Implementar lógica de verificación de límite mensual
-    // Por ahora, permitimos la solicitud
-    // En el futuro: verificar last_free_request_date en el perfil
+    if (isSubmittingFreeRequest) return;
 
     setIsSubmittingFreeRequest(true);
     setError(null);
 
     try {
+      // 2. Validaciones de formulario
       const normalizedWhatsapp = ensureWhatsappIsValid();
       if (!normalizedWhatsapp) {
         setIsSubmittingFreeRequest(false);
         return;
       }
 
-      setFormData((prev) => ({
-        ...prev,
-        whatsapp: formatWhatsappForDisplay(normalizedWhatsapp),
-      }));
+      const sanitizedDescription = sanitizeInput(formData.descripcion || "");
+      if (!formData.servicio?.trim()) {
+        throw new Error("Por favor selecciona un servicio.");
+      }
+      if (sanitizedDescription.length < 20) {
+        throw new Error("Por favor describe el problema con más detalle (mínimo 20 caracteres).");
+      }
 
-      await persistWhatsapp(normalizedWhatsapp);
+      // 3. Obtener coordenadas (Simplificado: Usar guardadas o default CDMX)
+      // No bloqueamos el proceso por geocoding externo para evitar retrasos
+      let lat = 19.4326;
+      let lng = -99.1332;
+      
+      if (selectedAddressCoords) {
+        lat = selectedAddressCoords.lat;
+        lng = selectedAddressCoords.lng;
+      }
 
-      // Subir imagen si existe
-      let imagenUrl = null;
+      // 4. Preparar el objeto para insertar
+      // IMPORTANTE: Insertamos directamente usando el cliente estándar
+      const leadPayload = {
+        nombre_cliente: user.user_metadata?.full_name || profile?.full_name || "Cliente",
+        whatsapp: normalizedWhatsapp,
+        descripcion_proyecto: sanitizedDescription,
+        servicio: formData.servicio,
+        ubicacion_lat: lat,
+        ubicacion_lng: lng,
+        ubicacion_direccion: formData.ubicacion || null,
+        cliente_id: user.id,
+        estado: "Nuevo",
+        // Campos opcionales
+        imagen_url: null, // La imagen se puede manejar aparte si es necesario
+        disciplina_ia: disciplinaIa || null,
+        urgencia_ia: urgenciaIa ? Number(urgenciaIa) : null,
+        diagnostico_ia: diagnosticoIa || null
+      };
+
+      console.log("📦 Enviando INSERT a Supabase:", leadPayload);
+
+      // 5. EJECUCIÓN DEL INSERT (Sin timeouts manuales, sin RPCs extraños)
+      const { data, error } = await supabase
+        .from('leads')
+        .insert(leadPayload)
+        .select('id') // Solicitamos solo el ID de vuelta
+        .single();
+
+      // 6. Manejo de Errores Real
+      if (error) {
+        console.error("❌ Error de Supabase:", error);
+        throw new Error(error.message || "Error al guardar la solicitud en la base de datos.");
+      }
+
+      if (!data) {
+        throw new Error("La solicitud se creó pero no recibimos confirmación.");
+      }
+
+      console.log("✅ ¡ÉXITO! Lead creado con ID:", data.id);
+
+      // 7. Éxito: Persistir datos secundarios en background (Fire and forget)
+      // No esperamos a esto para liberar al usuario
       if (formData.imagen) {
+        // Lógica de subida de imagen en background si quieres
         const fileExt = formData.imagen.name.split(".").pop();
         const fileName = `${user.id}-${Date.now()}.${fileExt}`;
-
-        const { data: uploadData, error: uploadError } = await supabase.storage
+        supabase.storage
           .from("lead-images")
-          .upload(fileName, formData.imagen);
-
-        if (uploadError) throw uploadError;
-
-        const {
-          data: { publicUrl },
-        } = supabase.storage.from("lead-images").getPublicUrl(fileName);
-
-        imagenUrl = publicUrl;
-      }
-
-      // Obtener la sesión actual de Supabase para usar el user.id correcto
-      const {
-        data: { session: currentSession },
-      } = await supabase.auth.getSession();
-
-      if (!currentSession?.user?.id) {
-        throw new Error("No se pudo obtener la sesión de autenticación");
-      }
-
-      const currentUserId = currentSession.user.id;
-
-      // Verificar el token de acceso para debugging
-      const accessToken = currentSession.access_token;
-      console.log("🔍 handleFreeRequestSubmit - Token de acceso:", {
-        hasToken: !!accessToken,
-        tokenLength: accessToken?.length,
-        userId: currentUserId,
-        userIdString: String(currentUserId),
-        tokenType: typeof currentUserId,
-      });
-
-      // INTENTAR PRIMERO: Usar función RPC si existe (bypass de RLS)
-      console.log(
-        "🔍 handleFreeRequestSubmit - Intentando crear lead via RPC..."
-      );
-      const { data: rpcData, error: rpcError } = await supabase.rpc(
-        "create_lead",
-        {
-          nombre_cliente_in: user.user_metadata?.full_name || "Cliente",
-          whatsapp_in: normalizedWhatsapp,
-          descripcion_proyecto_in: formData.descripcion || "Sin descripción",
-          servicio_in: formData.servicio,
-          ubicacion_lat_in: 19.4326,
-          ubicacion_lng_in: -99.1332,
-          ubicacion_direccion_in: formData.ubicacion || null,
-          disciplina_ia_in: disciplinaIa,
-          urgencia_ia_in: urgenciaIa,
-          diagnostico_ia_in: diagnosticoIa,
-        }
-      );
-
-      let leadData = null;
-      let leadError = null;
-
-      if (rpcError) {
-        console.warn(
-          "⚠️ handleFreeRequestSubmit - RPC falló, intentando INSERT directo:",
-          rpcError.message
-        );
-
-        // FALLBACK: Intentar INSERT directo
-        console.log(
-          "🔍 handleFreeRequestSubmit - Creando lead con INSERT directo:",
-          {
-            nombre_cliente: user.user_metadata?.full_name || "Cliente",
-            whatsapp: normalizedWhatsapp,
-            descripcion_proyecto: formData.descripcion,
-            ubicacion_lat: 19.4326,
-            ubicacion_lng: -99.1332,
-            estado: "nuevo",
-            servicio: formData.servicio,
-            cliente_id: currentUserId,
-            cliente_id_type: typeof currentUserId,
-            cliente_id_string: String(currentUserId),
-            auth_uid_check:
-              "Usando currentSession.user.id para coincidir con auth.uid()",
-          }
-        );
-
-        const insertResult = await supabase
-          .from("leads")
-          .insert({
-            nombre_cliente: user.user_metadata?.full_name || "Cliente",
-            whatsapp: normalizedWhatsapp,
-            descripcion_proyecto: formData.descripcion || "Sin descripción",
-            ubicacion_lat: 19.4326,
-            ubicacion_lng: -99.1332,
-            estado: "nuevo",
-            servicio: formData.servicio,
-            ubicacion_direccion: formData.ubicacion || null,
-            cliente_id: currentUserId,
-            disciplina_ia: disciplinaIa,
-            urgencia_ia: urgenciaIa,
-            diagnostico_ia: diagnosticoIa,
-          })
-          .select()
-          .maybeSingle();
-
-        leadData = insertResult.data;
-        leadError = insertResult.error;
-        if (!leadError && !leadData) {
-          leadError = {
-            message:
-              "No se pudo recuperar la solicitud creada. Intenta nuevamente.",
-            code: "NO_DATA",
-            details: null,
-            hint: null,
-            name: "PostgrestError",
-          } as any;
-        }
-      } else {
-        // RPC exitoso, obtener el lead creado
-        console.log(
-          "✅ handleFreeRequestSubmit - Lead creado via RPC, ID:",
-          rpcData
-        );
-        const { data: fetchedLead, error: fetchError } = await supabase
-          .from("leads")
-          .select("*")
-          .eq("id", rpcData)
-          .maybeSingle();
-
-        leadData = fetchedLead;
-        leadError = fetchError;
-        if (!leadError && !leadData) {
-          leadError = {
-            message:
-              "No se pudo recuperar la solicitud creada. Intenta nuevamente.",
-            code: "NO_DATA",
-            details: null,
-            hint: null,
-            name: "PostgrestError",
-          } as any;
-        }
-      }
-
-      if (leadError) {
-        console.error(
-          "🔍 handleFreeRequestSubmit - Error al crear lead:",
-          JSON.stringify(leadError, null, 2)
-        );
-        console.error("🔍 handleFreeRequestSubmit - Error details:", {
-          code: leadError.code,
-          message: leadError.message,
-          details: leadError.details,
-          hint: leadError.hint,
-          errorContext: {
-            userId: currentUserId,
-            hasSession: !!currentSession,
-            hasAccessToken: !!accessToken,
-          },
-        });
-
-        // Traducir errores técnicos a mensajes amigables
-        let errorMessage = "Error desconocido al crear la solicitud";
-
-        if (
-          leadError.message?.includes("row-level security") ||
-          leadError.message?.includes("RLS") ||
-          leadError.code === "42501"
-        ) {
-          errorMessage =
-            "No tienes permisos para crear solicitudes. Por favor, verifica tu sesión o contacta a soporte.";
-          console.error(
-            "🔍 handleFreeRequestSubmit - RLS Error detected. Verificando políticas...",
-            {
-              policyCheck:
-                "Verifica que las políticas 'authenticated_users_can_create_leads_v3' y 'anonymous_users_can_create_leads_v3' existan en Supabase.",
-              currentUserId: currentUserId,
-              suggestion:
-                "Si el problema persiste, ejecuta el script: fix-leads-rls-simplified-v3.sql en Supabase SQL Editor.",
+          .upload(fileName, formData.imagen)
+          .then(({ error: uploadError }) => {
+            if (!uploadError) {
+              const { data: { publicUrl } } = supabase.storage
+                .from("lead-images")
+                .getPublicUrl(fileName);
+              // Actualizar el lead con la URL de la imagen
+              supabase
+                .from("leads")
+                .update({ imagen_url: publicUrl, photos_urls: [publicUrl] })
+                .eq("id", data.id)
+                .then(() => console.log("✅ Imagen subida y actualizada en lead"));
             }
-          );
-        } else if (
-          leadError.message?.includes("violates") ||
-          leadError.message?.includes("constraint")
-        ) {
-          errorMessage =
-            "Error en los datos proporcionados. Por favor, verifica que todos los campos sean correctos.";
-        } else if (
-          leadError.message?.includes("network") ||
-          leadError.message?.includes("fetch")
-        ) {
-          errorMessage =
-            "Problema de conexión. Verifica tu internet e intenta de nuevo.";
-        } else if (leadError.message) {
-          errorMessage = leadError.message;
-        } else if (leadError.details) {
-          errorMessage = leadError.details;
-        }
-
-        throw new Error(errorMessage);
-      }
-
-      if (!leadData) {
-        console.error(
-          "🔍 handleFreeRequestSubmit - No se recibieron datos del lead"
-        );
-        throw new Error("No se pudo crear la solicitud. Intenta de nuevo.");
-      }
-
-      console.log(
-        "🔍 handleFreeRequestSubmit - Lead creado exitosamente:",
-        leadData
-      );
-
-      // Actualizar el contador de solicitudes usadas en el perfil
-      try {
-        const { error: updateError } = await supabase
-          .from("profiles")
-          .update({
-            requests_used: (profile?.requests_used || 0) + 1,
-            last_free_request_date: new Date().toISOString(),
-            whatsapp: normalizedWhatsapp,
-            phone: normalizedWhatsapp,
           })
-          .eq("user_id", user.id);
-
-        if (updateError) {
-          console.error("Error updating requests_used:", updateError);
-        } else {
-          console.log(
-            "🔍 handleFreeRequestSubmit - Contador de solicitudes actualizado"
-          );
-          // Refrescar el perfil para actualizar el contexto
-          try {
-            const { data: updatedProfile } = await supabase
-              .from("profiles")
-              .select("*")
-              .eq("user_id", user.id)
-              .single();
-
-            if (updatedProfile) {
-              console.log(
-                "🔍 handleFreeRequestSubmit - Perfil actualizado:",
-                updatedProfile
-              );
-              // Forzar re-render del contexto
-              window.location.reload();
-            }
-          } catch (refreshError) {
-            console.error("Error refreshing profile:", refreshError);
-          }
-        }
-      } catch (updateError) {
-        console.error("Error updating profile:", updateError);
+          .catch((error: any) => console.warn("⚠️ Error al subir imagen (no crítico):", error));
       }
+      persistWhatsapp(normalizedWhatsapp).catch(console.warn);
 
-      // Refrescar los leads en el dashboard
-      if (onLeadCreated) {
-        console.log(
-          "🔍 handleFreeRequestSubmit - Refrescando leads en dashboard..."
-        );
-        onLeadCreated();
-      }
-
-      // Redirigir a la página de estado del lead
-      console.log(
-        "🔍 handleFreeRequestSubmit - Redirigiendo a:",
-        `/solicitudes/${leadData.id}`
-      );
-      router.push(`/solicitudes/${leadData.id}`);
+      // 8. Navegación y Cierre
+      resetModal();
       onClose();
-    } catch (err) {
-      console.error("Error creating free lead:", err);
-      console.error(
-        "Error details:",
-        err instanceof Error
-          ? JSON.stringify(err, Object.getOwnPropertyNames(err))
-          : String(err)
-      );
+      
+      // Pequeño delay para UX suave antes de redirigir
+      setTimeout(() => {
+        router.push(`/solicitudes/${data.id}`);
+        if (onLeadCreated) onLeadCreated();
+      }, 100);
 
-      // Mejorar el mensaje de error para el usuario
-      let errorMessage =
-        "Error al crear la solicitud. Por favor, intenta de nuevo.";
-
-      if (err instanceof Error) {
-        // Si el mensaje ya es amigable (de nuestro código anterior), usarlo
-        errorMessage = err.message;
-        if (err.message.includes("row-level security")) {
-          errorMessage =
-            "Problema de permisos. Por favor, contacta a soporte si el problema persiste.";
-        }
-      } else if (typeof err === "string") {
-        errorMessage = err;
-      }
-
-      setError(errorMessage);
+    } catch (err: any) {
+      console.error("💥 Error en Frontend:", err);
+      
+      // Mensajes amigables
+      let msg = err.message || "Error desconocido";
+      if (msg.includes("fetch") || msg.includes("network")) msg = "Error de conexión. Verifica tu internet.";
+      if (msg.includes("RLS") || msg.includes("policy")) msg = "No tienes permisos. Cierra sesión y vuelve a entrar.";
+      
+      setError(msg);
+      // No reseteamos el modal completo, solo el loading para que el usuario pueda reintentar
     } finally {
       setIsSubmittingFreeRequest(false);
     }
@@ -1260,6 +1182,19 @@ export default function RequestServiceModal({
     setIaStatus("idle");
     setIaSuggestion(null);
     setIaError(null);
+    setIsSubmittingFreeRequest(false);
+    setLoading(false);
+    // Limpiar estados de autocompletado
+    setAddressSuggestions([]);
+    setShowAddressSuggestions(false);
+    setSelectedSuggestionIndex(-1);
+    setSelectedAddressCoords(null);
+    setIsLoadingAddressSuggestions(false);
+    // Limpiar timeout de búsqueda si existe
+    if (addressSearchTimeoutRef.current) {
+      clearTimeout(addressSearchTimeoutRef.current);
+      addressSearchTimeoutRef.current = null;
+    }
     setDisciplinaIa(null);
     setUrgenciaIa(null);
     setDiagnosticoIa(null);
@@ -1277,143 +1212,122 @@ export default function RequestServiceModal({
     onClose();
   };
 
-  if (!isOpen) return null;
+  if (!isOpen) {
+    return null;
+  }
 
   return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex justify-center items-center p-2 md:p-4 z-50 overflow-y-auto">
-      <div className="bg-white rounded-xl md:rounded-2xl shadow-2xl w-full max-w-4xl max-h-[98vh] md:max-h-[95vh] overflow-hidden my-auto flex flex-col">
-        {/* Header */}
-        <div className="bg-gradient-to-r from-blue-600 to-purple-700 text-white p-3 md:p-6 sticky top-0 z-10">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2 md:space-x-3 flex-1 min-w-0">
-              <div className="w-7 h-7 md:w-12 md:h-12 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0">
+    <>
+      <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex justify-center items-center p-1 md:p-3 z-50 overflow-y-auto">
+      <div className="bg-white rounded-lg md:rounded-xl shadow-2xl w-full max-w-3xl max-h-[98vh] md:max-h-[96vh] overflow-hidden my-auto flex flex-col">
+        {/* Header Compacto */}
+        <div className="bg-gradient-to-r from-blue-600 via-blue-700 to-purple-700 text-white p-3 md:p-4 sticky top-0 z-10 shadow-lg">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center space-x-2 flex-1 min-w-0">
+              <div className="w-8 h-8 md:w-10 md:h-10 bg-white/20 rounded-lg flex items-center justify-center flex-shrink-0 backdrop-blur-sm">
                 <FontAwesomeIcon
                   icon={faWrench}
-                  className="text-base md:text-2xl"
+                  className="text-sm md:text-lg"
                 />
               </div>
               <div className="min-w-0 flex-1">
-                <h2 className="text-base md:text-2xl font-bold truncate">
+                <h2 className="text-sm md:text-lg font-bold truncate">
                   Solicitar Servicio
                 </h2>
-                <p className="text-blue-100 text-xs md:text-base">
+                <p className="text-blue-100 text-[10px] md:text-xs opacity-90">
                   Paso {currentStep} de {totalSteps}
                 </p>
               </div>
             </div>
             <button
               onClick={handleClose}
-              className="text-white/80 hover:text-white transition-colors flex-shrink-0 ml-2"
+              className="text-white/80 hover:text-white transition-colors flex-shrink-0 ml-2 p-1 rounded-lg hover:bg-white/10"
               aria-label="Cerrar"
             >
-              <FontAwesomeIcon icon={faTimes} className="text-lg md:text-2xl" />
+              <FontAwesomeIcon icon={faTimes} className="text-base md:text-lg" />
             </button>
           </div>
 
-          {/* Progress Bar */}
-          <div className="mt-2 md:mt-4">
-            <div className="w-full bg-white/20 rounded-full h-1 md:h-2">
+          {/* Progress Bar Delgada */}
+          <div className="mt-1.5">
+            <div className="w-full bg-white/20 rounded-full h-0.5 md:h-1">
               <div
-                className="bg-white h-1 md:h-2 rounded-full transition-all duration-300"
+                className="bg-white h-0.5 md:h-1 rounded-full transition-all duration-300 shadow-sm"
                 style={{ width: `${(currentStep / totalSteps) * 100}%` }}
               />
             </div>
           </div>
         </div>
 
-        {/* Content */}
-        <div className="p-3 md:p-8 flex-1 overflow-y-auto">
+        {/* Content Compacto */}
+        <div className="p-4 md:p-6 flex-1 overflow-y-auto">
           {currentStep === 1 && (
-            <div className="space-y-3 md:space-y-6">
-              <div className="text-center">
-                <h3 className="text-lg md:text-2xl font-bold text-gray-900 mb-1 md:mb-2">
+            <div className="space-y-3">
+              <div className="text-center mb-3">
+                <h3 className="text-base md:text-xl font-bold text-gray-900 mb-1">
                   ¿Qué servicio necesitas?
                 </h3>
-                <p className="text-xs md:text-base text-gray-600">
+                <p className="text-xs md:text-sm text-gray-600">
                   Selecciona la categoría que mejor describa tu problema
                 </p>
               </div>
 
-              {/* Grid de servicios optimizado para móvil */}
-              <div className="max-h-[55vh] md:max-h-none overflow-y-auto pr-1 md:pr-2">
-                <div className="grid grid-cols-4 md:grid-cols-4 lg:grid-cols-4 gap-1.5 md:gap-3">
+              {/* Grid Compacto de Servicios */}
+              <div className="max-h-[60vh] overflow-y-auto pr-1">
+                <div className="grid grid-cols-5 md:grid-cols-6 gap-2">
                   {serviceCategories.map((service) => (
                     <button
                       key={service.id}
                       onClick={() => handleServiceSelect(service.id)}
-                      className={`p-1.5 md:p-3 rounded-md md:rounded-lg border-2 transition-all duration-200 ${
+                      className={`group relative p-2.5 rounded-lg border-2 transition-all duration-200 hover:scale-105 ${
                         formData.servicio === service.id
-                          ? "border-blue-500 bg-blue-50 shadow-md"
-                          : "border-gray-200 hover:border-blue-300 hover:shadow-sm"
+                          ? "border-blue-500 bg-blue-50 shadow-md ring-2 ring-blue-200"
+                          : "border-gray-200 hover:border-blue-300 hover:bg-gray-50"
                       }`}
                     >
                       <div className="text-center">
                         <div
-                          className={`w-6 h-6 md:w-12 md:h-12 ${service.bgColor} rounded-full flex items-center justify-center mx-auto mb-1 md:mb-2`}
+                          className={`w-8 h-8 md:w-10 md:h-10 ${service.bgColor} rounded-lg flex items-center justify-center mx-auto mb-1.5 transition-transform group-hover:scale-110 ${
+                            formData.servicio === service.id ? "ring-2 ring-blue-300" : ""
+                          }`}
                         >
                           <FontAwesomeIcon
                             icon={service.icon}
-                            className={`text-xs md:text-xl ${service.color}`}
+                            className={`text-sm md:text-base ${service.color}`}
                           />
                         </div>
-                        <span className="text-[10px] md:text-sm font-medium text-gray-900 leading-tight block px-0.5">
+                        <span className={`text-[9px] md:text-[10px] font-medium leading-tight block ${
+                          formData.servicio === service.id ? "text-blue-700 font-semibold" : "text-gray-700"
+                        }`}>
                           {service.name}
                         </span>
+                        {formData.servicio === service.id && (
+                          <div className="absolute -top-1 -right-1 w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
+                            <FontAwesomeIcon icon={faCheck} className="text-white text-[8px]" />
+                          </div>
+                        )}
                       </div>
                     </button>
                   ))}
                 </div>
               </div>
-
-              {/* Indicador visual de selección */}
-              {formData.servicio && (
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center">
-                        <FontAwesomeIcon
-                          icon={
-                            serviceCategories.find(
-                              (s) => s.id === formData.servicio
-                            )?.icon || faCheck
-                          }
-                          className="text-white text-lg"
-                        />
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-gray-700">
-                          Servicio seleccionado:
-                        </p>
-                        <p className="text-base font-semibold text-blue-700">
-                          {
-                            serviceCategories.find(
-                              (s) => s.id === formData.servicio
-                            )?.name
-                          }
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
             </div>
           )}
 
           {currentStep === 2 && (
-            <div className="space-y-4 md:space-y-6">
-              <div className="text-center">
-                <h3 className="text-xl md:text-2xl font-bold text-gray-900 mb-2">
+            <div className="space-y-3">
+              <div className="text-center mb-3">
+                <h3 className="text-base md:text-xl font-bold text-gray-900 mb-1">
                   Describe el problema
                 </h3>
-                <p className="text-sm md:text-base text-gray-600">
-                  Sé lo más detallado posible. ¿Puedes subir una foto o video
-                  corto? ¡Ayuda mucho al técnico!
+                <p className="text-xs md:text-sm text-gray-600">
+                  Sé detallado. ¿Puedes subir una foto o video? ¡Ayuda mucho!
                 </p>
               </div>
 
-              <div className="space-y-3 md:space-y-4">
+              <div className="space-y-3">
                 <div>
-                  <label className="block text-xs md:text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-xs font-medium text-gray-700 mb-1.5">
                     Descripción detallada
                   </label>
                   <textarea
@@ -1424,9 +1338,9 @@ export default function RequestServiceModal({
                         descripcion: e.target.value,
                       }))
                     }
-                    className="w-full p-3 md:p-4 text-sm md:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    rows={5}
-                    placeholder="Describe el problema en detalle. Incluye síntomas, cuándo empezó, qué has intentado, etc."
+                    className="w-full p-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
+                    rows={4}
+                    placeholder="Describe el problema en detalle. Incluye síntomas, cuándo empezó, qué has intentado..."
                   />
                   <div className="mt-2">
                     {iaStatus === "typing" && (
@@ -1481,10 +1395,10 @@ export default function RequestServiceModal({
                 </div>
 
                 <div>
-                  <label className="block text-xs md:text-sm font-medium text-gray-700 mb-2">
-                    Foto o Video (Opcional)
+                  <label className="block text-xs font-medium text-gray-700 mb-1.5">
+                    Foto o Video <span className="text-gray-400 font-normal">(Opcional)</span>
                   </label>
-                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 md:p-6 text-center hover:border-blue-400 transition-colors">
+                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-3 text-center hover:border-blue-400 transition-colors cursor-pointer">
                     <input
                       ref={fileInputRef}
                       type="file"
@@ -1494,15 +1408,17 @@ export default function RequestServiceModal({
                     />
                     <button
                       onClick={() => fileInputRef.current?.click()}
-                      className="flex flex-col items-center space-y-2 text-gray-600 hover:text-blue-600"
+                      className="flex flex-col items-center space-y-1.5 text-gray-600 hover:text-blue-600 w-full"
                     >
                       <FontAwesomeIcon
                         icon={faCamera}
-                        className="text-2xl md:text-3xl"
+                        className="text-xl"
                       />
-                      <span className="text-sm md:text-base font-medium">
+                      <span className="text-xs font-medium">
                         {formData.imagen
-                          ? formData.imagen.name
+                          ? formData.imagen.name.length > 25 
+                            ? formData.imagen.name.substring(0, 25) + "..."
+                            : formData.imagen.name
                           : "Subir foto o video"}
                       </span>
                     </button>
@@ -1513,19 +1429,19 @@ export default function RequestServiceModal({
           )}
 
           {currentStep === 3 && (
-            <div className="space-y-4 md:space-y-6">
-              <div className="text-center">
-                <h3 className="text-xl md:text-2xl font-bold text-gray-900 mb-2">
+            <div className="space-y-3">
+              <div className="text-center mb-3">
+                <h3 className="text-base md:text-xl font-bold text-gray-900 mb-1">
                   ¿Dónde es el servicio?
                 </h3>
-                <p className="text-sm md:text-base text-gray-600">
-                  Confirma la dirección donde necesitas el servicio
+                <p className="text-xs md:text-sm text-gray-600">
+                  Confirma la dirección y tu contacto
                 </p>
               </div>
 
-              <div className="space-y-3 md:space-y-4">
+              <div className="space-y-3">
                 <div>
-                  <label className="block text-xs md:text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-xs font-medium text-gray-700 mb-1.5">
                     WhatsApp de contacto <span className="text-red-500">*</span>
                   </label>
                   <input
@@ -1542,335 +1458,239 @@ export default function RequestServiceModal({
                         );
                       }
                     }}
-                    className={`w-full p-3 md:p-4 text-sm md:text-base border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
+                    className={`w-full p-2.5 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
                       whatsappError ? "border-red-400" : "border-gray-300"
                     }`}
                     placeholder="55 1234 5678"
                   />
-                  <p className="text-xs text-gray-500 mt-1">
-                    Este número se compartirá con el profesional para coordinar
-                    el servicio vía WhatsApp.
+                  <p className="text-[10px] text-gray-500 mt-1">
+                    Se compartirá con el profesional para coordinar el servicio.
                   </p>
                   {whatsappError && (
-                    <p className="text-xs text-red-600 mt-1">{whatsappError}</p>
+                    <p className="text-[10px] text-red-600 mt-1">{whatsappError}</p>
                   )}
                 </div>
 
                 <div>
-                  <label className="block text-xs md:text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-xs font-medium text-gray-700 mb-1.5">
                     Dirección
                   </label>
+                  <div className="relative" ref={addressInputRef}>
                   <div className="flex flex-col md:flex-row gap-2">
+                      <div className="flex-1 relative">
                     <input
                       type="text"
                       value={formData.ubicacion}
-                      onChange={(e) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          ubicacion: e.target.value,
-                        }))
-                      }
-                      className="flex-1 p-3 md:p-4 text-sm md:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="Calle, número, colonia, delegación"
-                    />
+                          onChange={handleAddressChange}
+                          onKeyDown={handleAddressKeyDown}
+                          onFocus={() => {
+                            if (addressSuggestions.length > 0) {
+                              setShowAddressSuggestions(true);
+                            }
+                          }}
+                          className="w-full p-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 pr-10"
+                          placeholder="Escribe tu dirección (aparecerán sugerencias)"
+                          autoComplete="off"
+                        />
+                        {isLoadingAddressSuggestions && (
+                          <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                            <FontAwesomeIcon
+                              icon={faSpinner}
+                              className="animate-spin text-gray-400"
+                            />
+                          </div>
+                        )}
+                      </div>
                     <button
                       type="button"
                       onClick={handleUseMyLocation}
                       disabled={isGettingLocation}
-                      className="px-3 md:px-4 py-2.5 md:py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors flex items-center justify-center space-x-2 text-sm md:text-base whitespace-nowrap"
+                        className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors flex items-center justify-center space-x-1.5 text-xs whitespace-nowrap"
                       title="Permite al navegador acceder a tu ubicación para llenar automáticamente la dirección"
                     >
                       {isGettingLocation ? (
                         <>
-                          <FontAwesomeIcon icon={faSpinner} spin />
-                          <span className="md:inline">Detectando...</span>
+                            <FontAwesomeIcon icon={faSpinner} spin className="text-xs" />
+                            <span>Detectando...</span>
                         </>
                       ) : (
                         <>
-                          <FontAwesomeIcon icon={faMapMarkerAlt} />
-                          <span className="md:inline">Usar mi Ubicación</span>
+                            <FontAwesomeIcon icon={faMapMarkerAlt} className="text-xs" />
+                            <span>GPS</span>
                         </>
                       )}
                     </button>
                   </div>
+                    
+                    {/* Dropdown de sugerencias de direcciones */}
+                    {showAddressSuggestions && addressSuggestions.length > 0 && (
+                      <div
+                        ref={addressSuggestionsRef}
+                        className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto"
+                      >
+                        {addressSuggestions.map((suggestion, index) => (
+                          <button
+                            key={index}
+                            type="button"
+                            onClick={() => handleSelectAddressSuggestion(suggestion)}
+                            className={`w-full text-left px-4 py-3 hover:bg-blue-50 focus:bg-blue-50 focus:outline-none transition-colors ${
+                              index === selectedSuggestionIndex
+                                ? "bg-blue-50 border-l-4 border-blue-500"
+                                : "border-l-4 border-transparent"
+                            }`}
+                          >
+                            <div className="flex items-start">
+                              <FontAwesomeIcon
+                                icon={faMapMarkerAlt}
+                                className="mr-2 text-blue-600 mt-1 flex-shrink-0"
+                              />
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm text-gray-900 truncate">
+                                  {formatAddressSuggestion(suggestion)}
+                                </p>
+                                {suggestion.address?.city && (
                   <p className="text-xs text-gray-500 mt-1">
-                    💡 Tip: Permite el acceso a tu ubicación para llenar
-                    automáticamente la dirección
+                                    {suggestion.address.city}
+                                    {suggestion.address.state && `, ${suggestion.address.state}`}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <p className="text-[10px] text-gray-500 mt-1">
+                    💡 Escribe tu dirección o usa GPS para prellenar
                   </p>
                 </div>
 
                 <div>
-                  <label className="block text-xs md:text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-xs font-medium text-gray-700 mb-1.5">
                     Urgencia
                   </label>
-                  <select
-                    value={formData.urgencia}
-                    onChange={(e) =>
-                      {
+                  <div className="grid grid-cols-3 gap-2">
+                    {[
+                      { value: "normal", label: "Normal", sublabel: "1-2 días", borderColor: "border-blue-500", bgColor: "bg-blue-50", textColor: "text-blue-700" },
+                      { value: "urgente", label: "Urgente", sublabel: "Hoy", borderColor: "border-orange-500", bgColor: "bg-orange-50", textColor: "text-orange-700" },
+                      { value: "emergencia", label: "Emergencia", sublabel: "Ya", borderColor: "border-red-500", bgColor: "bg-red-50", textColor: "text-red-700" },
+                    ].map((option) => (
+                      <button
+                        key={option.value}
+                        type="button"
+                        onClick={() => {
                         setUserOverrodeUrgency(true);
-                        setFormData((prev) => ({
-                          ...prev,
-                          urgencia: e.target.value,
-                        }));
-                      }
-                    }
-                    className="w-full p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    <option value="normal">Normal (1-2 días)</option>
-                    <option value="urgente">Urgente (mismo día)</option>
-                    <option value="emergencia">Emergencia (inmediato)</option>
-                  </select>
+                          setFormData((prev) => ({ ...prev, urgencia: option.value }));
+                        }}
+                        className={`p-2.5 rounded-lg border-2 transition-all ${
+                          formData.urgencia === option.value
+                            ? `${option.borderColor} ${option.bgColor} shadow-sm`
+                            : "border-gray-200 hover:border-gray-300"
+                        }`}
+                      >
+                        <div className="text-center">
+                          <div className={`text-xs font-semibold ${formData.urgencia === option.value ? option.textColor : "text-gray-700"}`}>
+                            {option.label}
+                          </div>
+                          <div className="text-[10px] text-gray-600 mt-0.5">
+                            {option.sublabel}
+                          </div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
           )}
 
           {currentStep === 4 && (
-            <div className="space-y-6">
-              <div className="text-center">
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">
-                  {hasActiveMembership
-                    ? "Confirma y Envía"
-                    : "¡Activa tu Membresía!"}
+            <div className="space-y-3">
+              <div className="text-center mb-3">
+                <h3 className="text-base md:text-xl font-bold text-gray-900 mb-1">
+                  Confirma y Envía
                 </h3>
-                <p className="text-gray-600">
-                  {hasActiveMembership
-                    ? "Revisa los detalles de tu solicitud"
-                    : "Tu solicitud está lista. Activa tu membresía para conectar con profesionales."}
+                <p className="text-xs md:text-sm text-gray-600">
+                  Revisa los detalles de tu solicitud
                 </p>
               </div>
 
-              <div className="bg-gray-50 rounded-lg p-6 space-y-4">
-                <div className="flex items-center space-x-3">
-                  <FontAwesomeIcon icon={faWrench} className="text-blue-600" />
-                  <span>
-                    <strong>Servicio:</strong>{" "}
+              <div className="bg-gray-50 rounded-lg p-4 space-y-2.5">
+                <div className="flex items-center space-x-2 text-sm">
+                  <FontAwesomeIcon icon={faWrench} className="text-blue-600 text-xs" />
+                  <span className="text-gray-700">
+                    <span className="font-semibold">Servicio:</span>{" "}
                     {
                       serviceCategories.find((s) => s.id === formData.servicio)
                         ?.name
                     }
                   </span>
                 </div>
-                <div className="flex items-start space-x-3">
+                <div className="flex items-start space-x-2 text-sm">
                   <FontAwesomeIcon
                     icon={faCheck}
-                    className="text-green-600 mt-1"
+                    className="text-green-600 mt-0.5 text-xs"
                   />
-                  <span>
-                    <strong>Descripción:</strong> {formData.descripcion}
+                  <span className="text-gray-700">
+                    <span className="font-semibold">Descripción:</span>{" "}
+                    <span className="text-gray-600">{formData.descripcion.substring(0, 80)}{formData.descripcion.length > 80 ? "..." : ""}</span>
                   </span>
                 </div>
-                <div className="flex items-center space-x-3">
+                <div className="flex items-center space-x-2 text-sm">
                   <FontAwesomeIcon
                     icon={faWhatsappBrand}
-                    className="text-green-600"
+                    className="text-green-600 text-xs"
                   />
-                  <span>
-                    <strong>WhatsApp:</strong>{" "}
+                  <span className="text-gray-700">
+                    <span className="font-semibold">WhatsApp:</span>{" "}
                     {formattedWhatsappDisplay || formData.whatsapp || "—"}
                   </span>
                 </div>
                 {(disciplinaIa || urgenciaIa || diagnosticoIa) && (
-                  <div className="flex flex-col space-y-1 text-sm text-blue-800 bg-white/70 border border-blue-100 rounded-lg p-3">
-                    <div className="font-semibold text-blue-900">
-                      Inteligencia Sumee (Gemini)
-                    </div>
+                  <div className="flex flex-wrap gap-1.5 text-xs text-blue-800 bg-white/70 border border-blue-100 rounded-lg p-2">
+                    <span className="font-semibold text-blue-900 text-[10px] uppercase tracking-wide">IA Sumee:</span>
                     {disciplinaIa && (
-                      <div>
-                        <strong>Disciplina sugerida:</strong> {disciplinaIa}
-                      </div>
+                      <span className="px-2 py-0.5 bg-blue-100 rounded text-blue-700">
+                        {disciplinaIa}
+                      </span>
                     )}
                     {Number.isFinite(urgenciaIa) && (
-                      <div>
-                        <strong>Urgencia IA:</strong> {urgenciaIa}/10
-                      </div>
+                      <span className="px-2 py-0.5 bg-blue-100 rounded text-blue-700">
+                        Urgencia {urgenciaIa}/10
+                      </span>
                     )}
                     {diagnosticoIa && (
-                      <div>
-                        <strong>Diagnóstico:</strong> {diagnosticoIa}
-                      </div>
+                      <span className="px-2 py-0.5 bg-blue-100 rounded text-blue-700 text-[10px]">
+                        {diagnosticoIa.substring(0, 40)}{diagnosticoIa.length > 40 ? "..." : ""}
+                      </span>
                     )}
                   </div>
                 )}
                 {formData.imagen && (
-                  <div className="flex items-center space-x-3">
+                  <div className="flex items-center space-x-2 text-sm">
                     <FontAwesomeIcon
                       icon={faCamera}
-                      className="text-purple-600"
+                      className="text-purple-600 text-xs"
                     />
-                    <span>
-                      <strong>Imagen:</strong> {formData.imagen.name}
+                    <span className="text-gray-700">
+                      <span className="font-semibold">Imagen:</span>{" "}
+                      <span className="text-gray-600">{formData.imagen.name.length > 30 ? formData.imagen.name.substring(0, 30) + "..." : formData.imagen.name}</span>
                     </span>
                   </div>
                 )}
-                <div className="flex items-center space-x-3">
+                <div className="flex items-center space-x-2 text-sm">
                   <FontAwesomeIcon
                     icon={faMapMarkerAlt}
-                    className="text-red-600"
+                    className="text-red-600 text-xs"
                   />
-                  <span>
-                    <strong>Ubicación:</strong> {formData.ubicacion || "CDMX"}
+                  <span className="text-gray-700">
+                    <span className="font-semibold">Ubicación:</span>{" "}
+                    <span className="text-gray-600">{formData.ubicacion || "CDMX"}</span>
                   </span>
                 </div>
               </div>
 
-              {/* Lógica de Membresía */}
-              {!hasActiveMembership && (
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
-                  <h4 className="text-lg font-semibold text-blue-900 mb-3">
-                    ¡Estás a un paso de conectar con profesionales!
-                  </h4>
-                  <p className="text-blue-800 mb-4">
-                    Tu solicitud ha sido preparada. Para que los profesionales
-                    puedan verla y contactarte, necesitas una membresía activa.
-                  </p>
-
-                  <div className="grid md:grid-cols-3 gap-4">
-                    {/* Plan Gratuito */}
-                    <div className="bg-white border border-green-200 rounded-lg p-4">
-                      <h5 className="font-semibold text-gray-900 mb-2">
-                        Plan Gratuito
-                      </h5>
-                      <div className="text-2xl font-bold text-green-600 mb-2">
-                        $0 MXN
-                      </div>
-                      <p className="text-sm text-gray-600 mb-4">
-                        Siempre gratis
-                      </p>
-                      <ul className="text-sm text-gray-700 space-y-1 mb-4">
-                        <li>• 1 solicitud por mes</li>
-                        <li>• Acceso básico a técnicos</li>
-                        <li>• Seguimiento básico en la app</li>
-                        <li>• Soporte por chat</li>
-                      </ul>
-
-                      {/* LÓGICA CONDICIONAL INTELIGENTE CON AUTHCONTEXT */}
-                      {/* DEBUG: Mostrar información del usuario */}
-                      {process.env.NODE_ENV === "development" && (
-                        <div className="text-xs text-gray-500 mb-2 p-2 bg-gray-100 rounded">
-                          DEBUG: isAuthenticated=
-                          {isAuthenticated ? "YES" : "NO"}, user=
-                          {user ? "YES" : "NO"}, profile=
-                          {profile ? "YES" : "NO"}, membership=
-                          {profile?.membership_status || "none"},
-                          requestsRemaining={requestsRemaining || 1}
-                        </div>
-                      )}
-                      {isLoading ? (
-                        // Estado de carga
-                        <div className="space-y-2">
-                          <button
-                            disabled
-                            className="w-full bg-gray-400 text-white font-bold py-3 px-4 rounded-lg cursor-not-allowed flex items-center justify-center space-x-2"
-                          >
-                            <FontAwesomeIcon
-                              icon={faSpinner}
-                              className="animate-spin"
-                            />
-                            <span>Cargando...</span>
-                          </button>
-                        </div>
-                      ) : isAuthenticated && user ? (
-                        // Usuario logueado - mostrar botón de acción
-                        <div className="space-y-2">
-                          <button
-                            onClick={handleFreeRequestSubmit}
-                            disabled={
-                              isSubmittingFreeRequest || requestsRemaining <= 0
-                            }
-                            className="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white font-bold py-3 px-4 rounded-lg transition-colors flex items-center justify-center space-x-2"
-                          >
-                            {isSubmittingFreeRequest ? (
-                              <>
-                                <FontAwesomeIcon
-                                  icon={faSpinner}
-                                  className="animate-spin"
-                                />
-                                <span>Publicando...</span>
-                              </>
-                            ) : requestsRemaining <= 0 ? (
-                              <>
-                                <FontAwesomeIcon icon={faExclamationTriangle} />
-                                <span>Solicitud Usada</span>
-                              </>
-                            ) : (
-                              <>
-                                <FontAwesomeIcon icon={faCheck} />
-                                <span>Publicar mi Solicitud Gratis</span>
-                              </>
-                            )}
-                          </button>
-                          <p className="text-xs text-green-600 text-center">
-                            {requestsRemaining <= 0
-                              ? "Ya usaste tu solicitud gratuita de este mes"
-                              : "Tienes 1 solicitud gratuita disponible este mes"}
-                          </p>
-                        </div>
-                      ) : (
-                        // Usuario no logueado - mostrar registro
-                        <Link
-                          href="/registro-cliente"
-                          className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg transition-colors text-center block"
-                        >
-                          Regístrate Gratis
-                        </Link>
-                      )}
-                    </div>
-
-                    {/* Plan Básico */}
-                    <div className="bg-white border border-blue-200 rounded-lg p-4">
-                      <h5 className="font-semibold text-gray-900 mb-2">
-                        Plan Básico
-                      </h5>
-                      <div className="text-2xl font-bold text-blue-600 mb-2">
-                        $299 MXN
-                      </div>
-                      <p className="text-sm text-gray-600 mb-4">
-                        Suscripción anual
-                      </p>
-                      <ul className="text-sm text-gray-700 space-y-1 mb-4">
-                        <li>• Hasta 5 solicitudes por mes</li>
-                        <li>• Acceso a técnicos verificados</li>
-                        <li>• Diagnóstico por foto/video</li>
-                        <li>• Seguimiento completo en la app</li>
-                      </ul>
-                      <StripeBuyButton
-                        buyButtonId="buy_btn_1SLx83E2shKTNR9MwlSZog2K"
-                        publishableKey="pk_live_51P8c4AE2shKTNR9MVARQB4La2uYMMc2shlTCcpcg8EI6MqqPV1uN5uj6UbB5mpfReRKd4HL2OP1LoF17WXcYYeB000Ot1l847E"
-                      />
-                    </div>
-
-                    {/* Plan Premium */}
-                    <div className="bg-white border-2 border-purple-300 rounded-lg p-4 relative">
-                      <div className="absolute -top-2 left-1/2 transform -translate-x-1/2">
-                        <span className="bg-purple-600 text-white text-xs px-3 py-1 rounded-full">
-                          Más Popular
-                        </span>
-                      </div>
-                      <h5 className="font-semibold text-gray-900 mb-2">
-                        Plan Premium
-                      </h5>
-                      <div className="text-2xl font-bold text-purple-600 mb-2">
-                        $499 MXN
-                      </div>
-                      <p className="text-sm text-gray-600 mb-4">
-                        Suscripción anual
-                      </p>
-                      <ul className="text-sm text-gray-700 space-y-1 mb-4">
-                        <li>• Solicitudes ilimitadas</li>
-                        <li>• Prioridad en asignación</li>
-                        <li>• Diagnóstico por foto/video</li>
-                        <li>• Servicio de conserjería</li>
-                        <li>• Historial de mantenimiento</li>
-                      </ul>
-                      <StripeBuyButton
-                        buyButtonId="buy_btn_1SLwlqE2shKTNR9MmwebXHlB"
-                        publishableKey="pk_live_51P8c4AE2shKTNR9MVARQB4La2uYMMc2shlTCcpcg8EI6MqqPV1uN5uj6UbB5mpfReRKd4HL2OP1LoF17WXcYYeB000Ot1l847E"
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
             </div>
           )}
 
@@ -1881,14 +1701,14 @@ export default function RequestServiceModal({
             </div>
           )}
 
-          {/* Navigation */}
-          <div className="flex flex-col-reverse md:flex-row justify-between gap-3 md:gap-0 mt-6 md:mt-8 pt-4 border-t border-gray-200">
+          {/* Navigation Compacta */}
+          <div className="flex flex-col-reverse md:flex-row justify-between gap-2 mt-4 pt-3 border-t border-gray-200 sticky bottom-0 bg-white">
             <button
               onClick={prevStep}
               disabled={currentStep === 1}
-              className="flex items-center justify-center space-x-2 px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-sm md:text-base"
+              className="flex items-center justify-center space-x-1.5 px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-xs md:text-sm transition-colors"
             >
-              <FontAwesomeIcon icon={faArrowLeft} />
+              <FontAwesomeIcon icon={faArrowLeft} className="text-xs" />
               <span>Anterior</span>
             </button>
 
@@ -1900,39 +1720,64 @@ export default function RequestServiceModal({
                   (currentStep === 2 && !formData.descripcion.trim()) ||
                   (currentStep === 3 && !whatsappValidation.isValid)
                 }
-                className="flex items-center justify-center space-x-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed font-semibold shadow-lg text-sm md:text-base"
+                className="flex items-center justify-center space-x-1.5 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed font-semibold shadow-md text-xs md:text-sm transition-colors"
               >
                 <span>Siguiente</span>
-                <FontAwesomeIcon icon={faArrowRight} />
+                <FontAwesomeIcon icon={faArrowRight} className="text-xs" />
               </button>
-            ) : hasActiveMembership ? (
+            ) : (
               <button
-                onClick={handleSubmit}
-                disabled={loading}
-                className="flex items-center space-x-2 px-8 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
+                onClick={async (e) => {
+                  try {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log("🔍 Botón Enviar Solicitud - onClick ejecutado");
+                    console.log("🔍 Botón Enviar Solicitud - isSubmittingFreeRequest:", isSubmittingFreeRequest);
+                    console.log("🔍 Botón Enviar Solicitud - handleFreeRequestSubmit existe:", typeof handleFreeRequestSubmit);
+                    
+                    // Asegurar que el estado no esté bloqueado
+                    if (isSubmittingFreeRequest) {
+                      console.warn("⚠️ Botón Enviar Solicitud - Estado bloqueado, reseteando...");
+                      setIsSubmittingFreeRequest(false);
+                      // Esperar un momento para que el estado se actualice
+                      await new Promise(resolve => setTimeout(resolve, 100));
+                    }
+                    
+                    if (typeof handleFreeRequestSubmit === 'function') {
+                      await handleFreeRequestSubmit();
+                    } else {
+                      console.error("❌ Botón Enviar Solicitud - handleFreeRequestSubmit no es una función");
+                      setError("Error interno: función no disponible. Por favor, recarga la página.");
+                    }
+                  } catch (error) {
+                    console.error("❌ Botón Enviar Solicitud - Error en onClick:", error);
+                    setError("Error al enviar la solicitud. Por favor, intenta de nuevo.");
+                    setIsSubmittingFreeRequest(false);
+                  }
+                }}
+                disabled={isSubmittingFreeRequest}
+                className="flex items-center space-x-1.5 px-5 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed font-semibold shadow-md text-xs md:text-sm transition-colors z-[100] relative"
+                type="button"
+                aria-label="Enviar solicitud de servicio"
               >
-                {loading ? (
+                {isSubmittingFreeRequest ? (
                   <>
-                    <FontAwesomeIcon icon={faSpinner} spin />
+                    <FontAwesomeIcon icon={faSpinner} spin className="text-xs" />
                     <span>Enviando...</span>
                   </>
                 ) : (
                   <>
-                    <FontAwesomeIcon icon={faCheck} />
+                    <FontAwesomeIcon icon={faCheck} className="text-xs" />
                     <span>Enviar Solicitud</span>
                   </>
                 )}
               </button>
-            ) : (
-              <div className="text-center">
-                <p className="text-sm text-gray-600 mb-4">
-                  Selecciona un plan arriba para continuar
-                </p>
-              </div>
             )}
           </div>
         </div>
       </div>
     </div>
+    </>
   );
 }
+
