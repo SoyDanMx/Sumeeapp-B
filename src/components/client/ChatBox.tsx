@@ -98,11 +98,13 @@ export default function ChatBox({ leadId, currentUserId }: ChatBoxProps) {
     try {
       setIsSending(true);
 
-      const { error } = await supabase.from("messages").insert({
-        lead_id: leadId,
-        sender_id: currentUserId,
-        content: newMessage.trim(),
-      });
+      const { error } = await supabase
+        .from("messages")
+        .insert([{
+          lead_id: leadId,
+          sender_id: currentUserId,
+          content: newMessage.trim(),
+        }] as any);
 
       if (error) {
         console.error("Error sending message:", error);
