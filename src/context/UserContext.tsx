@@ -11,7 +11,6 @@ interface UserContextType {
   profile: Profile | null;
   isLoading: boolean;
   isProfessional: boolean;
-  hasActiveMembership: boolean;
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -30,15 +29,12 @@ export function UserProvider({ children }: UserProviderProps) {
   
   // Obtener perfil del usuario (cliente o profesional)
   const profile = user?.role === 'profesional' ? profesional : clientProfile;
-  
-  const hasActiveMembership = profile?.membership_status === 'basic' || profile?.membership_status === 'premium';
 
   const value: UserContextType = {
     user,
     profile,
     isLoading,
-    isProfessional,
-    hasActiveMembership
+    isProfessional
   };
 
   return (

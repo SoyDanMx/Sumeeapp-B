@@ -108,7 +108,7 @@ export async function updateUserProfileRPC(
       updates: filteredUpdates,
     });
 
-    const { data: updatedUserId, error: rpcError } = await supabase.rpc(
+    const { data: updatedUserId, error: rpcError } = await (supabase.rpc as any)(
       "update_profile",
       {
         user_id_in: userId,

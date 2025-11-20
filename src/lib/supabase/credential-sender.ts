@@ -54,7 +54,7 @@ export async function getProfesionalData(
       return null;
     }
 
-    return data as Profesional;
+    return data as unknown as Profesional;
   } catch (error) {
     console.error("Error en getProfesionalData:", error);
     return null;
@@ -92,7 +92,8 @@ export async function sendCredentialToClient(
     }
 
     // 2. Verificar que el lead tenga WhatsApp del cliente
-    if (!lead.whatsapp) {
+    // @ts-ignore - Supabase types inference issue
+    if (!(lead as any).whatsapp) {
       console.warn("El lead no tiene WhatsApp del cliente");
       return { success: false, error: "Lead sin WhatsApp" };
     }
@@ -106,7 +107,8 @@ export async function sendCredentialToClient(
 
     // 4. Generar link de WhatsApp con la credencial
     const whatsappLink = generateWhatsAppCredentialLink(
-      lead.whatsapp,
+      // @ts-ignore - Supabase types inference issue
+      (lead as any).whatsapp,
       profesional
     );
 

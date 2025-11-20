@@ -12,7 +12,6 @@ export interface Profile { // O 'Profesional' si prefieres ese nombre
     full_name: string;
     email: string;
     profession: string | null;
-    membership_status: 'free' | 'basic';
     status: 'active' | 'inactive';
     bio: string | null;
     avatar_url: string | null;

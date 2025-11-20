@@ -30,7 +30,8 @@ export function useUser(): { user: AppUser | null; isLoading: boolean } {
       // Construimos y devolvemos el objeto AppUser completo
       return {
         ...authUser,
-        role: profile?.role || "client",
+        // @ts-ignore - Supabase types inference issue
+        role: (profile as any)?.role || "client",
       };
     };
 

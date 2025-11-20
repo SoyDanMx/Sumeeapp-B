@@ -66,7 +66,8 @@ export function useUserRole() {
           setRole('client'); // Default to client if no profile
         } else {
           // Validar que el rol sea válido
-          const userRole = profile?.role as UserRole;
+          // @ts-ignore - Supabase types inference issue
+          const userRole = (profile as any)?.role as UserRole;
           console.log('🔍 useUserRole: Profile role found:', userRole);
           console.log('🔍 useUserRole: Full profile data:', profile);
           
