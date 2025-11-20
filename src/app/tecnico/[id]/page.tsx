@@ -150,10 +150,11 @@ export default function TecnicoProfilePage() {
         setIsLoading(true);
         // Usar el cliente de Supabase directamente
 
+        const professionalId = params.id as string;
         const { data, error } = await supabase
           .from("profiles")
           .select("*")
-          .eq("user_id", params.id)
+          .eq("user_id", professionalId)
           .eq("role", "profesional")
           .single();
 
