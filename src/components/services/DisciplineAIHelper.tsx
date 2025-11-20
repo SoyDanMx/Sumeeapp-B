@@ -397,12 +397,12 @@ Nuestros ${disciplineName}s están verificados, tienen licencias vigentes y ofre
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Membership CTA */}
+          {/* Payment Setup CTA */}
           {showMembershipCTA && (
             <div className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white p-4 border-t">
               <div className="flex items-center space-x-2 mb-2">
                 <FontAwesomeIcon icon={faCrown} className="text-lg" />
-                <span className="font-semibold">¡Activa tu Membresía!</span>
+                <span className="font-semibold">¡Configura tu Método de Pago!</span>
               </div>
               <p className="text-sm mb-3">
                 Conecta con {expert.name}s verificados y recibe respuesta en {expert.averageResponseTime}
@@ -412,7 +412,7 @@ Nuestros ${disciplineName}s están verificados, tienen licencias vigentes y ofre
                 className="w-full bg-white text-orange-600 py-2 px-4 rounded-lg font-semibold hover:bg-gray-100 transition-colors flex items-center justify-center space-x-2"
               >
                 <FontAwesomeIcon icon={faCreditCard} />
-                <span>Activar Membresía</span>
+                <span>Configurar Pago</span>
               </button>
             </div>
           )}
