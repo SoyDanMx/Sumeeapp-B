@@ -27,26 +27,14 @@ export default function ResourceHints() {
         type="image/webp"
       />
       
-      {/* Preload para CSS crítico */}
-      <link 
-        rel="preload" 
-        href="/styles/critical.css" 
-        as="style" 
-        onLoad={(e) => {
-          const link = e.target as HTMLLinkElement;
-          link.onload = null;
-          link.rel = 'stylesheet';
-        }}
-      />
+      {/* CSS crítico está inline en CriticalCSS component, no necesita preload */}
       
       {/* Prefetch para páginas importantes */}
       <link rel="prefetch" href="/servicios" />
-      <link rel="prefetch" href="/professionals" />
+      <link rel="prefetch" href="/tecnicos" />
       <link rel="prefetch" href="/join-as-pro" />
       
-      {/* Modulepreload para JavaScript crítico */}
-      <link rel="modulepreload" href="/_next/static/chunks/vendors.js" />
-      <link rel="modulepreload" href="/_next/static/chunks/common.js" />
+      {/* Modulepreload removido - Next.js maneja esto automáticamente */}
     </>
   );
 }

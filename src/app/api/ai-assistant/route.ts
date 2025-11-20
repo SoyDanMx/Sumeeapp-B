@@ -47,7 +47,6 @@ interface AIResponse {
   };
   recommendations: ProfessionalRecommendation[];
   estimated_price_range: string;
-  requires_membership?: boolean;
   ai_suggested_questions?: string[];
 }
 
@@ -210,43 +209,7 @@ export async function POST(request: NextRequest) {
       console.log('🖼️ Imagen recibida para análisis visual');
     }
 
-    // Verificar membresía del usuario
-    let hasPremiumMembership = false;
-    try {
-      const authHeader = request.headers.get('authorization');
-      if (authHeader) {
-        const token = authHeader.replace('Bearer ', '');
-        const { data: { user } } = await supabase.auth.getUser(token);
-        
-        if (user) {
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('membership_status')
-            .eq('user_id', user.id)
-            .single();
-          
-          hasPremiumMembership = profile?.membership_status === 'premium' || profile?.membership_status === 'basic';
-        }
-      } else {
-        // Intentar obtener usuario desde cookie/session
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('membership_status')
-            .eq('user_id', user.id)
-            .single();
-          
-          hasPremiumMembership = profile?.membership_status === 'premium' || profile?.membership_status === 'basic';
-        }
-      }
-    } catch (membershipError) {
-      console.warn('⚠️ Error al verificar membresía:', membershipError);
-      // Si hay error, asumir que no tiene membresía
-      hasPremiumMembership = false;
-    }
-
-    console.log('👤 Usuario tiene membresía premium:', hasPremiumMembership);
+    // Ya no hay verificación de membership - todos los usuarios tienen acceso completo
 
     // Detectar categoría técnica avanzada
     const technicalCategory = detectTechnicalCategory(userQuery);
@@ -264,16 +227,7 @@ export async function POST(request: NextRequest) {
     let professionals = await getTopProfessionals(detectedService, 5);
     console.log('👥 Profesionales encontrados:', professionals.length);
 
-    // Filtrar datos de contacto si el usuario no tiene membresía premium
-    if (!hasPremiumMembership) {
-      professionals = professionals.map(prof => ({
-        ...prof,
-        whatsapp: null, // Ocultar WhatsApp
-        numero_imss: null, // Ocultar IMSS
-        // Mantener otros datos públicos como nombre, calificación, etc.
-      }));
-      console.log('🔒 Datos de contacto ocultos para usuario sin membresía');
-    }
+    // Todos los usuarios tienen acceso completo a datos de contacto (ya no hay restricciones de membership)
 
     // Generar respuesta conversacional con Gemini (si está disponible)
     // Incluir imagen si fue enviada
@@ -322,7 +276,6 @@ export async function POST(request: NextRequest) {
       },
       recommendations: professionals,
       estimated_price_range: technicalDiagnosis.costEstimate || knowledge?.price_range || 'Consulte precio con el técnico',
-      requires_membership: !hasPremiumMembership, // Agregar flag para indicar que requiere membresía
       ai_suggested_questions: aiConversation?.suggestedQuestions || [], // Preguntas sugeridas por IA
     };
 

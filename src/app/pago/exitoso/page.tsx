@@ -36,25 +36,16 @@ export default async function PagoExitosoPage({ searchParams }: PagoExitosoPageP
       const { data: { user } } = await supabase.auth.getUser();
       
       if (user) {
-        // Determinar el tipo de membresía basado en el precio
-        let membershipStatus = 'free';
-        if (session.amount_total === 29900) { // $299 MXN en centavos
-          membershipStatus = 'basic';
-        } else if (session.amount_total === 49900) { // $499 MXN en centavos
-          membershipStatus = 'premium';
-        }
-
-        // Actualizar el estado de membresía del usuario
+        // Actualizar stripe_customer_id del usuario (ya no hay membership_status)
         const { error: updateError } = await supabase
           .from('profiles')
           .update({ 
-            membership_status: membershipStatus,
             stripe_customer_id: session.customer
           })
           .eq('user_id', user.id);
 
         if (updateError) {
-          console.error('Error updating membership:', updateError);
+          console.error('Error updating customer ID:', updateError);
         }
 
         // Si hay un leadId, activar la solicitud

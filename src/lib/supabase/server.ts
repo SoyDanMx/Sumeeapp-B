@@ -31,7 +31,7 @@ export function createSupabaseAdminClient(): SupabaseClient | null {
   // Log detallado para debugging (solo en desarrollo y durante troubleshooting)
   console.log('🔍 createSupabaseAdminClient - Verificando variables:');
   console.log('- NEXT_PUBLIC_SUPABASE_URL:', supabaseUrl ? '✅ Definida' : '❌ Falta');
-  console.log('- SUPABASE_SERVICE_ROLE_KEY:', serviceRoleKey ? `✅ Definida (${serviceRoleKey.substring(0, 10)}...)` : '❌ Falta');
+  console.log('- SUPABASE_SERVICE_ROLE_KEY:', serviceRoleKey ? `✅ Definida (${(serviceRoleKey as string).substring(0, 10)}...)` : '❌ Falta');
 
   if (!supabaseUrl || !serviceRoleKey) {
     console.error(

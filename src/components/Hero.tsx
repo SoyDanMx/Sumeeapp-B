@@ -59,7 +59,7 @@ export const Hero = () => {
   };
 
   useEffect(() => {
-    const fetchUserAndMembership = async () => {
+    const fetchUser = async () => {
       setIsLoadingUser(true);
       const {
         data: { user },
@@ -68,7 +68,7 @@ export const Hero = () => {
       setIsLoadingUser(false);
     };
 
-    fetchUserAndMembership();
+    fetchUser();
 
     const { data: authListener } = supabase.auth.onAuthStateChange(
       (_, session) => {
@@ -98,14 +98,8 @@ export const Hero = () => {
       alert("Por favor, regístrate o inicia sesión para buscar servicios.");
       router.push("/login?redirect=/professionals");
     } else {
-      const userMembershipStatus = user.user_metadata?.membership_s || "free";
-
-      if (userMembershipStatus === "free") {
-        alert("Necesitas configurar tu método de pago para acceder a los técnicos.");
-        router.push("/pago-de-servicios");
-      } else {
-        router.push(`/professionals?cp=${encodeURIComponent(postalCode)}`);
-      }
+      // Redirigir directamente a profesionales (ya no hay verificación de membership)
+      router.push(`/professionals?cp=${encodeURIComponent(postalCode)}`);
     }
     setIsLoadingUser(false);
   };

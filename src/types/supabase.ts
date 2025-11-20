@@ -105,7 +105,6 @@ export interface Profile {
   portfolio?: PortfolioItem[] | null; // Array de objetos con url, description, type
   certificaciones_urls?: string[] | null; // Array de URLs a certificaciones
   antecedentes_no_penales_url?: string | null; // URL a constancia de antecedentes
-  membership_status: "free" | "basic" | "premium";
   stripe_customer_id?: string | null;
   status: "active" | "inactive";
   work_zones?: string[] | null;

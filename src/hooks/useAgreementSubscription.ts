@@ -45,6 +45,13 @@ export function useAgreementSubscription({
             const updatedLead = payload.new as Lead;
             const oldLead = payload.old as Lead;
 
+            // IMPORTANTE: Ignorar si es un INSERT (creación de lead)
+            // Solo procesar UPDATEs que cambien negotiation_status
+            if (!oldLead || !oldLead.negotiation_status) {
+              // Es un INSERT nuevo, ignorar
+              return;
+            }
+
             console.log("📨 useAgreementSubscription: Lead actualizado:", {
               id: updatedLead.id,
               old_status: oldLead?.negotiation_status,
@@ -52,9 +59,11 @@ export function useAgreementSubscription({
             });
 
             // Solo notificar si negotiation_status cambió a 'acuerdo_confirmado'
+            // Y el estado anterior NO era 'acuerdo_confirmado'
             if (
               updatedLead.negotiation_status === "acuerdo_confirmado" &&
-              oldLead?.negotiation_status !== "acuerdo_confirmado"
+              oldLead?.negotiation_status !== "acuerdo_confirmado" &&
+              oldLead?.negotiation_status !== null // Ignorar si era null (lead nuevo)
             ) {
               console.log("✅ useAgreementSubscription: Acuerdo confirmado! Notificando...");
               
