@@ -880,6 +880,7 @@ export default function ClientDashboardPage() {
             <UpcomingServiceWidget
               upcomingLead={upcomingService}
               onViewDetails={handleViewLead}
+              onRequestService={() => setIsModalOpen(true)}
             />
           </div>
 

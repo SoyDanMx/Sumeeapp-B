@@ -443,6 +443,15 @@ select:focus-visible {
   }
 }
 
+@keyframes shimmer-sweep {
+  0% {
+    transform: translateX(-200%) skewX(-12deg);
+  }
+  100% {
+    transform: translateX(200%) skewX(-12deg);
+  }
+}
+
 .shimmer {
   background: linear-gradient(
     90deg,
@@ -452,6 +461,10 @@ select:focus-visible {
   );
   background-size: 1000px 100%;
   animation: shimmer 2s infinite;
+}
+
+.animate-shimmer {
+  animation: shimmer-sweep 3s ease-in-out infinite;
 }
 
 /* Mejoras de Transición para Links */
