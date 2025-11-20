@@ -302,8 +302,9 @@ export default function ClientDashboardPage() {
           setUserProfile(profile);
           
           // FASE 1: Verificar si falta ubicación (BLOQUEO CRÍTICO)
-          const needsLocation = !profile.ubicacion_lat || !profile.ubicacion_lng;
-          if (needsLocation && profile.role === 'client') {
+          const profileData = profile as any;
+          const needsLocation = !profileData.ubicacion_lat || !profileData.ubicacion_lng;
+          if (needsLocation && profileData.role === 'client') {
             console.log('🚫 Cliente necesita ubicación - BLOQUEANDO DASHBOARD');
             setHasLocation(false);
             setTimeout(() => {
@@ -314,7 +315,7 @@ export default function ClientDashboardPage() {
           }
           
           // FASE 2: Verificar si falta WhatsApp (onboarding no bloqueante)
-          const needsWhatsApp = !profile.whatsapp && !profile.phone;
+          const needsWhatsApp = !profileData.whatsapp && !profileData.phone;
           if (needsWhatsApp && !needsLocation) {
             console.log('🆕 Cliente necesita WhatsApp');
             setTimeout(() => {
@@ -353,10 +354,11 @@ export default function ClientDashboardPage() {
       
       if (updatedProfile) {
         setUserProfile(updatedProfile);
-        if (updatedProfile.ubicacion_lat && updatedProfile.ubicacion_lng) {
+        const updatedProfileData = updatedProfile as any;
+        if (updatedProfileData.ubicacion_lat && updatedProfileData.ubicacion_lng) {
           setClientLocation({
-            lat: updatedProfile.ubicacion_lat,
-            lng: updatedProfile.ubicacion_lng,
+            lat: updatedProfileData.ubicacion_lat,
+            lng: updatedProfileData.ubicacion_lng,
           });
         }
       }
@@ -396,15 +398,16 @@ export default function ClientDashboardPage() {
           .eq('user_id', user.id)
           .single();
 
-        if (!profile?.ubicacion_lat || !profile?.ubicacion_lng) return;
+        const profileData = profile as any;
+        if (!profileData?.ubicacion_lat || !profileData?.ubicacion_lng) return;
 
         // Calcular distancia usando fórmula de Haversine
         const R = 6371; // Radio de la Tierra en km
-        const dLat = ((newLat - profile.ubicacion_lat) * Math.PI) / 180;
-        const dLon = ((newLng - profile.ubicacion_lng) * Math.PI) / 180;
+        const dLat = ((newLat - profileData.ubicacion_lat) * Math.PI) / 180;
+        const dLon = ((newLng - profileData.ubicacion_lng) * Math.PI) / 180;
         const a =
           Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-          Math.cos((profile.ubicacion_lat * Math.PI) / 180) *
+          Math.cos((profileData.ubicacion_lat * Math.PI) / 180) *
             Math.cos((newLat * Math.PI) / 180) *
             Math.sin(dLon / 2) *
             Math.sin(dLon / 2);
@@ -414,12 +417,13 @@ export default function ClientDashboardPage() {
         // Si la distancia es mayor a 1 km, actualizar silenciosamente
         if (distance > 1) {
           console.log(`📍 Actualizando ubicación pasivamente (${distance.toFixed(2)} km de diferencia)`);
-          await supabase
-            .from('profiles')
-            .update({
-              ubicacion_lat: newLat,
-              ubicacion_lng: newLng,
-            })
+          const updatePayload: any = {
+            ubicacion_lat: newLat,
+            ubicacion_lng: newLng,
+          };
+          await (supabase
+            .from('profiles') as any)
+            .update(updatePayload)
             .eq('user_id', user.id);
           
           setClientLocation({ lat: newLat, lng: newLng });
@@ -457,8 +461,9 @@ export default function ClientDashboardPage() {
           return;
         }
 
-        if (data && data.ubicacion_lat && data.ubicacion_lng) {
-          setClientLocation({ lat: data.ubicacion_lat, lng: data.ubicacion_lng });
+        const locationData = data as any;
+        if (locationData && locationData.ubicacion_lat && locationData.ubicacion_lng) {
+          setClientLocation({ lat: locationData.ubicacion_lat, lng: locationData.ubicacion_lng });
         } else {
           // Si no tiene ubicación, usar geolocalización del navegador
           if ('geolocation' in navigator) {
@@ -532,10 +537,11 @@ export default function ClientDashboardPage() {
         setUserProfile(updatedProfile);
         
         // Actualizar ubicación del cliente
-        if (updatedProfile.ubicacion_lat && updatedProfile.ubicacion_lng) {
+        const updatedProfileData = updatedProfile as any;
+        if (updatedProfileData.ubicacion_lat && updatedProfileData.ubicacion_lng) {
           setClientLocation({
-            lat: updatedProfile.ubicacion_lat,
-            lng: updatedProfile.ubicacion_lng
+            lat: updatedProfileData.ubicacion_lat,
+            lng: updatedProfileData.ubicacion_lng
           });
         }
       }
@@ -627,8 +633,8 @@ export default function ClientDashboardPage() {
         photos_urls: data.photos.length > 0 ? data.photos : null,
       };
 
-      const { error } = await supabase
-        .from("leads")
+      const { error } = await (supabase
+        .from("leads") as any)
         .update(updatePayload)
         .eq("id", leadId)
         .eq("cliente_id", user.id)
@@ -645,16 +651,17 @@ export default function ClientDashboardPage() {
         });
         if (error.code === "42501") {
           console.warn("Falling back to RPC update_lead_details due to RLS.");
-          const { error: rpcError } = await supabase.rpc(
+          const rpcPayload: any = {
+            lead_id: leadId,
+            servicio_solicitado_in: updatePayload.servicio_solicitado,
+            descripcion_proyecto_in: updatePayload.descripcion_proyecto,
+            ubicacion_direccion_in: updatePayload.ubicacion_direccion,
+            whatsapp_in: updatePayload.whatsapp,
+            photos_urls_in: updatePayload.photos_urls,
+          };
+          const { error: rpcError } = await (supabase.rpc as any)(
             "update_lead_details",
-            {
-              lead_id: leadId,
-              servicio_solicitado_in: updatePayload.servicio_solicitado,
-              descripcion_proyecto_in: updatePayload.descripcion_proyecto,
-              ubicacion_direccion_in: updatePayload.ubicacion_direccion,
-              whatsapp_in: updatePayload.whatsapp,
-              photos_urls_in: updatePayload.photos_urls,
-            }
+            rpcPayload
           );
 
           if (rpcError) {
