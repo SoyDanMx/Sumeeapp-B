@@ -215,12 +215,14 @@ export default function QuickLeadForm({
 
         // Mensaje pre-rellenado con información del servicio
         const serviceInfo = SERVICES.find((s) => s.id === formData.service);
+        // @ts-ignore - Supabase type inference issue
+        const leadIdStr = String(result.leadId || '');
         const message = encodeURIComponent(
           `Hola, necesito ayuda con el servicio de ${
             serviceInfo?.name || formData.service
           }. ` +
             `Ubicación: ${formData.location}. ` +
-            `Mi solicitud ID: ${result.leadId.substring(0, 8)}`
+            `Mi solicitud ID: ${leadIdStr.substring(0, 8)}`
         );
 
         // Redirigir a WhatsApp
