@@ -79,7 +79,7 @@ export function useProfessionalRegistration() {
 
       // Paso 3: Si el email ya está confirmado, crear perfil usando RPC
       console.log("🔧 CREANDO PERFIL PROFESIONAL CON RPC...");
-      const { data: rpcData, error: rpcError } = await supabase.rpc(
+      const { data: rpcData, error: rpcError } = await (supabase.rpc as any)(
         "create_professional_complete",
         {
           p_full_name: data.fullName,
@@ -167,7 +167,7 @@ export function useProfessionalRegistration() {
           "Profesional verificado en Sumee App";
 
         // Crear perfil usando RPC
-        const { data: rpcData, error: rpcError } = await supabase.rpc(
+        const { data: rpcData, error: rpcError } = await (supabase.rpc as any)(
           "create_professional_complete",
           {
             p_full_name: fullName,
