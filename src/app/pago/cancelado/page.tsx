@@ -41,11 +41,11 @@ export default function PagoCanceladoPage() {
         {/* Action Buttons */}
         <div className="space-y-3">
           <Link
-            href="/membresia"
+            href="/pago-de-servicios"
             className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 px-6 rounded-lg font-medium transition-colors flex items-center justify-center space-x-2"
           >
             <FontAwesomeIcon icon={faCreditCard} />
-            <span>Intentar Pago Nuevamente</span>
+            <span>Ver Sistema de Pago</span>
           </Link>
           
           <Link

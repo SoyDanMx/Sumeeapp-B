@@ -86,8 +86,8 @@ export async function POST(request: NextRequest) {
         },
       ],
       mode: 'subscription',
-      success_url: `${baseUrl}/membresia/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${baseUrl}/membresia/cancel`,
+      success_url: `${baseUrl}/pago/exitoso?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${baseUrl}/pago/cancelado`,
       customer_email: userEmail || undefined,
       metadata: {
         userId: userId,

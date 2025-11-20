@@ -647,7 +647,7 @@ const blogPosts: Record<string, BlogPost> = {
         <h3 style="font-size:1.8rem; margin-bottom:1rem;">Protege tu hogar con la Membresía Sumee</h3>
         <p style="font-size:1.1rem; max-width:600px; margin:0 auto 1.5rem;">Accede a revisiones eléctricas periódicas, atención prioritaria y técnicos expertos cuando más lo necesitas. No improvises con la seguridad de tu familia.</p>
         <a
-          href="/membresia"
+          href="/pago-de-servicios"
           style="display:inline-block; padding:0.9rem 2.2rem; background:white; color:#f97316; font-weight:700; border-radius:9999px; text-decoration:none; transition:all 0.3s ease;"
           onmouseover="this.style.background='#fff7ed'"
           onmouseout="this.style.background='white'"

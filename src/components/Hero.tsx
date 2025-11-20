@@ -101,8 +101,8 @@ export const Hero = () => {
       const userMembershipStatus = user.user_metadata?.membership_s || "free";
 
       if (userMembershipStatus === "free") {
-        alert("Necesitas una membresía premium para acceder a los técnicos.");
-        router.push("/membresia");
+        alert("Necesitas configurar tu método de pago para acceder a los técnicos.");
+        router.push("/pago-de-servicios");
       } else {
         router.push(`/professionals?cp=${encodeURIComponent(postalCode)}`);
       }

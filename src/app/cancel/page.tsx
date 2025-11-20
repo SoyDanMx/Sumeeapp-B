@@ -16,8 +16,8 @@ export default function CancelPage() {
         <p className="text-lg text-gray-700 max-w-lg mx-auto mb-8">
           Tu transacción ha sido cancelada. Si tienes problemas para completar el pago, por favor, intenta de nuevo o contacta a soporte.
         </p>
-        <Link href="/membresia" className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg text-lg transition">
-          Volver a Planes de Membresía
+        <Link href="/pago-de-servicios" className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg text-lg transition">
+          Volver al Sistema de Pago
         </Link>
       </div>
     </PageLayout>

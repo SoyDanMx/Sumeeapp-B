@@ -356,11 +356,11 @@ export default function VerificacionPage() {
             {/* CTA */}
             <div className="text-center">
               <Link
-                href="/membresia"
+                href="/pago-de-servicios"
                 className="inline-flex items-center bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-4 rounded-lg font-bold text-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-300 transform hover:scale-105 shadow-lg"
               >
                 <FontAwesomeIcon icon={faCrown} className="mr-2" />
-                Conoce nuestros Planes Premium
+                Conoce nuestro Sistema de Pago
               </Link>
             </div>
           </div>
@@ -435,11 +435,11 @@ export default function VerificacionPage() {
             {/* CTA */}
             <div className="text-center">
               <Link
-                href="/membresia"
+                href="/pago-de-servicios"
                 className="inline-flex items-center bg-gradient-to-r from-purple-600 to-pink-600 text-white px-8 py-4 rounded-lg font-bold text-lg hover:from-purple-700 hover:to-pink-700 transition-all duration-300 transform hover:scale-105 shadow-lg"
               >
                 <FontAwesomeIcon icon={faCrown} className="mr-2" />
-                Activa tu Membresía Premium
+                Configura tu Método de Pago
               </Link>
             </div>
           </div>
