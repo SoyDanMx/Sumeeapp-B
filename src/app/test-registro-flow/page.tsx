@@ -164,7 +164,7 @@ export default function TestRegistroFlowPage() {
         },
         profile: profile || null,
         profileError: profileError?.message || null,
-        expectedRedirect: profile?.role === 'profesional' ? 
+        expectedRedirect: (profile as any)?.role === 'profesional' ? 
           'Debería ser redirigido a /professional-dashboard' : 
           'Debería ser redirigido a /dashboard/client'
       });
