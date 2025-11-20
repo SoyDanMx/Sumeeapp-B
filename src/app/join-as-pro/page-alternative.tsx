@@ -192,33 +192,33 @@ export default function JoinAsProAlternative() {
       );
 
       // Crear perfil completo en la tabla profiles
-      const { data: profileData, error: profileError } = await supabase
-        .from("profiles")
-        .insert({
-          user_id: user.id,
-          full_name: formData.fullName,
-          email: user.email,
-          phone: formData.phone,
-          profession: formData.profession,
-          experience: 2,
-          bio:
-            formData.bio ||
-            `Profesional verificado en Sumee App - ${formData.profession}`,
-          work_zones: formData.workZones || [],
-          whatsapp: formData.phone,
-          descripcion_perfil:
-            formData.bio ||
-            `Profesional verificado en Sumee App - ${formData.profession}`,
+      const insertPayload: any = {
+        user_id: user.id,
+        full_name: formData.fullName,
+        email: user.email,
+        phone: formData.phone,
+        profession: formData.profession,
+        experience: 2,
+        bio:
+          formData.bio ||
+          `Profesional verificado en Sumee App - ${formData.profession}`,
+        work_zones: formData.workZones || [],
+        whatsapp: formData.phone,
+        descripcion_perfil:
+          formData.bio ||
+          `Profesional verificado en Sumee App - ${formData.profession}`,
           role: "profesional", // CRÍTICO: Asignar role de profesional
-          membership_status: "free",
           status: "active",
-          ubicacion_lat: null,
-          ubicacion_lng: null,
-          calificacion_promedio: 0,
-          experiencia_uber: false,
-          años_experiencia_uber: 0,
-          areas_servicio: [formData.profession],
-        })
+        ubicacion_lat: null,
+        ubicacion_lng: null,
+        calificacion_promedio: 0,
+        experiencia_uber: false,
+        años_experiencia_uber: 0,
+        areas_servicio: [formData.profession],
+      };
+      const { data: profileData, error: profileError } = await (supabase
+        .from("profiles") as any)
+        .insert([insertPayload])
         .select()
         .single();
 
