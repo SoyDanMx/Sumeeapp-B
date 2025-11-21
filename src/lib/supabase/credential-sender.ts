@@ -22,11 +22,12 @@ export function generateWhatsAppCredentialLink(
     ? cleanPhone
     : `52${cleanPhone}`;
 
-  // Mensaje personalizado
+  // ✅ FIX: Mensaje mejorado con texto específico sobre ser técnico verificado
+  const servicioDescripcion = "tu solicitud de servicio"; // Se puede mejorar obteniendo el servicio del lead
   const message = encodeURIComponent(
     `¡Hola! 👋\n\n` +
-      `Soy ${profesional.full_name || "tu técnico asignado"} de Sumee.\n\n` +
-      `He aceptado tu solicitud de servicio y quiero compartirte mi credencial de profesional verificado para tu seguridad y confianza:\n\n` +
+      `Soy ${profesional.full_name || "tu técnico asignado"}, técnico verificado de SumeeApp.\n\n` +
+      `He aceptado el trabajo disponible "${servicioDescripcion}" y quiero compartirte mi credencial de profesional verificado para tu seguridad y confianza:\n\n` +
       `${professionalUrl}\n\n` +
       `Aquí puedes verificar mi información, calificaciones y experiencia. Estoy listo para ayudarte con tu proyecto.\n\n` +
       `¿Cuándo te viene bien que coordinemos la visita? 🛠️`
@@ -105,12 +106,32 @@ export async function sendCredentialToClient(
       return { success: false, error: "Profesional no encontrado" };
     }
 
-    // 4. Generar link de WhatsApp con la credencial
-    const whatsappLink = generateWhatsAppCredentialLink(
-      // @ts-ignore - Supabase types inference issue
-      (lead as any).whatsapp,
-      profesional
+    // 4. Generar link de WhatsApp con la credencial - ✅ FIX: Incluir descripción del servicio
+    const leadData = lead as any;
+    const servicioDescripcion = leadData.servicio_solicitado || leadData.servicio || leadData.descripcion_proyecto || "tu solicitud de servicio";
+    
+    // ✅ FIX: Generar mensaje mejorado con servicio específico
+    const professionalUrl = `${
+      typeof window !== "undefined"
+        ? window.location.origin
+        : process.env.NEXT_PUBLIC_SITE_URL || ""
+    }/profesional/${profesional.user_id}`;
+
+    const cleanPhone = leadData.whatsapp.replace(/\D/g, "");
+    const whatsappPhone = cleanPhone.startsWith("52")
+      ? cleanPhone
+      : `52${cleanPhone}`;
+
+    const message = encodeURIComponent(
+      `¡Hola! 👋\n\n` +
+        `Soy ${profesional.full_name || "tu técnico asignado"}, técnico verificado de SumeeApp.\n\n` +
+        `He aceptado el trabajo disponible "${servicioDescripcion}" y quiero compartirte mi credencial de profesional verificado para tu seguridad y confianza:\n\n` +
+        `${professionalUrl}\n\n` +
+        `Aquí puedes verificar mi información, calificaciones y experiencia. Estoy listo para ayudarte con tu proyecto.\n\n` +
+        `¿Cuándo te viene bien que coordinemos la visita? 🛠️`
     );
+
+    const whatsappLink = `https://wa.me/${whatsappPhone}?text=${message}`;
 
     // 5. Retornar el link (el frontend puede abrirlo o copiarlo)
     return {
