@@ -68,14 +68,30 @@ export async function POST(request: Request) {
 
     // Intentar primero con el RPC (SECURITY DEFINER) para no depender del service role
     // @ts-ignore - Supabase RPC type inference issue
-    const { data: rpcLead, error: rpcError } = await (supabase.rpc as any)(
-      "accept_lead",
-      { lead_uuid: leadId }
-    ).single();
+    let rpcLead = null;
+    let rpcError = null;
+    
+    try {
+      const rpcResult = await (supabase.rpc as any)(
+        "accept_lead",
+        { lead_uuid: leadId }
+      );
+      
+      // El RPC puede retornar directamente el objeto o un array
+      if (rpcResult.data) {
+        rpcLead = Array.isArray(rpcResult.data) ? rpcResult.data[0] : rpcResult.data;
+        rpcError = rpcResult.error;
+      } else {
+        rpcError = rpcResult.error || new Error("RPC retornó sin datos");
+      }
+    } catch (rpcException: any) {
+      console.warn("⚠️ Excepción al llamar RPC accept_lead:", rpcException);
+      rpcError = rpcException;
+    }
 
     if (rpcError) {
       console.warn("⚠️ RPC accept_lead falló:", rpcError.message || rpcError);
-      if (rpcError.message?.includes("JWT") || rpcError.message?.includes("auth")) {
+      if (rpcError.message?.includes("JWT") || rpcError.message?.includes("auth") || rpcError.message?.includes("No hay un usuario autenticado")) {
         return NextResponse.json(
           {
             error:
@@ -84,54 +100,21 @@ export async function POST(request: Request) {
           { status: 401 }
         );
       }
-      // Si el RPC falla, continuar con el método alternativo (admin client)
+      // Si el RPC falla, intentar con UPDATE directo usando el cliente del servidor
+      // Esto funciona porque el usuario está autenticado y puede actualizar leads asignados a él
+      console.log("🔄 Intentando método alternativo: UPDATE directo con cliente autenticado");
     } else if (rpcLead) {
       // RPC exitoso, retornar el lead actualizado
+      console.log("✅ RPC accept_lead exitoso");
       return NextResponse.json({ lead: rpcLead });
     }
 
-    // Si el RPC falla (por ejemplo, función no creada aún), intentar con el cliente admin
-    const adminClient = createSupabaseAdminClient();
-
-    if (!adminClient) {
-      console.error(
-        "❌ accept_lead RPC falló y no hay SUPABASE_SERVICE_ROLE_KEY configurado:",
-        rpcError
-      );
-      return NextResponse.json(
-        {
-          error:
-            "No se pudo aceptar el lead porque falta la configuración administrativa. Contacta al administrador de la plataforma.",
-        },
-        { status: 500 }
-      );
-    }
-
-    // Obtener el lead antes de actualizar para validar su existencia
-    const { data: existingLead, error: fetchError } = await adminClient
-      .from("leads")
-      .select(
-        "id, cliente_id, profesional_asignado_id, estado, whatsapp, ubicacion_lat, ubicacion_lng, ubicacion_direccion, descripcion_proyecto, servicio_solicitado, fecha_creacion, photos_urls"
-      )
-      .eq("id", leadId)
-      .maybeSingle();
-
-    if (fetchError || !existingLead) {
-      return NextResponse.json(
-        {
-          error:
-            fetchError?.message ||
-            "No encontramos la solicitud indicada. Verifica el ID e inténtalo nuevamente.",
-        },
-        { status: 404 }
-      );
-    }
-
-    // Actualizar el lead con privilegios administrativos
+    // Método alternativo: Actualizar directamente con el cliente autenticado
+    // Esto funciona porque el usuario está autenticado y puede actualizar leads
     const contactDeadline = new Date();
     contactDeadline.setMinutes(contactDeadline.getMinutes() + 30); // 30 minutos para contactar
     
-    const { data: updatedLead, error: updateError } = await adminClient
+    const { data: updatedLead, error: updateError } = await supabase
       .from("leads")
       .update({
         estado: "aceptado",
@@ -145,14 +128,58 @@ export async function POST(request: Request) {
       .select("*")
       .maybeSingle();
 
-    if (updateError || !updatedLead) {
+    if (updateError) {
+      console.error("❌ Error al actualizar lead directamente:", updateError);
+      // Si el UPDATE directo también falla, intentar con admin client como último recurso
+      const adminClient = createSupabaseAdminClient();
+      
+      if (!adminClient) {
+        return NextResponse.json(
+          {
+            error:
+              updateError.message || "No se pudo aceptar el lead. Verifica tus permisos e inténtalo de nuevo.",
+          },
+          { status: 500 }
+        );
+      }
+      
+      // Último recurso: usar admin client
+      const adminContactDeadline = new Date();
+      adminContactDeadline.setMinutes(adminContactDeadline.getMinutes() + 30);
+      
+      const { data: adminUpdatedLead, error: adminError } = await adminClient
+        .from("leads")
+        .update({
+          estado: "aceptado",
+          profesional_asignado_id: currentUser.id,
+          fecha_asignacion: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          contact_deadline_at: adminContactDeadline.toISOString(),
+          appointment_status: "pendiente_contacto",
+        })
+        .eq("id", leadId)
+        .select("*")
+        .maybeSingle();
+
+      if (adminError || !adminUpdatedLead) {
+        return NextResponse.json(
+          {
+            error:
+              adminError?.message || "No se pudo aceptar el lead. Intenta nuevamente.",
+          },
+          { status: 500 }
+        );
+      }
+
+      return NextResponse.json({ lead: adminUpdatedLead });
+    }
+
+    if (!updatedLead) {
       return NextResponse.json(
         {
-          error:
-            updateError?.message ||
-            "No pudimos marcar el lead como aceptado. Intenta nuevamente.",
+          error: "No encontramos la solicitud indicada. Verifica el ID e inténtalo nuevamente.",
         },
-        { status: 500 }
+        { status: 404 }
       );
     }
 
