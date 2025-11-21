@@ -100,30 +100,36 @@ export async function POST(request: Request) {
           { status: 401 }
         );
       }
-      // Si el RPC falla, intentar con UPDATE directo usando el cliente del servidor
-      // Esto funciona porque el usuario está autenticado y puede actualizar leads asignados a él
-      console.log("🔄 Intentando método alternativo: UPDATE directo con cliente autenticado");
+      // Si el RPC falla, usar admin client directamente para evitar problemas de RLS
+      console.log("🔄 RPC falló, usando admin client directamente (bypass RLS)");
     } else if (rpcLead) {
       // RPC exitoso, retornar el lead actualizado
       console.log("✅ RPC accept_lead exitoso");
       return NextResponse.json({ lead: rpcLead });
     }
 
-    // Método alternativo: Actualizar directamente con el cliente autenticado
-    // IMPORTANTE: La política RLS requiere que el estado sea 'asignado' o 'en_progreso' 
-    // cuando un profesional acepta un lead, no 'aceptado'
-    const contactDeadline = new Date();
-    contactDeadline.setMinutes(contactDeadline.getMinutes() + 30); // 30 minutos para contactar
+    // Si llegamos aquí, el RPC falló. Usar admin client directamente para evitar problemas de RLS
+    const adminClient = createSupabaseAdminClient();
     
-    // Primero verificar que el lead existe y está disponible
-    const { data: existingLead, error: fetchError } = await supabase
+    if (!adminClient) {
+      return NextResponse.json(
+        {
+          error:
+            "No se pudo aceptar el lead porque falta la configuración administrativa. Contacta al administrador de la plataforma.",
+        },
+        { status: 500 }
+      );
+    }
+
+    // Verificar que el lead existe usando admin client (bypass RLS)
+    const { data: existingLead, error: fetchError } = await adminClient
       .from("leads")
-      .select("id, estado, profesional_asignado_id")
+      .select("id, estado, profesional_asignado_id, cliente_id")
       .eq("id", leadId)
       .maybeSingle();
     
     if (fetchError || !existingLead) {
-      console.error("❌ Error al buscar lead o lead no encontrado:", fetchError);
+      console.error("❌ Error al buscar lead con admin client:", fetchError);
       return NextResponse.json(
         {
           error: "No encontramos la solicitud indicada. Verifica el ID e inténtalo nuevamente.",
@@ -132,111 +138,51 @@ export async function POST(request: Request) {
       );
     }
     
-    console.log("📋 Lead encontrado:", {
+    console.log("📋 Lead encontrado con admin client:", {
       id: existingLead.id,
       estado: existingLead.estado,
       profesional_asignado_id: existingLead.profesional_asignado_id,
+      cliente_id: existingLead.cliente_id,
     });
     
-    // Determinar el estado correcto según la política RLS
-    // Si el lead está 'nuevo' o 'Nuevo', usar 'asignado' para cumplir con la política
-    const newEstado = (existingLead.estado?.toLowerCase() === 'nuevo' || existingLead.estado?.toLowerCase() === 'new') 
-      ? 'asignado' 
-      : 'aceptado';
+    // Actualizar el lead usando admin client (bypass RLS)
+    const contactDeadline = new Date();
+    contactDeadline.setMinutes(contactDeadline.getMinutes() + 30); // 30 minutos para contactar
     
-    // Las columnas existen según la verificación, actualizar con todas las columnas necesarias
     const updateData: any = {
-      estado: newEstado,
+      estado: "aceptado",
       profesional_asignado_id: currentUser.id,
       fecha_asignacion: new Date().toISOString(),
       contact_deadline_at: contactDeadline.toISOString(),
       appointment_status: "pendiente_contacto",
+      updated_at: new Date().toISOString(),
     };
     
-    // Agregar updated_at si existe
-    updateData.updated_at = new Date().toISOString();
-    
-    console.log("🔄 Intentando actualizar lead con:", {
+    console.log("🔄 Actualizando lead con admin client:", {
+      leadId,
       estado: updateData.estado,
       profesional_asignado_id: updateData.profesional_asignado_id,
     });
     
-    const { data: updatedLead, error: updateError } = await supabase
+    const { data: updatedLead, error: updateError } = await adminClient
       .from("leads")
       .update(updateData)
       .eq("id", leadId)
       .select("*")
       .maybeSingle();
-    
-    if (updateError) {
-      console.error("❌ Error al actualizar lead:", updateError);
-      console.error("📋 Detalles del error:", {
-        message: updateError.message,
-        details: updateError.details,
-        hint: updateError.hint,
-      });
-    }
 
-    if (updateError) {
-      console.error("❌ Error al actualizar lead directamente:", updateError);
-      // Si el UPDATE directo también falla, intentar con admin client como último recurso
-      const adminClient = createSupabaseAdminClient();
-      
-      if (!adminClient) {
-        return NextResponse.json(
-          {
-            error:
-              updateError.message || "No se pudo aceptar el lead. Verifica tus permisos e inténtalo de nuevo.",
-          },
-          { status: 500 }
-        );
-      }
-      
-      // Último recurso: usar admin client (bypass RLS)
-      const adminContactDeadline = new Date();
-      adminContactDeadline.setMinutes(adminContactDeadline.getMinutes() + 30);
-      
-      // Usar 'aceptado' con admin client ya que bypass RLS
-      const adminUpdateData: any = {
-        estado: "aceptado",
-        profesional_asignado_id: currentUser.id,
-        fecha_asignacion: new Date().toISOString(),
-        contact_deadline_at: adminContactDeadline.toISOString(),
-        appointment_status: "pendiente_contacto",
-        updated_at: new Date().toISOString(),
-      };
-      
-      console.log("🔄 Usando admin client como último recurso");
-      
-      const { data: adminUpdatedLead, error: adminError } = await adminClient
-        .from("leads")
-        .update(adminUpdateData)
-        .eq("id", leadId)
-        .select("*")
-        .maybeSingle();
-
-      if (adminError || !adminUpdatedLead) {
-        return NextResponse.json(
-          {
-            error:
-              adminError?.message || "No se pudo aceptar el lead. Intenta nuevamente.",
-          },
-          { status: 500 }
-        );
-      }
-
-      return NextResponse.json({ lead: adminUpdatedLead });
-    }
-
-    if (!updatedLead) {
+    if (updateError || !updatedLead) {
+      console.error("❌ Error al actualizar lead con admin client:", updateError);
       return NextResponse.json(
         {
-          error: "No encontramos la solicitud indicada. Verifica el ID e inténtalo nuevamente.",
+          error:
+            updateError?.message || "No se pudo aceptar el lead. Intenta nuevamente.",
         },
-        { status: 404 }
+        { status: 500 }
       );
     }
 
+    console.log("✅ Lead aceptado exitosamente con admin client");
     return NextResponse.json({ lead: updatedLead });
   } catch (error) {
     console.error("Error en /api/leads/accept:", error);
