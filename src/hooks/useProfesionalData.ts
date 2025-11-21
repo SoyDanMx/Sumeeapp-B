@@ -223,10 +223,16 @@ export function useProfesionalData(): UseProfesionalDataReturn {
   );
 
   const refetchData = useCallback(() => {
+    // ✅ FIX: Invalidar caché antes de refetch para evitar datos obsoletos
+    try {
+      sessionStorage.removeItem(cacheKey);
+    } catch {
+      /* ignore cache removal failures */
+    }
     if (user?.id) {
       fetchData(user.id);
     }
-  }, [user?.id, fetchData]);
+  }, [user?.id, fetchData, cacheKey]);
 
   useEffect(() => {
     let isMounted = true;
@@ -251,11 +257,29 @@ export function useProfesionalData(): UseProfesionalDataReturn {
           profesional: Profesional;
           leads: Lead[];
         };
-        setProfesional(parsed.profesional);
-        setLeads(parsed.leads.map(normalizeLead));
-        setIsLoading(false);
-        if (timeoutId) clearTimeout(timeoutId);
-        return; // Salir temprano si hay cache
+        // ✅ FIX: Verificar que el caché no sea muy viejo (máximo 2 minutos)
+        const cacheAge = Date.now() - parsed.updatedAt;
+        const MAX_CACHE_AGE = 2 * 60 * 1000; // 2 minutos
+        
+        if (cacheAge < MAX_CACHE_AGE) {
+          setProfesional(parsed.profesional);
+          setLeads(parsed.leads.map(normalizeLead));
+          setIsLoading(false);
+          if (timeoutId) clearTimeout(timeoutId);
+          // ✅ FIX: Aún así hacer fetch en background para verificar que los leads existan
+          // No bloquear la UI, pero actualizar si hay cambios
+          supabase.auth.getSession().then(async ({ data: { session } }) => {
+            if (session?.user?.id) {
+              fetchData(session.user.id).catch(() => {
+                // Si falla el fetch, mantener el caché
+              });
+            }
+          });
+          return; // Salir temprano si hay cache válido
+        } else {
+          // Caché expirado, eliminarlo
+          sessionStorage.removeItem(cacheKey);
+        }
       }
     } catch {
       /* ignore cache read failures */
