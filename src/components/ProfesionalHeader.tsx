@@ -59,12 +59,12 @@ export default function ProfesionalHeader({ profesional, onEditClick }: Props) {
   ].filter(Boolean).length;
 
   return (
-    <header className="bg-white shadow-md p-2 md:p-4 lg:p-6 border-t-4 border-indigo-600">
-      <div className="flex flex-col lg:flex-row lg:justify-between lg:items-start space-y-2 md:space-y-4 lg:space-y-0">
+    <header className="bg-white shadow-sm p-2 md:p-3 border-t-2 border-indigo-600">
+      <div className="flex flex-col lg:flex-row lg:justify-between lg:items-start space-y-2 md:space-y-2 lg:space-y-0">
         {/* Contenedor de la Tarjeta de Identidad Enriquecida */}
-        <div className="flex flex-row items-center space-x-3 md:space-x-4 lg:space-x-6 flex-1">
-          {/* Avatar con fallback a inicial */}
-          <div className="relative w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 rounded-full overflow-hidden bg-indigo-100 border-2 border-indigo-300 flex-shrink-0 shadow-lg">
+        <div className="flex flex-row items-center space-x-2 md:space-x-3 flex-1">
+          {/* Avatar con fallback a inicial - Compactado */}
+          <div className="relative w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-full overflow-hidden bg-indigo-100 border-2 border-indigo-300 flex-shrink-0 shadow-md">
             {profesional.avatar_url ? (
               <Image
                 src={profesional.avatar_url}
@@ -83,9 +83,9 @@ export default function ProfesionalHeader({ profesional, onEditClick }: Props) {
           </div>
 
           <div className="flex-1 text-left min-w-0">
-            {/* 1. Nombre Completo con Badge Verificado */}
-            <div className="flex flex-col sm:flex-row sm:items-center space-y-1 sm:space-y-0 sm:space-x-3 mb-1 md:mb-2">
-              <h1 className="text-lg sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl font-extrabold text-gray-900 leading-tight truncate">
+            {/* 1. Nombre Completo con Badge Verificado - Compactado */}
+            <div className="flex flex-col sm:flex-row sm:items-center space-y-0.5 sm:space-y-0 sm:space-x-2 mb-0.5">
+              <h1 className="text-base sm:text-lg md:text-xl lg:text-2xl font-bold text-gray-900 leading-tight truncate">
                 {profesional.full_name}
               </h1>
               {/* Badge Verificado - Trust Signal */}
@@ -105,14 +105,13 @@ export default function ProfesionalHeader({ profesional, onEditClick }: Props) {
               </span>
             </div>
 
-            {/* 2. Calificación en estrellas mejorada (UX visual) */}
-            <div className="flex items-center space-x-1.5 md:space-x-2 my-1 md:my-2">
-              <div className="flex items-center space-x-0.5 md:space-x-1">
-                {/* Renderiza las estrellas basadas en el rating */}
+            {/* 2. Calificación en estrellas - Compactado */}
+            <div className="flex items-center space-x-1 my-0.5">
+              <div className="flex items-center space-x-0.5">
                 {Array.from({ length: 5 }, (_, i) => (
                   <span
                     key={i}
-                    className={`text-xs sm:text-sm md:text-base lg:text-lg ${
+                    className={`text-xs sm:text-sm ${
                       i < starCount ? "text-yellow-400" : "text-gray-300"
                     }`}
                   >
@@ -120,7 +119,7 @@ export default function ProfesionalHeader({ profesional, onEditClick }: Props) {
                   </span>
                 ))}
               </div>
-              <span className="text-gray-600 text-xs md:text-sm font-medium whitespace-nowrap">
+              <span className="text-gray-600 text-xs font-medium whitespace-nowrap">
                 ({rating.toFixed(1)}/5.0)
               </span>
             </div>
@@ -135,30 +134,30 @@ export default function ProfesionalHeader({ profesional, onEditClick }: Props) {
               </div>
             )}
 
-            {/* 4. Oficios y Biografía */}
-            <p className="text-xs md:text-sm lg:text-base text-gray-600 mt-1 md:mt-2 line-clamp-1">
+            {/* 4. Oficios y Biografía - Compactado */}
+            <p className="text-xs text-gray-600 mt-0.5 line-clamp-1">
               Especialista en:{" "}
               <span className="font-semibold">
                 {profesional.areas_servicio?.join(", ") || "Sin definir"}
               </span>
             </p>
-            <p className="text-xs text-gray-500 mt-0.5 md:mt-1 italic hidden md:block line-clamp-1">
+            <p className="text-xs text-gray-500 mt-0.5 italic hidden md:block line-clamp-1">
               {profesional.descripcion_perfil
-                ? profesional.descripcion_perfil.substring(0, 50) + "..."
+                ? profesional.descripcion_perfil.substring(0, 40) + "..."
                 : "Biografía pendiente"}
             </p>
           </div>
         </div>
 
-        {/* Columna de Acciones y Contacto - Responsive */}
-        <div className="hidden sm:flex flex-col lg:flex-col items-center lg:items-end space-y-3 lg:space-y-3 lg:ml-4 lg:w-auto">
+        {/* Columna de Acciones y Contacto - Compactado */}
+        <div className="hidden sm:flex flex-col lg:flex-col items-center lg:items-end space-y-2 lg:space-y-2 lg:ml-3 lg:w-auto">
           <button
-            onClick={onEditClick} // Llama a la función para abrir el modal
+            onClick={onEditClick}
             className={`w-full sm:w-auto ${
               isIncomplete
-                ? "bg-gradient-to-r from-orange-500 via-red-500 to-pink-600 hover:from-orange-600 hover:via-red-600 hover:to-pink-700 animate-pulse shadow-2xl"
-                : "bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 shadow-lg shadow-indigo-200"
-            } text-white px-5 py-3 rounded-xl transition-all duration-300 text-sm sm:text-base font-bold touch-manipulation active:scale-95 transform hover:scale-105 flex items-center justify-center gap-2`}
+                ? "bg-gradient-to-r from-orange-500 via-red-500 to-pink-600 hover:from-orange-600 hover:via-red-600 hover:to-pink-700 animate-pulse shadow-lg"
+                : "bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 shadow-md"
+            } text-white px-3 py-1.5 rounded-lg transition-all duration-200 text-xs sm:text-sm font-semibold touch-manipulation active:scale-95 flex items-center justify-center gap-1.5`}
           >
             {isIncomplete && (
               <FontAwesomeIcon
@@ -177,8 +176,8 @@ export default function ProfesionalHeader({ profesional, onEditClick }: Props) {
             <span className="sm:hidden">Optimizar</span>
           </button>
 
-          {/* Datos de contacto clave para referencia rápida */}
-          <div className="w-full sm:w-auto text-center lg:text-right text-xs sm:text-sm text-gray-700 p-2 sm:p-3 border rounded-lg bg-gray-50">
+          {/* Datos de contacto - Compactado */}
+          <div className="w-full sm:w-auto text-center lg:text-right text-xs text-gray-700 p-1.5 sm:p-2 border rounded-md bg-gray-50">
             <p className="break-all sm:break-normal">
               WhatsApp:{" "}
               <span className="font-medium">

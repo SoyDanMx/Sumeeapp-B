@@ -128,8 +128,18 @@ export default function ProfesionalDashboardPage() {
 
   // --- FUNCIONES HANDLER ---
   const handleProfileUpdateSuccess = useCallback(() => {
+    // ✅ FIX: Invalidar caché y forzar refetch completo
+    try {
+      sessionStorage.removeItem("sumeeapp/professional-dashboard");
+    } catch {
+      /* ignore */
+    }
     refetchData();
     setIsModalOpen(false);
+    // Forzar recarga después de un pequeño delay para asegurar sincronización
+    setTimeout(() => {
+      window.location.reload();
+    }, 500);
   }, [refetchData]);
 
   const handleLeadClick = useCallback(

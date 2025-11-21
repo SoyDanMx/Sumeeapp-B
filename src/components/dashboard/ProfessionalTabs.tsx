@@ -158,38 +158,38 @@ export default function ProfessionalTabs({
 
   return (
     <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-      {/* Header del Profesional */}
-      <div className="relative overflow-hidden bg-gradient-to-r from-indigo-600 via-blue-600 to-blue-500 p-6 text-white">
+      {/* Header del Profesional - Compactado */}
+      <div className="relative overflow-hidden bg-gradient-to-r from-indigo-600 via-blue-600 to-blue-500 p-3 sm:p-4 text-white">
         <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.6),transparent_65%)]" />
-        <div className="relative flex flex-col gap-6">
-          <div className="flex flex-col sm:flex-row sm:items-start gap-4">
+        <div className="relative flex flex-col gap-3">
+          <div className="flex flex-col sm:flex-row sm:items-start gap-3">
             <div className="relative">
               {avatarUrl ? (
                 <Image
                   src={avatarUrl}
                   alt={profesional.full_name ?? "Profesional Sumee"}
-                  width={96}
-                  height={96}
-                  className="w-20 h-20 sm:w-24 sm:h-24 object-cover rounded-3xl border-4 border-white/40 shadow-xl"
+                  width={64}
+                  height={64}
+                  className="w-14 h-14 sm:w-16 sm:h-16 object-cover rounded-2xl border-2 border-white/40 shadow-lg"
                 />
               ) : (
-                <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-3xl bg-white/25 border-4 border-white/40 flex items-center justify-center shadow-xl">
-                  <FontAwesomeIcon icon={faUser} className="text-3xl" />
+                <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-white/25 border-2 border-white/40 flex items-center justify-center shadow-lg">
+                  <FontAwesomeIcon icon={faUser} className="text-xl" />
                 </div>
               )}
-              <span className="absolute -bottom-3 left-1/2 -translate-x-1/2 inline-flex items-center gap-1 bg-emerald-500 text-white text-[10px] font-semibold px-3 py-1 rounded-full shadow">
-                <FontAwesomeIcon icon={faShieldHalved} className="text-xs" />
+              <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 inline-flex items-center gap-0.5 bg-emerald-500 text-white text-[9px] font-semibold px-2 py-0.5 rounded-full shadow">
+                <FontAwesomeIcon icon={faShieldHalved} className="text-[10px]" />
                 {membershipLabel}
               </span>
             </div>
-            <div className="flex-1 min-w-0 space-y-2">
-              <h3 className="text-2xl font-bold leading-tight break-words">
+            <div className="flex-1 min-w-0 space-y-1">
+              <h3 className="text-lg sm:text-xl font-bold leading-tight break-words">
                 {profesional.full_name || "Profesional Sumee"}
               </h3>
-              <p className="text-blue-100 text-sm capitalize">
+              <p className="text-blue-100 text-xs capitalize">
                 {profesional.profession || "Especialista verificado"}
               </p>
-              <p className="text-blue-200 text-xs break-all">
+              <p className="text-blue-200 text-[10px] break-all">
                 {profesional.email}
               </p>
               <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm text-white/90">
@@ -224,34 +224,34 @@ export default function ProfessionalTabs({
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
             {headerButtons.map((button) => (
               <button
                 key={button.label}
                 onClick={() => button.action?.()}
-                className={`w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-semibold transition-all active:scale-95 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-white/60 ${button.styles}`}
+                className={`w-full inline-flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-lg font-medium text-xs transition-all active:scale-95 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-white/60 ${button.styles}`}
                 aria-label={button.label}
               >
-                <FontAwesomeIcon icon={button.icon} />
-                <span className="text-sm text-center">{button.label}</span>
+                <FontAwesomeIcon icon={button.icon} className="text-xs" />
+                <span className="text-xs text-center">{button.label}</span>
               </button>
             ))}
           </div>
         </div>
       </div>
 
-      {/* Pestañas de Navegación */}
-      <div className="p-4">
-        <div className="grid grid-cols-2 gap-3">
+      {/* Pestañas de Navegación - Compactado */}
+      <div className="p-3">
+        <div className="grid grid-cols-2 gap-2">
           {tabs.map((tab) => (
             <div key={tab.id}>
               {tab.href && !isMobile ? (
                 <Link
                   href={tab.href}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex flex-col items-center p-4 rounded-lg border-2 transition-all duration-200 ${
+                  className={`flex flex-col items-center p-2.5 rounded-lg border-2 transition-all duration-200 ${
                     activeTab === tab.id
-                      ? "border-indigo-500 bg-indigo-50 text-indigo-700 shadow-md"
+                      ? "border-indigo-500 bg-indigo-50 text-indigo-700 shadow-sm"
                       : "border-gray-200 hover:border-indigo-300 hover:bg-gray-50 text-gray-700"
                   }`}
                 >
