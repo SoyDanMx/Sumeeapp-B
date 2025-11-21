@@ -29,7 +29,7 @@ import {
   openWhatsAppLink,
 } from "@/lib/supabase/credential-sender";
 import { useCountdown } from "@/hooks/useCountdown";
-import ConfirmAgreementModal from "@/components/dashboard/ConfirmAgreementModal";
+import ProfessionalQuoteModal from "@/components/dashboard/ProfessionalQuoteModal";
 import { useAuth } from "@/context/AuthContext";
 
 interface LeadCardProps {
@@ -134,12 +134,10 @@ export default function LeadCard({
         setIsAccepting(true);
 
         try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-            if (!user) {
+      // Usar el user de useAuth() en lugar de obtenerlo de nuevo
+      if (!user?.id) {
         throw new Error("Usuario no autenticado");
-            }
+      }
 
       const result = await acceptLead(leadInfo.id);
             
@@ -185,12 +183,16 @@ export default function LeadCard({
           // No bloquear el flujo si falla el envío de credencial
         }
 
-                if (onLeadAccepted) {
-          onLeadAccepted(updatedLead);
-        }
-        if (onLeadUpdated) {
-          onLeadUpdated(updatedLead);
-        }
+                // ✅ Refrescar datos inmediatamente para que aparezca en "En Progreso"
+        // Usar setTimeout para asegurar que el estado se actualice primero
+        setTimeout(() => {
+          if (onLeadAccepted) {
+            onLeadAccepted(updatedLead);
+          }
+          if (onLeadUpdated) {
+            onLeadUpdated(updatedLead);
+          }
+        }, 100);
       }
     } catch (error) {
       console.error("Error al aceptar el lead:", error);
@@ -215,6 +217,14 @@ export default function LeadCard({
   };
 
   const handleMarkContacted = async () => {
+    // Verificar que el usuario esté autenticado antes de proceder
+    if (!user?.id) {
+      alert(
+        "Debes iniciar sesión para marcar el contacto. Por favor, recarga la página e inicia sesión nuevamente."
+      );
+      return;
+    }
+
     if (!contactClientWhatsappLink) {
       alert(
         "No se detectó el número de WhatsApp del cliente. Puedes marcarlo como contactado manualmente desde Detalles."
@@ -236,11 +246,11 @@ export default function LeadCard({
       );
       emitLeadUpdate(updatedLead);
     } catch (error) {
-      console.error(error);
+      console.error("Error al marcar contacto:", error);
       alert(
         error instanceof Error
           ? error.message
-          : "No se pudo registrar el contacto."
+          : "No se pudo registrar el contacto. Por favor, recarga la página e inténtalo nuevamente."
       );
     } finally {
       setIsSavingContact(false);
@@ -334,14 +344,14 @@ export default function LeadCard({
     }
 
     return (
-      <div className="rounded-xl border-2 border-amber-300 bg-amber-50 p-4 animate-pulse">
-        <div className="flex items-center justify-between gap-3 flex-wrap">
+      <div className="rounded-lg border-2 border-amber-300 bg-amber-50 p-2.5 md:p-3 animate-pulse">
+        <div className="flex flex-col gap-2">
           <div>
-            <p className="font-semibold text-amber-700">
+            <p className="font-semibold text-amber-700 text-xs md:text-sm">
               Tienes 30 minutos para contactar al cliente. ¡Hazlo cuanto antes!
             </p>
-            <p className="text-sm text-amber-600 flex items-center gap-2">
-              <FontAwesomeIcon icon={faBell} />
+            <p className="text-xs text-amber-600 flex items-center gap-1.5 mt-1">
+              <FontAwesomeIcon icon={faBell} className="text-xs" />
               {contactCountdown.isExpired
                 ? "El tiempo límite expiró. Registra el contacto o re-asigna el trabajo."
                 : `Tiempo restante: ${contactCountdown.minutes}m ${contactCountdown.seconds}s`}
@@ -359,10 +369,11 @@ export default function LeadCard({
                   );
                 }
               }}
-              className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg font-semibold shadow-md transition-transform animate-[wiggle_2s_ease-in-out_infinite]"
+              className="bg-green-500 hover:bg-green-600 text-white px-3 py-1.5 md:px-4 md:py-2 rounded-lg text-xs md:text-sm font-semibold shadow-md transition-transform animate-[wiggle_2s_ease-in-out_infinite] flex items-center justify-center gap-1.5"
               style={{ animationDelay: "0.5s" }}
             >
-              Contactar por WhatsApp
+              <FontAwesomeIcon icon={faWhatsappBrand} className="text-xs" />
+              <span>Contactar WhatsApp</span>
             </button>
             <button
               onClick={(e) => {
@@ -370,9 +381,9 @@ export default function LeadCard({
                 void handleMarkContacted();
               }}
               disabled={isSavingContact}
-              className="bg-white border border-green-500 text-green-600 px-4 py-2 rounded-lg font-semibold hover:bg-green-50 disabled:opacity-50"
+              className="bg-white border border-green-500 text-green-600 px-3 py-1.5 md:px-4 md:py-2 rounded-lg text-xs md:text-sm font-semibold hover:bg-green-50 disabled:opacity-50"
             >
-              {isSavingContact ? "Guardando..." : "Ya contacté al cliente"}
+              {isSavingContact ? "Guardando..." : "Ya contacté"}
             </button>
           </div>
         </div>
@@ -517,18 +528,18 @@ export default function LeadCard({
 
     return (
     <div
-      className={`p-3 md:p-4 border rounded-lg transition-all duration-200 touch-manipulation ${
+      className={`p-2.5 md:p-3 border rounded-lg transition-all duration-200 touch-manipulation ${
         isSelected
           ? "bg-indigo-100 border-indigo-500 shadow-md"
           : "bg-white hover:border-gray-400 active:scale-[0.98]"
       }`}
     >
             <div onClick={onSelect} className="cursor-pointer">
-        <div className="flex justify-between items-start mb-2 gap-2">
-          <h3 className="font-bold text-gray-800 flex items-center text-base md:text-lg flex-1 min-w-0">
+        <div className="flex justify-between items-start mb-1.5 gap-2">
+          <h3 className="font-semibold text-gray-800 flex items-center text-sm md:text-base flex-1 min-w-0">
             <FontAwesomeIcon
               icon={faUser}
-              className="mr-2 text-gray-500 flex-shrink-0"
+              className="mr-1.5 text-gray-500 flex-shrink-0 text-xs"
             />
             <span className="truncate">
               {leadInfo.nombre_cliente || "Cliente Anónimo"}
@@ -536,10 +547,10 @@ export default function LeadCard({
                     </h3>
                     {getStatusBadge()}
                 </div>
-        <p className="text-sm text-gray-600 mb-3">
+        <p className="text-xs md:text-sm text-gray-600 mb-2 line-clamp-2">
           {leadInfo.descripcion_proyecto || "Sin descripción"}
         </p>
-        <div className="grid grid-cols-2 gap-3 text-xs text-gray-500 mb-4">
+        <div className="grid grid-cols-2 gap-2 text-xs text-gray-500 mb-3">
           <div>
             <p className="font-semibold text-gray-700">Servicio</p>
             <p>{leadInfo.servicio_solicitado || leadInfo.servicio || "General"}</p>
@@ -581,37 +592,50 @@ export default function LeadCard({
         <div className="space-y-4 mt-4">
           {renderContactBanner()}
           
-          {/* Botón de Confirmar Acuerdo Final */}
+          {/* Botón de Crear Cotización */}
           {user?.id === leadInfo.profesional_asignado_id && 
            (leadInfo.negotiation_status === null || 
             leadInfo.negotiation_status === 'asignado') && (
-            <div className="rounded-xl border-2 border-purple-300 bg-gradient-to-r from-purple-50 to-indigo-50 p-4">
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
-                  <FontAwesomeIcon icon={faCheckCircle} className="text-purple-600" />
-                  <p className="font-semibold text-purple-900">
-                    Confirmar Acuerdo Final
-                  </p>
-                </div>
+            <div className="rounded-lg border-2 border-purple-300 bg-gradient-to-r from-purple-50 to-indigo-50 p-2.5 md:p-3">
+              <div className="flex items-center gap-1.5 mb-1.5">
+                <FontAwesomeIcon icon={faCheckCircle} className="text-purple-600 text-xs" />
+                <p className="font-semibold text-purple-900 text-xs md:text-sm">
+                  Crear Cotización
+                </p>
               </div>
-              <p className="text-sm text-purple-700 mb-3">
-                Captura el precio y alcance del trabajo acordado con el cliente.
+              <p className="text-xs text-purple-700 mb-2">
+                Agrega conceptos y montos para enviar propuesta al cliente.
               </p>
               <button
                 onClick={(e) => {
                   e.stopPropagation();
                   setShowAgreementModal(true);
                 }}
-                className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white py-2 px-4 rounded-lg font-semibold hover:from-purple-700 hover:to-indigo-700 transition-all flex items-center justify-center gap-2"
+                className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white py-1.5 md:py-2 px-3 md:px-4 rounded-lg text-xs md:text-sm font-semibold hover:from-purple-700 hover:to-indigo-700 transition-all flex items-center justify-center gap-1.5"
               >
-                <FontAwesomeIcon icon={faCheckCircle} />
-                Confirmar Acuerdo Final
+                <FontAwesomeIcon icon={faCheckCircle} className="text-xs" />
+                <span>Crear Cotización</span>
               </button>
             </div>
           )}
 
-          {/* Badge de Acuerdo Confirmado */}
-          {leadInfo.negotiation_status === 'acuerdo_confirmado' && (
+          {/* Badge de Propuesta Enviada */}
+          {leadInfo.negotiation_status === 'propuesta_enviada' && (
+            <div className="rounded-lg border-2 border-blue-300 bg-blue-50 p-2.5 md:p-3">
+              <div className="flex items-center gap-1.5 mb-1.5">
+                <FontAwesomeIcon icon={faCheckCircle} className="text-blue-600 text-xs" />
+                <p className="font-semibold text-blue-900 text-xs md:text-sm">
+                  Propuesta Enviada
+                </p>
+              </div>
+              <p className="text-xs text-blue-700">
+                Esperando respuesta del cliente...
+              </p>
+            </div>
+          )}
+
+          {/* Badge de Propuesta Aceptada o Acuerdo Confirmado */}
+          {(leadInfo.negotiation_status === 'propuesta_aceptada' || leadInfo.negotiation_status === 'acuerdo_confirmado') && (
             <div className="rounded-xl border-2 border-green-300 bg-green-50 p-4">
               <div className="flex items-center gap-2 mb-2">
                 <FontAwesomeIcon icon={faCheckCircle} className="text-green-600" />
@@ -637,18 +661,17 @@ export default function LeadCard({
 
           {renderAppointmentSection()}
           {renderCompletionSection()}
-          <div className="grid grid-cols-3 gap-2 md:gap-2">
+          <div className="grid grid-cols-3 gap-1.5 md:gap-2">
             {hasLeadLocation && (
               <a
                 href={`https://www.google.com/maps/dir/${profesionalLat},${profesionalLng}/${leadInfo.ubicacion_lat},${leadInfo.ubicacion_lng}`}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     onClick={(e) => e.stopPropagation()}
-                className="bg-blue-500 hover:bg-blue-600 text-white py-3 md:py-2 px-2 md:px-3 rounded-lg text-sm md:text-xs font-semibold md:font-medium transition-colors flex items-center justify-center space-x-1 touch-manipulation active:scale-95"
+                className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-1.5 md:px-2 rounded-lg text-xs font-medium transition-colors flex items-center justify-center touch-manipulation active:scale-95"
                                 >
-                <FontAwesomeIcon icon={faRoute} className="text-sm" />
-                <span className="hidden sm:inline">Ver ruta</span>
-                <span className="sm:hidden">🗺️</span>
+                <FontAwesomeIcon icon={faRoute} className="text-xs" />
+                <span className="hidden sm:inline ml-1">Ruta</span>
                                 </a>
                             )}
                             
@@ -663,11 +686,10 @@ export default function LeadCard({
                 }
                 openWhatsAppLink(contactClientWhatsappLink);
               }}
-              className="bg-green-500 hover:bg-green-600 text-white py-3 md:py-2 px-2 md:px-3 rounded-lg text-sm md:text-xs font-semibold md:font-medium transition-colors flex items-center justify-center space-x-1 touch-manipulation active:scale-95"
+              className="bg-green-500 hover:bg-green-600 text-white py-2 px-1.5 md:px-2 rounded-lg text-xs font-medium transition-colors flex items-center justify-center touch-manipulation active:scale-95"
             >
-              <FontAwesomeIcon icon={faWhatsappBrand} className="text-sm" />
-              <span className="hidden sm:inline">WhatsApp cliente</span>
-              <span className="sm:hidden">💬</span>
+              <FontAwesomeIcon icon={faWhatsappBrand} className="text-xs" />
+              <span className="hidden sm:inline ml-1">WhatsApp</span>
             </button>
 
             <button
@@ -677,40 +699,39 @@ export default function LeadCard({
                   "Para llamadas directas, usa el botón de WhatsApp o revisa el detalle del lead en tu panel."
                 );
               }}
-              className="bg-yellow-500 hover:bg-yellow-600 text-white py-3 md:py-2 px-2 md:px-3 rounded-lg text-sm md:text-xs font-semibold md:font-medium transition-colors flex items-center justify-center space-x-1 touch-manipulation active:scale-95"
+              className="bg-yellow-500 hover:bg-yellow-600 text-white py-2 px-1.5 md:px-2 rounded-lg text-xs font-medium transition-colors flex items-center justify-center touch-manipulation active:scale-95"
             >
-              <FontAwesomeIcon icon={faQuestion} className="text-sm" />
-              <span className="hidden sm:inline">Notas</span>
-              <span className="sm:hidden">ℹ️</span>
+              <FontAwesomeIcon icon={faQuestion} className="text-xs" />
+              <span className="hidden sm:inline ml-1">Notas</span>
             </button>
           </div>
 
-          <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 text-sm text-gray-700 space-y-2">
-            <div className="flex items-center justify-between text-sm text-green-700 bg-green-50 border border-green-200 rounded-lg px-3 py-2">
-              <div className="flex items-center gap-2 font-semibold">
-                <FontAwesomeIcon icon={faCheck} />
+          <div className="bg-gray-50 border border-gray-200 rounded-lg p-2 md:p-2.5 text-xs md:text-sm text-gray-700 space-y-1.5">
+            <div className="flex items-center justify-between text-xs md:text-sm text-green-700 bg-green-50 border border-green-200 rounded-lg px-2 py-1.5">
+              <div className="flex items-center gap-1.5 font-semibold">
+                <FontAwesomeIcon icon={faCheck} className="text-xs" />
                 <span>{leadInfo.estado === "completado" ? "Trabajo completado" : "Trabajo agendado"}</span>
               </div>
-              <span className="text-xs text-green-600">#{leadInfo.id.slice(0, 8)}</span>
+              <span className="text-[10px] md:text-xs text-green-600">#{leadInfo.id.slice(0, 8)}</span>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
-              <div className="bg-white rounded-lg border border-gray-200 p-3">
-                <p className="text-gray-700 font-semibold mb-1">Cliente</p>
-                <p className="text-gray-900">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-1.5 md:gap-2 text-xs md:text-sm">
+              <div className="bg-white rounded-lg border border-gray-200 p-2">
+                <p className="text-gray-700 font-semibold mb-1 text-xs">Cliente</p>
+                <p className="text-gray-900 text-xs md:text-sm">
                   {leadInfo.nombre_cliente ?? "Cliente Sumee"}
                 </p>
                 {leadInfo.whatsapp && (
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-[10px] md:text-xs text-gray-500 mt-0.5">
                     WhatsApp: {leadInfo.whatsapp}
                   </p>
                 )}
                 {leadInfo.ubicacion_direccion && (
-                  <p className="text-xs text-gray-500 mt-1">
-                    Dirección: {leadInfo.ubicacion_direccion}
+                  <p className="text-[10px] md:text-xs text-gray-500 mt-0.5 line-clamp-1">
+                    {leadInfo.ubicacion_direccion}
                   </p>
                 )}
               </div>
-              <div className="bg-white rounded-lg border border-gray-200 p-3 space-y-2">
+              <div className="bg-white rounded-lg border border-gray-200 p-2 space-y-1.5">
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
@@ -718,11 +739,11 @@ export default function LeadCard({
                       openWhatsAppLink(contactClientWhatsappLink);
                     }
                   }}
-                  className="w-full bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg text-sm font-semibold transition-colors flex items-center justify-center gap-2"
+                  className="w-full bg-green-600 hover:bg-green-700 text-white py-1.5 md:py-2 rounded-lg text-xs md:text-sm font-semibold transition-colors flex items-center justify-center gap-1.5"
                   disabled={!contactClientWhatsappLink}
                 >
-                  <FontAwesomeIcon icon={faWhatsappBrand} />
-                  <span>Enviar mensaje al cliente</span>
+                  <FontAwesomeIcon icon={faWhatsappBrand} className="text-xs" />
+                  <span>Mensaje cliente</span>
                 </button>
                 {hasLeadLocation && (
                   <a
@@ -730,10 +751,11 @@ export default function LeadCard({
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     onClick={(e) => e.stopPropagation()}
-                    className="w-full bg-blue-500 hover:bg-blue-600 text-white py-2 rounded-lg text-sm font-semibold transition-colors flex items-center justify-center gap-2"
+                    className="w-full bg-blue-500 hover:bg-blue-600 text-white py-1.5 md:py-2 rounded-lg text-xs md:text-sm font-semibold transition-colors flex items-center justify-center gap-1.5"
                                 >
-                    <FontAwesomeIcon icon={faRoute} />
-                    <span>Ver ruta en Google Maps</span>
+                    <FontAwesomeIcon icon={faRoute} className="text-xs" />
+                    <span className="hidden md:inline">Ver ruta</span>
+                    <span className="md:hidden">Ruta</span>
                                 </a>
                             )}
                 <button
@@ -741,10 +763,10 @@ export default function LeadCard({
                     e.stopPropagation();
                     setShowDetailsModal(true);
                   }}
-                  className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 rounded-lg text-sm font-semibold transition-colors flex items-center justify-center gap-2"
+                  className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 py-1.5 md:py-2 rounded-lg text-xs md:text-sm font-semibold transition-colors flex items-center justify-center gap-1.5"
                 >
-                  <FontAwesomeIcon icon={faQuestion} />
-                  <span>Detalles y notas</span>
+                  <FontAwesomeIcon icon={faQuestion} className="text-xs" />
+                  <span>Detalles</span>
                 </button>
               </div>
                         </div>
@@ -988,13 +1010,13 @@ export default function LeadCard({
         </div>
       )}
 
-      {/* Modal de Confirmar Acuerdo Final */}
-      <ConfirmAgreementModal
+      {/* Modal de Cotización Profesional */}
+      <ProfessionalQuoteModal
         isOpen={showAgreementModal}
         onClose={() => setShowAgreementModal(false)}
         lead={leadInfo}
         onSuccess={() => {
-          // Refrescar el lead después de confirmar
+          // Refrescar el lead después de enviar propuesta
           if (onLeadUpdated) {
             // Recargar el lead desde la BD
             supabase

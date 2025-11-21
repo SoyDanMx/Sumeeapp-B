@@ -73,27 +73,39 @@ export async function POST(request: Request) {
 
     console.log("✅ [ACCEPT LEAD] Usuario autenticado:", currentUser.id, currentUser.email);
 
-    // ✅ SOLUCIÓN DEFINITIVA: Usar admin client directamente para evitar problemas de RLS
-    // Esto garantiza que el lead se pueda aceptar sin importar las políticas RLS
+    // ✅ SOLUCIÓN CON FALLBACK: Intentar con admin client primero, luego con cliente autenticado
     const adminClient = createSupabaseAdminClient();
-    
-    if (!adminClient) {
-      console.error("❌ [ACCEPT LEAD] No se pudo crear admin client. Verifica SUPABASE_SERVICE_ROLE_KEY.");
-      return NextResponse.json(
-        {
-          error: "Error de configuración del servidor. Contacta al soporte técnico.",
-        },
-        { status: 500 }
-      );
+    const useAdminClient = !!adminClient;
+
+    if (!useAdminClient) {
+      console.warn("⚠️ [ACCEPT LEAD] Admin client no disponible. Usando cliente autenticado con RPC/UPDATE.");
     }
 
     // Paso 1: Verificar que el lead existe
     console.log("🔍 [ACCEPT LEAD] Verificando existencia del lead:", leadId);
-    const { data: existingLead, error: fetchError } = await adminClient
-      .from("leads")
-      .select("id, estado, profesional_asignado_id, cliente_id")
-      .eq("id", leadId)
-      .maybeSingle();
+    
+    let existingLead: any = null;
+    let fetchError: any = null;
+
+    if (useAdminClient) {
+      // Usar admin client si está disponible
+      const result = await adminClient!
+        .from("leads")
+        .select("id, estado, profesional_asignado_id, cliente_id")
+        .eq("id", leadId)
+        .maybeSingle();
+      existingLead = result.data;
+      fetchError = result.error;
+    } else {
+      // Usar cliente autenticado como fallback
+      const result = await supabase
+        .from("leads")
+        .select("id, estado, profesional_asignado_id, cliente_id")
+        .eq("id", leadId)
+        .maybeSingle();
+      existingLead = result.data;
+      fetchError = result.error;
+    }
 
     if (fetchError) {
       console.error("❌ [ACCEPT LEAD] Error al buscar lead:", fetchError);
@@ -132,15 +144,52 @@ export async function POST(request: Request) {
       );
     }
 
-    // Paso 3: Actualizar el lead usando admin client (bypass RLS)
+    // Paso 3: Intentar aceptar el lead usando RPC primero (funciona con cliente autenticado)
+    console.log("🔄 [ACCEPT LEAD] Intentando aceptar lead con RPC...");
+    let rpcLead = null;
+    let rpcError = null;
+
+    try {
+      const rpcResult = await (supabase.rpc as any)(
+        "accept_lead",
+        { lead_uuid: leadId }
+      );
+      
+      if (rpcResult.data) {
+        rpcLead = Array.isArray(rpcResult.data) ? rpcResult.data[0] : rpcResult.data;
+        rpcError = rpcResult.error;
+      } else {
+        rpcError = rpcResult.error || new Error("RPC retornó sin datos");
+      }
+    } catch (rpcException: any) {
+      console.warn("⚠️ [ACCEPT LEAD] Excepción al llamar RPC accept_lead:", rpcException);
+      rpcError = rpcException;
+    }
+
+    if (!rpcError && rpcLead) {
+      console.log("✅ [ACCEPT LEAD] Lead aceptado exitosamente con RPC");
+      return NextResponse.json({ lead: rpcLead });
+    }
+
+    // Paso 4: Si RPC falla, intentar con UPDATE directo
+    console.warn("⚠️ [ACCEPT LEAD] RPC falló, intentando UPDATE directo. Error:", rpcError?.message || rpcError);
+    
     const contactDeadline = new Date();
     contactDeadline.setMinutes(contactDeadline.getMinutes() + 30); // 30 minutos para contactar
 
-    console.log("🔄 [ACCEPT LEAD] Actualizando lead con admin client...");
-    const { data: updatedLead, error: updateError } = await adminClient
+    // Determinar qué estado usar según el estado actual del lead
+    // ✅ Usar 'aceptado' que se normaliza a 'en_progreso' en el frontend
+    const currentEstado = existingLead.estado?.toLowerCase();
+    const newEstado = 'aceptado'; // Siempre usar 'aceptado' que es válido y se normaliza correctamente
+
+    console.log(`🔄 [ACCEPT LEAD] Actualizando lead con ${useAdminClient ? 'admin client' : 'cliente autenticado'}...`);
+    console.log(`🔄 [ACCEPT LEAD] Estado actual: ${currentEstado}, Nuevo estado: ${newEstado}`);
+
+    const clientToUse = useAdminClient ? adminClient! : supabase;
+    const { data: updatedLead, error: updateError } = await clientToUse
       .from("leads")
       .update({
-        estado: "aceptado",
+        estado: newEstado,
         profesional_asignado_id: currentUser.id,
         fecha_asignacion: new Date().toISOString(),
         updated_at: new Date().toISOString(),
