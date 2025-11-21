@@ -5,7 +5,7 @@ import React, { useMemo } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faShieldAlt, faLock, faFileAlt, faStar, faMapMarkerAlt, faPhoneAlt, faEnvelope, faInfoCircle, faPen, faCreditCard, faCheckCircle } from '@fortawesome/free-solid-svg-icons';
+import { faShieldAlt, faLock, faFileAlt, faStar, faMapMarkerAlt, faPhoneAlt, faEnvelope, faInfoCircle, faPen, faCreditCard, faCheckCircle, faShoppingCart } from '@fortawesome/free-solid-svg-icons';
 import { faFacebookF, faLinkedinIn } from '@fortawesome/free-brands-svg-icons';
 import { NewsletterForm } from './NewsletterForm';
 import { FooterLinkColumn } from './FooterLinkColumn';
@@ -18,6 +18,7 @@ export const Footer = () => {
     { href: "/verificacion", icon: faCheckCircle, text: "Proceso de Verificación" },
     { href: "/#como-funciona", icon: faStar, text: "Cómo Funciona" },
     { href: "/pago-de-servicios", icon: faCreditCard, text: "Pago de Servicios" },
+    { href: "/marketplace", icon: faShoppingCart, text: "Marketplace" },
     { href: "/blog", icon: faPen, text: "Blog" },
     { href: "/professionals", icon: faStar, text: "Profesionales" },
     { href: "/join-as-pro", icon: faStar, text: "Únete como Profesional" },
