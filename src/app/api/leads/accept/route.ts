@@ -114,59 +114,28 @@ export async function POST(request: Request) {
     const contactDeadline = new Date();
     contactDeadline.setMinutes(contactDeadline.getMinutes() + 30); // 30 minutos para contactar
     
-    // Primero intentar solo con columnas esenciales (que siempre existen)
-    let updateData: any = {
+    // Las columnas existen según la verificación, actualizar con todas las columnas necesarias
+    const updateData: any = {
       estado: "aceptado",
       profesional_asignado_id: currentUser.id,
       fecha_asignacion: new Date().toISOString(),
+      contact_deadline_at: contactDeadline.toISOString(),
+      appointment_status: "pendiente_contacto",
     };
     
-    // Intentar agregar columnas opcionales una por una
-    // Si alguna no existe, Supabase la ignorará en el siguiente intento
-    let { data: updatedLead, error: updateError } = await supabase
+    // Agregar updated_at si existe (puede no estar en todas las bases de datos)
+    try {
+      updateData.updated_at = new Date().toISOString();
+    } catch (e) {
+      // Ignorar si no se puede agregar
+    }
+    
+    const { data: updatedLead, error: updateError } = await supabase
       .from("leads")
       .update(updateData)
       .eq("id", leadId)
       .select("*")
       .maybeSingle();
-    
-    // Si el primer intento falla por columnas faltantes, intentar sin ellas
-    if (updateError && updateError.message?.includes("column")) {
-      console.warn("⚠️ Error por columnas faltantes, intentando solo con columnas esenciales:", updateError.message);
-      // Segundo intento: solo columnas que definitivamente existen
-      const { data: retryLead, error: retryError } = await supabase
-        .from("leads")
-        .update({
-          estado: "aceptado",
-          profesional_asignado_id: currentUser.id,
-          fecha_asignacion: new Date().toISOString(),
-        })
-        .eq("id", leadId)
-        .select("*")
-        .maybeSingle();
-      
-      if (!retryError && retryLead) {
-        updatedLead = retryLead;
-        updateError = null;
-        console.log("✅ Lead aceptado exitosamente (sin columnas opcionales)");
-      } else {
-        updateError = retryError || updateError;
-      }
-    } else if (!updateError && updatedLead) {
-      // Si el primer intento fue exitoso, intentar agregar columnas opcionales en un segundo UPDATE
-      const optionalUpdate: any = {};
-      if (contactDeadline) {
-        optionalUpdate.contact_deadline_at = contactDeadline.toISOString();
-      }
-      
-      // Intentar actualizar columnas opcionales (si existen)
-      await supabase
-        .from("leads")
-        .update(optionalUpdate)
-        .eq("id", leadId);
-      
-      console.log("✅ Lead aceptado exitosamente");
-    }
 
     if (updateError) {
       console.error("❌ Error al actualizar lead directamente:", updateError);
@@ -187,21 +156,15 @@ export async function POST(request: Request) {
       const adminContactDeadline = new Date();
       adminContactDeadline.setMinutes(adminContactDeadline.getMinutes() + 30);
       
-      // Construir update data de forma segura
+      // Usar todas las columnas que sabemos que existen
       const adminUpdateData: any = {
         estado: "aceptado",
         profesional_asignado_id: currentUser.id,
         fecha_asignacion: new Date().toISOString(),
         contact_deadline_at: adminContactDeadline.toISOString(),
+        appointment_status: "pendiente_contacto",
+        updated_at: new Date().toISOString(),
       };
-      
-      // Intentar agregar campos opcionales
-      try {
-        adminUpdateData.updated_at = new Date().toISOString();
-        adminUpdateData.appointment_status = "pendiente_contacto";
-      } catch (e) {
-        // Ignorar si no existen
-      }
       
       const { data: adminUpdatedLead, error: adminError } = await adminClient
         .from("leads")
