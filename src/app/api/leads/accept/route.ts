@@ -128,6 +128,9 @@ export async function POST(request: Request) {
     }
 
     // Actualizar el lead con privilegios administrativos
+    const contactDeadline = new Date();
+    contactDeadline.setMinutes(contactDeadline.getMinutes() + 30); // 30 minutos para contactar
+    
     const { data: updatedLead, error: updateError } = await adminClient
       .from("leads")
       .update({
@@ -135,11 +138,11 @@ export async function POST(request: Request) {
         profesional_asignado_id: currentUser.id,
         fecha_asignacion: new Date().toISOString(),
         updated_at: new Date().toISOString(),
+        contact_deadline_at: contactDeadline.toISOString(),
+        appointment_status: "pendiente_contacto",
       })
       .eq("id", leadId)
-      .select(
-        "id, cliente_id, profesional_asignado_id, estado, whatsapp, ubicacion_lat, ubicacion_lng, ubicacion_direccion, descripcion_proyecto, servicio_solicitado, fecha_creacion, photos_urls"
-      )
+      .select("*")
       .maybeSingle();
 
     if (updateError || !updatedLead) {

@@ -144,10 +144,18 @@ export default function LeadCard({
       const result = await acceptLead(leadInfo.id);
             
             if (result.success) {
+        // Asegurar que el lead tenga el estado correcto
         const updatedLead: Lead = {
           ...leadInfo,
           ...result.lead,
+          estado: result.lead.estado || "aceptado", // Asegurar que el estado sea "aceptado"
         };
+
+        console.log("✅ Lead aceptado exitosamente:", updatedLead);
+        console.log("📋 Estado del lead:", updatedLead.estado);
+        console.log("📞 WhatsApp del cliente:", updatedLead.whatsapp);
+        console.log("📍 Ubicación:", updatedLead.ubicacion_lat, updatedLead.ubicacion_lng);
+        console.log("⏰ Deadline de contacto:", updatedLead.contact_deadline_at);
 
                 setAccepted(true);
         setLeadState(updatedLead);
@@ -330,13 +338,13 @@ export default function LeadCard({
         <div className="flex items-center justify-between gap-3 flex-wrap">
           <div>
             <p className="font-semibold text-amber-700">
-              Tienes 2 horas para contactar al cliente. ¡Hazlo cuanto antes!
+              Tienes 30 minutos para contactar al cliente. ¡Hazlo cuanto antes!
             </p>
             <p className="text-sm text-amber-600 flex items-center gap-2">
               <FontAwesomeIcon icon={faBell} />
               {contactCountdown.isExpired
                 ? "El tiempo límite expiró. Registra el contacto o re-asigna el trabajo."
-                : `Tiempo restante: ${contactCountdown.hours}h ${contactCountdown.minutes}m ${contactCountdown.seconds}s`}
+                : `Tiempo restante: ${contactCountdown.minutes}m ${contactCountdown.seconds}s`}
             </p>
           </div>
           <div className="flex flex-col sm:flex-row gap-2">

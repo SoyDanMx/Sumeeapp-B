@@ -29,7 +29,7 @@ BEGIN
   SET
     estado = 'aceptado',
     profesional_asignado_id = current_professional,
-    contact_deadline_at = COALESCE(contact_deadline_at, NOW() + interval '2 hours'),
+    contact_deadline_at = COALESCE(contact_deadline_at, NOW() + interval '30 minutes'),
     appointment_status = 'pendiente_contacto',
     fecha_asignacion = NOW(),
     fecha_actualizacion = NOW()
