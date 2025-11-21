@@ -16,6 +16,7 @@ import {
   faUsers,
   faClock,
   faShieldAlt,
+  faTools,
 } from "@fortawesome/free-solid-svg-icons";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -420,13 +421,20 @@ export const Hero = () => {
                     )}
                   </button>
 
-                  {/* Enlace simplificado a servicios */}
-                  <div className="text-center pt-1 md:pt-2">
+                  {/* Botones de acción secundarios - Servicios y Marketplace */}
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3 pt-1 md:pt-2">
                     <Link
                       href="/servicios"
-                      className="text-blue-200 hover:text-white transition-colors text-sm sm:text-base md:text-lg underline"
+                      className="w-full sm:w-auto bg-white/15 hover:bg-white/25 backdrop-blur-sm border border-white/30 hover:border-white/40 text-white px-4 sm:px-5 py-2.5 sm:py-3 rounded-lg md:rounded-xl font-semibold text-sm sm:text-base md:text-lg transition-all duration-300 text-center"
                     >
                       O explora todos nuestros servicios
+                    </Link>
+                    <Link
+                      href="/marketplace"
+                      className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-green-500/20 hover:bg-green-500/30 backdrop-blur-sm border border-green-400/40 hover:border-green-400/60 text-green-200 hover:text-green-100 px-4 sm:px-5 py-2.5 sm:py-3 rounded-lg md:rounded-xl font-semibold text-sm sm:text-base md:text-lg transition-all duration-300"
+                    >
+                      <FontAwesomeIcon icon={faTools} className="text-xs sm:text-sm" />
+                      Marketplace para Técnicos
                     </Link>
                   </div>
                 </div>
