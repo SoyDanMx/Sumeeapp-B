@@ -72,39 +72,57 @@ export async function POST(request: Request) {
     let rpcError = null;
     
     try {
-      console.log("🔄 Intentando RPC accept_lead con leadId:", leadId);
-      const rpcResult = await (supabase.rpc as any)(
-        "accept_lead",
-        { lead_uuid: leadId }
-      );
+      console.log("🔄 Intentando RPC accept_lead con leadId:", leadId, "userId:", currentUser.id);
       
-      console.log("📋 Resultado RPC:", {
-        hasData: !!rpcResult.data,
-        hasError: !!rpcResult.error,
-        dataType: Array.isArray(rpcResult.data) ? 'array' : typeof rpcResult.data,
-      });
+      // Intentar llamar al RPC de múltiples formas para asegurar compatibilidad
+      let rpcResult: any = null;
       
-      // El RPC puede retornar directamente el objeto o un array
-      if (rpcResult.data) {
-        rpcLead = Array.isArray(rpcResult.data) ? rpcResult.data[0] : rpcResult.data;
-        rpcError = rpcResult.error;
-        
-        // Verificar que el lead tiene los datos necesarios
-        if (rpcLead && rpcLead.id) {
-          console.log("✅ RPC accept_lead exitoso, lead retornado:", {
-            id: rpcLead.id,
-            estado: rpcLead.estado,
-            contact_deadline_at: rpcLead.contact_deadline_at,
-          });
-          return NextResponse.json({ lead: rpcLead });
-        } else {
-          rpcError = new Error("RPC retornó datos incompletos");
+      // Método 1: Llamada directa
+      try {
+        rpcResult = await (supabase.rpc as any)("accept_lead", { lead_uuid: leadId });
+      } catch (e1: any) {
+        console.warn("⚠️ Método 1 de RPC falló:", e1.message);
+        // Método 2: Con .single()
+        try {
+          rpcResult = await (supabase.rpc as any)("accept_lead", { lead_uuid: leadId }).single();
+        } catch (e2: any) {
+          console.warn("⚠️ Método 2 de RPC falló:", e2.message);
+          rpcError = e1 || e2;
         }
-      } else {
-        rpcError = rpcResult.error || new Error("RPC retornó sin datos");
+      }
+      
+      if (rpcResult) {
+        console.log("📋 Resultado RPC completo:", JSON.stringify(rpcResult, null, 2));
+        console.log("📋 Resultado RPC:", {
+          hasData: !!rpcResult.data,
+          hasError: !!rpcResult.error,
+          dataType: Array.isArray(rpcResult.data) ? 'array' : typeof rpcResult.data,
+          errorMessage: rpcResult.error?.message,
+        });
+        
+        // El RPC puede retornar directamente el objeto o un array
+        if (rpcResult.data) {
+          rpcLead = Array.isArray(rpcResult.data) ? rpcResult.data[0] : rpcResult.data;
+          rpcError = rpcResult.error;
+          
+          // Verificar que el lead tiene los datos necesarios
+          if (rpcLead && rpcLead.id) {
+            console.log("✅ RPC accept_lead exitoso, lead retornado:", {
+              id: rpcLead.id,
+              estado: rpcLead.estado,
+              contact_deadline_at: rpcLead.contact_deadline_at,
+            });
+            return NextResponse.json({ lead: rpcLead });
+          } else {
+            rpcError = new Error("RPC retornó datos incompletos");
+          }
+        } else {
+          rpcError = rpcResult.error || new Error("RPC retornó sin datos");
+        }
       }
     } catch (rpcException: any) {
       console.error("❌ Excepción al llamar RPC accept_lead:", rpcException);
+      console.error("❌ Stack trace:", rpcException.stack);
       rpcError = rpcException;
     }
 
@@ -125,28 +143,53 @@ export async function POST(request: Request) {
       // ✅ FIX: Intentar UPDATE directo con el cliente autenticado (puede funcionar con RLS)
       console.log("🔄 Intentando UPDATE directo con cliente autenticado");
       
-      const directContactDeadline = new Date();
-      directContactDeadline.setMinutes(directContactDeadline.getMinutes() + 30);
-      
-      const directUpdateData: any = {
-        estado: "aceptado",
-        profesional_asignado_id: currentUser.id,
-        fecha_asignacion: new Date().toISOString(),
-        contact_deadline_at: directContactDeadline.toISOString(),
-        appointment_status: "pendiente_contacto",
-        updated_at: new Date().toISOString(),
-      };
-      
-      const { data: updatedLeadDirect, error: updateErrorDirect } = await supabase
+      // Primero obtener el lead para ver su estado actual
+      const { data: existingLeadForUpdate, error: fetchLeadError } = await supabase
         .from("leads")
-        .update(directUpdateData)
+        .select("id, estado, profesional_asignado_id")
         .eq("id", leadId)
-        .select("*")
         .maybeSingle();
       
-      if (!updateErrorDirect && updatedLeadDirect) {
-        console.log("✅ UPDATE directo exitoso");
-        return NextResponse.json({ lead: updatedLeadDirect });
+      if (fetchLeadError) {
+        console.warn("⚠️ No se pudo obtener lead para UPDATE directo:", fetchLeadError.message);
+      } else if (existingLeadForUpdate) {
+        console.log("📋 Lead encontrado para UPDATE:", {
+          id: existingLeadForUpdate.id,
+          estado: existingLeadForUpdate.estado,
+        });
+        
+        const directContactDeadline = new Date();
+        directContactDeadline.setMinutes(directContactDeadline.getMinutes() + 30);
+        
+        // Intentar con diferentes estados según las políticas RLS
+        const estadosToTry = ["aceptado", "asignado", "en_progreso"];
+        
+        for (const estadoToTry of estadosToTry) {
+          const directUpdateData: any = {
+            estado: estadoToTry,
+            profesional_asignado_id: currentUser.id,
+            fecha_asignacion: new Date().toISOString(),
+            contact_deadline_at: directContactDeadline.toISOString(),
+            appointment_status: "pendiente_contacto",
+            updated_at: new Date().toISOString(),
+          };
+          
+          console.log(`🔄 Intentando UPDATE con estado: ${estadoToTry}`);
+          
+          const { data: updatedLeadDirect, error: updateErrorDirect } = await supabase
+            .from("leads")
+            .update(directUpdateData)
+            .eq("id", leadId)
+            .select("*")
+            .maybeSingle();
+          
+          if (!updateErrorDirect && updatedLeadDirect) {
+            console.log(`✅ UPDATE directo exitoso con estado: ${estadoToTry}`);
+            return NextResponse.json({ lead: updatedLeadDirect });
+          } else {
+            console.warn(`⚠️ UPDATE con estado ${estadoToTry} falló:`, updateErrorDirect?.message);
+          }
+        }
       }
       
       // Si UPDATE directo también falla, usar admin client como último recurso
