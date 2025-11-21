@@ -67,13 +67,11 @@ export async function POST(request: Request) {
     }
 
     // Intentar primero con el RPC (SECURITY DEFINER) para no depender del service role
-    const { data: rpcLead, error: rpcError } = await supabase
-      .rpc("accept_lead", { lead_uuid: leadId })
-      .maybeSingle();
-
-    if (rpcLead) {
-      return NextResponse.json({ lead: rpcLead });
-    }
+    // @ts-ignore - Supabase RPC type inference issue
+    const { data: rpcLead, error: rpcError } = await (supabase.rpc as any)(
+      "accept_lead",
+      { lead_uuid: leadId }
+    ).single();
 
     if (rpcError) {
       console.warn("⚠️ RPC accept_lead falló:", rpcError.message || rpcError);
@@ -86,6 +84,10 @@ export async function POST(request: Request) {
           { status: 401 }
         );
       }
+      // Si el RPC falla, continuar con el método alternativo (admin client)
+    } else if (rpcLead) {
+      // RPC exitoso, retornar el lead actualizado
+      return NextResponse.json({ lead: rpcLead });
     }
 
     // Si el RPC falla (por ejemplo, función no creada aún), intentar con el cliente admin
