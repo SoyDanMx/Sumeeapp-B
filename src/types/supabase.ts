@@ -187,9 +187,20 @@ export interface Lead {
   // Campos de confirmación de acuerdo final
   agreed_price?: number | null;
   agreed_scope?: string | null;
-  negotiation_status?: 'asignado' | 'acuerdo_confirmado' | 'cancelado_pro' | 'cancelado_cliente' | 'rechazado_cliente' | null;
+  negotiation_status?: 'asignado' | 'propuesta_enviada' | 'propuesta_aceptada' | 'acuerdo_confirmado' | 'cancelado_pro' | 'cancelado_cliente' | 'rechazado_cliente' | null;
   agreed_at?: string | null;
   agreed_by?: string | null;
+  // Campos de cotización con partidas
+  quote_items?: Array<{
+    concepto: string;
+    cantidad: number;
+    precio_unitario: number;
+    subtotal: number;
+  }> | null;
+  quote_sent_at?: string | null;
+  quote_sent_by?: string | null;
+  quote_accepted_at?: string | null;
+  quote_accepted_by?: string | null;
   // Campos de control de precios (sugerencia por IA)
   ai_suggested_price_min?: number | null;
   ai_suggested_price_max?: number | null;

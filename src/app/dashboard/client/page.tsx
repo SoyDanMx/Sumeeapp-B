@@ -86,6 +86,11 @@ const AgreementNotificationBanner = dynamic(
   { ssr: true }
 );
 
+const ClientQuoteView = dynamic(
+  () => import("@/components/client/ClientQuoteView"),
+  { ssr: false }
+);
+
 import {
   faSpinner,
   faExclamationTriangle,
@@ -95,6 +100,9 @@ import {
   faBolt,
   faWater,
   faTimes,
+  faUser,
+  faFileAlt,
+  faCheckCircle,
 } from "@fortawesome/free-solid-svg-icons";
 import { faWhatsapp } from "@fortawesome/free-brands-svg-icons";
 import { useAgreementSubscription } from "@/hooks/useAgreementSubscription";
@@ -127,6 +135,8 @@ export default function ClientDashboardPage() {
   // 🆕 MODAL DE BLOQUEO DE UBICACIÓN (Fase 1)
   const [showLocationBlocking, setShowLocationBlocking] = useState(false);
   const [hasLocation, setHasLocation] = useState(false);
+  const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
+  const [selectedQuoteLead, setSelectedQuoteLead] = useState<Lead | null>(null);
 
   // React Query para data fetching con timeout agresivo
   // IMPORTANTE: Definir esto ANTES de refreshLeads para evitar el error de inicialización
@@ -985,62 +995,160 @@ export default function ClientDashboardPage() {
                   {actionError}
                 </div>
               )}
-              {leads.map((lead) => (
-                <div
-                  key={lead.id}
-                  className="p-4 rounded-lg border border-gray-200 hover:border-blue-300 hover:bg-blue-50 transition-all"
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center mb-2">
-                        <h3 className="font-semibold text-gray-900 mr-3">
-                          {lead.servicio_solicitado || "Servicio Profesional"}
-                        </h3>
-                        <span
-                          className={`px-2 py-1 rounded-full text-xs font-medium ${
-                            lead.estado === "completado"
-                              ? "bg-green-100 text-green-700"
-                              : lead.estado === "aceptado" ||
-                                lead.estado === "en_camino"
-                              ? "bg-blue-100 text-blue-700"
-                              : "bg-yellow-100 text-yellow-700"
-                          }`}
-                        >
-                          {lead.estado || "Nuevo"}
-                        </span>
-                      </div>
-                      <p className="text-sm text-gray-600 mb-2 line-clamp-2">
-                        {lead.descripcion_proyecto}
-                      </p>
-                      <p className="text-xs text-gray-400">
-                        {new Date(lead.fecha_creacion).toLocaleDateString(
-                          "es-MX",
-                          {
-                            day: "numeric",
-                            month: "long",
-                            year: "numeric",
-                          }
+              {leads.map((lead) => {
+                const isAccepted = lead.profesional_asignado_id !== null && 
+                  (lead.estado === "aceptado" || lead.estado === "en_progreso" || lead.estado === "contactado" || lead.estado === "en_camino");
+                const estado = (lead.estado || "").toLowerCase();
+                
+                return (
+                  <div
+                    key={lead.id}
+                    className={`p-4 rounded-lg border transition-all ${
+                      isAccepted
+                        ? "border-green-300 bg-green-50/50 hover:border-green-400 hover:bg-green-50"
+                        : "border-gray-200 hover:border-blue-300 hover:bg-blue-50"
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center flex-wrap gap-2 mb-2">
+                          <h3 className="font-semibold text-gray-900">
+                            {lead.servicio_solicitado || "Servicio Profesional"}
+                          </h3>
+                          <span
+                            className={`px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap ${
+                              lead.estado === "completado"
+                                ? "bg-green-100 text-green-700"
+                                : isAccepted
+                                ? "bg-blue-100 text-blue-700"
+                                : "bg-yellow-100 text-yellow-700"
+                            }`}
+                          >
+                            {lead.estado === "aceptado" || lead.estado === "en_progreso" || lead.estado === "contactado"
+                              ? "Profesional Asignado" 
+                              : lead.estado === "en_camino"
+                              ? "En Camino"
+                              : lead.estado || "Nuevo"}
+                          </span>
+                        </div>
+                        
+                        {/* ✅ Mostrar información del profesional asignado */}
+                        {isAccepted && lead.profesional_asignado_id && (
+                          <div className="mb-3 p-3 bg-white/70 rounded-lg border border-green-200">
+                            <div className="flex items-center gap-2 mb-2">
+                              <FontAwesomeIcon icon={faUser} className="text-green-600" />
+                              <span className="text-xs font-semibold text-green-700 uppercase tracking-wide">
+                                Profesional Asignado
+                              </span>
+                            </div>
+                            <p className="text-sm font-medium text-gray-900">
+                              {lead.profesional_asignado?.full_name || "Profesional Sumee"}
+                            </p>
+                            {lead.profesional_asignado?.profession && (
+                              <p className="text-xs text-gray-600 mt-1">
+                                {lead.profesional_asignado.profession}
+                              </p>
+                            )}
+                            {lead.profesional_asignado?.whatsapp && (
+                              <a
+                                href={`https://wa.me/${lead.profesional_asignado.whatsapp}?text=Hola%20${
+                                  lead.profesional_asignado.full_name
+                                    ? encodeURIComponent(lead.profesional_asignado.full_name)
+                                    : ""
+                                }%2C%20tengo%20dudas%20sobre%20mi%20servicio%20de%20${encodeURIComponent(
+                                  lead.servicio_solicitado || "Sumee App"
+                                )}.`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-2 mt-2 px-3 py-1.5 rounded-lg bg-green-600 hover:bg-green-700 text-white text-xs font-semibold transition-colors"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <FontAwesomeIcon icon={faWhatsapp} />
+                                Contactar por WhatsApp
+                              </a>
+                            )}
+                          </div>
                         )}
-                      </p>
+
+                        {/* ✅ Mostrar propuesta de cotización si está enviada */}
+                        {lead.negotiation_status === 'propuesta_enviada' && lead.quote_items && lead.quote_items.length > 0 && (
+                          <div className="mb-3 p-3 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-lg border-2 border-purple-300">
+                            <div className="flex items-center justify-between mb-2">
+                              <div className="flex items-center gap-2">
+                                <FontAwesomeIcon icon={faFileAlt} className="text-purple-600" />
+                                <span className="text-xs font-semibold text-purple-900 uppercase tracking-wide">
+                                  Propuesta de Cotización
+                                </span>
+                              </div>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedQuoteLead(lead);
+                                  setIsQuoteModalOpen(true);
+                                }}
+                                className="px-3 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold transition-colors"
+                              >
+                                Ver Propuesta
+                              </button>
+                            </div>
+                            <p className="text-xs text-purple-700">
+                              El profesional ha enviado una cotización detallada. Revísala y acepta si estás de acuerdo.
+                            </p>
+                          </div>
+                        )}
+
+                        {/* ✅ Mostrar propuesta aceptada */}
+                        {lead.negotiation_status === 'propuesta_aceptada' && (
+                          <div className="mb-3 p-3 bg-green-50 rounded-lg border-2 border-green-300">
+                            <div className="flex items-center gap-2 mb-1">
+                              <FontAwesomeIcon icon={faCheckCircle} className="text-green-600" />
+                              <span className="text-xs font-semibold text-green-900">
+                                Propuesta Aceptada
+                              </span>
+                            </div>
+                            {lead.agreed_price && (
+                              <p className="text-sm text-green-700 font-semibold">
+                                Total acordado: ${lead.agreed_price.toLocaleString("es-MX", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} MXN
+                              </p>
+                            )}
+                          </div>
+                        )}
+                        
+                        <p className="text-sm text-gray-600 mb-2 line-clamp-2">
+                          {lead.descripcion_proyecto || "Sin descripción"}
+                        </p>
+                        <p className="text-xs text-gray-400">
+                          {new Date(lead.fecha_creacion).toLocaleDateString(
+                            "es-MX",
+                            {
+                              day: "numeric",
+                              month: "long",
+                              year: "numeric",
+                            }
+                          )}
+                        </p>
+                      </div>
+                      <div className="flex flex-col gap-2 ml-4 flex-shrink-0">
+                        <button
+                          onClick={() => handleViewLead(lead)}
+                          className="px-3 py-1.5 text-sm rounded-lg bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors whitespace-nowrap"
+                        >
+                          Ver detalles
+                        </button>
+                        {lead.estado !== "completado" && (
+                          <button
+                            onClick={() => handleDeleteLead(lead)}
+                            className="px-3 py-1.5 text-sm rounded-lg bg-red-100 text-red-700 hover:bg-red-200 transition-colors disabled:opacity-50 whitespace-nowrap"
+                            disabled={isDeleting}
+                          >
+                            {isDeleting ? "Eliminando..." : "Eliminar"}
+                          </button>
+                        )}
+                      </div>
                     </div>
-                    <div className="flex flex-col gap-2 ml-4">
-                      <button
-                        onClick={() => handleViewLead(lead)}
-                        className="px-3 py-1.5 text-sm rounded-lg bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors"
-                      >
-                        Ver detalles
-                      </button>
-                      <button
-                        onClick={() => handleDeleteLead(lead)}
-                        className="px-3 py-1.5 text-sm rounded-lg bg-red-100 text-red-700 hover:bg-red-200 transition-colors disabled:opacity-50"
-                        disabled={isDeleting}
-                      >
-                        {isDeleting ? "Eliminando..." : "Eliminar"}
-                      </button>
                   </div>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         ) : (
@@ -1177,6 +1285,23 @@ export default function ClientDashboardPage() {
           isOpen={showOnboarding}
           userProfile={userProfile}
           onComplete={handleOnboardingComplete}
+        />
+      )}
+
+      {/* Modal de Cotización del Cliente */}
+      {selectedQuoteLead && (
+        <ClientQuoteView
+          isOpen={isQuoteModalOpen}
+          onClose={() => {
+            setIsQuoteModalOpen(false);
+            setSelectedQuoteLead(null);
+          }}
+          lead={selectedQuoteLead}
+          onSuccess={() => {
+            refreshLeads();
+            setIsQuoteModalOpen(false);
+            setSelectedQuoteLead(null);
+          }}
         />
       )}
     </div>

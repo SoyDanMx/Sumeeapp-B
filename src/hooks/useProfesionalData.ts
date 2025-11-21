@@ -25,7 +25,8 @@ export function useProfesionalData(): UseProfesionalDataReturn {
   const normalizeLead = useCallback((lead: Lead): Lead => {
     if (!lead) return lead;
     const estado = (lead.estado || "").toLowerCase();
-    if (estado === "aceptado") {
+    // ✅ Normalizar estados: "aceptado" y "asignado" → "en_progreso"
+    if (estado === "aceptado" || estado === "asignado") {
       return { ...lead, estado: "en_progreso" };
     }
     return lead;

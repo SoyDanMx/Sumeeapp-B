@@ -200,11 +200,31 @@ export default function ProfesionalDashboardPage() {
 
   const handleLeadAccepted = useCallback(
     (lead: Lead) => {
-      navigateToLeads("en_progreso", "lista");
-      setSelectedLeadId(lead.id);
+      console.log("✅ [DASHBOARD] Lead aceptado, refrescando datos...", {
+        leadId: lead.id,
+        estado: lead.estado,
+        profesional_asignado_id: lead.profesional_asignado_id,
+        currentProfesionalId: profesional?.user_id,
+      });
+      
+      // Refrescar datos inmediatamente para que aparezca en "En Progreso"
       refetchData();
+      
+      // Navegar a "En Progreso" después de un delay para que los datos se actualicen
+      // Aumentar el delay para dar tiempo a que la suscripción en tiempo real actualice
+      setTimeout(() => {
+        console.log("🔄 [DASHBOARD] Navegando a 'En Progreso'...");
+        navigateToLeads("en_progreso", "lista");
+        setSelectedLeadId(lead.id);
+        
+        // Refrescar nuevamente después de navegar para asegurar que los datos estén actualizados
+        setTimeout(() => {
+          console.log("🔄 [DASHBOARD] Refresco adicional después de navegar...");
+          refetchData();
+        }, 1000);
+      }, 1000); // Aumentado a 1 segundo
     },
-    [navigateToLeads, refetchData]
+    [navigateToLeads, refetchData, profesional?.user_id]
   );
 
   const handleAcceptLeadFromModal = useCallback(
@@ -315,6 +335,7 @@ export default function ProfesionalDashboardPage() {
               profesionalLng={profesional?.ubicacion_lng ?? undefined}
               currentLat={currentLocation?.lat}
               currentLng={currentLocation?.lng}
+              profesionalId={profesional?.user_id} // ✅ Pasar ID del profesional para filtrar leads asignados
               onLeadClick={handleLeadClick}
               onLeadAccepted={handleLeadAccepted}
               selectedLeadId={selectedLeadId}
@@ -496,9 +517,9 @@ export default function ProfesionalDashboardPage() {
 
   // --- LAYOUT PRINCIPAL: 2 COLUMNAS ---
   return (
-    <div className="flex flex-col h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-50 overflow-hidden pt-[calc(var(--header-offset,72px)+1.5rem)]">
+    <div className="flex flex-col min-h-screen md:h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-50 md:overflow-hidden overflow-y-auto pt-[calc(var(--header-offset,72px)+0.75rem)] md:pt-[calc(var(--header-offset,72px)+1.5rem)]">
       {/* Header - Más compacto en móvil */}
-      <div className="md:hidden">
+      <div className="md:hidden sticky top-0 z-30 bg-white/95 backdrop-blur-sm border-b border-gray-200">
         <ProfesionalHeader
           profesional={profesional}
           onEditClick={() => setIsModalOpen(true)}
@@ -512,7 +533,7 @@ export default function ProfesionalDashboardPage() {
       </div>
 
       {/* Contenido Principal: Layout de 2 Columnas */}
-      <main className="flex flex-1 overflow-hidden relative pb-20 md:pb-0 safe-area-bottom">
+      <main className="flex flex-1 md:overflow-hidden overflow-y-auto relative pb-20 md:pb-0 safe-area-bottom">
         {/* Botón flotante de menú/estado móvil */}
         <button
           onClick={() => {
@@ -538,13 +559,14 @@ export default function ProfesionalDashboardPage() {
 
         {/* Contenido principal según tab activo en móvil */}
         {mobileActiveTab === "home" || mobileActiveTab === "leads" ? (
-          <div className="flex-1 min-w-0 p-2 md:p-3 md:p-6 overflow-hidden w-full">
+          <div className="flex-1 min-w-0 p-2 md:p-3 md:p-6 md:overflow-hidden overflow-y-auto w-full">
             <WorkFeed
               leads={leads}
               profesionalLat={profesional?.ubicacion_lat ?? undefined}
               profesionalLng={profesional?.ubicacion_lng ?? undefined}
               currentLat={currentLocation?.lat}
               currentLng={currentLocation?.lng}
+              profesionalId={profesional?.user_id} // ✅ Pasar ID del profesional para filtrar leads asignados
               onLeadClick={handleLeadClick}
               onLeadAccepted={handleLeadAccepted}
               selectedLeadId={selectedLeadId}
@@ -600,7 +622,7 @@ export default function ProfesionalDashboardPage() {
             <FontAwesomeIcon icon={faTimes} className="text-gray-700 text-lg" />
           </button>
 
-          <div className="p-4 md:p-6 space-y-4 md:space-y-6 pt-16 md:pt-6">
+          <div className="p-2 md:p-4 space-y-2 md:space-y-4 pt-14 md:pt-4">
             {/* Pestañas Profesionales */}
             <ProfessionalTabs
               profesional={profesional}

@@ -39,6 +39,7 @@ interface WorkFeedProps {
   profesionalLng?: number;
   currentLat?: number;
   currentLng?: number;
+  profesionalId?: string; // ✅ ID del profesional actual para filtrar leads asignados
   onLeadClick?: (leadId: string) => void;
   onLeadAccepted?: (lead: Lead) => void;
   selectedLeadId?: string | null;
@@ -59,6 +60,7 @@ export default function WorkFeed({
   profesionalLng,
   currentLat,
   currentLng,
+  profesionalId,
   onLeadClick,
   onLeadAccepted,
   selectedLeadId,
@@ -103,19 +105,53 @@ export default function WorkFeed({
     }
   }, [forcedTab, activeTab]);
 
-  // Filtrar leads por estado
+  // ✅ Filtrar leads por estado Y asignación al profesional actual
   const filteredLeads = useMemo(() => {
     if (activeTab === "nuevos") {
+      // Para "nuevos": solo leads sin asignar o con estado "nuevo"
       return localLeads.filter(
-        (lead) => (lead.estado || "").toLowerCase() === "nuevo"
+        (lead) => 
+          (lead.estado || "").toLowerCase() === "nuevo" &&
+          !lead.profesional_asignado_id // Solo leads sin asignar
       );
     } else {
-      return localLeads.filter((lead) => {
+      // Para "en_progreso": solo leads asignados AL PROFESIONAL ACTUAL con estados activos
+      const filtered = localLeads.filter((lead) => {
         const estado = (lead.estado || "").toLowerCase();
-        return ["aceptado", "contactado", "en_progreso"].includes(estado);
+        const isAssignedToCurrentProfessional = profesionalId && 
+          lead.profesional_asignado_id === profesionalId;
+        
+        // Incluir si está asignado al profesional actual Y tiene un estado activo
+        // Nota: "aceptado" se normaliza a "en_progreso" en useProfesionalData
+        // También incluir "asignado" por si acaso el API lo guarda así temporalmente
+        const validStates = ["aceptado", "asignado", "contactado", "en_progreso", "en_camino"];
+        const isValid = isAssignedToCurrentProfessional && validStates.includes(estado);
+        
+        // 🔍 DEBUG: Log para entender por qué no aparece
+        if (isAssignedToCurrentProfessional && !isValid) {
+          console.log("🔍 [WorkFeed] Lead asignado pero no válido:", {
+            leadId: lead.id,
+            estado,
+            profesionalId,
+            leadProfesionalId: lead.profesional_asignado_id,
+            validStates,
+          });
+        }
+        
+        return isValid;
       });
+      
+      // 🔍 DEBUG: Log del resultado del filtro
+      console.log("🔍 [WorkFeed] Filtro 'en_progreso':", {
+        totalLeads: localLeads.length,
+        filteredCount: filtered.length,
+        profesionalId,
+        filteredLeads: filtered.map(l => ({ id: l.id, estado: l.estado, profesional_asignado_id: l.profesional_asignado_id })),
+      });
+      
+      return filtered;
     }
-  }, [localLeads, activeTab]);
+  }, [localLeads, activeTab, profesionalId]);
 
   // Componente para estado vacío
   const EmptyState = ({ tabType }: { tabType: TabType }) => {
@@ -347,14 +383,14 @@ export default function WorkFeed({
   return (
     <div
       id="professional-leads-section"
-      className="bg-white rounded-xl shadow-sm border border-gray-200 h-full flex flex-col"
+      className="bg-white rounded-xl shadow-sm border border-gray-200 min-h-full md:h-full flex flex-col"
     >
       {/* Header con pestañas y toggle de vista */}
       <div className="border-b border-gray-200">
         <div className="flex">
           <button
             onClick={() => changeActiveTab("nuevos")}
-            className={`flex-1 px-3 md:px-6 py-3 md:py-4 text-xs md:text-sm font-medium transition-colors duration-200 touch-manipulation active:scale-95 ${
+            className={`flex-1 px-2 md:px-4 py-2 md:py-3 text-xs md:text-sm font-medium transition-colors duration-200 touch-manipulation active:scale-95 ${
               activeTab === "nuevos"
                 ? "text-blue-600 border-b-2 border-blue-600 bg-blue-50"
                 : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
@@ -383,7 +419,7 @@ export default function WorkFeed({
 
           <button
             onClick={() => changeActiveTab("en_progreso")}
-            className={`flex-1 px-3 md:px-6 py-3 md:py-4 text-xs md:text-sm font-medium transition-colors duration-200 touch-manipulation active:scale-95 ${
+            className={`flex-1 px-2 md:px-4 py-2 md:py-3 text-xs md:text-sm font-medium transition-colors duration-200 touch-manipulation active:scale-95 ${
               activeTab === "en_progreso"
                 ? "text-green-600 border-b-2 border-green-600 bg-green-50"
                 : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
@@ -414,35 +450,36 @@ export default function WorkFeed({
           </button>
         </div>
         {activeTab === "nuevos" && (
-          <div className="flex justify-between items-center px-3 md:px-4 py-2.5 border-t border-gray-100 bg-white sticky top-0 z-20 md:static">
-            <div className="flex items-center gap-2 text-sm text-gray-600">
-              <span className="inline-flex items-center gap-1 bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full font-semibold">
-                <FontAwesomeIcon icon={faLocationDot} className="text-xs" />
-                {sortedLeads.length} lead(s) cercanos
+          <div className="flex justify-between items-center px-2 md:px-3 py-1.5 md:py-2 border-t border-gray-100 bg-white sticky top-0 z-20 md:static">
+            <div className="flex items-center gap-1.5 text-xs md:text-sm text-gray-600">
+              <span className="inline-flex items-center gap-1 bg-blue-100 text-blue-600 px-1.5 md:px-2 py-0.5 rounded-full font-semibold text-[10px] md:text-xs">
+                <FontAwesomeIcon icon={faLocationDot} className="text-[10px]" />
+                <span className="hidden sm:inline">{sortedLeads.length} lead(s) cercanos</span>
+                <span className="sm:hidden">{sortedLeads.length}</span>
               </span>
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-1.5">
               <button
                 onClick={() => handleChangeView("mapa")}
-                className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors active:scale-95 ${
+                className={`px-2 md:px-2.5 py-1 text-[10px] md:text-xs font-semibold rounded-lg transition-colors active:scale-95 ${
                   viewType === "mapa"
                     ? "bg-blue-600 text-white"
                     : "bg-gray-100 text-gray-600"
                 }`}
               >
-                <FontAwesomeIcon icon={faMap} className="mr-1" />
-                Mapa
+                <FontAwesomeIcon icon={faMap} className="text-[10px] md:text-xs" />
+                <span className="hidden sm:inline ml-1">Mapa</span>
               </button>
               <button
                 onClick={() => handleChangeView("lista")}
-                className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors active:scale-95 ${
+                className={`px-2 md:px-2.5 py-1 text-[10px] md:text-xs font-semibold rounded-lg transition-colors active:scale-95 ${
                   viewType === "lista"
                     ? "bg-blue-600 text-white"
                     : "bg-gray-100 text-gray-600"
                 }`}
               >
-                <FontAwesomeIcon icon={faList} className="mr-1" />
-                Lista
+                <FontAwesomeIcon icon={faList} className="text-[10px] md:text-xs" />
+                <span className="hidden sm:inline ml-1">Lista</span>
               </button>
             </div>
           </div>
@@ -450,7 +487,7 @@ export default function WorkFeed({
       </div>
 
       {/* Contenido: Mapa, Lista o Split según viewType */}
-      <div className="flex-1 overflow-hidden">
+      <div className="flex-1 md:overflow-hidden overflow-y-auto">
         {activeTab === "nuevos" && viewType === "mapa" ? (
           <div
             className={`relative ${
@@ -584,10 +621,10 @@ export default function WorkFeed({
           </div>
         ) : (
           // Vista Lista para "nuevos" en modo lista y para "en progreso"
-          <div className={`flex-1 overflow-y-auto ${isMobile ? "pb-20" : ""}`}>
+          <div className={`flex-1 overflow-y-auto ${isMobile ? "pb-4" : ""}`}>
             {(activeTab === "nuevos" ? sortedLeads : filteredLeads).length >
             0 ? (
-              <div className="p-2 md:p-4 space-y-3 md:space-y-4">
+              <div className="p-1.5 md:p-3 space-y-2 md:space-y-3">
                 {(activeTab === "nuevos" ? sortedLeads : filteredLeads).map(
                   (lead) => (
                     <LeadCard

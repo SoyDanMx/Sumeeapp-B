@@ -319,14 +319,35 @@ export async function markLeadContacted(
   method: string,
   notes?: string
 ) {
-  // Verificar que haya una sesión activa
-  const {
-    data: { session },
-    error: sessionError,
-  } = await supabase.auth.getSession();
+  // Intentar obtener sesión con reintentos
+  let session = null;
+  let sessionError = null;
+  
+  try {
+    const sessionResult = await supabase.auth.getSession();
+    session = sessionResult.data?.session;
+    sessionError = sessionResult.error;
+  } catch (err) {
+    console.error("Error obteniendo sesión:", err);
+    sessionError = err as any;
+  }
 
-  if (sessionError || !session) {
-    console.error("Error obteniendo sesión:", sessionError);
+  // Si no hay sesión, intentar refrescar
+  if (!session && !sessionError) {
+    try {
+      const refreshResult = await supabase.auth.refreshSession();
+      if (refreshResult.data?.session) {
+        session = refreshResult.data.session;
+        console.log("✅ Sesión refrescada exitosamente");
+      }
+    } catch (refreshError) {
+      console.warn("⚠️ No se pudo refrescar la sesión:", refreshError);
+    }
+  }
+
+  // Si aún no hay sesión después de intentar refrescar, lanzar error
+  if (!session) {
+    console.error("❌ No hay sesión activa. Error:", sessionError);
     throw new Error(
       "Debes iniciar sesión para marcar el contacto. Por favor, recarga la página e inicia sesión nuevamente."
     );
@@ -336,33 +357,46 @@ export async function markLeadContacted(
     "Content-Type": "application/json",
   };
 
-  if (session?.access_token) {
+  // Usar el token de acceso de la sesión
+  if (session.access_token) {
     headers.Authorization = `Bearer ${session.access_token}`;
+  } else {
+    console.warn("⚠️ Sesión sin access_token, intentando sin Authorization header");
   }
 
-  const response = await fetch("/api/leads/contact", {
-    method: "POST",
-    headers,
-    credentials: "include",
-    body: JSON.stringify({ leadId, method, notes }),
-  });
+  try {
+    const response = await fetch("/api/leads/contact", {
+      method: "POST",
+      headers,
+      credentials: "include",
+      body: JSON.stringify({ leadId, method, notes }),
+    });
 
-  if (!response.ok) {
-    const payload = await response.json().catch(() => null);
-    const errorMessage = payload?.error ?? "No se pudo registrar el contacto. Intenta nuevamente.";
-    
-    // Mensaje más específico según el código de estado
-    if (response.status === 401) {
-      throw new Error(
-        "Tu sesión expiró. Por favor, recarga la página e inicia sesión nuevamente."
-      );
+    if (!response.ok) {
+      const payload = await response.json().catch(() => null);
+      const errorMessage = payload?.error ?? "No se pudo registrar el contacto. Intenta nuevamente.";
+      
+      // Mensaje más específico según el código de estado
+      if (response.status === 401) {
+        throw new Error(
+          "Tu sesión expiró. Por favor, recarga la página e inicia sesión nuevamente."
+        );
+      }
+      
+      throw new Error(errorMessage);
     }
-    
-    throw new Error(errorMessage);
-  }
 
-  const payload = (await response.json()) as { lead: Lead };
-  return payload.lead;
+    const payload = (await response.json()) as { lead: Lead };
+    return payload.lead;
+  } catch (fetchError) {
+    // Si es un error de red o fetch, relanzarlo
+    if (fetchError instanceof Error) {
+      throw fetchError;
+    }
+    throw new Error(
+      "Error de conexión al registrar el contacto. Verifica tu conexión a internet e inténtalo nuevamente."
+    );
+  }
 }
 
 export async function scheduleLeadAppointment(

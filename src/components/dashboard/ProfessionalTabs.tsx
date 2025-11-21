@@ -159,81 +159,78 @@ export default function ProfessionalTabs({
   return (
     <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
       {/* Header del Profesional - Compactado */}
-      <div className="relative overflow-hidden bg-gradient-to-r from-indigo-600 via-blue-600 to-blue-500 p-3 sm:p-4 text-white">
+      <div className="relative overflow-hidden bg-gradient-to-r from-indigo-600 via-blue-600 to-blue-500 p-2 sm:p-2.5 text-white">
         <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.6),transparent_65%)]" />
-        <div className="relative flex flex-col gap-3">
-          <div className="flex flex-col sm:flex-row sm:items-start gap-3">
+        <div className="relative flex flex-col gap-2">
+          <div className="flex flex-col sm:flex-row sm:items-start gap-2">
             <div className="relative">
               {avatarUrl ? (
                 <Image
                   src={avatarUrl}
                   alt={profesional.full_name ?? "Profesional Sumee"}
-                  width={64}
-                  height={64}
-                  className="w-14 h-14 sm:w-16 sm:h-16 object-cover rounded-2xl border-2 border-white/40 shadow-lg"
+                  width={48}
+                  height={48}
+                  className="w-12 h-12 sm:w-14 sm:h-14 object-cover rounded-xl border-2 border-white/40 shadow-lg"
                 />
               ) : (
-                <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-white/25 border-2 border-white/40 flex items-center justify-center shadow-lg">
-                  <FontAwesomeIcon icon={faUser} className="text-xl" />
+                <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-white/25 border-2 border-white/40 flex items-center justify-center shadow-lg">
+                  <FontAwesomeIcon icon={faUser} className="text-base sm:text-lg" />
                 </div>
               )}
-              <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 inline-flex items-center gap-0.5 bg-emerald-500 text-white text-[9px] font-semibold px-2 py-0.5 rounded-full shadow">
-                <FontAwesomeIcon icon={faShieldHalved} className="text-[10px]" />
-                {membershipLabel}
+              <span className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 inline-flex items-center gap-0.5 bg-emerald-500 text-white text-[8px] font-semibold px-1.5 py-0.5 rounded-full shadow">
+                <FontAwesomeIcon icon={faShieldHalved} className="text-[9px]" />
+                <span className="hidden sm:inline">{membershipLabel}</span>
+                <span className="sm:hidden">Pro</span>
               </span>
             </div>
-            <div className="flex-1 min-w-0 space-y-1">
-              <h3 className="text-lg sm:text-xl font-bold leading-tight break-words">
+            <div className="flex-1 min-w-0 space-y-0.5">
+              <h3 className="text-sm sm:text-base font-bold leading-tight break-words">
                 {profesional.full_name || "Profesional Sumee"}
               </h3>
-              <p className="text-blue-100 text-xs capitalize">
+              <p className="text-blue-100 text-[10px] sm:text-xs capitalize line-clamp-1">
                 {profesional.profession || "Especialista verificado"}
               </p>
-              <p className="text-blue-200 text-[10px] break-all">
+              <p className="text-blue-200 text-[9px] sm:text-[10px] break-all line-clamp-1">
                 {profesional.email}
               </p>
-              <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm text-white/90">
-                <span className="inline-flex items-center gap-2 bg-white/15 px-3 py-1.5 rounded-full backdrop-blur">
-                  <span className="text-base leading-none tracking-tight">
+              <div className="flex flex-wrap items-center gap-1.5 text-[10px] sm:text-xs text-white/90">
+                <span className="inline-flex items-center gap-1 bg-white/15 px-2 py-1 rounded-full backdrop-blur">
+                  <span className="text-xs leading-none tracking-tight">
                     {starString}
                   </span>
                   <span className="font-semibold text-white">
                     {formattedRating}/5.0
                   </span>
-                  {ratingValue && reviewCount ? (
-                    <span className="text-white/70 text-xs font-normal">
-                      · {reviewCount} reseñas
+                  {ratingValue && reviewCount && (
+                    <span className="text-white/70 text-[9px] font-normal">
+                      · {reviewCount}
                     </span>
-                  ) : !ratingValue ? (
-                    <span className="text-white/70 text-xs font-normal">
-                      · Sin reseñas aún
-                    </span>
-                  ) : null}
+                  )}
                 </span>
-                <span className="inline-flex items-center gap-2 bg-white/20 px-2 py-1 rounded-full">
-                  <FontAwesomeIcon icon={faIdCard} className="text-xs" />
-                  ID: {profesional.user_id?.slice(0, 8) ?? "—"}
+                <span className="inline-flex items-center gap-1 bg-white/20 px-1.5 py-0.5 rounded-full">
+                  <FontAwesomeIcon icon={faIdCard} className="text-[9px]" />
+                  <span className="text-[9px]">ID: {profesional.user_id?.slice(0, 6) ?? "—"}</span>
                 </span>
               </div>
               {specialtiesSummary && (
-                <p className="text-xs sm:text-sm text-white/90 font-medium">
-                  <span className="text-white">Especialista en:</span>{" "}
+                <p className="text-[10px] sm:text-xs text-white/90 font-medium line-clamp-1">
+                  <span className="text-white">Especialista:</span>{" "}
                   {specialtiesSummary}
                 </p>
               )}
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-1.5">
             {headerButtons.map((button) => (
               <button
                 key={button.label}
                 onClick={() => button.action?.()}
-                className={`w-full inline-flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-lg font-medium text-xs transition-all active:scale-95 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-white/60 ${button.styles}`}
+                className={`w-full inline-flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg font-medium text-[10px] sm:text-xs transition-all active:scale-95 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-white/60 ${button.styles}`}
                 aria-label={button.label}
               >
-                <FontAwesomeIcon icon={button.icon} className="text-xs" />
-                <span className="text-xs text-center">{button.label}</span>
+                <FontAwesomeIcon icon={button.icon} className="text-[10px] sm:text-xs" />
+                <span className="text-[10px] sm:text-xs text-center line-clamp-1">{button.label}</span>
               </button>
             ))}
           </div>
@@ -241,15 +238,15 @@ export default function ProfessionalTabs({
       </div>
 
       {/* Pestañas de Navegación - Compactado */}
-      <div className="p-3">
-        <div className="grid grid-cols-2 gap-2">
+      <div className="p-2 sm:p-2.5">
+        <div className="grid grid-cols-2 gap-1.5 sm:gap-2">
           {tabs.map((tab) => (
             <div key={tab.id}>
               {tab.href && !isMobile ? (
                 <Link
                   href={tab.href}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex flex-col items-center p-2.5 rounded-lg border-2 transition-all duration-200 ${
+                  className={`flex flex-col items-center p-2 rounded-lg border-2 transition-all duration-200 ${
                     activeTab === tab.id
                       ? "border-indigo-500 bg-indigo-50 text-indigo-700 shadow-sm"
                       : "border-gray-200 hover:border-indigo-300 hover:bg-gray-50 text-gray-700"
@@ -257,15 +254,12 @@ export default function ProfessionalTabs({
                 >
                   <FontAwesomeIcon
                     icon={tab.icon}
-                    className={`text-2xl mb-2 ${
+                    className={`text-lg sm:text-xl mb-1 ${
                       activeTab === tab.id ? "text-indigo-600" : "text-gray-500"
                     }`}
                   />
-                  <span className="text-sm font-medium text-center">
+                  <span className="text-xs sm:text-sm font-medium text-center line-clamp-1">
                     {tab.label}
-                  </span>
-                  <span className="text-xs text-gray-500 text-center mt-1">
-                    {tab.description}
                   </span>
                 </Link>
               ) : (
@@ -274,7 +268,7 @@ export default function ProfessionalTabs({
                     tab.action ? tab.action() : handleTabPress(tab)
                   }
                   disabled={isLoggingOut && tab.id === "logout"}
-                  className={`w-full flex flex-col items-center p-4 rounded-lg border-2 transition-all duration-200 ${
+                  className={`w-full flex flex-col items-center p-2 sm:p-2.5 rounded-lg border-2 transition-all duration-200 ${
                     activeTab === tab.id
                       ? tab.id === "logout"
                         ? "border-red-500 bg-red-50 text-red-700 shadow-md"
@@ -286,15 +280,12 @@ export default function ProfessionalTabs({
                 >
                   <FontAwesomeIcon
                     icon={tab.icon}
-                    className={`text-2xl mb-2 ${
-                      activeTab === tab.id ? "text-red-600" : "text-gray-500"
+                    className={`text-lg sm:text-xl mb-1 ${
+                      activeTab === tab.id && tab.id === "logout" ? "text-red-600" : activeTab === tab.id ? "text-indigo-600" : "text-gray-500"
                     }`}
                   />
-                  <span className="text-sm font-medium text-center">
+                  <span className="text-xs sm:text-sm font-medium text-center line-clamp-1">
                     {isLoggingOut ? "Cerrando..." : tab.label}
-                  </span>
-                  <span className="text-xs text-gray-500 text-center mt-1">
-                    {tab.description}
                   </span>
                 </button>
               )}
@@ -303,13 +294,13 @@ export default function ProfessionalTabs({
         </div>
       </div>
 
-      {/* Información Adicional */}
-      <div className="px-4 pb-4">
-        <div className="bg-gray-50 rounded-lg p-3">
-          <div className="flex items-center justify-between text-sm">
+      {/* Información Adicional - Compactado */}
+      <div className="px-2 sm:px-3 pb-2 sm:pb-3">
+        <div className="bg-gray-50 rounded-lg p-2">
+          <div className="flex items-center justify-between text-xs">
             <span className="text-gray-600">Estado:</span>
             <span
-              className={`px-2 py-1 rounded-full text-xs font-medium ${
+              className={`px-1.5 py-0.5 rounded-full text-[10px] font-medium ${
                 profesional.status === "active"
                   ? "bg-green-100 text-green-700"
                   : "bg-red-100 text-red-700"
@@ -318,10 +309,10 @@ export default function ProfessionalTabs({
               {profesional.status === "active" ? "Activo" : "Inactivo"}
             </span>
           </div>
-          <div className="flex items-center justify-between text-sm mt-2">
+          <div className="flex items-center justify-between text-xs mt-1.5">
             <span className="text-gray-600">Miembro desde:</span>
-            <span className="text-gray-800 font-medium">
-              {new Date(profesional.created_at).toLocaleDateString()}
+            <span className="text-gray-800 font-medium text-[10px]">
+              {new Date(profesional.created_at).toLocaleDateString("es-MX", { month: "short", year: "numeric" })}
             </span>
           </div>
         </div>
