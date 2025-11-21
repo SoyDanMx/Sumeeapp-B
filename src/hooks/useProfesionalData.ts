@@ -240,14 +240,15 @@ export function useProfesionalData(): UseProfesionalDataReturn {
       null;
     let timeoutId: NodeJS.Timeout | null = null;
 
-    // Timeout de seguridad más agresivo (3 segundos)
+    // ✅ FIX: Timeout de seguridad aumentado a 8 segundos para no interferir con login
+    // El login puede tardar más tiempo, especialmente si hay que cargar datos del profesional
     timeoutId = setTimeout(() => {
       if (isMounted) {
-        console.warn("⚠️ useProfesionalData - Timeout de 3 segundos, forzando setIsLoading(false)");
+        console.warn("⚠️ useProfesionalData - Timeout de 8 segundos, forzando setIsLoading(false)");
         setIsLoading(false);
         // No establecer error, solo dejar de cargar
       }
-    }, 3000); // 3 segundos máximo (reducido de 10)
+    }, 8000); // Aumentado de 3s a 8s para no interferir con login
 
     try {
       const cached = sessionStorage.getItem(cacheKey);

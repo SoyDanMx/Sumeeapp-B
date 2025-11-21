@@ -69,9 +69,9 @@ export default function RequiredWhatsAppModal({
     
     try {
       // Actualizar en profiles
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .update({ 
+      const { error: profileError } = await (supabase
+        .from('profiles') as any)
+        .update({
           whatsapp: whatsapp,
           phone: whatsapp, // También actualizar phone si está vacío
           updated_at: new Date().toISOString()
