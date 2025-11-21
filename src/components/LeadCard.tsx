@@ -99,14 +99,14 @@ export default function LeadCard({
     return cleanPhone.startsWith("52") ? cleanPhone : `52${cleanPhone}`;
   }, [leadInfo.whatsapp]);
 
+  // ✅ FIX: Mensaje mejorado con texto específico sobre ser técnico verificado de SumeeApp
   const whatsappIntroMessage = React.useMemo(() => {
     const clientName = leadInfo.nombre_cliente?.trim() || "hola";
+    const servicio = leadInfo.servicio_solicitado || leadInfo.servicio || "tu solicitud de servicio";
     return encodeURIComponent(
-      `Hola ${clientName}, soy un profesional verificado de Sumee. Vi tu solicitud sobre "${
-        leadInfo.descripcion_proyecto || "tu proyecto"
-      }" y me gustaría coordinar los detalles contigo. ¿Te parece si conversamos?`
+      `Hola ${clientName}, soy un técnico verificado de SumeeApp. He aceptado el trabajo disponible "${servicio}" y me gustaría coordinar los detalles contigo. ¿Te parece si conversamos?`
     );
-  }, [leadInfo.nombre_cliente, leadInfo.descripcion_proyecto]);
+  }, [leadInfo.nombre_cliente, leadInfo.descripcion_proyecto, leadInfo.servicio_solicitado, leadInfo.servicio]);
 
   const contactClientWhatsappLink = normalizedClientWhatsapp
     ? `https://wa.me/${normalizedClientWhatsapp}?text=${whatsappIntroMessage}`
