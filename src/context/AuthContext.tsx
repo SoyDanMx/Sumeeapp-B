@@ -99,13 +99,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
     // Ejecutar actualización
     updateProfile();
 
-    // Timeout de seguridad: forzar finalización después de 2 segundos
+    // ✅ FIX: Timeout de seguridad aumentado a 5 segundos para no interferir con login
+    // El login puede tardar más tiempo, especialmente si hay que cargar datos del profesional
     timeoutId = setTimeout(() => {
       if (isMounted && isLoading) {
         console.warn('⚠️ AuthContext - Timeout de seguridad: forzando isLoading=false');
         setIsLoading(false);
       }
-    }, 2000);
+    }, 5000); // Aumentado de 2s a 5s
 
     return () => {
       isMounted = false;

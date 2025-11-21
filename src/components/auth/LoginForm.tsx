@@ -67,13 +67,14 @@ export default function LoginForm() {
     try {
       console.log('🔐 Intentando login...');
       
-      // Timeout solo para la llamada de autenticación
+      // ✅ FIX: Timeout aumentado a 30 segundos para dar más tiempo al login
+      // El login puede tardar más si hay que cargar datos del profesional o cliente
       timeoutId = setTimeout(() => {
         if (!loginCompleted) {
           setLoading(false);
           setError('La autenticación está tardando demasiado. Por favor, verifica tu conexión e intenta de nuevo.');
         }
-      }, 20000);
+      }, 30000); // Aumentado de 20s a 30s
       
       const { data: authData, error } = await supabase.auth.signInWithPassword({
         email,

@@ -67,8 +67,8 @@ export const ProfessionalDashboard: React.FC<ProfessionalDashboardProps> = ({ pr
     const newStatus = profile.status === 'active' ? 'inactive' : 'active';
     setLoading(true);
     
-    const { data, error } = await supabase
-      .from('profiles')
+    const { data, error } = await (supabase
+      .from('profiles') as any)
       .update({ status: newStatus })
       .eq('user_id', profile.user_id)
       .select()

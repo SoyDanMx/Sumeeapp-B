@@ -1,10 +1,3 @@
-import { createClient } from '@supabase/supabase-js';
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Faltan variables de Supabase en .env.local');
-}
-
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// src/lib/supabase.ts
+// ✅ FIX: Re-exportar desde el singleton para evitar múltiples instancias
+export { supabase } from '@/lib/supabase/client';
