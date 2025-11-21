@@ -11,7 +11,6 @@ import {
   faSpinner,
   faTimes,
   faBriefcase,
-  faCamera,
   faExclamationTriangle,
 } from "@fortawesome/free-solid-svg-icons";
 import { faWhatsapp } from "@fortawesome/free-brands-svg-icons";
@@ -67,12 +66,6 @@ export default function UpdateProfileModal({
   currentProfile,
   onSuccess,
 }: UpdateProfileModalProps) {
-  // 🔍 DEBUG: Verificar que el modal se está renderizando
-  console.log("🟣 UpdateProfileModal renderizado:");
-  console.log("   - isOpen:", isOpen);
-  console.log("   - userRole:", userRole);
-  console.log("   - currentProfile:", currentProfile);
-  
   const [formData, setFormData] = useState({
     full_name: currentProfile.full_name || "",
     whatsapp: currentProfile.whatsapp || "",
@@ -80,7 +73,6 @@ export default function UpdateProfileModal({
     otherCity: "",
     ubicacion_lat: currentProfile.ubicacion_lat || null,
     ubicacion_lng: currentProfile.ubicacion_lng || null,
-    // Profesionales
     bio: currentProfile.bio || "",
     profession: currentProfile.profession || "",
     work_zones: currentProfile.work_zones || [],
@@ -90,7 +82,6 @@ export default function UpdateProfileModal({
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [whatsappError, setWhatsappError] = useState<string | null>(null);
-  // Inicializar useGPS en true si ya hay coordenadas GPS en el perfil
   const [useGPS, setUseGPS] = useState(
     !!(currentProfile.ubicacion_lat && currentProfile.ubicacion_lng)
   );
@@ -113,7 +104,7 @@ export default function UpdateProfileModal({
     setUseGPS(!!(currentProfile.ubicacion_lat && currentProfile.ubicacion_lng));
   }, [currentProfile]);
 
-  // Detectar cambios (incluyendo ubicación)
+  // Detectar cambios
   useEffect(() => {
     const hasChanged =
       formData.full_name !== (currentProfile.full_name || "") ||
@@ -122,13 +113,11 @@ export default function UpdateProfileModal({
       formData.bio !== (currentProfile.bio || "") ||
       formData.profession !== (currentProfile.profession || "") ||
       JSON.stringify(formData.work_zones) !== JSON.stringify(currentProfile.work_zones || []) ||
-      // Verificar cambios en ubicación GPS
       formData.ubicacion_lat !== (currentProfile.ubicacion_lat ?? null) ||
-      formData.ubicacion_lng !== (currentProfile.ubicacion_lng ?? null) ||
-      useGPS; // Si se activó GPS, hay cambios
+      formData.ubicacion_lng !== (currentProfile.ubicacion_lng ?? null);
 
     setHasChanges(hasChanged);
-  }, [formData, currentProfile, useGPS]);
+  }, [formData, currentProfile]);
 
   // Validación de WhatsApp
   const validateWhatsapp = (value: string): boolean => {
@@ -159,39 +148,16 @@ export default function UpdateProfileModal({
     validateWhatsapp(value);
   };
 
-  /**
-   * Llama a la Edge Function reverse-geocode para enriquecer datos geográficos
-   * Se ejecuta de forma asíncrona sin bloquear al usuario
-   */
   const callReverseGeocode = async (userId: string, lat: number, lng: number) => {
     try {
-      console.log("🗺️ Llamando a Edge Function reverse-geocode...", { userId, lat, lng });
-      
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        console.warn("⚠️ No hay sesión, no se puede llamar a reverse-geocode");
-        return;
-      }
+      if (!session) return;
 
-      // Usar la API de Supabase para invocar la Edge Function (más confiable)
-      const { data, error } = await supabase.functions.invoke("reverse-geocode", {
-        body: {
-          user_id: userId,
-          lat,
-          lng,
-        },
+      await supabase.functions.invoke("reverse-geocode", {
+        body: { user_id: userId, lat, lng },
       });
-
-      if (error) {
-        throw error;
-      }
-
-      console.log("✅ reverse-geocode completado:", data);
     } catch (error: any) {
-      // No lanzar error, solo loguear (proceso de background)
-      // Este es un proceso no crítico, no debe bloquear al usuario
       console.error("❌ Error en reverse-geocode (no crítico):", error);
-      // No re-lanzar el error para que no interrumpa el flujo principal
     }
   };
 
@@ -224,12 +190,9 @@ export default function UpdateProfileModal({
         ubicacion_lng: newLng,
       }));
       setUseGPS(true);
-      setHasChanges(true); // Forzar detección de cambios
-      console.log("✅ Ubicación GPS obtenida:", { lat: newLat, lng: newLng });
+      setHasChanges(true);
     } catch (err: any) {
-      console.error("❌ Error obteniendo GPS:", err);
       setUseGPS(false);
-
       if (err.code === 1) {
         setError("Permiso de ubicación denegado");
       } else if (err.code === 2) {
@@ -252,8 +215,11 @@ export default function UpdateProfileModal({
     });
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (e?: React.FormEvent) => {
+    // ✅ FIX: Permitir llamada sin evento (desde botón fuera del form)
+    if (e) {
+      e.preventDefault();
+    }
 
     if (!validateWhatsapp(formData.whatsapp)) {
       return;
@@ -268,29 +234,19 @@ export default function UpdateProfileModal({
       let ubicacion_lng = formData.ubicacion_lng;
       const finalCity = formData.city === "Otra" ? formData.otherCity : formData.city;
 
-      // Si se usó GPS, usar las coordenadas del formData
-      // Si no se usó GPS pero hay coordenadas existentes y no cambió la ciudad, mantenerlas
-      // Si no hay coordenadas o cambió la ciudad, geocodificar
       if (useGPS && ubicacion_lat && ubicacion_lng) {
-        console.log("📍 Usando coordenadas GPS:", { lat: ubicacion_lat, lng: ubicacion_lng });
-        // Ya tenemos las coordenadas del GPS, no hacer nada más
+        // Usar coordenadas GPS
       } else if (!ubicacion_lat || !ubicacion_lng || formData.city !== currentProfile.city) {
-        console.log("🗺️ Geocodificando ciudad:", finalCity);
         const coords = await geocodeAddress(`${finalCity}, México`);
         if (coords) {
           ubicacion_lat = coords.lat;
           ubicacion_lng = coords.lng;
-          console.log("✅ Coordenadas geocodificadas:", { lat: ubicacion_lat, lng: ubicacion_lng });
         } else {
-          console.warn("⚠️ No se pudo geocodificar, usando coordenadas por defecto de CDMX");
           ubicacion_lat = 19.4326;
           ubicacion_lng = -99.1332;
         }
-      } else {
-        console.log("📍 Manteniendo coordenadas existentes:", { lat: ubicacion_lat, lng: ubicacion_lng });
       }
 
-      // Preparar datos de actualización
       const updateData: any = {
         full_name: formData.full_name,
         whatsapp: formData.whatsapp,
@@ -299,36 +255,28 @@ export default function UpdateProfileModal({
         updated_at: new Date().toISOString(),
       };
 
-      // Intentar incluir city
       try {
         updateData.city = finalCity;
       } catch (e) {
-        console.warn("City column might not exist, continuing without it");
+        // Ignorar si city no existe
       }
 
-      // Agregar campos de profesional
       if (userRole === "professional") {
         updateData.bio = formData.bio;
         updateData.profession = formData.profession;
         updateData.work_zones = formData.work_zones;
       }
 
-      console.log("📤 Actualizando perfil...", updateData);
-
-      // Remover updated_at si puede causar problemas (algunos esquemas no lo tienen)
       const { updated_at, ...updateDataWithoutTimestamp } = updateData;
       
-      // Actualizar en profiles con verificación
       let updateResult = await (supabase
         .from("profiles") as any)
         .update(updateDataWithoutTimestamp)
         .eq("user_id", currentProfile.user_id)
-        .select(); // CRÍTICO: Verificar que se actualizó
+        .select();
 
-      // Si falla por city, reintentar sin city
       if (updateResult.error) {
-        if (updateResult.error.message?.includes("city") || updateResult.error.message?.includes("column") && updateResult.error.message?.includes("city")) {
-          console.warn("⚠️ Reintentando sin columna city...");
+        if (updateResult.error.message?.includes("city")) {
           const { city, ...updateDataWithoutCity } = updateDataWithoutTimestamp;
           updateResult = await (supabase
             .from("profiles") as any)
@@ -338,20 +286,15 @@ export default function UpdateProfileModal({
         }
         
         if (updateResult.error) {
-          console.error("❌ Error de Supabase:", updateResult.error);
-          throw new Error(updateResult.error.message || "Error al actualizar el perfil en la base de datos");
+          throw new Error(updateResult.error.message || "Error al actualizar el perfil");
         }
       }
 
-      // Verificar que realmente se actualizó
       if (!updateResult.data || updateResult.data.length === 0) {
-        console.error("❌ No se actualizó ningún registro");
-        throw new Error("No se pudo actualizar el perfil. Verifica que tengas permisos para editar tu perfil.");
+        throw new Error("No se pudo actualizar el perfil. Verifica tus permisos.");
       }
 
-      console.log("✅ Perfil actualizado en BD:", updateResult.data[0]);
-
-      // Actualizar metadata de auth (opcional, no crítico)
+      // Actualizar metadata de auth (opcional)
       try {
         await supabase.auth.updateUser({
           data: {
@@ -366,32 +309,20 @@ export default function UpdateProfileModal({
             }),
           },
         });
-        console.log("✅ Metadata de auth actualizada");
       } catch (authError: any) {
         console.warn("⚠️ Error actualizando auth metadata (no crítico):", authError);
-        // No lanzar error, la actualización en profiles ya fue exitosa
       }
 
-      console.log("✅ Perfil actualizado exitosamente");
-      
-      // 🆕 Llamar a la Edge Function de geocodificación inversa de forma asíncrona
-      // Solo si se actualizaron las coordenadas
+      // Llamar reverse-geocode de forma asíncrona
       if ((ubicacion_lat !== currentProfile.ubicacion_lat || ubicacion_lng !== currentProfile.ubicacion_lng) && ubicacion_lat && ubicacion_lng) {
-        callReverseGeocode(currentProfile.user_id, ubicacion_lat, ubicacion_lng)
-          .catch((err) => {
-            console.error("⚠️ Error al enriquecer datos geográficos (no crítico):", err);
-            // No mostrar error al usuario, es un proceso de background
-          });
+        callReverseGeocode(currentProfile.user_id, ubicacion_lat, ubicacion_lng).catch(() => {});
       }
       
       setSuccess(true);
-      setError(null); // Limpiar cualquier error previo
+      setError(null);
 
-      // Mostrar mensaje de éxito por 1.5 segundos antes de cerrar
       setTimeout(() => {
-        // Llamar onSuccess primero para refrescar datos
         onSuccess();
-        // Cerrar después de un pequeño delay para que el usuario vea el mensaje
         setTimeout(() => {
           onClose();
         }, 300);
@@ -414,7 +345,6 @@ export default function UpdateProfileModal({
     onClose();
   };
 
-  // Si no está abierto, no renderizar nada
   if (!isOpen) return null;
 
   return (
@@ -422,126 +352,107 @@ export default function UpdateProfileModal({
       <Dialog as="div" className="relative z-[9999]" onClose={handleClose}>
         <Transition.Child
           as={Fragment}
-          enter="ease-out duration-300"
+          enter="ease-out duration-200"
           enterFrom="opacity-0"
           enterTo="opacity-100"
-          leave="ease-in duration-200"
+          leave="ease-in duration-150"
           leaveFrom="opacity-100"
           leaveTo="opacity-0"
         >
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" />
+          <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" />
         </Transition.Child>
 
         <div className="fixed inset-0 overflow-y-auto">
-          <div className="flex min-h-full items-center justify-center p-4">
+          <div className="flex min-h-full items-center justify-center p-3 sm:p-4">
             <Transition.Child
               as={Fragment}
-              enter="ease-out duration-300"
+              enter="ease-out duration-200"
               enterFrom="opacity-0 scale-95"
               enterTo="opacity-100 scale-100"
-              leave="ease-in duration-200"
+              leave="ease-in duration-150"
               leaveFrom="opacity-100 scale-100"
               leaveTo="opacity-0 scale-95"
             >
-              <Dialog.Panel className="w-full max-w-2xl transform overflow-hidden rounded-2xl bg-white shadow-2xl transition-all z-[10000]">
-                {/* Header mejorado */}
-                <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 px-6 py-5 text-white relative overflow-hidden">
-                  {/* Elementos decorativos */}
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16"></div>
-                  <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/10 rounded-full -ml-12 -mb-12"></div>
-                  
-                  <div className="relative z-10 flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center">
-                        <FontAwesomeIcon icon={faUser} className="text-xl" />
+              <Dialog.Panel className="w-full max-w-lg transform overflow-hidden rounded-xl bg-white shadow-xl transition-all">
+                {/* Header compacto */}
+                <div className="bg-gradient-to-r from-indigo-600 to-purple-600 px-4 py-3 text-white">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
+                        <FontAwesomeIcon icon={faUser} className="text-sm" />
                       </div>
                       <div>
-                        <Dialog.Title className="text-2xl font-bold flex items-center">
-                          Actualizar Mi Perfil
+                        <Dialog.Title className="text-lg font-semibold">
+                          Actualizar Perfil
                         </Dialog.Title>
-                        <p className="text-sm text-white/90 mt-0.5">
-                          {userRole === "professional"
-                            ? "Mantén tu perfil profesional actualizado"
-                            : "Actualiza tu información de contacto"}
+                        <p className="text-xs text-white/90">
+                          {userRole === "professional" ? "Información profesional" : "Información de contacto"}
                         </p>
                       </div>
                     </div>
                     <button
                       onClick={handleClose}
-                      className="w-10 h-10 rounded-lg bg-white/20 hover:bg-white/30 backdrop-blur-sm transition-all flex items-center justify-center"
+                      className="w-8 h-8 rounded-lg bg-white/20 hover:bg-white/30 transition-colors flex items-center justify-center"
                       aria-label="Cerrar"
                     >
-                      <FontAwesomeIcon icon={faTimes} className="text-lg" />
+                      <FontAwesomeIcon icon={faTimes} className="text-sm" />
                     </button>
                   </div>
                 </div>
 
-                {/* Content */}
-                <div className="px-6 py-4 max-h-[70vh] overflow-y-auto">
-                  {/* Mensaje de éxito */}
+                {/* Content compacto */}
+                <div className="px-4 py-3 max-h-[65vh] overflow-y-auto">
+                  {/* Mensajes de estado */}
                   {success && (
-                    <div className="mb-4 p-4 bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-400 rounded-lg text-sm text-green-800 flex items-center shadow-lg">
-                      <FontAwesomeIcon icon={faCheckCircle} className="mr-3 text-green-600 text-xl flex-shrink-0" />
-                      <div>
-                        <strong className="text-base">¡Perfil actualizado exitosamente! ✅</strong>
-                        <p className="text-xs text-green-600 mt-1">Los cambios se han guardado correctamente en la base de datos.</p>
-                      </div>
+                    <div className="mb-3 p-3 bg-green-50 border border-green-200 rounded-lg text-sm text-green-800 flex items-center">
+                      <FontAwesomeIcon icon={faCheckCircle} className="mr-2 text-green-600 flex-shrink-0" />
+                      <span>¡Perfil actualizado exitosamente!</span>
                     </div>
                   )}
 
-                  {/* Mensaje de error */}
                   {error && !success && (
-                    <div className="mb-4 p-4 bg-red-50 border-2 border-red-400 rounded-lg text-sm text-red-800 flex items-start shadow-lg">
-                      <FontAwesomeIcon icon={faExclamationTriangle} className="mr-3 text-red-600 text-xl mt-0.5 flex-shrink-0" />
+                    <div className="mb-3 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-800 flex items-start">
+                      <FontAwesomeIcon icon={faExclamationTriangle} className="mr-2 text-red-600 mt-0.5 flex-shrink-0" />
                       <div className="flex-1">
-                        <strong className="text-base block mb-1">Error al guardar cambios:</strong>
-                        <p className="text-sm text-red-700 mb-2">{error}</p>
-                        <button
-                          type="button"
-                          onClick={() => setError(null)}
-                          className="text-xs text-red-600 hover:text-red-800 underline font-medium"
-                        >
-                          Cerrar mensaje
-                        </button>
+                        <strong className="block mb-1">Error:</strong>
+                        <p className="text-xs text-red-700">{error}</p>
                       </div>
                     </div>
                   )}
 
-                  {userRole === "professional" ? (
-                    <Tab.Group>
-                      <Tab.List className="flex space-x-1 rounded-xl bg-blue-50 p-1 mb-6">
-                        <Tab
-                          className={({ selected }) =>
-                            `w-full rounded-lg py-2.5 text-sm font-medium leading-5 transition-all
-                            ${
-                              selected
-                                ? "bg-white text-blue-700 shadow"
-                                : "text-gray-600 hover:bg-white/50"
-                            }`
-                          }
-                        >
-                          📝 Básico
-                        </Tab>
-                        <Tab
-                          className={({ selected }) =>
-                            `w-full rounded-lg py-2.5 text-sm font-medium leading-5 transition-all
-                            ${
-                              selected
-                                ? "bg-white text-blue-700 shadow"
-                                : "text-gray-600 hover:bg-white/50"
-                            }`
-                          }
-                        >
-                          💼 Profesional
-                        </Tab>
-                      </Tab.List>
-                      <Tab.Panels>
-                        {/* TAB: Básico */}
-                        <Tab.Panel>
-                          <form onSubmit={handleSubmit} className="space-y-4">
-                            {/* Nombre */}
+                  {/* ✅ FIX: Un solo formulario que envuelve todo */}
+                  <form onSubmit={handleSubmit} id="profile-update-form">
+                    {userRole === "professional" ? (
+                      <Tab.Group>
+                        <Tab.List className="flex space-x-1 rounded-lg bg-gray-100 p-1 mb-4">
+                          <Tab
+                            className={({ selected }) =>
+                              `flex-1 rounded-md py-1.5 text-xs font-medium transition-all ${
+                                selected
+                                  ? "bg-white text-indigo-600 shadow-sm"
+                                  : "text-gray-600 hover:text-gray-900"
+                              }`
+                            }
+                          >
+                            Básico
+                          </Tab>
+                          <Tab
+                            className={({ selected }) =>
+                              `flex-1 rounded-md py-1.5 text-xs font-medium transition-all ${
+                                selected
+                                  ? "bg-white text-indigo-600 shadow-sm"
+                                  : "text-gray-600 hover:text-gray-900"
+                              }`
+                            }
+                          >
+                            Profesional
+                          </Tab>
+                        </Tab.List>
+                        <Tab.Panels>
+                          {/* TAB: Básico */}
+                          <Tab.Panel className="space-y-3">
                             <div>
-                              <label className="block text-sm font-medium text-gray-700 mb-2">
+                              <label className="block text-xs font-medium text-gray-700 mb-1">
                                 Nombre Completo *
                               </label>
                               <input
@@ -553,17 +464,16 @@ export default function UpdateProfileModal({
                                     full_name: e.target.value,
                                   }))
                                 }
-                                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                                 required
                               />
                             </div>
 
-                            {/* WhatsApp */}
                             <div>
-                              <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+                              <label className="flex items-center text-xs font-medium text-gray-700 mb-1">
                                 <FontAwesomeIcon
                                   icon={faWhatsapp}
-                                  className="mr-2 text-green-600"
+                                  className="mr-1.5 text-green-600 text-xs"
                                 />
                                 WhatsApp *
                               </label>
@@ -571,7 +481,7 @@ export default function UpdateProfileModal({
                                 type="tel"
                                 value={formData.whatsapp}
                                 onChange={handleWhatsappChange}
-                                className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                                className={`w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${
                                   whatsappError ? "border-red-500" : "border-gray-300"
                                 }`}
                                 placeholder="5512345678"
@@ -579,31 +489,29 @@ export default function UpdateProfileModal({
                                 required
                               />
                               {whatsappError && (
-                                <p className="text-xs text-red-600 mt-1">{whatsappError}</p>
+                                <p className="text-xs text-red-600 mt-0.5">{whatsappError}</p>
                               )}
                             </div>
 
-                            {/* Ciudad */}
                             <div>
-                              <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+                              <label className="flex items-center text-xs font-medium text-gray-700 mb-1">
                                 <FontAwesomeIcon
                                   icon={faMapMarkerAlt}
-                                  className="mr-2 text-red-600"
+                                  className="mr-1.5 text-red-600 text-xs"
                                 />
                                 Ciudad *
                               </label>
-                        <select
-                          value={formData.city}
-                          onChange={(e) => {
-                            setFormData((prev) => ({ ...prev, city: e.target.value }));
-                            // Si cambia la ciudad, resetear GPS para que se geocodifique la nueva ciudad
-                            if (e.target.value !== currentProfile.city) {
-                              setUseGPS(false);
-                            }
-                          }}
-                          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                          required
-                        >
+                              <select
+                                value={formData.city}
+                                onChange={(e) => {
+                                  setFormData((prev) => ({ ...prev, city: e.target.value }));
+                                  if (e.target.value !== currentProfile.city) {
+                                    setUseGPS(false);
+                                  }
+                                }}
+                                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                required
+                              >
                                 {CITIES.map((city) => (
                                   <option key={city} value={city}>
                                     {city}
@@ -614,7 +522,7 @@ export default function UpdateProfileModal({
 
                             {formData.city === "Otra" && (
                               <div>
-                                <label className="text-sm font-medium text-gray-700 mb-2 block">
+                                <label className="text-xs font-medium text-gray-700 mb-1 block">
                                   Especifica tu ciudad *
                                 </label>
                                 <input
@@ -626,70 +534,65 @@ export default function UpdateProfileModal({
                                       otherCity: e.target.value,
                                     }))
                                   }
-                                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                                   placeholder="Escribe tu ciudad"
                                   required
                                 />
                               </div>
                             )}
 
-                            {/* Zonas de Trabajo (CDMX) */}
                             {formData.city === "Ciudad de México" && (
                               <div>
-                                <label className="text-sm font-medium text-gray-700 mb-2 block">
-                                  Zonas de Trabajo en CDMX
+                                <label className="text-xs font-medium text-gray-700 mb-1 block">
+                                  Zonas de Trabajo
                                 </label>
-                                <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto p-2 border border-gray-200 rounded-lg">
+                                <div className="grid grid-cols-2 gap-1.5 max-h-32 overflow-y-auto p-2 border border-gray-200 rounded-lg bg-gray-50">
                                   {WORK_ZONES_CDMX.map((zone) => (
                                     <label
                                       key={zone}
-                                      className="flex items-center space-x-2 text-sm cursor-pointer hover:bg-gray-50 p-1 rounded"
+                                      className="flex items-center space-x-1.5 text-xs cursor-pointer hover:bg-white p-1 rounded"
                                     >
                                       <input
                                         type="checkbox"
                                         checked={formData.work_zones?.includes(zone)}
                                         onChange={() => handleWorkZoneToggle(zone)}
-                                        className="rounded text-blue-600 focus:ring-blue-500"
+                                        className="rounded text-indigo-600 focus:ring-indigo-500"
                                       />
-                                      <span>{zone}</span>
+                                      <span className="text-gray-700">{zone}</span>
                                     </label>
                                   ))}
                                 </div>
                               </div>
                             )}
 
-                            {/* GPS */}
                             <div>
                               <button
                                 type="button"
                                 onClick={handleUseGPS}
                                 disabled={gpsLoading}
-                                className={`w-full p-3 border-2 rounded-lg font-medium transition-all ${
+                                className={`w-full px-3 py-2 text-sm border-2 rounded-lg font-medium transition-all ${
                                   useGPS
                                     ? "bg-green-50 border-green-500 text-green-700"
-                                    : "bg-gray-50 border-gray-300 text-gray-700 hover:border-blue-500 hover:bg-blue-50"
+                                    : "bg-gray-50 border-gray-300 text-gray-700 hover:border-indigo-500 hover:bg-indigo-50"
                                 }`}
                               >
                                 <FontAwesomeIcon
                                   icon={useGPS ? faCheckCircle : faLocationArrow}
-                                  className="mr-2"
+                                  className="mr-1.5 text-xs"
                                 />
                                 {gpsLoading
                                   ? "Obteniendo ubicación..."
                                   : useGPS
-                                  ? "✅ GPS Activado"
-                                  : "📍 Actualizar ubicación GPS"}
+                                  ? "GPS Activado"
+                                  : "Actualizar ubicación GPS"}
                               </button>
                             </div>
-                          </form>
-                        </Tab.Panel>
+                          </Tab.Panel>
 
-                        {/* TAB: Profesional */}
-                        <Tab.Panel>
-                          <form onSubmit={handleSubmit} className="space-y-4">
-                            {/* Profesión */}
+                          {/* TAB: Profesional */}
+                          <Tab.Panel className="space-y-3">
                             <div>
-                              <label className="block text-sm font-medium text-gray-700 mb-2">
+                              <label className="block text-xs font-medium text-gray-700 mb-1">
                                 Profesión *
                               </label>
                               <select
@@ -700,7 +603,7 @@ export default function UpdateProfileModal({
                                     profession: e.target.value,
                                   }))
                                 }
-                                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                                 required
                               >
                                 <option value="">Selecciona tu profesión</option>
@@ -712,9 +615,8 @@ export default function UpdateProfileModal({
                               </select>
                             </div>
 
-                            {/* Bio */}
                             <div>
-                              <label className="block text-sm font-medium text-gray-700 mb-2">
+                              <label className="block text-xs font-medium text-gray-700 mb-1">
                                 Bio / Descripción
                               </label>
                               <textarea
@@ -723,156 +625,157 @@ export default function UpdateProfileModal({
                                   setFormData((prev) => ({ ...prev, bio: e.target.value }))
                                 }
                                 rows={4}
-                                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                placeholder="Cuéntanos sobre tu experiencia, especialidades y por qué eres el mejor en lo que haces..."
+                                maxLength={500}
+                                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 resize-none"
+                                placeholder="Cuéntanos sobre tu experiencia..."
                               />
-                              <p className="text-xs text-gray-500 mt-1">
+                              <p className="text-xs text-gray-500 mt-0.5">
                                 {formData.bio.length}/500 caracteres
                               </p>
                             </div>
-                          </form>
-                        </Tab.Panel>
-                      </Tab.Panels>
-                    </Tab.Group>
-                  ) : (
-                    // FORMULARIO SIMPLE PARA CLIENTES
-                    <form onSubmit={handleSubmit} className="space-y-4">
-                      {/* Nombre */}
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Nombre Completo *
-                        </label>
-                        <input
-                          type="text"
-                          value={formData.full_name}
-                          onChange={(e) =>
-                            setFormData((prev) => ({ ...prev, full_name: e.target.value }))
-                          }
-                          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                          required
-                        />
-                      </div>
-
-                      {/* WhatsApp */}
-                      <div>
-                        <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
-                          <FontAwesomeIcon
-                            icon={faWhatsapp}
-                            className="mr-2 text-green-600"
-                          />
-                          WhatsApp *
-                        </label>
-                        <input
-                          type="tel"
-                          value={formData.whatsapp}
-                          onChange={handleWhatsappChange}
-                          className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                            whatsappError ? "border-red-500" : "border-gray-300"
-                          }`}
-                          placeholder="5512345678"
-                          maxLength={10}
-                          required
-                        />
-                        {whatsappError && (
-                          <p className="text-xs text-red-600 mt-1">{whatsappError}</p>
-                        )}
-                      </div>
-
-                      {/* Ciudad */}
-                      <div>
-                        <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
-                          <FontAwesomeIcon icon={faMapMarkerAlt} className="mr-2 text-red-600" />
-                          Ciudad *
-                        </label>
-                        <select
-                          value={formData.city}
-                          onChange={(e) => {
-                            setFormData((prev) => ({ ...prev, city: e.target.value }));
-                            // Si cambia la ciudad, resetear GPS para que se geocodifique la nueva ciudad
-                            if (e.target.value !== currentProfile.city) {
-                              setUseGPS(false);
-                            }
-                          }}
-                          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                          required
-                        >
-                          {CITIES.map((city) => (
-                            <option key={city} value={city}>
-                              {city}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-
-                      {formData.city === "Otra" && (
+                          </Tab.Panel>
+                        </Tab.Panels>
+                      </Tab.Group>
+                    ) : (
+                      // FORMULARIO SIMPLE PARA CLIENTES
+                      <div className="space-y-3">
                         <div>
-                          <label className="text-sm font-medium text-gray-700 mb-2 block">
-                            Especifica tu ciudad *
+                          <label className="block text-xs font-medium text-gray-700 mb-1">
+                            Nombre Completo *
                           </label>
                           <input
                             type="text"
-                            value={formData.otherCity}
+                            value={formData.full_name}
                             onChange={(e) =>
-                              setFormData((prev) => ({ ...prev, otherCity: e.target.value }))
+                              setFormData((prev) => ({ ...prev, full_name: e.target.value }))
                             }
-                            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                            placeholder="Escribe tu ciudad"
+                            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                             required
                           />
                         </div>
-                      )}
 
-                      {/* GPS */}
-                      <div>
-                        <button
-                          type="button"
-                          onClick={handleUseGPS}
-                          disabled={gpsLoading}
-                          className={`w-full p-3 border-2 rounded-lg font-medium transition-all ${
-                            useGPS
-                              ? "bg-green-50 border-green-500 text-green-700"
-                              : "bg-gray-50 border-gray-300 text-gray-700 hover:border-blue-500 hover:bg-blue-50"
-                          }`}
-                        >
-                          <FontAwesomeIcon
-                            icon={useGPS ? faCheckCircle : faLocationArrow}
-                            className="mr-2"
+                        <div>
+                          <label className="flex items-center text-xs font-medium text-gray-700 mb-1">
+                            <FontAwesomeIcon
+                              icon={faWhatsapp}
+                              className="mr-1.5 text-green-600 text-xs"
+                            />
+                            WhatsApp *
+                          </label>
+                          <input
+                            type="tel"
+                            value={formData.whatsapp}
+                            onChange={handleWhatsappChange}
+                            className={`w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${
+                              whatsappError ? "border-red-500" : "border-gray-300"
+                            }`}
+                            placeholder="5512345678"
+                            maxLength={10}
+                            required
                           />
-                          {gpsLoading
-                            ? "Obteniendo ubicación..."
-                            : useGPS
-                            ? "✅ GPS Activado"
-                            : "📍 Actualizar ubicación GPS"}
-                        </button>
+                          {whatsappError && (
+                            <p className="text-xs text-red-600 mt-0.5">{whatsappError}</p>
+                          )}
+                        </div>
+
+                        <div>
+                          <label className="flex items-center text-xs font-medium text-gray-700 mb-1">
+                            <FontAwesomeIcon icon={faMapMarkerAlt} className="mr-1.5 text-red-600 text-xs" />
+                            Ciudad *
+                          </label>
+                          <select
+                            value={formData.city}
+                            onChange={(e) => {
+                              setFormData((prev) => ({ ...prev, city: e.target.value }));
+                              if (e.target.value !== currentProfile.city) {
+                                setUseGPS(false);
+                              }
+                            }}
+                            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                            required
+                          >
+                            {CITIES.map((city) => (
+                              <option key={city} value={city}>
+                                {city}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
+                        {formData.city === "Otra" && (
+                          <div>
+                            <label className="text-xs font-medium text-gray-700 mb-1 block">
+                              Especifica tu ciudad *
+                            </label>
+                            <input
+                              type="text"
+                              value={formData.otherCity}
+                              onChange={(e) =>
+                                setFormData((prev) => ({
+                                  ...prev,
+                                  otherCity: e.target.value,
+                                }))
+                              }
+                              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                              placeholder="Escribe tu ciudad"
+                              required
+                            />
+                          </div>
+                        )}
+
+                        <div>
+                          <button
+                            type="button"
+                            onClick={handleUseGPS}
+                            disabled={gpsLoading}
+                            className={`w-full px-3 py-2 text-sm border-2 rounded-lg font-medium transition-all ${
+                              useGPS
+                                ? "bg-green-50 border-green-500 text-green-700"
+                                : "bg-gray-50 border-gray-300 text-gray-700 hover:border-indigo-500 hover:bg-indigo-50"
+                            }`}
+                          >
+                            <FontAwesomeIcon
+                              icon={useGPS ? faCheckCircle : faLocationArrow}
+                              className="mr-1.5 text-xs"
+                            />
+                            {gpsLoading
+                              ? "Obteniendo ubicación..."
+                              : useGPS
+                              ? "GPS Activado"
+                              : "Actualizar ubicación GPS"}
+                          </button>
+                        </div>
                       </div>
-                    </form>
-                  )}
+                    )}
+                  </form>
                 </div>
 
-                {/* Footer */}
-                <div className="bg-gray-50 px-6 py-4 flex justify-between items-center">
+                {/* Footer compacto */}
+                <div className="bg-gray-50 px-4 py-3 flex justify-between items-center border-t border-gray-200">
                   <button
                     type="button"
                     onClick={handleClose}
                     disabled={loading}
-                    className="px-4 py-2 text-gray-700 hover:bg-gray-200 rounded-lg transition-colors disabled:opacity-50"
+                    className="px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-200 rounded-lg transition-colors disabled:opacity-50"
                   >
                     Cancelar
                   </button>
+                  {/* ✅ FIX: Botón dentro del form usando form attribute */}
                   <button
-                    onClick={handleSubmit}
+                    type="submit"
+                    form="profile-update-form"
                     disabled={loading || !hasChanges || !!whatsappError}
-                    className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-2 rounded-lg font-semibold hover:from-blue-700 hover:to-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center"
+                    className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-5 py-1.5 rounded-lg text-sm font-medium hover:from-indigo-700 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center"
                   >
                     {loading ? (
                       <>
-                        <FontAwesomeIcon icon={faSpinner} className="mr-2 animate-spin" />
+                        <FontAwesomeIcon icon={faSpinner} className="mr-1.5 animate-spin text-xs" />
                         Guardando...
                       </>
                     ) : (
                       <>
-                        <FontAwesomeIcon icon={faCheckCircle} className="mr-2" />
-                        Guardar Cambios
+                        <FontAwesomeIcon icon={faCheckCircle} className="mr-1.5 text-xs" />
+                        Guardar
                       </>
                     )}
                   </button>
@@ -885,5 +788,3 @@ export default function UpdateProfileModal({
     </Transition>
   );
 }
-
-
