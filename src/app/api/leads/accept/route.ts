@@ -110,25 +110,56 @@ export async function POST(request: Request) {
     }
 
     // Método alternativo: Actualizar directamente con el cliente autenticado
-    // Esto funciona porque el usuario está autenticado y puede actualizar leads
+    // IMPORTANTE: La política RLS requiere que el estado sea 'asignado' o 'en_progreso' 
+    // cuando un profesional acepta un lead, no 'aceptado'
     const contactDeadline = new Date();
     contactDeadline.setMinutes(contactDeadline.getMinutes() + 30); // 30 minutos para contactar
     
+    // Primero verificar que el lead existe y está disponible
+    const { data: existingLead, error: fetchError } = await supabase
+      .from("leads")
+      .select("id, estado, profesional_asignado_id")
+      .eq("id", leadId)
+      .maybeSingle();
+    
+    if (fetchError || !existingLead) {
+      console.error("❌ Error al buscar lead o lead no encontrado:", fetchError);
+      return NextResponse.json(
+        {
+          error: "No encontramos la solicitud indicada. Verifica el ID e inténtalo nuevamente.",
+        },
+        { status: 404 }
+      );
+    }
+    
+    console.log("📋 Lead encontrado:", {
+      id: existingLead.id,
+      estado: existingLead.estado,
+      profesional_asignado_id: existingLead.profesional_asignado_id,
+    });
+    
+    // Determinar el estado correcto según la política RLS
+    // Si el lead está 'nuevo' o 'Nuevo', usar 'asignado' para cumplir con la política
+    const newEstado = (existingLead.estado?.toLowerCase() === 'nuevo' || existingLead.estado?.toLowerCase() === 'new') 
+      ? 'asignado' 
+      : 'aceptado';
+    
     // Las columnas existen según la verificación, actualizar con todas las columnas necesarias
     const updateData: any = {
-      estado: "aceptado",
+      estado: newEstado,
       profesional_asignado_id: currentUser.id,
       fecha_asignacion: new Date().toISOString(),
       contact_deadline_at: contactDeadline.toISOString(),
       appointment_status: "pendiente_contacto",
     };
     
-    // Agregar updated_at si existe (puede no estar en todas las bases de datos)
-    try {
-      updateData.updated_at = new Date().toISOString();
-    } catch (e) {
-      // Ignorar si no se puede agregar
-    }
+    // Agregar updated_at si existe
+    updateData.updated_at = new Date().toISOString();
+    
+    console.log("🔄 Intentando actualizar lead con:", {
+      estado: updateData.estado,
+      profesional_asignado_id: updateData.profesional_asignado_id,
+    });
     
     const { data: updatedLead, error: updateError } = await supabase
       .from("leads")
@@ -136,6 +167,15 @@ export async function POST(request: Request) {
       .eq("id", leadId)
       .select("*")
       .maybeSingle();
+    
+    if (updateError) {
+      console.error("❌ Error al actualizar lead:", updateError);
+      console.error("📋 Detalles del error:", {
+        message: updateError.message,
+        details: updateError.details,
+        hint: updateError.hint,
+      });
+    }
 
     if (updateError) {
       console.error("❌ Error al actualizar lead directamente:", updateError);
@@ -152,11 +192,11 @@ export async function POST(request: Request) {
         );
       }
       
-      // Último recurso: usar admin client
+      // Último recurso: usar admin client (bypass RLS)
       const adminContactDeadline = new Date();
       adminContactDeadline.setMinutes(adminContactDeadline.getMinutes() + 30);
       
-      // Usar todas las columnas que sabemos que existen
+      // Usar 'aceptado' con admin client ya que bypass RLS
       const adminUpdateData: any = {
         estado: "aceptado",
         profesional_asignado_id: currentUser.id,
@@ -165,6 +205,8 @@ export async function POST(request: Request) {
         appointment_status: "pendiente_contacto",
         updated_at: new Date().toISOString(),
       };
+      
+      console.log("🔄 Usando admin client como último recurso");
       
       const { data: adminUpdatedLead, error: adminError } = await adminClient
         .from("leads")
