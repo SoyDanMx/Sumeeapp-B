@@ -67,19 +67,70 @@ export default function LoginForm() {
     try {
       console.log('🔐 Intentando login...');
       
-      // ✅ FIX: Timeout aumentado a 30 segundos para dar más tiempo al login
-      // El login puede tardar más si hay que cargar datos del profesional o cliente
+      // ✅ FIX: Timeout aumentado a 45 segundos para manejar latencia de Supabase durante mantenimiento
+      // Durante mantenimiento de Supabase, la autenticación puede tardar más tiempo
       timeoutId = setTimeout(() => {
         if (!loginCompleted) {
           setLoading(false);
-          setError('La autenticación está tardando demasiado. Por favor, verifica tu conexión e intenta de nuevo.');
+          setError('La autenticación está tardando más de lo normal. Esto puede deberse al mantenimiento de Supabase. Por favor, espera unos momentos e intenta de nuevo. Si el problema persiste, verifica tu conexión a internet.');
         }
-      }, 30000); // Aumentado de 20s a 30s
+      }, 45000); // Aumentado de 30s a 45s para manejar latencia durante mantenimiento
       
-      const { data: authData, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+      // ✅ FIX: Agregar retry logic con exponential backoff para manejar latencia de Supabase
+      let authData: any = null;
+      let error: any = null;
+      const maxRetries = 2;
+      let retryCount = 0;
+      
+      while (retryCount <= maxRetries) {
+        try {
+          const result = await supabase.auth.signInWithPassword({
+            email,
+            password,
+          });
+          
+          // Si hay error de red o timeout, intentar retry
+          if (result.error) {
+            const errorMsg = result.error.message?.toLowerCase() || '';
+            const isNetworkError = errorMsg.includes('timeout') || 
+                                  errorMsg.includes('network') || 
+                                  errorMsg.includes('fetch') ||
+                                  errorMsg.includes('connection');
+            
+            if (isNetworkError && retryCount < maxRetries) {
+              retryCount++;
+              const delay = Math.min(1000 * Math.pow(2, retryCount), 5000); // Exponential backoff, max 5s
+              console.log(`⚠️ Error de red en intento ${retryCount}, reintentando en ${delay}ms...`);
+              await new Promise(resolve => setTimeout(resolve, delay));
+              continue;
+            }
+          }
+          
+          // Si llegamos aquí, tenemos resultado (éxito o error no recuperable)
+          authData = result.data;
+          error = result.error;
+          break;
+        } catch (err: any) {
+          // Si es un error de timeout o red, intentar retry
+          const errorMsg = err.message?.toLowerCase() || '';
+          const isNetworkError = errorMsg.includes('timeout') || 
+                                errorMsg.includes('network') || 
+                                errorMsg.includes('fetch') ||
+                                errorMsg.includes('connection');
+          
+          if (isNetworkError && retryCount < maxRetries) {
+            retryCount++;
+            const delay = Math.min(1000 * Math.pow(2, retryCount), 5000);
+            console.log(`⚠️ Excepción de red en intento ${retryCount}, reintentando en ${delay}ms...`);
+            await new Promise(resolve => setTimeout(resolve, delay));
+            continue;
+          }
+          
+          // Error no recuperable
+          error = err;
+          break;
+        }
+      }
 
       loginCompleted = true;
       if (timeoutId) clearTimeout(timeoutId);
