@@ -241,15 +241,15 @@ export function useProfesionalData(): UseProfesionalDataReturn {
       null;
     let timeoutId: NodeJS.Timeout | null = null;
 
-    // ✅ FIX: Timeout de seguridad aumentado a 8 segundos para no interferir con login
-    // El login puede tardar más tiempo, especialmente si hay que cargar datos del profesional
+    // ✅ FIX: Timeout de seguridad aumentado a 15 segundos para manejar latencia de Supabase
+    // Durante mantenimiento de Supabase, las operaciones pueden tardar más tiempo
     timeoutId = setTimeout(() => {
       if (isMounted) {
-        console.warn("⚠️ useProfesionalData - Timeout de 8 segundos, forzando setIsLoading(false)");
+        console.warn("⚠️ useProfesionalData - Timeout de 15 segundos, forzando setIsLoading(false) (puede deberse a latencia de Supabase)");
         setIsLoading(false);
         // No establecer error, solo dejar de cargar
       }
-    }, 8000); // Aumentado de 3s a 8s para no interferir con login
+    }, 15000); // Aumentado de 8s a 15s para manejar latencia durante mantenimiento
 
     try {
       const cached = sessionStorage.getItem(cacheKey);

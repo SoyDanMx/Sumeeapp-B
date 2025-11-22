@@ -99,14 +99,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
     // Ejecutar actualización
     updateProfile();
 
-    // ✅ FIX: Timeout de seguridad aumentado a 5 segundos para no interferir con login
-    // El login puede tardar más tiempo, especialmente si hay que cargar datos del profesional
+    // ✅ FIX: Timeout de seguridad aumentado a 10 segundos para manejar latencia de Supabase
+    // Durante mantenimiento de Supabase, las operaciones pueden tardar más tiempo
     timeoutId = setTimeout(() => {
       if (isMounted && isLoading) {
-        console.warn('⚠️ AuthContext - Timeout de seguridad: forzando isLoading=false');
+        console.warn('⚠️ AuthContext - Timeout de seguridad: forzando isLoading=false (puede deberse a latencia de Supabase)');
         setIsLoading(false);
       }
-    }, 5000); // Aumentado de 2s a 5s
+    }, 10000); // Aumentado de 5s a 10s para manejar latencia durante mantenimiento
 
     return () => {
       isMounted = false;
