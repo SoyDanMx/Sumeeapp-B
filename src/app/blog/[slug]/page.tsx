@@ -594,6 +594,164 @@ const blogPosts: Record<string, BlogPost> = {
       "CDMX",
     ],
   },
+  "ia-no-puede-sostener-llave-inglesa": {
+    id: "8",
+    title: "Más allá del Algoritmo: Por qué la IA no puede sostener una llave inglesa (todavía)",
+    content: `
+      <p>En la era de la automatización y los modelos de lenguaje avanzados, es común preguntarse qué profesiones están "a salvo". Mientras que los trabajos de oficina, redacción y análisis de datos enfrentan una transformación radical debido a la IA, los oficios manuales especializados —plomería, electricidad, mecánica, HVAC— parecen estar blindados. ¿Por qué? La respuesta radica en la naturaleza misma del mundo físico y la complejidad de interactuar con él.</p>
+
+      <div style="text-align: center; margin: 2rem 0;">
+        <img src="https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&h=600&q=80" alt="Técnico plomero trabajando con herramientas manuales en instalación compleja" style="width: 100%; max-width: 900px; height: 500px; object-fit: cover; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.15);">
+        <p style="color: #666; font-size: 0.9rem; margin-top: 0.5rem; font-style: italic;">Los oficios manuales requieren destreza, adaptabilidad y juicio humano que la IA aún no puede replicar</p>
+      </div>
+
+      <h2 style="color: #1e40af; font-size: 2rem; margin-top: 3rem; margin-bottom: 1.5rem; font-weight: 700;">El Caos del Mundo Real vs. Entornos Estructurados</h2>
+      
+      <div style="background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); border-left: 4px solid #3b82f6; padding: 2rem; margin: 2.5rem 0; border-radius: 0.5rem;">
+        <h3 style="color: #1e40af; font-size: 1.5rem; margin-bottom: 1rem; font-weight: 600;">💻 La IA brilla en lo digital</h3>
+        <p style="color: #1e3a8a; margin-bottom: 1rem;">La IA, como ChatGPT o los algoritmos de trading, opera en entornos donde las reglas son claras y los datos son digitales. Puede procesar millones de transacciones, analizar patrones en texto y generar código con una precisión impresionante.</p>
+      </div>
+
+      <div style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-left: 4px solid #f59e0b; padding: 2rem; margin: 2.5rem 0; border-radius: 0.5rem;">
+        <h3 style="color: #92400e; font-size: 1.5rem; margin-bottom: 1rem; font-weight: 600;">🌍 El mundo físico es desordenado</h3>
+        <p style="color: #78350f; margin-bottom: 1rem;">Una tubería rota no sigue un patrón predecible. Puede estar oxidada, ubicada en un rincón inaccesible, cubierta de moho o instalada incorrectamente hace 50 años. Cada situación es única y requiere una solución adaptada al contexto específico.</p>
+      </div>
+
+      <div style="text-align: center; margin: 2rem 0;">
+        <img src="https://images.unsplash.com/photo-1621905251918-48416bd8575a?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&h=600&q=80" alt="Electricista trabajando en cableado complejo y único de una casa antigua" style="width: 100%; max-width: 900px; height: 500px; object-fit: cover; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.15);">
+        <p style="color: #666; font-size: 0.9rem; margin-top: 0.5rem; font-style: italic;">Cada instalación eléctrica es única, con modificaciones históricas que requieren experiencia humana para descifrar</p>
+      </div>
+
+      <div style="background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%); border-left: 4px solid #10b981; padding: 2rem; margin: 2.5rem 0; border-radius: 0.5rem;">
+        <h3 style="color: #065f46; font-size: 1.5rem; margin-bottom: 1rem; font-weight: 600;">🔄 Variabilidad infinita</h3>
+        <p style="color: #065f46; margin-bottom: 1rem;">No hay dos casas idénticas. Un electricista entra a un hogar y debe descifrar un sistema de cableado único, a menudo modificado por dueños anteriores sin documentación. La IA necesita datos estandarizados; el mundo real es todo menos estándar.</p>
+      </div>
+
+      <h2 style="color: #1e40af; font-size: 2rem; margin-top: 3rem; margin-bottom: 1.5rem; font-weight: 700;">La Destreza Motora y la Manipulación Fina</h2>
+
+      <div style="text-align: center; margin: 2rem 0;">
+        <img src="https://images.unsplash.com/photo-1625246333195-78d9c38ad449?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&h=600&q=80" alt="Robot industrial vs mano humana trabajando con herramientas finas" style="width: 100%; max-width: 900px; height: 500px; object-fit: cover; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.15);">
+        <p style="color: #666; font-size: 0.9rem; margin-top: 0.5rem; font-style: italic;">La robótica actual lucha con tareas que requieren motricidad fina y adaptación constante</p>
+      </div>
+
+      <div style="background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%); border-left: 4px solid #ef4444; padding: 2rem; margin: 2.5rem 0; border-radius: 0.5rem;">
+        <h3 style="color: #991b1b; font-size: 1.5rem; margin-bottom: 1rem; font-weight: 600;">🤖 El reto de la robótica</h3>
+        <p style="color: #7f1d1d; margin-bottom: 1rem;">Aunque la IA es el "cerebro", necesita un "cuerpo" para actuar en el mundo físico. La robótica actual, aunque avanzada (piensa en Boston Dynamics), todavía lucha con tareas que requieren motricidad fina y adaptación constante. Replicar la coordinación mano-ojo de un técnico experimentado es tecnológicamente lejano y prohibitivamente caro.</p>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; margin: 2rem 0;">
+        <div style="background: #f0f9ff; border: 2px solid #0ea5e9; padding: 1.5rem; border-radius: 0.75rem;">
+          <h4 style="color: #0c4a6e; margin-bottom: 0.75rem; font-weight: 600; font-size: 1.2rem;">👆 Sentido del tacto</h4>
+          <p style="color: #075985; line-height: 1.7;">Un plomero "siente" si una rosca está entrando bien o si una tubería está a punto de romperse por la presión. Un electricista sabe cuánta fuerza aplicar al pelar un cable sin dañarlo. Replicar esta retroalimentación sensorial en un robot autónomo es extremadamente complejo.</p>
+        </div>
+        
+        <div style="background: #f0fdf4; border: 2px solid #10b981; padding: 1.5rem; border-radius: 0.75rem;">
+          <h4 style="color: #065f46; margin-bottom: 0.75rem; font-weight: 600; font-size: 1.2rem;">🚶 Acceso y movilidad</h4>
+          <p style="color: #047857; line-height: 1.7;">Los técnicos deben gatear bajo casas, subir escaleras inestables y contorsionarse dentro de gabinetes. Un robot tendría dificultades extremas para navegar estos espacios no estructurados que requieren flexibilidad y adaptabilidad humana.</p>
+        </div>
+      </div>
+
+      <h2 style="color: #1e40af; font-size: 2rem; margin-top: 3rem; margin-bottom: 1.5rem; font-weight: 700;">Resolución de Problemas Contextuales y Creatividad</h2>
+
+      <div style="text-align: center; margin: 2rem 0;">
+        <img src="https://images.unsplash.com/photo-1558618666-fcd25c85cd64?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&h=600&q=80" alt="Técnico diagnosticando problema complejo usando múltiples sentidos y experiencia" style="width: 100%; max-width: 900px; height: 500px; object-fit: cover; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.15);">
+        <p style="color: #666; font-size: 0.9rem; margin-top: 0.5rem; font-style: italic;">El diagnóstico requiere experiencia, intuición y uso de múltiples sentidos que la IA no puede replicar</p>
+      </div>
+
+      <div style="background: linear-gradient(135deg, #ede9fe 0%, #ddd6fe 100%); border-left: 4px solid #8b5cf6; padding: 2rem; margin: 2.5rem 0; border-radius: 0.5rem;">
+        <h3 style="color: #5b21b6; font-size: 1.5rem; margin-bottom: 1rem; font-weight: 600;">🔍 Diagnóstico más allá de los datos</h3>
+        <p style="color: #4c1d95; margin-bottom: 1rem;">A veces, el problema no es lo que parece. Un técnico experimentado usa el olfato (olor a gas o quemado), el oído (un zumbido específico) y la intuición basada en años de experiencia para diagnosticar fallos. La IA puede analizar datos, pero no puede "oler" un problema o "sentir" que algo está mal.</p>
+      </div>
+
+      <div style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-left: 4px solid #f59e0b; padding: 2rem; margin: 2.5rem 0; border-radius: 0.5rem;">
+        <h3 style="color: #92400e; font-size: 1.5rem; margin-bottom: 1rem; font-weight: 600;">🛠️ Soluciones creativas ("MacGyverismo")</h3>
+        <p style="color: #78350f; margin-bottom: 1rem;">A menudo, la pieza de repuesto exacta no existe o no está disponible. Los técnicos deben improvisar soluciones seguras y efectivas con lo que tienen a mano. La IA es buena siguiendo patrones, no rompiéndolos creativamente para solucionar una urgencia física.</p>
+      </div>
+
+      <h2 style="color: #1e40af; font-size: 2rem; margin-top: 3rem; margin-bottom: 1.5rem; font-weight: 700;">Empatía y Comunicación Humana</h2>
+
+      <div style="text-align: center; margin: 2rem 0;">
+        <img src="https://images.unsplash.com/photo-1551434678-e076c223a692?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&h=600&q=80" alt="Técnico explicando problema y solución a cliente preocupado con empatía" style="width: 100%; max-width: 900px; height: 500px; object-fit: cover; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.15);">
+        <p style="color: #666; font-size: 0.9rem; margin-top: 0.5rem; font-style: italic;">La confianza y comunicación humana son esenciales cuando alguien trabaja en tu hogar</p>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; margin: 2rem 0;">
+        <div style="background: #f0f9ff; border: 2px solid #0ea5e9; padding: 1.5rem; border-radius: 0.75rem;">
+          <h4 style="color: #0c4a6e; margin-bottom: 0.75rem; font-weight: 600; font-size: 1.2rem;">🤝 El factor confianza</h4>
+          <p style="color: #075985; line-height: 1.7;">Cuando invitas a alguien a tu casa para arreglar algo, la confianza es clave. Los técnicos deben explicar el problema, calmar al cliente (que puede estar estresado por una inundación o un corte de luz) y negociar soluciones. Esta interacción humana es irreemplazable.</p>
+        </div>
+        
+        <div style="background: #fef2f2; border: 2px solid #ef4444; padding: 1.5rem; border-radius: 0.75rem;">
+          <h4 style="color: #991b1b; margin-bottom: 0.75rem; font-weight: 600; font-size: 1.2rem;">⚖️ Juicio ético y seguridad</h4>
+          <p style="color: #7f1d1d; line-height: 1.7;">Un técnico toma decisiones de seguridad en tiempo real que protegen vidas y propiedades. ¿Es seguro trabajar con este cableado antiguo? ¿Esta tubería de gas está bien ventilada? La IA puede seguir protocolos, pero el juicio humano ante situaciones imprevistas de riesgo es insustituible.</p>
+        </div>
+      </div>
+
+      <h2 style="color: #1e40af; font-size: 2rem; margin-top: 3rem; margin-bottom: 1.5rem; font-weight: 700;">Economía: El Costo de la Automatización</h2>
+
+      <div style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-left: 4px solid #f59e0b; padding: 2rem; margin: 2.5rem 0; border-radius: 0.5rem;">
+        <h3 style="color: #92400e; font-size: 1.5rem; margin-bottom: 1rem; font-weight: 600;">🧠 La paradoja de Moravec</h3>
+        <p style="color: #78350f; margin-bottom: 1rem;">Es relativamente fácil hacer que las computadoras muestren un rendimiento de nivel adulto en pruebas de inteligencia o jugando a las damas, y difícil o imposible darles las habilidades de un niño de un año en cuanto a percepción y movilidad. Lo que es difícil para los humanos (matemáticas complejas) es fácil para las máquinas, pero lo que es fácil para los humanos (agarrar un objeto) es extremadamente difícil para las máquinas.</p>
+      </div>
+
+      <div style="background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%); border-left: 4px solid #10b981; padding: 2rem; margin: 2.5rem 0; border-radius: 0.5rem;">
+        <h3 style="color: #065f46; font-size: 1.5rem; margin-bottom: 1rem; font-weight: 600;">💰 Costo-Beneficio</h3>
+        <p style="color: #047857; margin-bottom: 1rem;">Desarrollar un robot autónomo que pueda hacer lo que hace un plomero costaría millones de dólares. Contratar a un ser humano sigue siendo infinitamente más económico y eficiente. La automatización llega primero donde es barata y escalable (software), no donde requiere hardware costoso y complejo.</p>
+      </div>
+
+      <div style="text-align: center; margin: 2rem 0;">
+        <img src="https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&h=600&q=80" alt="Comparación visual: robot costoso vs técnico humano eficiente y económico" style="width: 100%; max-width: 900px; height: 500px; object-fit: cover; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.15);">
+        <p style="color: #666; font-size: 0.9rem; margin-top: 0.5rem; font-style: italic;">La eficiencia económica de los técnicos humanos sigue siendo insuperable</p>
+      </div>
+
+      <h2 style="color: #1e40af; font-size: 2rem; margin-top: 3rem; margin-bottom: 1.5rem; font-weight: 700;">Conclusión: El Futuro de los Oficios en la Era de la IA</h2>
+      
+      <p>La Inteligencia Artificial sin duda se convertirá en una herramienta poderosa para estos profesionales. Podrá ayudarles a gestionar citas, optimizar rutas, diagnosticar problemas a través de imágenes o predecir fallos en sistemas. Sin embargo, el acto físico de reparar, instalar y mantener nuestro mundo construido requiere una combinación de destreza, adaptabilidad y juicio humano que ninguna máquina está cerca de replicar.</p>
+
+      <div style="background: linear-gradient(135deg, #1e40af 0%, #3730a3 100%); color: white; padding: 3rem; margin: 3rem 0; border-radius: 1rem; text-align: center;">
+        <h3 style="font-size: 2rem; margin-bottom: 1rem; font-weight: 700;">🎯 Los oficios no solo sobrevivirán a la revolución de la IA; probablemente se valorarán aún más</h3>
+        <p style="font-size: 1.2rem; margin-bottom: 2rem; opacity: 0.95; max-width: 800px; margin-left: auto; margin-right: auto;">A medida que la IA automatiza trabajos de oficina, la demanda de técnicos especializados aumentará. En Sumee App, conectamos a clientes con técnicos verificados que combinan experiencia humana con las mejores herramientas tecnológicas.</p>
+        
+        <div style="display: flex; flex-wrap: wrap; gap: 1rem; justify-content: center; margin-top: 2rem;">
+          <a
+            href="/registro"
+            style="display: inline-block; padding: 1rem 2.5rem; background: white; color: #1e40af; font-weight: 700; border-radius: 9999px; text-decoration: none; transition: all 0.3s ease; font-size: 1.1rem;"
+            onmouseover="this.style.background='#eff6ff'; this.style.transform='scale(1.05)'"
+            onmouseout="this.style.background='white'; this.style.transform='scale(1)'"
+          >
+            Regístrate Gratis
+          </a>
+          <a
+            href="/join-as-pro"
+            style="display: inline-block; padding: 1rem 2.5rem; background: rgba(255,255,255,0.2); color: white; font-weight: 700; border: 2px solid white; border-radius: 9999px; text-decoration: none; transition: all 0.3s ease; font-size: 1.1rem;"
+            onmouseover="this.style.background='rgba(255,255,255,0.3)'; this.style.transform='scale(1.05)'"
+            onmouseout="this.style.background='rgba(255,255,255,0.2)'; this.style.transform='scale(1)'"
+          >
+            Únete como Profesional
+          </a>
+        </div>
+      </div>
+
+      <div style="background: #f9fafb; border: 1px solid #e5e7eb; padding: 2rem; margin: 2rem 0; border-radius: 0.75rem; border-left: 4px solid #6b7280;">
+        <h3 style="color: #374151; margin-bottom: 1rem; font-size: 1.3rem;">📋 Puntos Clave (TL;DR)</h3>
+        <ul style="color: #4b5563; padding-left: 1.5rem; line-height: 2;">
+          <li><strong>El mundo físico es impredecible y caótico;</strong> la IA prefiere el orden digital.</li>
+          <li><strong>La robótica carece de la destreza fina y el tacto humano</strong> necesarios para trabajos especializados.</li>
+          <li><strong>La resolución de problemas en sitio requiere creatividad e improvisación</strong> que la IA no puede replicar.</li>
+          <li><strong>El trato humano y la confianza son esenciales</strong> en servicios a domicilio.</li>
+          <li><strong>Económicamente, el humano sigue siendo más eficiente</strong> para estas tareas.</li>
+        </ul>
+      </div>
+    `,
+    author: "Equipo Sumee",
+    publishDate: "2025-11-22",
+    readTime: "10 min",
+    category: "Tecnología",
+    image: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&h=630&q=80",
+    slug: "ia-no-puede-sostener-llave-inglesa",
+    views: 0,
+    tags: ["IA", "tecnología", "oficios", "futuro del trabajo", "automatización", "técnicos"],
+  },
   "diferencia-pastilla-termomagnetica-diferencial": {
     id: "7",
     title:
