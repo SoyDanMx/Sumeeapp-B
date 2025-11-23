@@ -140,6 +140,21 @@ const blogPosts: BlogPost[] = [
     views: 0,
     featured: false,
   },
+  {
+    id: "8",
+    title: "Más allá del Algoritmo: Por qué la IA no puede sostener una llave inglesa (todavía)",
+    excerpt:
+      "Descubre por qué los oficios manuales especializados están blindados ante la automatización y cómo la destreza humana sigue siendo insustituible en plomería, electricidad y construcción.",
+    author: "Equipo Sumee",
+    publishDate: "2025-11-22",
+    readTime: "10 min",
+    category: "Tecnología",
+    image:
+      "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=250&q=80",
+    slug: "ia-no-puede-sostener-llave-inglesa",
+    views: 0,
+    featured: true,
+  },
 ];
 
 const categories = [
