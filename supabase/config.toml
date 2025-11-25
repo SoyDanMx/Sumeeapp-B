@@ -20,3 +20,9 @@ entrypoint = "./functions/pro-signup/index.ts"
 # Specifies static files to be bundled with the function. Supports glob patterns.
 # For example, if you want to serve static HTML pages in your function:
 # static_files = [ "./functions/pro-signup/*.html" ]
+
+[functions.stripe-service]
+enabled = true
+verify_jwt = true
+import_map = "./functions/stripe-service/deno.json"
+entrypoint = "./functions/stripe-service/index.ts"

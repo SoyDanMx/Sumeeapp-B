@@ -32,6 +32,11 @@ import { useAuth } from "@/context/AuthContext";
 import Link from "next/link";
 import { sanitizeInput, sanitizePhone } from "@/lib/sanitize";
 import { getAddressSuggestions, formatAddressSuggestion, AddressSuggestion } from "@/lib/address-autocomplete";
+// Stripe imports (condicionales con feature flag)
+import { Elements } from "@stripe/react-stripe-js";
+import { getStripe } from "@/lib/stripe/client";
+import PaymentForm from "./PaymentForm";
+import ServicePricingSelector from "@/components/services/ServicePricingSelector";
 
 interface RequestServiceModalProps {
   isOpen: boolean;
@@ -279,8 +284,22 @@ export default function RequestServiceModal({
   const addressInputRef = useRef<HTMLDivElement>(null);
   const addressSuggestionsRef = useRef<HTMLDivElement>(null);
   const addressSearchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // Estados para controlar visibilidad del header al hacer scroll
+  const [isHeaderVisible, setIsHeaderVisible] = useState(true);
+  const [lastScrollTop, setLastScrollTop] = useState(0);
+  const contentRef = useRef<HTMLDivElement>(null);
 
-  const totalSteps = 4;
+  // Feature flag para Stripe (por defecto false = flujo actual)
+  const enableStripePayment = process.env.NEXT_PUBLIC_ENABLE_STRIPE_PAYMENT === "true";
+  
+  // Estados para Stripe (solo si feature flag activo)
+  const [paymentMethodId, setPaymentMethodId] = useState<string | null>(null);
+  const [clientSecret, setClientSecret] = useState<string | null>(null);
+  const [isInitializingPayment, setIsInitializingPayment] = useState(false);
+
+  // totalSteps dinámico: 4 sin pago, 5 con pago
+  const totalSteps = enableStripePayment ? 5 : 4;
   const prevInitialService = useRef<string | null>(null);
 
   const classifyDescription = useCallback(
@@ -471,6 +490,30 @@ export default function RequestServiceModal({
   const handleServiceSelect = (serviceId: string) => {
     setUserOverrodeService(true);
     setFormData((prev) => ({ ...prev, servicio: serviceId }));
+  };
+
+  // Nueva función para manejar selección desde el catálogo de precios
+  const handleServiceCatalogSelect = (
+    serviceName: string,
+    priceText: string,
+    fullDescription: string,
+    categoryId: string
+  ) => {
+    setUserOverrodeService(true);
+    setFormData((prev) => ({
+      ...prev,
+      servicio: categoryId,
+      descripcion: fullDescription,
+    }));
+    // Avanzar automáticamente al Paso 2 después de un breve delay para mejor UX
+    setTimeout(() => {
+      setCurrentStep(2);
+    }, 300);
+  };
+
+  // Función para saltar a descripción manual sin pre-llenar
+  const handleManualDescription = () => {
+    setCurrentStep(2);
   };
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -1012,8 +1055,10 @@ export default function RequestServiceModal({
     }
   };
 
-  // Función específica para manejar la solicitud gratuita
-  const handleFreeRequestSubmit = async () => {
+  // =========================================================================
+  // FUNCIÓN ORIGINAL (SIN PAGO) - Extraída para mantener código intacto
+  // =========================================================================
+  const handleFreeRequestSubmitWithoutPayment = async () => {
     console.log("🔍 handleFreeRequestSubmit - Iniciando proceso simplificado");
 
     // 1. Validaciones iniciales
@@ -1149,6 +1194,229 @@ export default function RequestServiceModal({
     }
   };
 
+  // =========================================================================
+  // FUNCIÓN NUEVA (CON PAGO) - Solo se usa si feature flag está activo
+  // =========================================================================
+  const handleFreeRequestSubmitWithPayment = async () => {
+    console.log("🔍 handleFreeRequestSubmitWithPayment - Iniciando proceso con pago");
+
+    // 1. Validaciones iniciales
+    if (!user || !isAuthenticated || !user.id) {
+      setError("Debes estar logueado para solicitar un servicio.");
+      return;
+    }
+
+    if (isSubmittingFreeRequest) return;
+
+    setIsSubmittingFreeRequest(true);
+    setError(null);
+
+    try {
+      // 2. Validaciones de formulario
+      const normalizedWhatsapp = ensureWhatsappIsValid();
+      if (!normalizedWhatsapp) {
+        setIsSubmittingFreeRequest(false);
+        return;
+      }
+
+      const sanitizedDescription = sanitizeInput(formData.descripcion || "");
+      if (!formData.servicio?.trim()) {
+        throw new Error("Por favor selecciona un servicio.");
+      }
+      if (sanitizedDescription.length < 20) {
+        throw new Error("Por favor describe el problema con más detalle (mínimo 20 caracteres).");
+      }
+
+      // 3. Validar que tenemos paymentMethodId
+      if (!paymentMethodId) {
+        throw new Error("No se ha proporcionado un método de pago válido. Por favor, completa el paso de pago.");
+      }
+
+      // 4. Obtener coordenadas
+      let lat = 19.4326;
+      let lng = -99.1332;
+      
+      if (selectedAddressCoords) {
+        lat = selectedAddressCoords.lat;
+        lng = selectedAddressCoords.lng;
+      }
+
+      // 5. AUTORIZACIÓN DE FONDOS (HOLD) - $350 MXN
+      console.log("💳 Autorizando fondos en Stripe...");
+      const { data: authData, error: authError } = await supabase.functions.invoke('stripe-service', {
+        body: {
+          action: 'authorize-hold',
+          paymentMethodId: paymentMethodId,
+          amount: 350, // Monto de la visita
+          userId: user.id
+        }
+      });
+
+      if (authError || !authData?.success) {
+        const errorMessage = authData?.error || authData?.stripeError || "No se pudo autorizar el pago. Verifica que tu tarjeta tenga fondos suficientes.";
+        console.error("❌ Error autorizando hold:", errorMessage);
+        throw new Error(errorMessage);
+      }
+
+      const paymentIntentId = authData.paymentIntentId;
+      console.log("✅ Fondos retenidos exitosamente. Payment Intent:", paymentIntentId);
+
+      // 6. Preparar el objeto para insertar (incluyendo datos de pago)
+      const leadPayload: any = {
+        nombre_cliente: user.user_metadata?.full_name || profile?.full_name || "Cliente",
+        whatsapp: normalizedWhatsapp,
+        descripcion_proyecto: sanitizedDescription,
+        servicio: formData.servicio,
+        ubicacion_lat: lat,
+        ubicacion_lng: lng,
+        ubicacion_direccion: formData.ubicacion || null,
+        cliente_id: user.id,
+        estado: "Nuevo",
+        // Campos opcionales
+        imagen_url: null,
+        disciplina_ia: disciplinaIa || null,
+        urgencia_ia: urgenciaIa ? Number(urgenciaIa) : null,
+        diagnostico_ia: diagnosticoIa || null,
+        // NUEVOS CAMPOS DE PAGO
+        payment_method_id: paymentMethodId,
+        payment_intent_id: paymentIntentId,
+        payment_status: 'authorized' // Estado inicial: retención exitosa
+      };
+
+      console.log("📦 Enviando INSERT a Supabase con datos de pago:", leadPayload);
+
+      // 7. EJECUCIÓN DEL INSERT (con datos de pago)
+      // @ts-ignore - Supabase types inference issue
+      const { data, error } = await supabase
+        .from('leads')
+        // @ts-ignore
+        .insert(leadPayload)
+        .select('id')
+        .single();
+
+      // 8. Manejo de Errores
+      if (error) {
+        console.error("❌ Error de Supabase:", error);
+        // Si falla el INSERT pero se autorizó el hold, idealmente deberíamos cancelar el hold
+        // Para MVP, dejamos que expire automáticamente (7 días)
+        throw new Error(error.message || "Error al guardar la solicitud en la base de datos.");
+      }
+
+      if (!data) {
+        throw new Error("La solicitud se creó pero no recibimos confirmación.");
+      }
+
+      // @ts-ignore - Supabase types inference issue
+      console.log("✅ ¡ÉXITO! Lead creado con ID:", data.id, "y pago autorizado");
+
+      // 9. Éxito: Persistir datos secundarios en background
+      if (formData.imagen) {
+        const fileExt = formData.imagen.name.split(".").pop();
+        const fileName = `${user.id}-${Date.now()}.${fileExt}`;
+        supabase.storage
+          .from("lead-images")
+          .upload(fileName, formData.imagen)
+          .then(({ error: uploadError }) => {
+            if (!uploadError) {
+              const { data: { publicUrl } } = supabase.storage
+                .from("lead-images")
+                .getPublicUrl(fileName);
+              (supabase
+                .from("leads") as any)
+                .update({ imagen_url: publicUrl, photos_urls: [publicUrl] })
+                // @ts-ignore
+                .eq("id", data.id)
+                .then(() => console.log("✅ Imagen subida y actualizada en lead"));
+            }
+          })
+          .catch((error: any) => console.warn("⚠️ Error al subir imagen (no crítico):", error));
+      }
+      persistWhatsapp(normalizedWhatsapp).catch(console.warn);
+
+      // 10. Navegación y Cierre
+      resetModal();
+      onClose();
+      
+      setTimeout(() => {
+        // @ts-ignore
+        router.push(`/solicitudes/${data.id}`);
+        if (onLeadCreated) onLeadCreated();
+      }, 100);
+
+    } catch (err: any) {
+      console.error("💥 Error en Frontend (con pago):", err);
+      
+      let msg = err.message || "Error desconocido";
+      if (msg.includes("fetch") || msg.includes("network")) msg = "Error de conexión. Verifica tu internet.";
+      if (msg.includes("RLS") || msg.includes("policy")) msg = "No tienes permisos. Cierra sesión y vuelve a entrar.";
+      if (msg.includes("tarjeta") || msg.includes("rechazada") || msg.includes("fondos")) {
+        // Mantener mensaje de Stripe tal cual
+      }
+      
+      setError(msg);
+    } finally {
+      setIsSubmittingFreeRequest(false);
+    }
+  };
+
+  // =========================================================================
+  // FUNCIÓN PRINCIPAL - Elige entre con o sin pago según feature flag
+  // =========================================================================
+  const handleFreeRequestSubmit = async () => {
+    // Validación adicional: Si feature flag está activo, DEBE haber paymentMethodId
+    if (enableStripePayment) {
+      if (!paymentMethodId) {
+        setError("Debes completar el paso de pago antes de enviar la solicitud.");
+        // Regresar al paso de pago si no está completo
+        setCurrentStep(4);
+        return;
+      }
+      return handleFreeRequestSubmitWithPayment();
+    } else {
+      return handleFreeRequestSubmitWithoutPayment();
+    }
+  };
+
+  // =========================================================================
+  // useEffect para inicializar SetupIntent cuando se llega al paso de pago
+  // =========================================================================
+  useEffect(() => {
+    if (!enableStripePayment) return;
+    if (currentStep !== 4) return; // Solo en paso 4 (Pago)
+    if (clientSecret) return; // Ya inicializado
+    if (!user?.id) return;
+    if (isInitializingPayment) return; // Evitar múltiples llamadas
+
+    const initializePayment = async () => {
+      setIsInitializingPayment(true);
+      setError(null);
+
+      try {
+        console.log("💳 Inicializando SetupIntent para guardar tarjeta...");
+        const { data, error } = await supabase.functions.invoke('stripe-service', {
+          body: {
+            action: 'create-setup-intent',
+            userId: user.id
+          }
+        });
+
+        if (error || !data?.clientSecret) {
+          throw new Error(error?.message || "Error iniciando el sistema de pagos.");
+        }
+
+        console.log("✅ SetupIntent creado, clientSecret obtenido");
+        setClientSecret(data.clientSecret);
+      } catch (err: any) {
+        console.error("❌ Error inicializando Stripe:", err);
+        setError("No se pudo cargar el sistema de pagos. Por favor, recarga la página e intenta de nuevo.");
+      } finally {
+        setIsInitializingPayment(false);
+      }
+    };
+
+    initializePayment();
+  }, [currentStep, enableStripePayment, user?.id, clientSecret, isInitializingPayment]);
+
   const nextStep = () => {
     if (currentStep === 2 && !formData.descripcion.trim()) {
       setError("Por favor describe el problema con más detalle.");
@@ -1213,6 +1481,12 @@ export default function RequestServiceModal({
       aiDebounceRef.current = null;
     }
     lastClassifiedDescription.current = "";
+    // Limpiar estados de Stripe (si feature flag activo)
+    if (enableStripePayment) {
+      setPaymentMethodId(null);
+      setClientSecret(null);
+      setIsInitializingPayment(false);
+    }
   };
 
   const handleClose = () => {
@@ -1228,36 +1502,40 @@ export default function RequestServiceModal({
     <>
       <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex justify-center items-center p-1 md:p-3 z-50 overflow-y-auto">
       <div className="bg-white rounded-lg md:rounded-xl shadow-2xl w-full max-w-3xl max-h-[98vh] md:max-h-[96vh] overflow-hidden my-auto flex flex-col">
-        {/* Header Compacto */}
-        <div className="bg-gradient-to-r from-blue-600 via-blue-700 to-purple-700 text-white p-3 md:p-4 sticky top-0 z-10 shadow-lg">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center space-x-2 flex-1 min-w-0">
-              <div className="w-8 h-8 md:w-10 md:h-10 bg-white/20 rounded-lg flex items-center justify-center flex-shrink-0 backdrop-blur-sm">
+        {/* Header Compacto - Se oculta al hacer scroll */}
+        <div 
+          className={`bg-gradient-to-r from-blue-600 via-blue-700 to-purple-700 text-white p-2 md:p-3 flex-shrink-0 shadow-lg transition-transform duration-300 ${
+            isHeaderVisible ? 'translate-y-0' : '-translate-y-full'
+          }`}
+        >
+          <div className="flex items-center justify-between mb-1 md:mb-1.5">
+            <div className="flex items-center space-x-1.5 md:space-x-2 flex-1 min-w-0">
+              <div className="w-7 h-7 md:w-8 md:h-8 bg-white/20 rounded-lg flex items-center justify-center flex-shrink-0 backdrop-blur-sm">
                 <FontAwesomeIcon
                   icon={faWrench}
-                  className="text-sm md:text-lg"
+                  className="text-xs md:text-sm"
                 />
               </div>
               <div className="min-w-0 flex-1">
-                <h2 className="text-sm md:text-lg font-bold truncate">
+                <h2 className="text-xs md:text-sm lg:text-base font-bold truncate">
                   Solicitar Servicio
                 </h2>
-                <p className="text-blue-100 text-[10px] md:text-xs opacity-90">
+                <p className="text-blue-100 text-[9px] md:text-[10px] opacity-90">
                   Paso {currentStep} de {totalSteps}
                 </p>
               </div>
             </div>
             <button
               onClick={handleClose}
-              className="text-white/80 hover:text-white transition-colors flex-shrink-0 ml-2 p-1 rounded-lg hover:bg-white/10"
+              className="text-white/80 hover:text-white transition-colors flex-shrink-0 ml-1.5 p-0.5 md:p-1 rounded-lg hover:bg-white/10"
               aria-label="Cerrar"
             >
-              <FontAwesomeIcon icon={faTimes} className="text-base md:text-lg" />
+              <FontAwesomeIcon icon={faTimes} className="text-sm md:text-base" />
             </button>
           </div>
 
           {/* Progress Bar Delgada */}
-          <div className="mt-1.5">
+          <div className="mt-1">
             <div className="w-full bg-white/20 rounded-full h-0.5 md:h-1">
               <div
                 className="bg-white h-0.5 md:h-1 rounded-full transition-all duration-300 shadow-sm"
@@ -1268,57 +1546,37 @@ export default function RequestServiceModal({
         </div>
 
         {/* Content Compacto */}
-        <div className="p-4 md:p-6 flex-1 overflow-y-auto">
+        <div 
+          ref={contentRef}
+          className="p-2 md:p-3 lg:p-4 flex-1 overflow-y-auto"
+          onScroll={(e) => {
+            const currentScrollTop = e.currentTarget.scrollTop;
+            // Ocultar header al hacer scroll hacia abajo, mostrar al hacer scroll hacia arriba
+            if (currentScrollTop > lastScrollTop && currentScrollTop > 50) {
+              setIsHeaderVisible(false);
+            } else if (currentScrollTop < lastScrollTop) {
+              setIsHeaderVisible(true);
+            }
+            setLastScrollTop(currentScrollTop);
+          }}
+        >
           {currentStep === 1 && (
-            <div className="space-y-3">
-              <div className="text-center mb-3">
-                <h3 className="text-base md:text-xl font-bold text-gray-900 mb-1">
+            <div className="space-y-1 md:space-y-1.5">
+              <div className="text-center mb-1 md:mb-1.5">
+                <h3 className="text-[10px] md:text-xs lg:text-sm font-bold text-gray-900 mb-0.5">
                   ¿Qué servicio necesitas?
                 </h3>
-                <p className="text-xs md:text-sm text-gray-600">
-                  Selecciona la categoría que mejor describa tu problema
+                <p className="text-[8px] md:text-[9px] lg:text-[10px] text-gray-600">
+                  Explora nuestros servicios con precios estandarizados
                 </p>
               </div>
 
-              {/* Grid Compacto de Servicios */}
-              <div className="max-h-[60vh] overflow-y-auto pr-1">
-                <div className="grid grid-cols-5 md:grid-cols-6 gap-2">
-                  {serviceCategories.map((service) => (
-                    <button
-                      key={service.id}
-                      onClick={() => handleServiceSelect(service.id)}
-                      className={`group relative p-2.5 rounded-lg border-2 transition-all duration-200 hover:scale-105 ${
-                        formData.servicio === service.id
-                          ? "border-blue-500 bg-blue-50 shadow-md ring-2 ring-blue-200"
-                          : "border-gray-200 hover:border-blue-300 hover:bg-gray-50"
-                      }`}
-                    >
-                      <div className="text-center">
-                        <div
-                          className={`w-8 h-8 md:w-10 md:h-10 ${service.bgColor} rounded-lg flex items-center justify-center mx-auto mb-1.5 transition-transform group-hover:scale-110 ${
-                            formData.servicio === service.id ? "ring-2 ring-blue-300" : ""
-                          }`}
-                        >
-                          <FontAwesomeIcon
-                            icon={service.icon}
-                            className={`text-sm md:text-base ${service.color}`}
-                          />
-                        </div>
-                        <span className={`text-[9px] md:text-[10px] font-medium leading-tight block ${
-                          formData.servicio === service.id ? "text-blue-700 font-semibold" : "text-gray-700"
-                        }`}>
-                          {service.name}
-                        </span>
-                        {formData.servicio === service.id && (
-                          <div className="absolute -top-1 -right-1 w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
-                            <FontAwesomeIcon icon={faCheck} className="text-white text-[8px]" />
-                          </div>
-                        )}
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              </div>
+              {/* Nuevo Componente de Catálogo de Precios */}
+              <ServicePricingSelector
+                onServiceSelect={handleServiceCatalogSelect}
+                preSelectedCategory={formData.servicio || undefined}
+                onManualDescription={handleManualDescription}
+              />
             </div>
           )}
 
@@ -1613,7 +1871,66 @@ export default function RequestServiceModal({
             </div>
           )}
 
-          {currentStep === 4 && (
+          {/* Paso 4: Pago (solo si feature flag activo) */}
+          {enableStripePayment && currentStep === 4 && (
+            <div className="space-y-3">
+              <div className="text-center mb-3">
+                <h3 className="text-base md:text-xl font-bold text-gray-900 mb-1">
+                  Método de Pago
+                </h3>
+                <p className="text-xs md:text-sm text-gray-600">
+                  Se realizará una <strong>retención temporal de $350 MXN</strong> por la visita técnica.
+                  <br />
+                  <span className="text-[10px] text-gray-500">
+                    Solo se cobrará si el servicio se concreta.
+                  </span>
+                </p>
+              </div>
+
+              {isInitializingPayment ? (
+                <div className="flex flex-col items-center justify-center p-8 space-y-3">
+                  <FontAwesomeIcon icon={faSpinner} spin className="text-3xl text-blue-600" />
+                  <p className="text-sm text-gray-600">Cargando sistema de pagos...</p>
+                </div>
+              ) : clientSecret ? (
+                <Elements
+                  stripe={getStripe()}
+                  options={{
+                    clientSecret,
+                    appearance: {
+                      theme: 'stripe',
+                    },
+                    locale: 'es',
+                  }}
+                >
+                  <PaymentForm
+                    onSuccess={(pmId) => {
+                      console.log("✅ PaymentMethod obtenido:", pmId);
+                      setPaymentMethodId(pmId);
+                      setError(null);
+                      setCurrentStep(5); // Avanzar al resumen
+                    }}
+                    onError={(msg) => {
+                      console.error("❌ Error en PaymentForm:", msg);
+                      setError(msg);
+                    }}
+                    amount={350}
+                    userEmail={user?.email || profile?.email || undefined}
+                    userPhone={whatsappValidation.normalized || formData.whatsapp || profile?.phone || profile?.whatsapp || undefined}
+                  />
+                </Elements>
+              ) : (
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                  <p className="text-sm text-yellow-800">
+                    No se pudo cargar el sistema de pagos. Por favor, recarga la página e intenta de nuevo.
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Paso 4 o 5: Confirmación (depende de si hay pago) */}
+          {currentStep === (enableStripePayment ? 5 : 4) && (
             <div className="space-y-3">
               <div className="text-center mb-3">
                 <h3 className="text-base md:text-xl font-bold text-gray-900 mb-1">
@@ -1697,6 +2014,21 @@ export default function RequestServiceModal({
                     <span className="text-gray-600">{formData.ubicacion || "CDMX"}</span>
                   </span>
                 </div>
+                {/* Información de pago (solo si feature flag activo y paymentMethodId existe) */}
+                {enableStripePayment && paymentMethodId && (
+                  <div className="flex items-center space-x-2 text-sm mt-2 pt-2 border-t border-gray-200">
+                    <FontAwesomeIcon
+                      icon={faCheck}
+                      className="text-green-600 text-xs"
+                    />
+                    <span className="text-gray-700">
+                      <span className="font-semibold">Pago:</span>{" "}
+                      <span className="text-gray-600">
+                        Tarjeta guardada (Pre-autorización $350 MXN)
+                      </span>
+                    </span>
+                  </div>
+                )}
               </div>
 
             </div>
@@ -1726,7 +2058,8 @@ export default function RequestServiceModal({
                 disabled={
                   !formData.servicio ||
                   (currentStep === 2 && !formData.descripcion.trim()) ||
-                  (currentStep === 3 && !whatsappValidation.isValid)
+                  (currentStep === 3 && !whatsappValidation.isValid) ||
+                  (enableStripePayment && currentStep === 4 && !paymentMethodId)
                 }
                 className="flex items-center justify-center space-x-1.5 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed font-semibold shadow-md text-xs md:text-sm transition-colors"
               >
