@@ -95,14 +95,20 @@ if (typeof window !== "undefined") {
   window.addEventListener("unhandledrejection", (event) => {
     const errorMessage =
       event.reason?.message || event.reason?.toString() || "";
+    const errorCode = event.reason?.code || event.reason?.status || "";
+    
     if (
       typeof errorMessage === "string" &&
       (errorMessage.includes("Invalid Refresh Token") ||
         errorMessage.includes("Refresh Token Not Found") ||
-        errorMessage.includes("refresh_token_not_found"))
+        errorMessage.includes("refresh_token_not_found") ||
+        errorMessage.includes("AuthApiError") ||
+        errorCode === "refresh_token_not_found")
     ) {
       // Prevenir que el error se muestre en la consola
       event.preventDefault();
+      console.log("🔄 Limpiando tokens inválidos automáticamente...");
+      
       // Limpiar tokens inválidos automáticamente
       const authKeys = Object.keys(localStorage).filter(
         (key) =>
@@ -112,7 +118,13 @@ if (typeof window !== "undefined") {
       );
       if (authKeys.length > 0) {
         authKeys.forEach((key) => localStorage.removeItem(key));
+        console.log("✅ Tokens limpiados. Por favor, inicia sesión nuevamente.");
       }
+      
+      // Intentar cerrar sesión silenciosamente
+      supabase.auth.signOut({ scope: 'local' }).catch(() => {
+        // Ignorar errores al hacer signOut
+      });
     }
   });
 
@@ -120,6 +132,7 @@ if (typeof window !== "undefined") {
   supabase.auth.onAuthStateChange(async (event, session) => {
     // Si la sesión es null después de un TOKEN_REFRESHED, podría indicar un error
     if (event === "TOKEN_REFRESHED" && !session) {
+      console.log("🔄 TOKEN_REFRESHED sin sesión - limpiando tokens...");
       // Limpiar datos de autenticación silenciosamente
       const authKeys = Object.keys(localStorage).filter(
         (key) =>
@@ -143,6 +156,22 @@ if (typeof window !== "undefined") {
       );
       if (authKeys.length > 0) {
         authKeys.forEach((key) => localStorage.removeItem(key));
+      }
+    }
+    
+    // Manejar errores de token explícitamente
+    if (event === "TOKEN_REFRESHED" && session) {
+      // Verificar que la sesión tenga un refresh_token válido
+      if (!session.refresh_token) {
+        console.warn("⚠️ Sesión sin refresh_token - limpiando...");
+        const authKeys = Object.keys(localStorage).filter(
+          (key) =>
+            key.includes("supabase") ||
+            key.includes("sb-") ||
+            key.includes("auth-token")
+        );
+        authKeys.forEach((key) => localStorage.removeItem(key));
+        await supabase.auth.signOut({ scope: 'local' });
       }
     }
   });

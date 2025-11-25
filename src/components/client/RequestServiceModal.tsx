@@ -32,10 +32,6 @@ import { useAuth } from "@/context/AuthContext";
 import Link from "next/link";
 import { sanitizeInput, sanitizePhone } from "@/lib/sanitize";
 import { getAddressSuggestions, formatAddressSuggestion, AddressSuggestion } from "@/lib/address-autocomplete";
-// Stripe imports (condicionales con feature flag)
-import { Elements } from "@stripe/react-stripe-js";
-import { getStripe } from "@/lib/stripe/client";
-import PaymentForm from "./PaymentForm";
 import ServicePricingSelector from "@/components/services/ServicePricingSelector";
 
 interface RequestServiceModalProps {
@@ -290,16 +286,8 @@ export default function RequestServiceModal({
   const [lastScrollTop, setLastScrollTop] = useState(0);
   const contentRef = useRef<HTMLDivElement>(null);
 
-  // Feature flag para Stripe (por defecto false = flujo actual)
-  const enableStripePayment = process.env.NEXT_PUBLIC_ENABLE_STRIPE_PAYMENT === "true";
-  
-  // Estados para Stripe (solo si feature flag activo)
-  const [paymentMethodId, setPaymentMethodId] = useState<string | null>(null);
-  const [clientSecret, setClientSecret] = useState<string | null>(null);
-  const [isInitializingPayment, setIsInitializingPayment] = useState(false);
-
-  // totalSteps dinámico: 4 sin pago, 5 con pago
-  const totalSteps = enableStripePayment ? 5 : 4;
+  // totalSteps: 4 pasos (sin pago - Stripe se implementará después)
+  const totalSteps = 4;
   const prevInitialService = useRef<string | null>(null);
 
   const classifyDescription = useCallback(
@@ -1195,9 +1183,13 @@ export default function RequestServiceModal({
   };
 
   // =========================================================================
-  // FUNCIÓN NUEVA (CON PAGO) - Solo se usa si feature flag está activo
+  // FUNCIÓN NUEVA (CON PAGO) - Comentada (Stripe se implementará después)
   // =========================================================================
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleFreeRequestSubmitWithPayment = async () => {
+    // Esta función está deshabilitada temporalmente - Stripe se implementará después
+    throw new Error("Función de pago deshabilitada temporalmente");
+    /* COMENTADO TEMPORALMENTE - STRIPE SE IMPLEMENTARÁ DESPUÉS
     console.log("🔍 handleFreeRequestSubmitWithPayment - Iniciando proceso con pago");
 
     // 1. Validaciones iniciales
@@ -1283,139 +1275,21 @@ export default function RequestServiceModal({
         payment_status: 'authorized' // Estado inicial: retención exitosa
       };
 
-      console.log("📦 Enviando INSERT a Supabase con datos de pago:", leadPayload);
-
-      // 7. EJECUCIÓN DEL INSERT (con datos de pago)
-      // @ts-ignore - Supabase types inference issue
-      const { data, error } = await supabase
-        .from('leads')
-        // @ts-ignore
-        .insert(leadPayload)
-        .select('id')
-        .single();
-
-      // 8. Manejo de Errores
-      if (error) {
-        console.error("❌ Error de Supabase:", error);
-        // Si falla el INSERT pero se autorizó el hold, idealmente deberíamos cancelar el hold
-        // Para MVP, dejamos que expire automáticamente (7 días)
-        throw new Error(error.message || "Error al guardar la solicitud en la base de datos.");
-      }
-
-      if (!data) {
-        throw new Error("La solicitud se creó pero no recibimos confirmación.");
-      }
-
-      // @ts-ignore - Supabase types inference issue
-      console.log("✅ ¡ÉXITO! Lead creado con ID:", data.id, "y pago autorizado");
-
-      // 9. Éxito: Persistir datos secundarios en background
-      if (formData.imagen) {
-        const fileExt = formData.imagen.name.split(".").pop();
-        const fileName = `${user.id}-${Date.now()}.${fileExt}`;
-        supabase.storage
-          .from("lead-images")
-          .upload(fileName, formData.imagen)
-          .then(({ error: uploadError }) => {
-            if (!uploadError) {
-              const { data: { publicUrl } } = supabase.storage
-                .from("lead-images")
-                .getPublicUrl(fileName);
-              (supabase
-                .from("leads") as any)
-                .update({ imagen_url: publicUrl, photos_urls: [publicUrl] })
-                // @ts-ignore
-                .eq("id", data.id)
-                .then(() => console.log("✅ Imagen subida y actualizada en lead"));
-            }
-          })
-          .catch((error: any) => console.warn("⚠️ Error al subir imagen (no crítico):", error));
-      }
-      persistWhatsapp(normalizedWhatsapp).catch(console.warn);
-
-      // 10. Navegación y Cierre
-      resetModal();
-      onClose();
-      
-      setTimeout(() => {
-        // @ts-ignore
-        router.push(`/solicitudes/${data.id}`);
-        if (onLeadCreated) onLeadCreated();
-      }, 100);
-
-    } catch (err: any) {
-      console.error("💥 Error en Frontend (con pago):", err);
-      
-      let msg = err.message || "Error desconocido";
-      if (msg.includes("fetch") || msg.includes("network")) msg = "Error de conexión. Verifica tu internet.";
-      if (msg.includes("RLS") || msg.includes("policy")) msg = "No tienes permisos. Cierra sesión y vuelve a entrar.";
-      if (msg.includes("tarjeta") || msg.includes("rechazada") || msg.includes("fondos")) {
-        // Mantener mensaje de Stripe tal cual
-      }
-      
-      setError(msg);
-    } finally {
-      setIsSubmittingFreeRequest(false);
-    }
+      // console.log("📦 Enviando INSERT a Supabase con datos de pago:", leadPayload);
+      // ... resto del código comentado ...
+    */
   };
 
   // =========================================================================
-  // FUNCIÓN PRINCIPAL - Elige entre con o sin pago según feature flag
+  // FUNCIÓN PRINCIPAL - Flujo sin pago (Stripe se implementará después)
   // =========================================================================
   const handleFreeRequestSubmit = async () => {
-    // Validación adicional: Si feature flag está activo, DEBE haber paymentMethodId
-    if (enableStripePayment) {
-      if (!paymentMethodId) {
-        setError("Debes completar el paso de pago antes de enviar la solicitud.");
-        // Regresar al paso de pago si no está completo
-        setCurrentStep(4);
-        return;
-      }
-      return handleFreeRequestSubmitWithPayment();
-    } else {
-      return handleFreeRequestSubmitWithoutPayment();
-    }
+    return handleFreeRequestSubmitWithoutPayment();
   };
 
   // =========================================================================
-  // useEffect para inicializar SetupIntent cuando se llega al paso de pago
+  // useEffect para inicializar SetupIntent - Removido (Stripe se implementará después)
   // =========================================================================
-  useEffect(() => {
-    if (!enableStripePayment) return;
-    if (currentStep !== 4) return; // Solo en paso 4 (Pago)
-    if (clientSecret) return; // Ya inicializado
-    if (!user?.id) return;
-    if (isInitializingPayment) return; // Evitar múltiples llamadas
-
-    const initializePayment = async () => {
-      setIsInitializingPayment(true);
-      setError(null);
-
-      try {
-        console.log("💳 Inicializando SetupIntent para guardar tarjeta...");
-        const { data, error } = await supabase.functions.invoke('stripe-service', {
-          body: {
-            action: 'create-setup-intent',
-            userId: user.id
-          }
-        });
-
-        if (error || !data?.clientSecret) {
-          throw new Error(error?.message || "Error iniciando el sistema de pagos.");
-        }
-
-        console.log("✅ SetupIntent creado, clientSecret obtenido");
-        setClientSecret(data.clientSecret);
-      } catch (err: any) {
-        console.error("❌ Error inicializando Stripe:", err);
-        setError("No se pudo cargar el sistema de pagos. Por favor, recarga la página e intenta de nuevo.");
-      } finally {
-        setIsInitializingPayment(false);
-      }
-    };
-
-    initializePayment();
-  }, [currentStep, enableStripePayment, user?.id, clientSecret, isInitializingPayment]);
 
   const nextStep = () => {
     if (currentStep === 2 && !formData.descripcion.trim()) {
@@ -1481,12 +1355,7 @@ export default function RequestServiceModal({
       aiDebounceRef.current = null;
     }
     lastClassifiedDescription.current = "";
-    // Limpiar estados de Stripe (si feature flag activo)
-    if (enableStripePayment) {
-      setPaymentMethodId(null);
-      setClientSecret(null);
-      setIsInitializingPayment(false);
-    }
+    // Limpiar estados de Stripe - Removido (Stripe se implementará después)
   };
 
   const handleClose = () => {
@@ -1871,66 +1740,8 @@ export default function RequestServiceModal({
             </div>
           )}
 
-          {/* Paso 4: Pago (solo si feature flag activo) */}
-          {enableStripePayment && currentStep === 4 && (
-            <div className="space-y-3">
-              <div className="text-center mb-3">
-                <h3 className="text-base md:text-xl font-bold text-gray-900 mb-1">
-                  Método de Pago
-                </h3>
-                <p className="text-xs md:text-sm text-gray-600">
-                  Se realizará una <strong>retención temporal de $350 MXN</strong> por la visita técnica.
-                  <br />
-                  <span className="text-[10px] text-gray-500">
-                    Solo se cobrará si el servicio se concreta.
-                  </span>
-                </p>
-              </div>
-
-              {isInitializingPayment ? (
-                <div className="flex flex-col items-center justify-center p-8 space-y-3">
-                  <FontAwesomeIcon icon={faSpinner} spin className="text-3xl text-blue-600" />
-                  <p className="text-sm text-gray-600">Cargando sistema de pagos...</p>
-                </div>
-              ) : clientSecret ? (
-                <Elements
-                  stripe={getStripe()}
-                  options={{
-                    clientSecret,
-                    appearance: {
-                      theme: 'stripe',
-                    },
-                    locale: 'es',
-                  }}
-                >
-                  <PaymentForm
-                    onSuccess={(pmId) => {
-                      console.log("✅ PaymentMethod obtenido:", pmId);
-                      setPaymentMethodId(pmId);
-                      setError(null);
-                      setCurrentStep(5); // Avanzar al resumen
-                    }}
-                    onError={(msg) => {
-                      console.error("❌ Error en PaymentForm:", msg);
-                      setError(msg);
-                    }}
-                    amount={350}
-                    userEmail={user?.email || profile?.email || undefined}
-                    userPhone={whatsappValidation.normalized || formData.whatsapp || profile?.phone || profile?.whatsapp || undefined}
-                  />
-                </Elements>
-              ) : (
-                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                  <p className="text-sm text-yellow-800">
-                    No se pudo cargar el sistema de pagos. Por favor, recarga la página e intenta de nuevo.
-                  </p>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Paso 4 o 5: Confirmación (depende de si hay pago) */}
-          {currentStep === (enableStripePayment ? 5 : 4) && (
+          {/* Paso 4: Confirmación */}
+          {currentStep === 4 && (
             <div className="space-y-3">
               <div className="text-center mb-3">
                 <h3 className="text-base md:text-xl font-bold text-gray-900 mb-1">
@@ -2014,21 +1825,7 @@ export default function RequestServiceModal({
                     <span className="text-gray-600">{formData.ubicacion || "CDMX"}</span>
                   </span>
                 </div>
-                {/* Información de pago (solo si feature flag activo y paymentMethodId existe) */}
-                {enableStripePayment && paymentMethodId && (
-                  <div className="flex items-center space-x-2 text-sm mt-2 pt-2 border-t border-gray-200">
-                    <FontAwesomeIcon
-                      icon={faCheck}
-                      className="text-green-600 text-xs"
-                    />
-                    <span className="text-gray-700">
-                      <span className="font-semibold">Pago:</span>{" "}
-                      <span className="text-gray-600">
-                        Tarjeta guardada (Pre-autorización $350 MXN)
-                      </span>
-                    </span>
-                  </div>
-                )}
+                {/* Información de pago - Removida (Stripe se implementará después) */}
               </div>
 
             </div>
@@ -2055,12 +1852,11 @@ export default function RequestServiceModal({
             {currentStep < totalSteps ? (
               <button
                 onClick={nextStep}
-                disabled={
-                  !formData.servicio ||
-                  (currentStep === 2 && !formData.descripcion.trim()) ||
-                  (currentStep === 3 && !whatsappValidation.isValid) ||
-                  (enableStripePayment && currentStep === 4 && !paymentMethodId)
-                }
+                  disabled={
+                    !formData.servicio ||
+                    (currentStep === 2 && !formData.descripcion.trim()) ||
+                    (currentStep === 3 && !whatsappValidation.isValid)
+                  }
                 className="flex items-center justify-center space-x-1.5 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed font-semibold shadow-md text-xs md:text-sm transition-colors"
               >
                 <span>Siguiente</span>

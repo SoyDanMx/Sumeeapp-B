@@ -201,6 +201,14 @@ export interface Lead {
   quote_sent_by?: string | null;
   quote_accepted_at?: string | null;
   quote_accepted_by?: string | null;
+  // Campos de pago para tarifa de visita ($350 MXN)
+  payment_method_id?: string | null;
+  payment_intent_id?: string | null;
+  payment_status?: 'pending' | 'authorized' | 'captured' | 'failed' | 'cancelled' | null;
+  // Alias con nombres más descriptivos (si existen en BD)
+  inspection_fee_payment_method_id?: string | null;
+  inspection_fee_payment_intent_id?: string | null;
+  inspection_fee_status?: 'pending' | 'authorized' | 'captured' | 'failed' | 'cancelled' | null;
   // Campos de control de precios (sugerencia por IA)
   ai_suggested_price_min?: number | null;
   ai_suggested_price_max?: number | null;
