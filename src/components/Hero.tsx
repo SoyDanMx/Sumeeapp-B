@@ -4,6 +4,7 @@
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { useUser } from "@/hooks/useUser";
 import {
   faSearch,
   faMapMarkerAlt,
@@ -33,9 +34,10 @@ import {
 export const Hero = () => {
   const [postalCode, setPostalCode] = useState("");
   const [isPostalCodeValid, setIsPostalCodeValid] = useState(false);
-  const [isLoadingUser, setIsLoadingUser] = useState(true);
   const [isUsingCurrentLocation, setIsUsingCurrentLocation] = useState(false);
-  const [user, setUser] = useState<any | null>(null);
+  
+  // Usar el hook useUser en el nivel superior del componente (regla de hooks de React)
+  const { user, isLoading: isLoadingUser } = useUser();
   const [imageError, setImageError] = useState(false);
   const [locationResult, setLocationResult] = useState<LocationResult | null>(
     null
@@ -59,28 +61,8 @@ export const Hero = () => {
     return isValidMexicanPostalCode(code);
   };
 
-  useEffect(() => {
-    const fetchUser = async () => {
-      setIsLoadingUser(true);
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      setUser(user);
-      setIsLoadingUser(false);
-    };
-
-    fetchUser();
-
-    const { data: authListener } = supabase.auth.onAuthStateChange(
-      (_, session) => {
-        setUser(session?.user ?? null);
-      }
-    );
-
-    return () => {
-      authListener.subscription.unsubscribe();
-    };
-  }, []);
+  // El hook useUser ya maneja la obtención del usuario y los cambios de autenticación
+  // No necesitamos suscripción adicional ni fetch manual
 
   // Validar código postal cuando cambie
   useEffect(() => {
@@ -93,8 +75,6 @@ export const Hero = () => {
       return;
     }
 
-    setIsLoadingUser(true);
-
     if (!user) {
       alert("Por favor, regístrate o inicia sesión para buscar servicios.");
       router.push("/login?redirect=/professionals");
@@ -102,7 +82,6 @@ export const Hero = () => {
       // Redirigir directamente a profesionales (ya no hay verificación de membership)
       router.push(`/professionals?cp=${encodeURIComponent(postalCode)}`);
     }
-    setIsLoadingUser(false);
   };
 
   const handlePostalCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
