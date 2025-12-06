@@ -128,53 +128,40 @@ if (typeof window !== "undefined") {
     }
   });
 
-  // Listener para errores de autenticación
-  supabase.auth.onAuthStateChange(async (event, session) => {
-    // Si la sesión es null después de un TOKEN_REFRESHED, podría indicar un error
-    if (event === "TOKEN_REFRESHED" && !session) {
-      console.log("🔄 TOKEN_REFRESHED sin sesión - limpiando tokens...");
-      // Limpiar datos de autenticación silenciosamente
-      const authKeys = Object.keys(localStorage).filter(
-        (key) =>
-          key.includes("supabase") ||
-          key.includes("sb-") ||
-          key.includes("auth-token")
-      );
-      if (authKeys.length > 0) {
-        authKeys.forEach((key) => localStorage.removeItem(key));
-      }
-    }
-
-    // Manejar errores de refresh token en eventos de error
-    if (event === "SIGNED_OUT" || (!session && event !== "INITIAL_SESSION")) {
-      // Limpiar tokens residuales
-      const authKeys = Object.keys(localStorage).filter(
-        (key) =>
-          key.includes("supabase") ||
-          key.includes("sb-") ||
-          key.includes("auth-token")
-      );
-      if (authKeys.length > 0) {
-        authKeys.forEach((key) => localStorage.removeItem(key));
-      }
-    }
-    
-    // Manejar errores de token explícitamente
-    if (event === "TOKEN_REFRESHED" && session) {
-      // Verificar que la sesión tenga un refresh_token válido
-      if (!session.refresh_token) {
-        console.warn("⚠️ Sesión sin refresh_token - limpiando...");
+  // Listener optimizado: Solo maneja limpieza de tokens, no lógica de negocio
+  // Se ejecuta solo una vez al inicializar el cliente, no en cada cambio de estado
+  let authCleanupListener: ReturnType<typeof supabase.auth.onAuthStateChange> | null = null;
+  
+  // Solo registrar listener si no existe ya (evitar múltiples suscripciones)
+  if (!authCleanupListener) {
+    authCleanupListener = supabase.auth.onAuthStateChange(async (event, session) => {
+      // Solo manejar eventos críticos de limpieza, ignorar eventos normales
+      if (event === "TOKEN_REFRESHED" && !session) {
+        // Limpiar tokens inválidos silenciosamente
         const authKeys = Object.keys(localStorage).filter(
           (key) =>
             key.includes("supabase") ||
             key.includes("sb-") ||
             key.includes("auth-token")
         );
-        authKeys.forEach((key) => localStorage.removeItem(key));
-        await supabase.auth.signOut({ scope: 'local' });
+        if (authKeys.length > 0) {
+          authKeys.forEach((key) => localStorage.removeItem(key));
+        }
+      } else if (event === "SIGNED_OUT") {
+        // Limpiar tokens al cerrar sesión
+        const authKeys = Object.keys(localStorage).filter(
+          (key) =>
+            key.includes("supabase") ||
+            key.includes("sb-") ||
+            key.includes("auth-token")
+        );
+        if (authKeys.length > 0) {
+          authKeys.forEach((key) => localStorage.removeItem(key));
+        }
       }
-    }
-  });
+      // Ignorar otros eventos - los hooks se encargan de ellos
+    });
+  }
 
   // Interceptar errores de fetch para detectar errores de refresh token
   const originalFetch = window.fetch;
