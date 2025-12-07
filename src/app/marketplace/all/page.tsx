@@ -89,7 +89,8 @@ export default function MarketplaceAllPage() {
                 if (data) {
                     const mappedProducts: MarketplaceProduct[] = (data as any[]).map(item => {
                         const sellerData = Array.isArray(item.seller) ? item.seller[0] : item.seller;
-                        const isOfficialStore = item.title.includes("Truper") || item.title.includes("Pretul");
+                        // Identify official Sumee Supply products by contact phone
+                        const isOfficialStore = item.contact_phone === '5636741156';
 
                         return {
                             ...item,

@@ -106,3 +106,4 @@ La solución propuesta es **EXCELENTE** para simplificar el código, pero **SOLO
 **Recomendación final**: Implementar la solución propuesta + timeout de red + verificación de trigger.
 
 
+

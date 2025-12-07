@@ -86,6 +86,7 @@ export interface MarketplaceProduct {
   views_count: number;
   likes_count: number;
   contact_phone?: string | null;
+  power_type?: string | null; // "electric", "cordless", "manual", etc.
   // Campos join (no en tabla)
   seller?: {
     full_name: string;

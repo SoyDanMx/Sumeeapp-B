@@ -62,3 +62,4 @@ $$;
 GRANT EXECUTE ON FUNCTION public.create_lead_simple TO anon, authenticated;
 
 
+

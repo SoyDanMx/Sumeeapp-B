@@ -25,15 +25,12 @@ import {
 import Link from "next/link";
 import { MarketplaceProduct } from "@/types/supabase";
 import ProductModal from "@/components/marketplace/ProductModal";
+import { MarketplaceSEO } from "@/components/marketplace/MarketplaceSEO";
+import { StructuredData } from "@/components/marketplace/StructuredData";
 import { supabase } from "@/lib/supabase/client";
-
-// MOCK DATA (Simulando respuesta de Supabase)
-// Basado en catálogo de Fix Ferreterías y agrupado por disciplina
-// State for products
-// State moved inside component
+import { MARKETPLACE_CATEGORIES, getCategoryUrl } from "@/lib/marketplace/categories";
 
 export default function MarketplacePage() {
-  // State for products
   const [products, setProducts] = useState<MarketplaceProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -67,17 +64,16 @@ export default function MarketplacePage() {
           const mappedProducts: MarketplaceProduct[] = (data as any[]).map(item => {
             const sellerData = Array.isArray(item.seller) ? item.seller[0] : item.seller;
 
-            // LOGIC: Identify "Official" Sumee Supply products (Truper catalog)
-            // In a real app, this would be based on a specific seller_id or a flag in the DB
-            const isOfficialStore = item.title.toLowerCase().includes("truper") || item.title.toLowerCase().includes("pretul");
+            // LOGIC: Identify "Official" Sumee Supply products by contact phone
+            // All products with contact_phone 5636741156 are from Sumee Supply official catalog
+            const isOfficialStore = item.contact_phone === '5636741156';
 
             return {
               ...item,
               seller: {
                 full_name: isOfficialStore ? "Sumee Supply" : (sellerData?.full_name || "Usuario Sumee"),
-                avatar_url: isOfficialStore ? null : (sellerData?.avatar_url || null), // Official store uses default icon or specific logo if added later
-                // Mock fields that don't exist in DB yet or Override for Official Store
-                verified: isOfficialStore ? true : true, // Maintain verified look for demo
+                avatar_url: isOfficialStore ? null : (sellerData?.avatar_url || null),
+                verified: isOfficialStore ? true : true,
                 calificacion_promedio: isOfficialStore ? 5.0 : 4.9,
                 review_count: isOfficialStore ? 1250 : 12
               }
@@ -101,6 +97,7 @@ export default function MarketplacePage() {
 
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [selectedPowerType, setSelectedPowerType] = useState<string | null>(null);
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -113,63 +110,38 @@ export default function MarketplacePage() {
 
   const handleCloseModal = () => {
     setIsModalOpen(false);
-    setTimeout(() => setSelectedProduct(null), 300); // Clear after animation
+    setTimeout(() => setSelectedProduct(null), 300);
   };
 
-  // Filtrado de productos
-  const filteredProducts = products.filter((product) => {
+  // Filtrar productos con filtros básicos
+  const baseFilteredProducts = products.filter((product) => {
     const matchesSearch = product.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       product.description.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory = selectedCategory ? product.category_id === selectedCategory : true;
+    const matchesPowerType = selectedPowerType ? (product.power_type === selectedPowerType || (selectedPowerType === 'electric_all' && (product.power_type === 'electric' || product.power_type === 'cordless'))) : true;
 
-    return matchesSearch && matchesCategory;
+    return matchesSearch && matchesCategory && matchesPowerType;
   });
 
-  // Categorías agrupadas por Disciplina
-  const categories = [
-    {
-      id: "electricidad",
-      name: "Electricidad",
-      icon: faBolt,
-      color: "from-yellow-400 to-yellow-600",
-      count: 145,
-    },
-    {
-      id: "plomeria",
-      name: "Plomería",
-      icon: faWrench, // O una gota de agua si hubiera
-      color: "from-blue-400 to-blue-600",
-      count: 98,
-    },
-    {
-      id: "construccion",
-      name: "Construcción",
-      icon: faHammer,
-      color: "from-orange-500 to-red-500",
-      count: 210,
-    },
-    {
-      id: "mecanica",
-      name: "Mecánica",
-      icon: faTools,
-      color: "from-gray-500 to-gray-700",
-      count: 76,
-    },
-    {
-      id: "pintura",
-      name: "Pintura",
-      icon: faPaintRoller,
-      color: "from-purple-500 to-pink-500",
-      count: 54,
-    },
-    {
-      id: "jardineria",
-      name: "Jardinería",
-      icon: faTree || faCheckCircle, // Fallback icon choice
-      color: "from-green-500 to-emerald-600",
-      count: 42,
-    },
-  ];
+  // Filtrar solo productos con imágenes y ordenar por importancia
+  const featuredProducts = baseFilteredProducts
+    .filter((product) => product.images && product.images.length > 0 && product.images[0])
+    .sort((a, b) => {
+      // Ordenar por importancia: más vistas + más likes + más reciente
+      const scoreA = (a.views_count || 0) + (a.likes_count || 0) * 2 + (a.seller?.verified ? 10 : 0);
+      const scoreB = (b.views_count || 0) + (b.likes_count || 0) * 2 + (b.seller?.verified ? 10 : 0);
+      return scoreB - scoreA;
+    })
+    .slice(0, 12); // Mostrar solo los 12 más importantes
+
+  // Contar total de productos filtrados (con y sin imagen)
+  const totalFilteredProducts = baseFilteredProducts.length;
+
+  // Calcular contadores reales por categoría
+  const categoriesWithCounts = MARKETPLACE_CATEGORIES.map((cat) => ({
+    ...cat,
+    count: products.filter((p) => p.category_id === cat.id).length,
+  }));
 
   const getConditionLabel = (condition: string) => {
     const labels: Record<string, { text: string; color: string }> = {
@@ -193,7 +165,6 @@ export default function MarketplacePage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-50 pb-20">
-
       {/* Product Modal */}
       {selectedProduct && (
         <ProductModal
@@ -215,18 +186,18 @@ export default function MarketplacePage() {
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="max-w-4xl mx-auto text-center">
             {/* Badge */}
-            <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full mb-6">
-              <FontAwesomeIcon icon={faRocket} className="text-sm" />
-              <span className="text-sm font-semibold">Marketplace Exclusivo para Profesionales</span>
+            <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm px-3 py-1.5 md:px-4 md:py-2 rounded-full mb-4 md:mb-6">
+              <FontAwesomeIcon icon={faRocket} className="text-xs md:text-sm" />
+              <span className="text-xs md:text-sm font-semibold">Marketplace Exclusivo para Profesionales</span>
             </div>
 
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-black mb-4 leading-tight">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black mb-3 md:mb-4 leading-tight px-2">
               Marketplace de
               <span className="block bg-gradient-to-r from-yellow-300 to-orange-300 bg-clip-text text-transparent">
                 Herramientas y Equipos
               </span>
             </h1>
-            <p className="text-lg md:text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
+            <p className="text-base sm:text-lg md:text-xl text-blue-100 mb-6 md:mb-8 max-w-2xl mx-auto px-4">
               Compra y vende herramientas, equipos y suministros de construcción entre profesionales verificados.
               Red social de técnicos confiables.
             </p>
@@ -251,7 +222,10 @@ export default function MarketplacePage() {
                 <span className="hidden sm:inline">Buscar</span>
               </button>
               <button
-                onClick={() => setSelectedCategory(null)}
+                onClick={() => {
+                  setSelectedCategory(null);
+                  setSelectedPowerType(null);
+                }}
                 className="bg-gray-100 text-gray-700 px-4 md:px-6 py-3 md:py-4 rounded-xl font-semibold hover:bg-gray-200 transition-all flex items-center justify-center gap-2 whitespace-nowrap"
               >
                 <FontAwesomeIcon icon={faFilter} />
@@ -260,19 +234,21 @@ export default function MarketplacePage() {
             </div>
 
             {/* Stats */}
-            <div className="flex flex-wrap justify-center gap-6 mt-8 text-sm">
-              <div className="flex items-center gap-2">
-                <FontAwesomeIcon icon={faChartLine} className="text-yellow-300" />
+            <div className="flex flex-wrap justify-center gap-4 md:gap-6 mt-6 md:mt-8 text-xs sm:text-sm px-4">
+              <div className="flex items-center gap-1.5 md:gap-2">
+                <FontAwesomeIcon icon={faChartLine} className="text-yellow-300 text-sm md:text-base" />
                 <span className="font-semibold">1,234+</span>
-                <span className="text-blue-100">Productos</span>
+                <span className="text-blue-100 hidden sm:inline">Productos</span>
+                <span className="text-blue-100 sm:hidden">Prod.</span>
               </div>
-              <div className="flex items-center gap-2">
-                <FontAwesomeIcon icon={faUsers} className="text-yellow-300" />
+              <div className="flex items-center gap-1.5 md:gap-2">
+                <FontAwesomeIcon icon={faUsers} className="text-yellow-300 text-sm md:text-base" />
                 <span className="font-semibold">456+</span>
-                <span className="text-blue-100">Vendedores Verificados</span>
+                <span className="text-blue-100 hidden sm:inline">Vendedores Verificados</span>
+                <span className="text-blue-100 sm:hidden">Vendedores</span>
               </div>
-              <div className="flex items-center gap-2">
-                <FontAwesomeIcon icon={faCheckCircle} className="text-yellow-300" />
+              <div className="flex items-center gap-1.5 md:gap-2">
+                <FontAwesomeIcon icon={faCheckCircle} className="text-yellow-300 text-sm md:text-base" />
                 <span className="font-semibold">98%</span>
                 <span className="text-blue-100">Satisfacción</span>
               </div>
@@ -293,35 +269,67 @@ export default function MarketplacePage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 md:gap-6">
-            {categories.map((category) => (
-              <button
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4 md:gap-6">
+            {categoriesWithCounts.map((category) => (
+              <Link
                 key={category.id}
-                onClick={() => setSelectedCategory(category.id === selectedCategory ? null : category.id)}
-                className={`group relative overflow-hidden rounded-2xl p-6 text-center transition-all duration-300 hover:scale-105 hover:shadow-xl ${selectedCategory === category.id
-                  ? "ring-4 ring-indigo-500 ring-offset-2 scale-105 shadow-xl"
-                  : ""
-                  }`}
+                href={getCategoryUrl(category)}
+                className={`group relative overflow-hidden rounded-xl sm:rounded-2xl p-4 sm:p-5 md:p-6 text-center transition-all duration-300 hover:scale-105 hover:shadow-xl block ${
+                  selectedCategory === category.id
+                    ? "ring-2 sm:ring-4 ring-indigo-500 ring-offset-1 sm:ring-offset-2 scale-105 shadow-xl"
+                    : ""
+                }`}
               >
                 <div
-                  className={`absolute inset-0 bg-gradient-to-br ${category.color} opacity-90 group-hover:opacity-100 transition-opacity`}
+                  className={`absolute inset-0 bg-gradient-to-br ${category.gradient} opacity-90 group-hover:opacity-100 transition-opacity`}
                 />
                 <div className="relative z-10">
-                  <div className="w-16 h-16 mx-auto mb-3 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
+                  <div className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 mx-auto mb-2 sm:mb-3 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
                     <FontAwesomeIcon
                       icon={category.icon}
-                      className="text-2xl text-white"
+                      className="text-lg sm:text-xl md:text-2xl text-white"
                     />
                   </div>
-                  <h3 className="font-bold text-white text-sm md:text-base mb-1">
+                  <h3 className="font-bold text-white text-xs sm:text-sm md:text-base mb-0.5 sm:mb-1">
                     {category.name}
                   </h3>
-                  <p className="text-white/80 text-xs">
-                    {category.count} productos
+                  <p className="text-white/80 text-[10px] sm:text-xs">
+                    {category.count} {category.count === 1 ? "prod." : "prod."}
                   </p>
                 </div>
-              </button>
+              </Link>
             ))}
+          </div>
+
+          {/* Special Filter: Herramienta Eléctrica */}
+          <div className="mt-6 sm:mt-8 flex justify-center px-4">
+            <button
+              onClick={() => setSelectedPowerType(selectedPowerType === 'electric_all' ? null : 'electric_all')}
+              className={`group relative overflow-hidden rounded-xl sm:rounded-2xl px-4 sm:px-6 md:px-8 py-4 sm:py-5 md:py-6 text-center transition-all duration-300 hover:scale-105 hover:shadow-xl w-full sm:w-auto ${selectedPowerType === 'electric_all'
+                ? "ring-2 sm:ring-4 ring-cyan-500 ring-offset-1 sm:ring-offset-2 scale-105 shadow-xl"
+                : ""
+                }`}
+            >
+              <div
+                className={`absolute inset-0 bg-gradient-to-br from-cyan-500 to-blue-600 opacity-90 group-hover:opacity-100 transition-opacity`}
+              />
+              <div className="relative z-10 flex items-center gap-3 sm:gap-4 justify-center sm:justify-start">
+                <div className="w-12 h-12 sm:w-14 sm:h-14 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center flex-shrink-0">
+                  <FontAwesomeIcon
+                    icon={faBolt}
+                    className="text-xl sm:text-2xl text-white"
+                  />
+                </div>
+                <div className="text-left">
+                  <h3 className="font-bold text-white text-base sm:text-lg mb-0.5 sm:mb-1">
+                    Herramienta Eléctrica
+                  </h3>
+                  <p className="text-white/80 text-xs sm:text-sm">
+                    Eléctricas e inalámbricas
+                  </p>
+                </div>
+              </div>
+            </button>
           </div>
         </div>
       </section>
@@ -329,20 +337,20 @@ export default function MarketplacePage() {
       {/* Productos */}
       <section className="py-12 md:py-16 bg-gray-50 min-h-[500px]">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between mb-8">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 sm:mb-8 gap-4">
             <div>
-              <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-1 sm:mb-2">
                 {selectedCategory
-                  ? `Resultados en ${categories.find(c => c.id === selectedCategory)?.name}`
+                  ? `Resultados en ${categoriesWithCounts.find(c => c.id === selectedCategory)?.name || "Categoría"}`
                   : "Productos Destacados"}
               </h2>
-              <p className="text-gray-600">
+              <p className="text-sm sm:text-base text-gray-600">
                 Seleccionados por nuestros profesionales verificados
               </p>
             </div>
             <Link
               href="/marketplace/all"
-              className="hidden md:flex items-center gap-2 text-indigo-600 font-semibold hover:text-indigo-700"
+              className="flex sm:hidden md:flex items-center gap-2 text-indigo-600 font-semibold hover:text-indigo-700 text-sm sm:text-base self-start sm:self-auto"
             >
               Ver todos
               <FontAwesomeIcon icon={faSearch} />
@@ -355,7 +363,7 @@ export default function MarketplacePage() {
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mb-4"></div>
               <p className="text-gray-500">Cargando productos...</p>
             </div>
-          ) : filteredProducts.length === 0 ? (
+          ) : featuredProducts.length === 0 ? (
             <div className="text-center py-20 bg-white rounded-3xl shadow-sm">
               <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <FontAwesomeIcon icon={faSearch} className="text-gray-400 text-3xl" />
@@ -363,24 +371,25 @@ export default function MarketplacePage() {
               <h3 className="text-xl font-bold text-gray-900 mb-2">No se encontraron productos</h3>
               <p className="text-gray-500">Intenta con otra búsqueda o categoría</p>
               <button
-                onClick={() => { setSearchQuery(""); setSelectedCategory(null); }}
+                onClick={() => { setSearchQuery(""); setSelectedCategory(null); setSelectedPowerType(null); }}
                 className="mt-4 text-indigo-600 font-semibold hover:underline"
               >
                 Ver todos los productos
               </button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredProducts.map((product) => {
+            <>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+                {featuredProducts.map((product) => {
                 const condition = getConditionLabel(product.condition);
                 return (
                   <div
                     key={product.id}
                     onClick={() => handleProductClick(product)}
-                    className="bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden group cursor-pointer transform hover:-translate-y-1"
+                    className="bg-white rounded-xl sm:rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden group cursor-pointer transform hover:-translate-y-1"
                   >
                     {/* Imagen */}
-                    <div className="relative h-48 bg-gradient-to-br from-gray-200 to-gray-300 overflow-hidden">
+                    <div className="relative h-40 sm:h-48 bg-gradient-to-br from-gray-200 to-gray-300 overflow-hidden">
                       {product.images && product.images.length > 0 ? (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img
@@ -421,18 +430,18 @@ export default function MarketplacePage() {
                     </div>
 
                     {/* Contenido */}
-                    <div className="p-5">
-                      <h3 className="font-bold text-gray-900 mb-2 line-clamp-2 h-12 leading-tight group-hover:text-indigo-600 transition-colors">
+                    <div className="p-4 sm:p-5">
+                      <h3 className="font-bold text-gray-900 mb-2 line-clamp-2 h-10 sm:h-12 leading-tight group-hover:text-indigo-600 transition-colors text-sm sm:text-base">
                         {product.title}
                       </h3>
 
                       {/* Precio */}
-                      <div className="flex items-baseline gap-2 mb-3">
-                        <span className="text-2xl font-black text-indigo-600">
+                      <div className="flex items-baseline gap-2 mb-2 sm:mb-3">
+                        <span className="text-xl sm:text-2xl font-black text-indigo-600">
                           ${Number(product.price).toLocaleString("es-MX")}
                         </span>
                         {product.original_price && (
-                          <span className="text-sm text-gray-400 line-through decoration-red-300">
+                          <span className="text-xs sm:text-sm text-gray-400 line-through decoration-red-300">
                             ${Number(product.original_price).toLocaleString("es-MX")}
                           </span>
                         )}
@@ -488,35 +497,109 @@ export default function MarketplacePage() {
                   </div>
                 );
               })}
-            </div>
+              </div>
+
+              {/* Enlace para explorar todos los artículos */}
+              {totalFilteredProducts > featuredProducts.length && (
+                <div className="mt-8 sm:mt-12 text-center px-4">
+                  <Link
+                    href="/marketplace/all"
+                    className="inline-flex flex-col sm:flex-row items-center gap-2 sm:gap-3 bg-gradient-to-r from-indigo-600 to-blue-600 text-white px-6 sm:px-8 py-3 sm:py-4 rounded-xl font-bold text-base sm:text-lg hover:from-indigo-700 hover:to-blue-700 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-1 w-full sm:w-auto"
+                  >
+                    <div className="flex items-center gap-2 sm:gap-3">
+                      <span className="text-center sm:text-left">Explora todos nuestros artículos</span>
+                      <FontAwesomeIcon icon={faRocket} className="text-lg sm:text-xl" />
+                    </div>
+                    <span className="bg-white/20 px-3 py-1 rounded-full text-xs sm:text-sm">
+                      {totalFilteredProducts - featuredProducts.length} más disponibles
+                    </span>
+                  </Link>
+                </div>
+              )}
+            </>
           )}
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="py-12 md:py-16 bg-gradient-to-r from-indigo-600 to-blue-600 text-white">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            ¿Eres Profesional Verificado?
-          </h2>
-          <p className="text-lg text-blue-100 mb-8 max-w-2xl mx-auto">
-            Únete a nuestra red y comienza a vender tus herramientas y equipos a otros profesionales de confianza
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link
-              href="/join-as-pro"
-              className="bg-white text-indigo-600 px-8 py-4 rounded-xl font-bold hover:bg-gray-100 transition-all flex items-center justify-center gap-2 shadow-lg hover:shadow-xl"
-            >
-              <FontAwesomeIcon icon={faRocket} />
-              Únete como Profesional
-            </Link>
-            <Link
-              href="/marketplace/sell"
-              className="bg-indigo-700 text-white px-8 py-4 rounded-xl font-bold hover:bg-indigo-800 transition-all border-2 border-white/20 flex items-center justify-center gap-2 shadow-lg hover:shadow-xl"
-            >
-              <FontAwesomeIcon icon={faShoppingCart} />
-              Publicar Producto
-            </Link>
+      {/* Dual CTA Section */}
+      <section className="py-12 md:py-16 bg-gradient-to-br from-gray-50 to-gray-100">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
+
+            {/* Card 1: Sell Your Tools */}
+            <div className="group relative bg-gradient-to-br from-indigo-600 to-blue-600 rounded-2xl sm:rounded-3xl p-6 sm:p-8 md:p-10 text-white overflow-hidden shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-1">
+              {/* Decorative Elements */}
+              <div className="absolute top-0 right-0 w-48 sm:w-64 h-48 sm:h-64 bg-white/5 rounded-full -translate-y-24 sm:-translate-y-32 translate-x-24 sm:translate-x-32 group-hover:scale-110 transition-transform duration-500"></div>
+              <div className="absolute bottom-0 left-0 w-36 sm:w-48 h-36 sm:h-48 bg-white/5 rounded-full translate-y-16 sm:translate-y-24 -translate-x-16 sm:-translate-x-24 group-hover:scale-110 transition-transform duration-500"></div>
+
+              <div className="relative z-10">
+                <div className="inline-flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 bg-white/20 backdrop-blur-sm rounded-xl sm:rounded-2xl mb-4 sm:mb-6 group-hover:scale-110 transition-transform">
+                  <FontAwesomeIcon icon={faShoppingCart} className="text-2xl sm:text-3xl" />
+                </div>
+
+                <h3 className="text-xl sm:text-2xl md:text-3xl font-bold mb-2 sm:mb-3">
+                  ¿Eres Profesional Verificado?
+                </h3>
+                <p className="text-blue-100 mb-4 sm:mb-6 leading-relaxed text-sm sm:text-base">
+                  Únete a nuestra red y comienza a vender tus herramientas y equipos a otros profesionales de confianza
+                </p>
+
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <Link
+                    href="/join-as-pro"
+                    className="flex-1 bg-white text-indigo-600 px-6 py-3 rounded-xl font-bold hover:bg-gray-100 transition-all flex items-center justify-center gap-2 shadow-lg hover:shadow-xl"
+                  >
+                    <FontAwesomeIcon icon={faRocket} />
+                    Únete Ahora
+                  </Link>
+                  <Link
+                    href="/marketplace/sell"
+                    className="flex-1 bg-indigo-700 text-white px-6 py-3 rounded-xl font-bold hover:bg-indigo-800 transition-all border-2 border-white/20 flex items-center justify-center gap-2"
+                  >
+                    <FontAwesomeIcon icon={faShoppingCart} />
+                    Publicar
+                  </Link>
+                </div>
+              </div>
+            </div>
+
+            {/* Card 2: Request a Tool */}
+            <div className="group relative bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl sm:rounded-3xl p-6 sm:p-8 md:p-10 text-white overflow-hidden shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-1">
+              {/* Decorative Elements */}
+              <div className="absolute top-0 right-0 w-48 sm:w-64 h-48 sm:h-64 bg-white/5 rounded-full -translate-y-24 sm:-translate-y-32 translate-x-24 sm:translate-x-32 group-hover:scale-110 transition-transform duration-500"></div>
+              <div className="absolute bottom-0 left-0 w-36 sm:w-48 h-36 sm:h-48 bg-white/5 rounded-full translate-y-16 sm:translate-y-24 -translate-x-16 sm:-translate-x-24 group-hover:scale-110 transition-transform duration-500"></div>
+
+              <div className="relative z-10">
+                <div className="inline-flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 bg-white/20 backdrop-blur-sm rounded-xl sm:rounded-2xl mb-4 sm:mb-6 group-hover:scale-110 transition-transform">
+                  <FontAwesomeIcon icon={faTools} className="text-2xl sm:text-3xl" />
+                </div>
+
+                <h3 className="text-xl sm:text-2xl md:text-3xl font-bold mb-2 sm:mb-3">
+                  ¿No Encuentras lo que Buscas?
+                </h3>
+                <p className="text-emerald-100 mb-4 sm:mb-6 leading-relaxed text-sm sm:text-base">
+                  ¿Tienes un equipo o herramienta especializada que no se muestra en el marketplace? Pregúntanos y lo buscamos por ti
+                </p>
+
+                <a
+                  href="https://wa.me/525636741156?text=Hola%2C%20estoy%20buscando%20una%20herramienta%20que%20no%20encuentro%20en%20el%20marketplace%3A%20"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full bg-white text-emerald-600 px-6 py-4 rounded-xl font-bold hover:bg-gray-100 transition-all flex items-center justify-center gap-3 shadow-lg hover:shadow-xl group/btn"
+                >
+                  <svg className="w-6 h-6 group-hover/btn:scale-110 transition-transform" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
+                  </svg>
+                  <span>Solicitar por WhatsApp</span>
+                  <FontAwesomeIcon icon={faRocket} className="text-sm group-hover/btn:translate-x-1 transition-transform" />
+                </a>
+
+                <p className="text-emerald-100 text-sm mt-4 text-center">
+                  Respuesta en menos de 24 horas
+                </p>
+              </div>
+            </div>
+
           </div>
         </div>
       </section>

@@ -14,6 +14,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { faWhatsapp } from "@fortawesome/free-brands-svg-icons";
 import { MarketplaceProduct } from "@/types/supabase";
+import { ProductStructuredData } from "./StructuredData";
 
 interface ProductModalProps {
     product: MarketplaceProduct;
@@ -62,7 +63,11 @@ export default function ProductModal({
     };
 
     return (
-        <div className="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        <>
+            {/* Structured Data for SEO */}
+            <ProductStructuredData product={product} />
+            
+            <div className="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
             {/* Backdrop */}
             <div
                 className="fixed inset-0 bg-gray-900 bg-opacity-75 transition-opacity backdrop-blur-sm"
@@ -224,5 +229,6 @@ export default function ProductModal({
                 </div>
             </div>
         </div>
+        </>
     );
 }

@@ -220,3 +220,4 @@ El prompt propone mejoras válidas, pero **necesitan adaptarse al stack actual**
 
 
 
+
