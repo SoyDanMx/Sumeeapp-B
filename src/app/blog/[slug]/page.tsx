@@ -594,6 +594,92 @@ const blogPosts: Record<string, BlogPost> = {
       "CDMX",
     ],
   },
+  "precio-plomeros-mexico-tarifas-promedio": {
+    id: "10",
+    title: "Precio de Plomeros en México: Tarifas Promedio por Servicio (2025)",
+    content: `
+      <p><strong>¿Tubería rota? ¿Fuga misteriosa? ¿Necesitas instalar un boiler nuevo? Conoce cuánto deberías pagar realmente por un servicio de plomería profesional en México.</strong></p>
+      
+      <p>En el mundo de los servicios para el hogar, la incertidumbre sobre los precios es una de las mayores frustraciones para los clientes. "Depende" es la respuesta más común, pero no ayuda a planificar tu presupuesto. En Sumee App, creemos en la transparencia total.</p>
+
+      <div style="text-align: center; margin: 2rem 0;">
+        <img src="https://images.unsplash.com/photo-1581578731117-104f2a8d23e9?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=400&q=80" alt="Tabla de precios de plomería" style="width: 100%; max-width: 600px; height: 300px; object-fit: cover; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.15);">
+        <p style="color: #666; font-size: 0.9rem; margin-top: 0.5rem; font-style: italic;">Conocer los rangos de precios te ayuda a evitar cobros excesivos</p>
+      </div>
+
+      <div style="background: linear-gradient(135deg, #dbeafe 0%, #3b82f6 100%); border: 1px solid #3b82f6; padding: 2rem; margin: 2rem 0; border-radius: 1rem;">
+        <h2 style="color: #1e40af; margin-bottom: 1rem; font-size: 1.5rem;">💸 Guía Rápida de Costos (Promedios CDMX y Área Metropolitana)</h2>
+        <p style="color: #1e40af; margin-bottom: 1.5rem;">Precios estimados para mano de obra (no incluyen materiales complejos):</p>
+        
+        <div style="overflow-x: auto;">
+          <table style="width: 100%; border-collapse: collapse; background: rgba(255,255,255,0.95); border-radius: 0.5rem; overflow: hidden;">
+            <thead>
+              <tr style="background: #1e40af; color: white;">
+                <th style="padding: 12px 15px; text-align: left;">Servicio</th>
+                <th style="padding: 12px 15px; text-align: left;">Rango de Precio (MXN)</th>
+                <th style="padding: 12px 15px; text-align: left;">Complejidad/Tiempo</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr style="border-bottom: 1px solid #e5e7eb;">
+                <td style="padding: 12px 15px;">Visita de Diagnóstico</td>
+                <td style="padding: 12px 15px;">$350 - $500</td>
+                <td style="padding: 12px 15px;">30 min - 1 hr</td>
+              </tr>
+              <tr style="border-bottom: 1px solid #e5e7eb;">
+                <td style="padding: 12px 15px;">Reparación de Fuga (Simple)</td>
+                <td style="padding: 12px 15px;">$500 - $900</td>
+                <td style="padding: 12px 15px;">1 - 2 hrs</td>
+              </tr>
+              <tr style="border-bottom: 1px solid #e5e7eb;">
+                <td style="padding: 12px 15px;">Destape de Drenaje (Manual)</td>
+                <td style="padding: 12px 15px;">$600 - $1,200</td>
+                <td style="padding: 12px 15px;">2 - 3 hrs</td>
+              </tr>
+              <tr style="border-bottom: 1px solid #e5e7eb;">
+                <td style="padding: 12px 15px;">Instalación de Boiler</td>
+                <td style="padding: 12px 15px;">$900 - $1,800</td>
+                <td style="padding: 12px 15px;">3 - 4 hrs</td>
+              </tr>
+              <tr style="border-bottom: 1px solid #e5e7eb;">
+                <td style="padding: 12px 15px;">Instalación de Bomba de Agua</td>
+                <td style="padding: 12px 15px;">$1,200 - $2,500</td>
+                <td style="padding: 12px 15px;">4 - 6 hrs</td>
+              </tr>
+              <tr>
+                <td style="padding: 12px 15px;">Limpieza de Cisterna</td>
+                <td style="padding: 12px 15px;">$1,000 - $2,200</td>
+                <td style="padding: 12px 15px;">3 - 5 hrs</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      
+      <h3>¿Qué factores influyen en el precio final?</h3>
+      <p>Es importante entender que estos precios son referencias. Varios factores pueden aumentar el costo:</p>
+      <ul>
+        <li><strong>Urgencia:</strong> Servicios fuera de horario laboral o fines de semana suelen tener un cargo extra del 30-50%.</li>
+        <li><strong>Accesibilidad:</strong> Si la tubería está enterrada bajo concreto o en un lugar de difícil acceso.</li>
+        <li><strong>Materiales:</strong> La calidad de las piezas (Cobre vs PVC vs Tuboplus) varía el costo final.</li>
+      </ul>
+
+      <div style="background: #f0fdf4; border-left: 4px solid #10b981; padding: 1.5rem; margin: 2rem 0; border-radius: 0.5rem;">
+        <h3 style="color: #15803d; margin-bottom: 0.5rem;">💡 Consejo Profesional: Paga por Calidad</h3>
+        <p style="color: #15803d;">Un trabajo "barato" mal hecho puede causar daños por agua de miles de pesos. Siempre verifica las credenciales del plomero y pide garantía por escrito. En Sumee App, todos nuestros profesionales están verificados para darte esa tranquilidad.</p>
+      </div>
+    `,
+    author: "Ing. Luis Rodríguez",
+    publishDate: "2024-02-20",
+    readTime: "10 min",
+    category: "Guía de Costos",
+    image:
+      "https://images.unsplash.com/photo-1504148455328-c376907d081c?auto=format&fit=crop&w=800&q=80",
+    slug: "precio-plomeros-mexico-tarifas-promedio",
+    views: 4120,
+    tags: ["plomería", "precios", "costos", "guía", "CDMX"],
+  },
+
   "ia-no-puede-sostener-llave-inglesa": {
     id: "8",
     title: "Más allá del Algoritmo: Por qué la IA no puede sostener una llave inglesa (todavía)",
@@ -976,7 +1062,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
               El artículo que buscas no existe o ha sido movido.
             </p>
             <Link
-              href="/blog" 
+              href="/blog"
               className="inline-flex items-center text-indigo-600 hover:text-indigo-700 font-medium"
             >
               <svg
@@ -1011,11 +1097,11 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
       />
 
-    <div className="flex flex-col min-h-screen bg-gray-50">
-      <Header />
+      <div className="flex flex-col min-h-screen bg-gray-50">
+        <Header />
         <BlogPostContent post={post} />
-      <Footer />
-    </div>
+        <Footer />
+      </div>
     </>
   );
 }

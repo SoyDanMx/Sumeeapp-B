@@ -5,7 +5,7 @@ import React, { useMemo } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faShieldAlt, faLock, faFileAlt, faStar, faMapMarkerAlt, faPhoneAlt, faEnvelope, faInfoCircle, faPen, faCreditCard, faCheckCircle, faShoppingCart } from '@fortawesome/free-solid-svg-icons';
+import { faShieldAlt, faLock, faFileAlt, faStar, faMapMarkerAlt, faPhoneAlt, faEnvelope, faInfoCircle, faPen, faCreditCard, faCheckCircle, faShoppingCart, faBriefcase } from '@fortawesome/free-solid-svg-icons';
 import { faFacebookF, faLinkedinIn } from '@fortawesome/free-brands-svg-icons';
 import { NewsletterForm } from './NewsletterForm';
 import { FooterLinkColumn } from './FooterLinkColumn';
@@ -22,6 +22,7 @@ export const Footer = () => {
     { href: "/blog", icon: faPen, text: "Blog" },
     { href: "/professionals", icon: faStar, text: "Profesionales" },
     { href: "/join-as-pro", icon: faStar, text: "Únete como Profesional" },
+    { href: "/trabaja-con-nosotros", icon: faBriefcase, text: "Trabaja con Nosotros" },
   ], []);
 
   const legalLinks = useMemo(() => [
@@ -34,10 +35,10 @@ export const Footer = () => {
     <footer className="bg-gray-900 text-white pt-16 pb-8">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
-          
+
           <div className="space-y-6">
             <Link href="/">
-                <Image src="/logo.png" alt="SUMEE Logo" width={140} height={35} />
+              <Image src="/logo.png" alt="SUMEE Logo" width={140} height={35} />
             </Link>
             <p className="text-gray-300 text-sm leading-relaxed">Conectamos usuarios con técnicos certificados para soluciones confiables en tu hogar.</p>
             <div className="space-y-3">

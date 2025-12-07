@@ -125,13 +125,13 @@ export default function ClientDashboardPage() {
   const [actionError, setActionError] = useState<string | null>(null);
   const [clientLocation, setClientLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [showProfessionalsMap, setShowProfessionalsMap] = useState(false);
-  
+
   // 🆕 ONBOARDING MODAL
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [userProfile, setUserProfile] = useState<Profile | null>(null);
   const [hasCheckedOnboarding, setHasCheckedOnboarding] = useState(false);
   const [isEmergencyMenuOpen, setIsEmergencyMenuOpen] = useState(false);
-  
+
   // 🆕 MODAL DE BLOQUEO DE UBICACIÓN (Fase 1)
   const [showLocationBlocking, setShowLocationBlocking] = useState(false);
   const [hasLocation, setHasLocation] = useState(false);
@@ -150,12 +150,9 @@ export default function ClientDashboardPage() {
     queryKey: ['client-leads', user?.id],
     queryFn: async () => {
       if (!user) {
-        console.warn("⚠️ Dashboard - No hay usuario, retornando array vacío");
         return []; // Retornar array vacío en lugar de lanzar error
       }
-      console.log("🔍 Dashboard - Obteniendo leads para usuario:", user.id);
       const leads = await getClientLeads(user.id);
-      console.log("✅ Dashboard - Leads obtenidos:", leads.length);
       return leads;
     },
     enabled: !!user && !userLoading,
@@ -171,19 +168,9 @@ export default function ClientDashboardPage() {
   // Envuelta en useCallback para evitar recreaciones innecesarias
   // IMPORTANTE: Definir DESPUÉS de useQuery para tener acceso a refetchLeads
   const refreshLeads = useCallback(async () => {
-    try {
-      console.log("🔄 Dashboard - Refrescando leads...");
-      // Usar refetch sin await para que no bloquee
-      // Esto evita que el dashboard se quede en loading
-      refetchLeads().catch((error) => {
-        console.error("❌ Dashboard - Error al refrescar leads:", error);
-        // No mostrar error al usuario, solo loguear
-      });
-      console.log("✅ Dashboard - Refresco de leads iniciado (no bloqueante)");
-    } catch (error) {
-      console.error("❌ Dashboard - Error al iniciar refresco de leads:", error);
-      // No mostrar error al usuario, solo loguear
-    }
+    refetchLeads().catch((error) => {
+      // No mostrar error al usuario, solo loguear internamente si es crítico
+    });
   }, [refetchLeads]);
 
   // Actualizar estado local cuando cambian los datos de React Query
@@ -193,20 +180,9 @@ export default function ClientDashboardPage() {
     }
   }, [userLeads]);
 
-  // Timeout de seguridad MUY agresivo (3 segundos)
+  // Actualizar la carga cuando cambian los estados de carga
   useEffect(() => {
-    if (userLoading || leadsLoading) {
-      const timeoutId = setTimeout(() => {
-        console.warn("⚠️ Timeout agresivo: Forzando reset de loading después de 3 segundos");
-        setError(null); // Limpiar error previo
-        setLoading(false);
-        // Forzar que el dashboard muestre contenido (aunque sea vacío)
-        // Esto es mejor que quedarse en loading indefinidamente
-      }, 3000); // 3 segundos - MUY agresivo
-
-      return () => clearTimeout(timeoutId);
-    } else {
-      // Si no está en loading, asegurar que el estado de loading esté en false
+    if (!userLoading && !leadsLoading) {
       setLoading(false);
     }
   }, [userLoading, leadsLoading]);
@@ -229,21 +205,10 @@ export default function ClientDashboardPage() {
     }
   }, [userLoading, leadsLoading, userLeads]);
 
-  // Safety: Forzar reset de loading después de 2 segundos si aún está en true
+  // Safety: Forzar reset de loading si ya cargaron los datos básicos
   useEffect(() => {
-    if (loading) {
-      const safetyTimeout = setTimeout(() => {
-        if (loading && !userLoading) {
-          console.warn("⚠️ Safety timeout: Forzando reset de loading después de 2 segundos");
-          setLoading(false);
-          // Asegurar que los leads se muestren (aunque sea array vacío)
-          if (!userLeads) {
-            setLeads([]);
-          }
-        }
-      }, 2000); // 2 segundos - MUY agresivo
-
-      return () => clearTimeout(safetyTimeout);
+    if (loading && !userLoading && userLeads !== undefined) {
+      setLoading(false);
     }
   }, [loading, userLoading, userLeads]);
 
@@ -260,7 +225,7 @@ export default function ClientDashboardPage() {
 
   // Callback para cuando se confirma un acuerdo (envuelto en useCallback para evitar loops)
   const handleAgreementConfirmed = useCallback((lead: Lead) => {
-    console.log("✅ Acuerdo confirmado recibido:", lead);
+
     setAgreementConfirmedLead(lead);
     // Refrescar leads para mostrar el estado actualizado (no bloqueante)
     // Usar setTimeout para que no bloquee la UI
@@ -295,13 +260,12 @@ export default function ClientDashboardPage() {
         if (error) {
           // Si el error es porque no existe el perfil (PGRST116), no es un error crítico
           const isNotFoundError = error.code === 'PGRST116' || error.message?.includes('No rows') || error.message?.includes('not found');
-          
+
           if (isNotFoundError) {
-            console.log('ℹ️ Perfil no encontrado para onboarding - se creará cuando sea necesario');
             setHasCheckedOnboarding(true);
             return;
           }
-          
+
           // Para otros errores, loguear pero no bloquear
           console.warn('⚠️ Error al verificar perfil para onboarding:', error.message || error);
           setHasCheckedOnboarding(true);
@@ -310,32 +274,28 @@ export default function ClientDashboardPage() {
 
         if (profile) {
           setUserProfile(profile);
-          
+
           // FASE 1: Verificar si falta ubicación (BLOQUEO CRÍTICO)
           const profileData = profile as any;
           const needsLocation = !profileData.ubicacion_lat || !profileData.ubicacion_lng;
+
+          // FASE 2: Verificar si falta WhatsApp (onboarding no bloqueante)
+          const needsWhatsApp = !profileData.whatsapp && !profileData.phone;
+
           if (needsLocation && profileData.role === 'client') {
-            console.log('🚫 Cliente necesita ubicación - BLOQUEANDO DASHBOARD');
             setHasLocation(false);
-            setTimeout(() => {
-              setShowLocationBlocking(true);
-            }, 500);
           } else {
             setHasLocation(true);
           }
-          
-          // FASE 2: Verificar si falta WhatsApp (onboarding no bloqueante)
-          const needsWhatsApp = !profileData.whatsapp && !profileData.phone;
+
           if (needsWhatsApp && !needsLocation) {
-            console.log('🆕 Cliente necesita WhatsApp');
             setTimeout(() => {
               setShowOnboarding(true);
             }, 500);
           }
-          
+
           setHasCheckedOnboarding(true);
         } else {
-          // Si no hay perfil pero tampoco hay error, marcar como verificado
           setHasCheckedOnboarding(true);
         }
       } catch (err: any) {
@@ -350,10 +310,9 @@ export default function ClientDashboardPage() {
 
   // Callback cuando se guarda la ubicación
   const handleLocationSaved = async () => {
-    console.log('✅ Ubicación guardada, refrescando perfil...');
     setShowLocationBlocking(false);
     setHasLocation(true);
-    
+
     // Refrescar perfil
     if (user) {
       const { data: updatedProfile } = await supabase
@@ -361,7 +320,7 @@ export default function ClientDashboardPage() {
         .select('*')
         .eq('user_id', user.id)
         .single();
-      
+
       if (updatedProfile) {
         setUserProfile(updatedProfile);
         const updatedProfileData = updatedProfile as any;
@@ -418,15 +377,14 @@ export default function ClientDashboardPage() {
         const a =
           Math.sin(dLat / 2) * Math.sin(dLat / 2) +
           Math.cos((profileData.ubicacion_lat * Math.PI) / 180) *
-            Math.cos((newLat * Math.PI) / 180) *
-            Math.sin(dLon / 2) *
-            Math.sin(dLon / 2);
+          Math.cos((newLat * Math.PI) / 180) *
+          Math.sin(dLon / 2) *
+          Math.sin(dLon / 2);
         const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
         const distance = R * c;
 
         // Si la distancia es mayor a 1 km, actualizar silenciosamente
         if (distance > 1) {
-          console.log(`📍 Actualizando ubicación pasivamente (${distance.toFixed(2)} km de diferencia)`);
           const updatePayload: any = {
             ubicacion_lat: newLat,
             ubicacion_lng: newLng,
@@ -435,7 +393,7 @@ export default function ClientDashboardPage() {
             .from('profiles') as any)
             .update(updatePayload)
             .eq('user_id', user.id);
-          
+
           setClientLocation({ lat: newLat, lng: newLng });
         }
       } catch (err) {
@@ -532,9 +490,8 @@ export default function ClientDashboardPage() {
 
   // 🆕 CALLBACK DE ONBOARDING COMPLETADO
   const handleOnboardingComplete = async () => {
-    console.log('✅ Onboarding completado, refrescando datos...');
     setShowOnboarding(false);
-    
+
     // Refrescar el perfil del usuario
     if (user) {
       const { data: updatedProfile } = await supabase
@@ -542,10 +499,10 @@ export default function ClientDashboardPage() {
         .select('*')
         .eq('user_id', user.id)
         .single();
-      
+
       if (updatedProfile) {
         setUserProfile(updatedProfile);
-        
+
         // Actualizar ubicación del cliente
         const updatedProfileData = updatedProfile as any;
         if (updatedProfileData.ubicacion_lat && updatedProfileData.ubicacion_lng) {
@@ -678,7 +635,7 @@ export default function ClientDashboardPage() {
             console.error("RPC update_lead_details failed:", rpcError);
             setActionError(
               rpcError.message ||
-                "No pudimos guardar los cambios (RPC). Verifica las políticas RLS."
+              "No pudimos guardar los cambios (RPC). Verifica las políticas RLS."
             );
             return;
           }
@@ -757,18 +714,25 @@ export default function ClientDashboardPage() {
         </div>
       )}
 
-      {/* 🚫 BLOQUEO DE DASHBOARD SI NO HAY UBICACIÓN */}
+      {/* ⚠️ ADVERTENCIA DE UBICACIÓN (NO BLOQUEANTE) */}
       {!hasLocation && userProfile && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[9998] flex items-center justify-center">
-          <div className="text-center text-white p-6">
-            <FontAwesomeIcon
-              icon={faExclamationTriangle}
-              className="text-6xl mb-4 text-yellow-400"
-            />
-            <h2 className="text-2xl font-bold mb-2">Ubicación Requerida</h2>
-            <p className="text-lg opacity-90">
-              Por favor, completa tu ubicación para continuar
-            </p>
+        <div className="bg-yellow-50 border-b border-yellow-200">
+          <div className="max-w-7xl mx-auto px-4 py-3 sm:px-6 lg:px-8 flex items-center justify-between flex-wrap gap-4">
+            <div className="flex items-center gap-3">
+              <FontAwesomeIcon
+                icon={faExclamationTriangle}
+                className="text-yellow-600 text-xl"
+              />
+              <p className="text-yellow-800 font-medium">
+                Tu ubicación es necesaria para asignarte profesionales cercanos.
+              </p>
+            </div>
+            <button
+              onClick={() => setShowLocationBlocking(true)}
+              className="bg-yellow-100 text-yellow-800 px-4 py-1.5 rounded-lg hover:bg-yellow-200 transition-colors text-sm font-semibold"
+            >
+              Completar ubicación
+            </button>
           </div>
         </div>
       )}
@@ -874,12 +838,12 @@ export default function ClientDashboardPage() {
               >
                 {/* Efecto de brillo animado */}
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transform -skew-x-12 translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000"></div>
-                
+
                 <span className="relative flex flex-col items-start gap-1 z-10">
                   <span className="flex items-center gap-2">
-                    <FontAwesomeIcon 
-                      icon={faWrench} 
-                      className="text-white text-base sm:text-lg group-hover:rotate-12 transition-transform duration-300" 
+                    <FontAwesomeIcon
+                      icon={faWrench}
+                      className="text-white text-base sm:text-lg group-hover:rotate-12 transition-transform duration-300"
                     />
                     <span>Agendar Proyecto Pro</span>
                   </span>
@@ -967,10 +931,10 @@ export default function ClientDashboardPage() {
                 }}
               />
             )}
-            
+
             {/* Widget de Mapa Interactivo COMPACTO */}
             <ExploreMapCTACompact professionalCount={50} maxRadius={15} />
-            
+
             {/* Widget de Actividad Reciente */}
             <RecentActivityWidget recentLeads={recentCompleted} />
           </div>
@@ -996,18 +960,17 @@ export default function ClientDashboardPage() {
                 </div>
               )}
               {leads.map((lead) => {
-                const isAccepted = lead.profesional_asignado_id !== null && 
+                const isAccepted = lead.profesional_asignado_id !== null &&
                   (lead.estado === "aceptado" || lead.estado === "en_progreso" || lead.estado === "contactado" || lead.estado === "en_camino");
                 const estado = (lead.estado || "").toLowerCase();
-                
+
                 return (
                   <div
                     key={lead.id}
-                    className={`p-4 rounded-lg border transition-all ${
-                      isAccepted
-                        ? "border-green-300 bg-green-50/50 hover:border-green-400 hover:bg-green-50"
-                        : "border-gray-200 hover:border-blue-300 hover:bg-blue-50"
-                    }`}
+                    className={`p-4 rounded-lg border transition-all ${isAccepted
+                      ? "border-green-300 bg-green-50/50 hover:border-green-400 hover:bg-green-50"
+                      : "border-gray-200 hover:border-blue-300 hover:bg-blue-50"
+                      }`}
                   >
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1 min-w-0">
@@ -1016,22 +979,21 @@ export default function ClientDashboardPage() {
                             {lead.servicio_solicitado || "Servicio Profesional"}
                           </h3>
                           <span
-                            className={`px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap ${
-                              lead.estado === "completado"
-                                ? "bg-green-100 text-green-700"
-                                : isAccepted
+                            className={`px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap ${lead.estado === "completado"
+                              ? "bg-green-100 text-green-700"
+                              : isAccepted
                                 ? "bg-blue-100 text-blue-700"
                                 : "bg-yellow-100 text-yellow-700"
-                            }`}
+                              }`}
                           >
                             {lead.estado === "aceptado" || lead.estado === "en_progreso" || lead.estado === "contactado"
-                              ? "Profesional Asignado" 
+                              ? "Profesional Asignado"
                               : lead.estado === "en_camino"
-                              ? "En Camino"
-                              : lead.estado || "Nuevo"}
+                                ? "En Camino"
+                                : lead.estado || "Nuevo"}
                           </span>
                         </div>
-                        
+
                         {/* ✅ Mostrar información del profesional asignado */}
                         {isAccepted && lead.profesional_asignado_id && (
                           <div className="mb-3 p-3 bg-white/70 rounded-lg border border-green-200">
@@ -1051,13 +1013,12 @@ export default function ClientDashboardPage() {
                             )}
                             {lead.profesional_asignado?.whatsapp && (
                               <a
-                                href={`https://wa.me/${lead.profesional_asignado.whatsapp}?text=Hola%20${
-                                  lead.profesional_asignado.full_name
-                                    ? encodeURIComponent(lead.profesional_asignado.full_name)
-                                    : ""
-                                }%2C%20tengo%20dudas%20sobre%20mi%20servicio%20de%20${encodeURIComponent(
-                                  lead.servicio_solicitado || "Sumee App"
-                                )}.`}
+                                href={`https://wa.me/${lead.profesional_asignado.whatsapp}?text=Hola%20${lead.profesional_asignado.full_name
+                                  ? encodeURIComponent(lead.profesional_asignado.full_name)
+                                  : ""
+                                  }%2C%20tengo%20dudas%20sobre%20mi%20servicio%20de%20${encodeURIComponent(
+                                    lead.servicio_solicitado || "Sumee App"
+                                  )}.`}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="inline-flex items-center gap-2 mt-2 px-3 py-1.5 rounded-lg bg-green-600 hover:bg-green-700 text-white text-xs font-semibold transition-colors"
@@ -1113,7 +1074,7 @@ export default function ClientDashboardPage() {
                             )}
                           </div>
                         )}
-                        
+
                         <p className="text-sm text-gray-600 mb-2 line-clamp-2">
                           {lead.descripcion_proyecto || "Sin descripción"}
                         </p>
@@ -1163,13 +1124,13 @@ export default function ClientDashboardPage() {
               Puedes comenzar desde el botón “Solicitar servicio” en la parte superior derecha o explorar profesionales destacados para inspirarte.
             </p>
             <div className="mt-6 flex flex-col sm:flex-row justify-center gap-3">
-            <button
-              onClick={() => setIsModalOpen(true)}
+              <button
+                onClick={() => setIsModalOpen(true)}
                 className="inline-flex items-center justify-center gap-2 bg-blue-600 text-white px-5 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
-            >
+              >
                 <FontAwesomeIcon icon={faPlus} className="text-sm" />
                 Solicitar servicio
-            </button>
+              </button>
               <Link
                 href="/tecnicos"
                 className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-lg font-semibold border border-blue-100 text-blue-600 bg-blue-50 hover:bg-blue-100 transition-colors"
@@ -1190,9 +1151,8 @@ export default function ClientDashboardPage() {
       )}
       <div className="md:hidden fixed bottom-24 right-4 z-40 flex flex-col items-end gap-3">
         <div
-          className={`flex flex-col gap-2 w-56 transition-all duration-200 ${
-            isEmergencyMenuOpen ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2 pointer-events-none"
-          }`}
+          className={`flex flex-col gap-2 w-56 transition-all duration-200 ${isEmergencyMenuOpen ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2 pointer-events-none"
+            }`}
         >
           <button
             onClick={() => handleEmergencyRequest("electricidad")}
@@ -1220,11 +1180,11 @@ export default function ClientDashboardPage() {
           >
             {/* Efecto de brillo animado */}
             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transform -skew-x-12 translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000"></div>
-            
+
             <span className="relative flex items-center gap-2 z-10">
-              <FontAwesomeIcon 
-                icon={faWrench} 
-                className="text-white group-hover:rotate-12 transition-transform duration-300" 
+              <FontAwesomeIcon
+                icon={faWrench}
+                className="text-white group-hover:rotate-12 transition-transform duration-300"
               />
               <span>Proyecto Programado</span>
             </span>
@@ -1596,13 +1556,12 @@ function LeadDetailsModal({
                 <div className="flex flex-col gap-2 w-full sm:w-auto sm:items-end">
                   {lead.profesional_asignado.whatsapp && (
                     <a
-                      href={`https://wa.me/${lead.profesional_asignado.whatsapp}?text=Hola%20${
-                        lead.profesional_asignado.full_name
-                          ? encodeURIComponent(lead.profesional_asignado.full_name)
-                          : ""
-                      }%2C%20tengo%20dudas%20sobre%20mi%20servicio%20de%20${encodeURIComponent(
-                        lead.servicio_solicitado || "Sumee App"
-                      )}.`}
+                      href={`https://wa.me/${lead.profesional_asignado.whatsapp}?text=Hola%20${lead.profesional_asignado.full_name
+                        ? encodeURIComponent(lead.profesional_asignado.full_name)
+                        : ""
+                        }%2C%20tengo%20dudas%20sobre%20mi%20servicio%20de%20${encodeURIComponent(
+                          lead.servicio_solicitado || "Sumee App"
+                        )}.`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-green-600 hover:bg-green-700 text-white text-sm font-semibold transition-colors"
@@ -1662,9 +1621,8 @@ function LeadDetailsModal({
               type="tel"
               inputMode="tel"
               autoComplete="tel"
-              className={`w-full rounded-lg border px-3 py-2 focus:ring-2 focus:ring-blue-200 ${
-                whatsappError ? "border-red-400 focus:border-red-500" : "border-gray-300 focus:border-blue-500"
-              }`}
+              className={`w-full rounded-lg border px-3 py-2 focus:ring-2 focus:ring-blue-200 ${whatsappError ? "border-red-400 focus:border-red-500" : "border-gray-300 focus:border-blue-500"
+                }`}
               value={whatsapp}
               onChange={(event) => handleWhatsappChange(event.target.value)}
               onBlur={applyWhatsappFormatting}

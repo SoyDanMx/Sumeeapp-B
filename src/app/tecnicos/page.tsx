@@ -40,7 +40,9 @@ function TecnicosPageContent() {
             .eq("user_id", user.id)
             .single()
             .then(({ data, error }) => {
-              const locationData = data as any;
+              // Definir tipo para la respuesta de la base de datos
+              const locationData = data as { ubicacion_lat: number | null; ubicacion_lng: number | null } | null;
+
               if (error || !locationData?.ubicacion_lat || !locationData?.ubicacion_lng) {
                 return null;
               }
@@ -77,9 +79,8 @@ function TecnicosPageContent() {
 
         // OPTIMIZACIÓN 3: Usar la primera ubicación que llegue
         const location = await Promise.race(locationPromises);
-        
+
         if (location) {
-          console.log("📍 Ubicación obtenida:", location);
           setClientLocation(location);
         }
       } catch (err) {
