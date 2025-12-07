@@ -62,6 +62,41 @@ export interface PortfolioItem {
 }
 
 // =========================================================================
+// INTERFAZ PARA MARKETPLACE PRODUCTS (NUEVA TABLA)
+// =========================================================================
+/**
+ * Representa un producto en el marketplace
+ * Corresponde a la tabla public.marketplace_products
+ */
+export interface MarketplaceProduct {
+  id: string;
+  created_at: string;
+  updated_at: string;
+  seller_id: string;
+  title: string;
+  description: string;
+  price: number;
+  original_price?: number | null;
+  condition: "nuevo" | "usado_excelente" | "usado_bueno" | "usado_regular" | "para_reparar";
+  category_id: string;
+  images: string[] | null;
+  location_city?: string | null;
+  location_zone?: string | null;
+  status: "active" | "sold" | "hidden" | "deleted";
+  views_count: number;
+  likes_count: number;
+  contact_phone?: string | null;
+  // Campos join (no en tabla)
+  seller?: {
+    full_name: string;
+    avatar_url?: string | null;
+    verified?: boolean; // Derivado de lógica de negocio
+    calificacion_promedio?: number;
+    review_count?: number;
+  };
+}
+
+// =========================================================================
 // INTERFAZ PARA SERVICES (NUEVA TABLA)
 // =========================================================================
 /**
@@ -125,10 +160,10 @@ export interface Profile {
   sub_city_zone?: string | null; // Delegación, alcaldía o zona específica (ej: Coyoacán, Benito Juárez)
   postal_code?: string | null; // Código postal del usuario
   onboarding_status?:
-    | "approved"
-    | "pending_review"
-    | "waitlist_other_city"
-    | "rejected";
+  | "approved"
+  | "pending_review"
+  | "waitlist_other_city"
+  | "rejected";
   disponibilidad?: "disponible" | "no_disponible" | "ocupado" | null;
 }
 

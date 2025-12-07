@@ -155,6 +155,36 @@ const blogPosts: BlogPost[] = [
     views: 0,
     featured: true,
   },
+  {
+    id: "9",
+    title: "Guía de Precios: ¿Cuánto Cuesta una Instalación Eléctrica en CDMX? (2025)",
+    excerpt:
+      "Desglose detallado de costos para servicios eléctricos comunes en la Ciudad de México. Desde cambios de contactos hasta recableado completo. Evita sorpresas en tu presupuesto.",
+    author: "Ing. Ana Herrera",
+    publishDate: "2024-02-15",
+    readTime: "12 min",
+    category: "Guía de Costos",
+    image:
+      "https://images.unsplash.com/photo-1621905251918-48416bd8575a?auto=format&fit=crop&w=800&q=80",
+    slug: "guia-precios-electricistas-cdmx-2025",
+    views: 3450,
+    featured: true,
+  },
+  {
+    id: "10",
+    title: "Precio de Plomeros en México: Tarifas Promedio por Servicio",
+    excerpt:
+      "¿Te cobran lo justo? Consulta nuestra tabla actualizada de precios para destapes, fugas, instalación de boilers y mantenimiento de cisternas en tu zona.",
+    author: "Ing. Luis Rodríguez",
+    publishDate: "2024-02-20",
+    readTime: "10 min",
+    category: "Guía de Costos",
+    image:
+      "https://images.unsplash.com/photo-1504148455328-c376907d081c?auto=format&fit=crop&w=800&q=80",
+    slug: "precio-plomeros-mexico-tarifas-promedio",
+    views: 4120,
+    featured: true,
+  },
 ];
 
 const categories = [
@@ -166,6 +196,7 @@ const categories = [
   "Tecnología",
   "Plomería",
   "Electricidad",
+  "Guía de Costos",
 ];
 
 interface BlogSectionProps {
@@ -228,9 +259,8 @@ export const BlogSection: React.FC<BlogSectionProps> = ({
           {displayedPosts.map((post, index) => (
             <article
               key={post.id}
-              className={`group bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-100 ${
-                post.featured ? "ring-2 ring-indigo-200" : ""
-              } ${index === 0 ? "md:col-span-2 lg:col-span-1" : ""}`}
+              className={`group bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-100 ${post.featured ? "ring-2 ring-indigo-200" : ""
+                } ${index === 0 ? "md:col-span-2 lg:col-span-1" : ""}`}
             >
               {/* 🎯 Imagen del post */}
               <div className="relative h-48 overflow-hidden">

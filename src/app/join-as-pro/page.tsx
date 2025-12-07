@@ -69,6 +69,9 @@ const ProfessionalLocationMap = dynamic(
   }
 );
 
+import ProTestimonials from "@/components/pro/ProTestimonials";
+
+
 const CDMX_COORDS = {
   lat: 19.410894,
   lng: -99.170816,
@@ -173,7 +176,7 @@ export default function JoinAsPro() {
   ) => {
     setFormData((prev) => {
       const updated = { ...prev, [field]: value };
-      
+
       // Sincronización automática: cuando cambia profession, actualizar areas_servicio
       if (field === "profession" && typeof value === "string") {
         const autoAreas = PROFESSION_TO_AREAS[value] || [];
@@ -182,7 +185,7 @@ export default function JoinAsPro() {
         const newAreas = [...new Set([...autoAreas, ...currentAreas])];
         updated.areas_servicio = newAreas;
       }
-      
+
       return updated;
     });
 
@@ -200,8 +203,8 @@ export default function JoinAsPro() {
             value === "Ciudad de México"
               ? "Ciudad de México, CDMX"
               : value === "Otra"
-              ? ""
-              : `${value}, México`;
+                ? ""
+                : `${value}, México`;
 
           if (value === "Otra") {
             setAddressInput("");
@@ -252,7 +255,7 @@ export default function JoinAsPro() {
         setLocationStatus("success");
         setLocationError(null);
       } catch (reverseError) {
-        console.error("❌ Error al obtener dirección inversa:", reverseError);
+
         setLocation((prev) => ({
           ...prev,
           lat,
@@ -287,7 +290,7 @@ export default function JoinAsPro() {
         await updateLocationFromCoords(latitude, longitude, "gps");
       },
       (geoError) => {
-        console.error("❌ Error obteniendo ubicación GPS:", geoError);
+
         setLocationStatus("error");
         setLocationError(
           "No pudimos acceder a tu ubicación. Activa el GPS o permite el acceso en tu navegador."
@@ -321,8 +324,8 @@ export default function JoinAsPro() {
         );
       }
     } catch (error) {
-      console.error("❌ Error geocodificando dirección:", error);
       setLocationStatus("error");
+
       setLocationError(
         "Ocurrió un error al buscar la dirección. Intenta nuevamente."
       );
@@ -416,36 +419,14 @@ export default function JoinAsPro() {
     setSuccess(null);
 
     try {
-      // Añadir console.log para depuración en el navegador
-      console.log("🚀 INICIANDO REGISTRO PROFESIONAL...");
       const sanitizedPhone = formData.phone.replace(/[^\\d+]/g, "");
       const normalizedPhone = sanitizedPhone || formData.phone.trim();
 
-      console.log("📋 Datos del formulario:", {
-        fullName: formData.fullName,
-        profession: formData.profession,
-        phone: formData.phone,
-        phone_normalized: normalizedPhone,
-        email: formData.email,
-        registration_type: "profesional",
-        city: formData.city,
-        workZones: formData.workZones,
-        work_zones_other: formData.work_zones_other,
-        bio: formData.bio,
-        location: {
-          lat: location.lat,
-          lng: location.lng,
-          address: location.address,
-          hasCustom: location.hasCustom,
-          source: location.source,
-        },
-        addressInput,
-        otherCityInput,
-      });
+
 
       // Construir dinámicamente la URL redirectTo usando window.location.origin
       const emailRedirectTo = getEmailConfirmationUrl();
-      console.log("🔗 URL de redirección:", emailRedirectTo);
+
 
       // Preparar datos para enviar a Supabase (con nuevos campos city y work_zones)
       // Determinar el valor real de city
@@ -455,11 +436,6 @@ export default function JoinAsPro() {
           ? otherCityInput.trim() || "Ciudad de México" // Si seleccionó "Otra", usar lo que escribió
           : formData.city || "Ciudad de México";
 
-      console.log("📍 Ubicación seleccionada:", {
-        realCity,
-        location,
-        addressInput,
-      });
 
       let ubicacion_lat = location.lat ?? CDMX_COORDS.lat;
       let ubicacion_lng = location.lng ?? CDMX_COORDS.lng;
@@ -480,13 +456,11 @@ export default function JoinAsPro() {
             ubicacion_lng = coords.lng;
             ubicacion_direccion = coords.displayName || ubicacion_direccion;
             locationSource = "fallback";
-            console.log("✅ Ubicación por ciudad:", coords.displayName);
-          } else {
-            console.log("⚠️ No se pudo geocodificar la ciudad, usando fallback CDMX");
           }
         } catch (geoError) {
-          console.warn("⚠️ Error geocodificando ciudad, usando fallback:", geoError);
+          // Silent catch for geocoding fallback
         }
+
       }
 
       const userMetadata: Record<string, any> = {
@@ -518,7 +492,7 @@ export default function JoinAsPro() {
         }
       }
 
-      console.log("📤 Enviando metadatos a Supabase:", userMetadata);
+
 
       // Realizar la llamada a supabase.auth.signUp()
       const { data: authData, error: authError } = await supabase.auth.signUp({
@@ -530,21 +504,12 @@ export default function JoinAsPro() {
         },
       });
 
-      console.log("📥 Respuesta completa de Supabase:", {
-        authData,
-        authError,
-        user: authData?.user,
-        session: authData?.session,
-      });
+
+
 
       // Manejar los casos de éxito y error de la llamada signUp
       if (authError) {
-        console.error("❌ Error de autenticación:", authError);
-        console.error("❌ Detalles del error:", {
-          message: authError.message,
-          status: authError.status,
-          name: authError.name,
-        });
+
 
         // Proporcionar mensajes de error más específicos
         let errorMessage = "Error al crear usuario: ";
@@ -563,17 +528,8 @@ export default function JoinAsPro() {
       }
 
       if (authData.user) {
-        console.log("✅ Usuario creado exitosamente:", {
-          id: authData.user.id,
-          email: authData.user.email,
-          email_confirmed: authData.user.email_confirmed_at,
-          created_at: authData.user.created_at,
-        });
-
         // El trigger se encarga automáticamente de crear el perfil
-        console.log(
-          "🔧 El trigger creará el perfil automáticamente con los metadatos enviados"
-        );
+
 
         // Mensaje de éxito positivo e inclusivo para todas las ciudades
         const successMessage =
@@ -588,19 +544,14 @@ export default function JoinAsPro() {
           router.push("/dashboard");
         }, 3000);
       } else {
-        console.warn("⚠️ No se recibió información del usuario creado");
+
         setError(
           "El usuario se creó pero no se recibió confirmación. Por favor, verifica tu correo electrónico."
         );
       }
     } catch (err) {
-      console.error("❌ Error en registro profesional:", err);
-      console.error(
-        "❌ Stack trace:",
-        err instanceof Error ? err.stack : "No stack trace available"
-      );
-
       // En caso de error, mostrarlo al usuario
+
       const errorMessage =
         err instanceof Error
           ? err.message
@@ -638,7 +589,7 @@ export default function JoinAsPro() {
             />
             {/* Overlay para legibilidad del texto */}
             <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/40 to-black/20" />
-            
+
             {/* Contenido sobre la imagen - Posicionado abajo a la izquierda */}
             <div className="absolute inset-0 flex flex-col justify-end items-start p-4 md:p-6 lg:p-8 text-white">
               <div className="w-full max-w-md md:max-w-lg">
@@ -649,7 +600,7 @@ export default function JoinAsPro() {
                 <p className="text-sm md:text-base text-white/95 max-w-md leading-relaxed mb-3 drop-shadow-lg">
                   Conecta con clientes verificados y haz crecer tu negocio. Disponible en toda México.
                 </p>
-                
+
                 {/* Beneficios compactos */}
                 <div className="flex flex-wrap gap-2 md:gap-3">
                   <div className="flex items-center gap-1.5 px-2.5 py-1 bg-white/20 backdrop-blur-sm rounded-lg text-xs md:text-sm">
@@ -684,11 +635,10 @@ export default function JoinAsPro() {
                 value={formData.fullName}
                 onChange={(e) => handleChange("fullName", e.target.value)}
                 placeholder="Ej: Juan Pérez"
-                className={`w-full px-4 py-3 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
-                  validationErrors.fullName
-                    ? "border-red-300 focus:ring-red-500 focus:border-red-500"
-                    : "border-gray-300"
-                }`}
+                className={`w-full px-4 py-3 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${validationErrors.fullName
+                  ? "border-red-300 focus:ring-red-500 focus:border-red-500"
+                  : "border-gray-300"
+                  }`}
               />
               {validationErrors.fullName && (
                 <p className="mt-1 text-sm text-red-600 flex items-center">
@@ -713,11 +663,10 @@ export default function JoinAsPro() {
               <select
                 value={formData.profession}
                 onChange={(e) => handleChange("profession", e.target.value)}
-                className={`w-full px-4 py-3 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
-                  validationErrors.profession
-                    ? "border-red-300 focus:ring-red-500 focus:border-red-500"
-                    : "border-gray-300"
-                }`}
+                className={`w-full px-4 py-3 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${validationErrors.profession
+                  ? "border-red-300 focus:ring-red-500 focus:border-red-500"
+                  : "border-gray-300"
+                  }`}
               >
                 <option value="">Selecciona tu profesión</option>
                 {PROFESSIONAL_PROFESSIONS.map((prof) => (
@@ -756,11 +705,10 @@ export default function JoinAsPro() {
                   handleChange("experience", value as any);
                 }}
                 placeholder="Ej: 5"
-                className={`w-full px-4 py-3 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors ${
-                  validationErrors.experience
-                    ? "border-red-300 focus:ring-red-500 focus:border-red-500"
-                    : "border-gray-300"
-                }`}
+                className={`w-full px-4 py-3 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors ${validationErrors.experience
+                  ? "border-red-300 focus:ring-red-500 focus:border-red-500"
+                  : "border-gray-300"
+                  }`}
               />
               <p className="mt-1 text-xs text-gray-500">
                 Indica cuántos años de experiencia tienes en tu profesión
@@ -794,11 +742,10 @@ export default function JoinAsPro() {
                   return (
                     <label
                       key={area}
-                      className={`flex items-center space-x-2 p-2 rounded-lg cursor-pointer transition-all ${
-                        isSelected
-                          ? "bg-indigo-100 border-2 border-indigo-500 text-indigo-900"
-                          : "bg-white border-2 border-gray-200 hover:border-indigo-300 text-gray-700"
-                      }`}
+                      className={`flex items-center space-x-2 p-2 rounded-lg cursor-pointer transition-all ${isSelected
+                        ? "bg-indigo-100 border-2 border-indigo-500 text-indigo-900"
+                        : "bg-white border-2 border-gray-200 hover:border-indigo-300 text-gray-700"
+                        }`}
                     >
                       <input
                         type="checkbox"
@@ -848,11 +795,10 @@ export default function JoinAsPro() {
                 value={formData.phone}
                 onChange={(e) => handleChange("phone", e.target.value)}
                 placeholder="+52 55 1234 5678"
-                className={`w-full px-4 py-3 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors ${
-                  validationErrors.phone
-                    ? "border-red-300 focus:ring-red-500 focus:border-red-500"
-                    : "border-gray-300"
-                }`}
+                className={`w-full px-4 py-3 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors ${validationErrors.phone
+                  ? "border-red-300 focus:ring-red-500 focus:border-red-500"
+                  : "border-gray-300"
+                  }`}
               />
               {validationErrors.phone && (
                 <p className="mt-1 text-sm text-red-600 flex items-center">
@@ -879,11 +825,10 @@ export default function JoinAsPro() {
                 value={formData.email}
                 onChange={(e) => handleChange("email", e.target.value)}
                 placeholder="tu-email@ejemplo.com"
-                className={`w-full px-4 py-3 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
-                  validationErrors.email
-                    ? "border-red-300 focus:ring-red-500 focus:border-red-500"
-                    : "border-gray-300"
-                }`}
+                className={`w-full px-4 py-3 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${validationErrors.email
+                  ? "border-red-300 focus:ring-red-500 focus:border-red-500"
+                  : "border-gray-300"
+                  }`}
               />
               {validationErrors.email && (
                 <p className="mt-1 text-sm text-red-600 flex items-center">
@@ -908,11 +853,10 @@ export default function JoinAsPro() {
                   value={formData.password}
                   onChange={(e) => handleChange("password", e.target.value)}
                   placeholder="Mínimo 6 caracteres"
-                  className={`w-full px-4 py-3 pr-12 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
-                    validationErrors.password
-                      ? "border-red-300 focus:ring-red-500 focus:border-red-500"
-                      : "border-gray-300"
-                  }`}
+                  className={`w-full px-4 py-3 pr-12 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${validationErrors.password
+                    ? "border-red-300 focus:ring-red-500 focus:border-red-500"
+                    : "border-gray-300"
+                    }`}
                 />
                 <button
                   type="button"
@@ -953,7 +897,7 @@ export default function JoinAsPro() {
               <select
                 value={
                   formData.city === "Otra" ||
-                  (formData.city && formData.city !== "Ciudad de México")
+                    (formData.city && formData.city !== "Ciudad de México")
                     ? "Otra"
                     : formData.city || ""
                 }
@@ -967,11 +911,10 @@ export default function JoinAsPro() {
                     setOtherCityInput(""); // Limpiar cuando se selecciona CDMX
                   }
                 }}
-                className={`w-full px-4 py-3 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
-                  validationErrors.city
-                    ? "border-red-300 focus:ring-red-500 focus:border-red-500"
-                    : "border-gray-300"
-                }`}
+                className={`w-full px-4 py-3 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${validationErrors.city
+                  ? "border-red-300 focus:ring-red-500 focus:border-red-500"
+                  : "border-gray-300"
+                  }`}
               >
                 <option value="">Selecciona tu ciudad</option>
                 <option value="Ciudad de México">Ciudad de México</option>
@@ -1004,11 +947,10 @@ export default function JoinAsPro() {
                       key={zone}
                       type="button"
                       onClick={() => toggleWorkZone(zone)}
-                      className={`p-3 rounded-lg border text-sm font-medium transition-all duration-200 ${
-                        formData.workZones?.includes(zone)
-                          ? "bg-blue-50 border-blue-300 text-blue-700 shadow-sm"
-                          : "bg-white border-gray-300 text-gray-700 hover:border-blue-300 hover:bg-blue-50"
-                      }`}
+                      className={`p-3 rounded-lg border text-sm font-medium transition-all duration-200 ${formData.workZones?.includes(zone)
+                        ? "bg-blue-50 border-blue-300 text-blue-700 shadow-sm"
+                        : "bg-white border-gray-300 text-gray-700 hover:border-blue-300 hover:bg-blue-50"
+                        }`}
                     >
                       {zone}
                     </button>
@@ -1028,91 +970,90 @@ export default function JoinAsPro() {
             {/* Campos para otras ciudades */}
             {(formData.city === "Otra" ||
               (formData.city && formData.city !== "Ciudad de México")) && (
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    <FontAwesomeIcon
-                      icon={faMapMarkerAlt}
-                      className="mr-2 text-green-600"
-                    />
-                    Escribe tu Ciudad *
-                  </label>
-                  <input
-                    type="text"
-                    value={
-                      formData.city === "Otra" ? otherCityInput : formData.city
-                    }
-                    onChange={(e) => {
-                      const inputValue = e.target.value;
-                      setOtherCityInput(inputValue);
-                      clearLocationErrorState();
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      <FontAwesomeIcon
+                        icon={faMapMarkerAlt}
+                        className="mr-2 text-green-600"
+                      />
+                      Escribe tu Ciudad *
+                    </label>
+                    <input
+                      type="text"
+                      value={
+                        formData.city === "Otra" ? otherCityInput : formData.city
+                      }
+                      onChange={(e) => {
+                        const inputValue = e.target.value;
+                        setOtherCityInput(inputValue);
+                        clearLocationErrorState();
 
-                      if (!location.hasCustom) {
-                        setAddressInput(inputValue);
-                        setLocation((prev) => ({
-                          ...prev,
-                          address: inputValue,
-                        }));
-                      }
+                        if (!location.hasCustom) {
+                          setAddressInput(inputValue);
+                          setLocation((prev) => ({
+                            ...prev,
+                            address: inputValue,
+                          }));
+                        }
 
-                      // Cuando el usuario escribe, actualizar city directamente con el valor
-                      if (inputValue.trim()) {
-                        handleChange("city", inputValue.trim());
-                      } else {
-                        // Si borra todo, volver a "Otra"
-                        handleChange("city", "Otra");
-                      }
-                    }}
-                    onBlur={(e) => {
-                      const inputValue = e.target.value.trim();
-                      // Si el campo queda vacío al perder el foco, volver a "Otra"
-                      if (!inputValue) {
-                        handleChange("city", "Otra");
-                        setOtherCityInput("");
-                      }
-                    }}
-                    placeholder="Ej: Monterrey, Guadalajara, Puebla..."
-                    className={`w-full px-4 py-3 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
-                      validationErrors.city
+                        // Cuando el usuario escribe, actualizar city directamente con el valor
+                        if (inputValue.trim()) {
+                          handleChange("city", inputValue.trim());
+                        } else {
+                          // Si borra todo, volver a "Otra"
+                          handleChange("city", "Otra");
+                        }
+                      }}
+                      onBlur={(e) => {
+                        const inputValue = e.target.value.trim();
+                        // Si el campo queda vacío al perder el foco, volver a "Otra"
+                        if (!inputValue) {
+                          handleChange("city", "Otra");
+                          setOtherCityInput("");
+                        }
+                      }}
+                      placeholder="Ej: Monterrey, Guadalajara, Puebla..."
+                      className={`w-full px-4 py-3 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${validationErrors.city
                         ? "border-red-300 focus:ring-red-500 focus:border-red-500"
                         : "border-gray-300"
-                    }`}
-                  />
-                  {validationErrors.city &&
-                    (formData.city === "Otra" || !formData.city) && (
-                      <p className="mt-1 text-sm text-red-600 flex items-center">
-                        <FontAwesomeIcon
-                          icon={faExclamationTriangle}
-                          className="mr-1"
-                        />
-                        {validationErrors.city}
-                      </p>
-                    )}
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    <FontAwesomeIcon
-                      icon={faMapMarkerAlt}
-                      className="mr-2 text-green-600"
+                        }`}
                     />
-                    Zonas de Trabajo Principales (Opcional)
-                  </label>
-                  <textarea
-                    value={formData.work_zones_other || ""}
-                    onChange={(e) =>
-                      handleChange("work_zones_other", e.target.value)
-                    }
-                    placeholder="Ej: Centro, Zona Norte, Fraccionamiento ABC..."
-                    rows={3}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors resize-none"
-                  />
-                  <p className="mt-1 text-xs text-gray-500">
-                    Indica las colonias, municipios o zonas donde ofreces tus
-                    servicios
-                  </p>
+                    {validationErrors.city &&
+                      (formData.city === "Otra" || !formData.city) && (
+                        <p className="mt-1 text-sm text-red-600 flex items-center">
+                          <FontAwesomeIcon
+                            icon={faExclamationTriangle}
+                            className="mr-1"
+                          />
+                          {validationErrors.city}
+                        </p>
+                      )}
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      <FontAwesomeIcon
+                        icon={faMapMarkerAlt}
+                        className="mr-2 text-green-600"
+                      />
+                      Zonas de Trabajo Principales (Opcional)
+                    </label>
+                    <textarea
+                      value={formData.work_zones_other || ""}
+                      onChange={(e) =>
+                        handleChange("work_zones_other", e.target.value)
+                      }
+                      placeholder="Ej: Centro, Zona Norte, Fraccionamiento ABC..."
+                      rows={3}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors resize-none"
+                    />
+                    <p className="mt-1 text-xs text-gray-500">
+                      Indica las colonias, municipios o zonas donde ofreces tus
+                      servicios
+                    </p>
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
 
             {/* Ubicación precisa */}
             <div className="rounded-2xl border border-indigo-100 bg-indigo-50/40 p-5">
@@ -1135,11 +1076,10 @@ export default function JoinAsPro() {
                     type="button"
                     onClick={handleUseGPS}
                     disabled={locationStatus === "loading"}
-                    className={`inline-flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-semibold transition-colors ${
-                      locationStatus === "loading"
-                        ? "cursor-not-allowed border-gray-200 bg-gray-100 text-gray-400"
-                        : "border-indigo-200 bg-white text-indigo-700 hover:border-indigo-300 hover:text-indigo-800"
-                    }`}
+                    className={`inline-flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-semibold transition-colors ${locationStatus === "loading"
+                      ? "cursor-not-allowed border-gray-200 bg-gray-100 text-gray-400"
+                      : "border-indigo-200 bg-white text-indigo-700 hover:border-indigo-300 hover:text-indigo-800"
+                      }`}
                   >
                     <FontAwesomeIcon icon={faLocationCrosshairs} />
                     Usar mi GPS
@@ -1240,10 +1180,10 @@ export default function JoinAsPro() {
                     {location.source === "gps"
                       ? "Tomado con GPS"
                       : location.source === "search"
-                      ? "Dirección buscada"
-                      : location.source === "manual"
-                      ? "Pin ajustado manualmente"
-                      : "Ubicación base (CDMX)"}
+                        ? "Dirección buscada"
+                        : location.source === "manual"
+                          ? "Pin ajustado manualmente"
+                          : "Ubicación base (CDMX)"}
                   </span>
                 </div>
 
@@ -1278,11 +1218,10 @@ export default function JoinAsPro() {
             <button
               type="submit"
               disabled={loading}
-              className={`w-full py-3 px-6 rounded-lg font-medium transition-all duration-200 flex items-center justify-center space-x-2 ${
-                loading
-                  ? "bg-gray-400 text-white cursor-not-allowed"
-                  : "bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700 shadow-lg hover:shadow-xl"
-              }`}
+              className={`w-full py-3 px-6 rounded-lg font-medium transition-all duration-200 flex items-center justify-center space-x-2 ${loading
+                ? "bg-gray-400 text-white cursor-not-allowed"
+                : "bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700 shadow-lg hover:shadow-xl"
+                }`}
             >
               {loading ? (
                 <>
@@ -1323,6 +1262,9 @@ export default function JoinAsPro() {
             </div>
           )}
         </div>
+
+        {/* Sección de Testimonios (Prueba Social) */}
+        <ProTestimonials />
 
         {/* Footer */}
         <div className="text-center mt-8">

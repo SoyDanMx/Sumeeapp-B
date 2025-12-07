@@ -30,12 +30,13 @@ import {
   type LocationResult,
   type GeolocationError,
 } from "@/lib/location";
+import { toast } from "sonner";
 
 export const Hero = () => {
   const [postalCode, setPostalCode] = useState("");
   const [isPostalCodeValid, setIsPostalCodeValid] = useState(false);
   const [isUsingCurrentLocation, setIsUsingCurrentLocation] = useState(false);
-  
+
   // Usar el hook useUser en el nivel superior del componente (regla de hooks de React)
   const { user, isLoading: isLoadingUser } = useUser();
   const [imageError, setImageError] = useState(false);
@@ -71,15 +72,17 @@ export const Hero = () => {
 
   const handlePostalCodeSubmit = async () => {
     if (!isPostalCodeValid) {
-      alert("Por favor, ingresa un código postal válido de 5 dígitos.");
+      toast.error("Por favor, ingresa un código postal válido de 5 dígitos.");
       return;
     }
 
     if (!user) {
-      alert("Por favor, regístrate o inicia sesión para buscar servicios.");
+      // Requerir registro para ver datos de profesionales (Solicitud del usuario)
+      toast.info("Para ver a los profesionales verificados, por favor inicia sesión o regístrate.", {
+        duration: 4000,
+      });
       router.push("/login?redirect=/professionals");
     } else {
-      // Redirigir directamente a profesionales (ya no hay verificación de membership)
       router.push(`/professionals?cp=${encodeURIComponent(postalCode)}`);
     }
   };
@@ -98,32 +101,21 @@ export const Hero = () => {
     setLocationResult(null);
 
     try {
-      console.log("🚀 Iniciando geolocalización precisa...");
-      console.log(
-        "🔧 API Key configurada:",
-        !!process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
-      );
-
       // Usar la nueva función de geolocalización inversa precisa
       const result = await getCurrentPostalCode();
-
-      console.log("📍 Resultado de geolocalización:", result);
 
       if (result.postalCode) {
         setPostalCode(result.postalCode);
         setLocationResult(result);
         setShowLocationDetails(true);
-        console.log("✅ Código postal obtenido:", result.postalCode);
-        console.log("🎯 Confianza:", result.confidence);
+        toast.success(`Ubicación detectada: C.P. ${result.postalCode}`);
       } else {
         setLocationError(
           "No pudimos determinar tu código postal. Por favor, ingrésalo manualmente."
         );
-        console.warn("⚠️ No se pudo obtener código postal");
+        toast.warning("No pudimos determinar tu código postal automáticamente.");
       }
     } catch (error) {
-      console.error("❌ Error en geolocalización:", error);
-
       let errorMessage = "Error al obtener tu ubicación. ";
 
       if (error instanceof Error) {
@@ -146,11 +138,11 @@ export const Hero = () => {
               setPostalCode(fallbackResult.postalCode);
               setLocationResult(fallbackResult);
               setShowLocationDetails(true);
-              console.log("✅ Fallback exitoso:", fallbackResult.postalCode);
+              toast.success(`Ubicación aproximada: C.P. ${fallbackResult.postalCode}`);
               return;
             }
           } catch (fallbackError) {
-            console.error("❌ Fallback también falló:", fallbackError);
+            // Silenciosamente fallar en fallback
           }
         } else {
           errorMessage += error.message;
@@ -158,6 +150,7 @@ export const Hero = () => {
       }
 
       setLocationError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setIsUsingCurrentLocation(false);
     }
@@ -360,9 +353,8 @@ export const Hero = () => {
                         icon={
                           isUsingCurrentLocation ? faSpinner : faLocationDot
                         }
-                        className={`text-lg ${
-                          isUsingCurrentLocation ? "animate-spin" : ""
-                        }`}
+                        className={`text-lg ${isUsingCurrentLocation ? "animate-spin" : ""
+                          }`}
                       />
                     </button>
                   </div>
@@ -375,9 +367,8 @@ export const Hero = () => {
                   >
                     <FontAwesomeIcon
                       icon={isUsingCurrentLocation ? faSpinner : faLocationDot}
-                      className={`mr-2 text-sm ${
-                        isUsingCurrentLocation ? "animate-spin" : ""
-                      }`}
+                      className={`mr-2 text-sm ${isUsingCurrentLocation ? "animate-spin" : ""
+                        }`}
                     />
                     {isUsingCurrentLocation
                       ? "Detectando..."
@@ -388,7 +379,7 @@ export const Hero = () => {
                   <button
                     onClick={handlePostalCodeSubmit}
                     className="w-full bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed text-white px-5 sm:px-6 md:px-8 py-4 sm:py-4.5 md:py-5 rounded-lg md:rounded-xl font-bold text-lg sm:text-xl md:text-2xl transition-smooth btn-hover-lift button-ripple flex items-center justify-center shadow-xl"
-                    disabled={!isPostalCodeValid || isLoadingUser}
+                    disabled={isLoadingUser}
                   >
                     {isLoadingUser ? (
                       <FontAwesomeIcon icon={faSpinner} spin className="mr-2" />

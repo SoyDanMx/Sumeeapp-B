@@ -45,18 +45,22 @@ const PopularServices = dynamic(() => import('@/components/landing/PopularServic
   ssr: true,
 });
 
+const FloatingActionBtn = dynamic(
+  () => import('@/components/FloatingActionBtn').then((mod) => mod.FloatingActionBtn)
+);
+
 export default function Home() {
   return (
     <div className="flex flex-col min-h-screen">
       <Header />
       <main className="flex-grow">
         <Hero />
-        
+
         {/* Banner de Transparencia de Tarifas */}
         <PricingTransparencyBanner />
-        
+
         {/* 🚀 QuickLeadForm - Nuevo funnel de captación rápida */}
-        <section className="py-16 bg-gray-50">
+        <section id="quick-lead-form" className="py-16 bg-gray-50">
           <div className="container mx-auto px-4">
             <div className="max-w-4xl mx-auto">
               <div className="text-center mb-12">
@@ -64,7 +68,7 @@ export default function Home() {
                   ¿Necesitas un Técnico Ahora?
                 </h2>
                 <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-                  Solicita un profesional verificado y recibe respuesta en menos de 2 horas. 
+                  Solicita un profesional verificado y recibe respuesta en menos de 2 horas.
                   Sin compromiso, directo por WhatsApp.
                 </p>
               </div>
@@ -72,7 +76,7 @@ export default function Home() {
             </div>
           </div>
         </section>
-        
+
         {/* 🎯 SECCIÓN: Servicios Populares - Versión mejorada */}
         <PopularServices />
         <ValueProposition />
@@ -85,6 +89,7 @@ export default function Home() {
         <ProfessionalCTA />
       </main>
       <Footer />
+      <FloatingActionBtn />
     </div>
   );
 }

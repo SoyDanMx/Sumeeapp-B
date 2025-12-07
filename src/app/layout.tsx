@@ -14,6 +14,7 @@ import { AuthProvider } from "@/context/AuthContext";
 import { UserProvider } from "@/context/UserContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { QueryProvider } from "@/providers/QueryProvider";
+import { ToasterProvider } from "@/providers/ToasterProvider";
 
 // Fuente optimizada para CLS - auto-hospedada con next/font
 const inter = Inter({
@@ -83,15 +84,15 @@ export const metadata: Metadata = {
     url: "https://www.sumeeapp.com",
     siteName: "Sumee App",
     images: [
-      { 
-        url: "/logo.png", 
-        width: 512, 
+      {
+        url: "/logo.png",
+        width: 512,
         height: 512,
         alt: "Sumee App Logo",
       },
-      { 
-        url: "/og-image.png", 
-        width: 1200, 
+      {
+        url: "/og-image.png",
+        width: 1200,
         height: 630,
         alt: "Sumee App - Servicios Profesionales CDMX",
       },
@@ -142,6 +143,7 @@ export default function RootLayout({
                   <main id="main-content" className="pt-0">
                     {children}
                   </main>
+                  <ToasterProvider />
                 </UserProvider>
               </AuthProvider>
             </LocationProvider>
