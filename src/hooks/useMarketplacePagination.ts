@@ -182,7 +182,17 @@ export function useMarketplacePagination(options: UseMarketplacePaginationOption
   }, [fetchProducts]);
 
   // Cargar primera página cuando cambian los filtros
+  // Usar un flag para evitar múltiples ejecuciones
+  const isInitialMount = useRef(true);
+  
   useEffect(() => {
+    // Evitar ejecución en el mount inicial si no hay filtros
+    if (isInitialMount.current && !categoryId && !searchQuery && !filters) {
+      isInitialMount.current = false;
+      return;
+    }
+    
+    isInitialMount.current = false;
     setProducts([]);
     setPagination((prev) => ({ ...prev, page: 1, total: 0, totalPages: 0, hasMore: false }));
     fetchProducts(1, false);
