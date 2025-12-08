@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { MarketplaceProduct } from "@/types/supabase";
 import { supabase } from "@/lib/supabase/client";
 
@@ -36,6 +36,10 @@ export function useMarketplacePagination(options: UseMarketplacePaginationOption
     hasMore: false,
   });
 
+  // Usar ref para evitar recrear callbacks cuando cambian los filtros
+  const filtersRef = useRef(filters);
+  filtersRef.current = filters;
+
   const fetchProducts = useCallback(
     async (page: number, append: boolean = false) => {
       try {
@@ -44,6 +48,9 @@ export function useMarketplacePagination(options: UseMarketplacePaginationOption
 
         const from = (page - 1) * pageSize;
         const to = from + pageSize - 1;
+
+        // Usar ref para obtener los filtros actuales sin causar recreación del callback
+        const currentFilters = filtersRef.current;
 
         // Construir consulta base
         let query = supabase
@@ -71,23 +78,23 @@ export function useMarketplacePagination(options: UseMarketplacePaginationOption
           );
         }
 
-        if (filters?.minPrice !== null && filters?.minPrice !== undefined) {
-          query = query.gte("price", filters.minPrice);
+        if (currentFilters?.minPrice !== null && currentFilters?.minPrice !== undefined) {
+          query = query.gte("price", currentFilters.minPrice);
         }
 
-        if (filters?.maxPrice !== null && filters?.maxPrice !== undefined) {
-          query = query.lte("price", filters.maxPrice);
+        if (currentFilters?.maxPrice !== null && currentFilters?.maxPrice !== undefined) {
+          query = query.lte("price", currentFilters.maxPrice);
         }
 
-        if (filters?.condition && filters.condition.length > 0) {
-          query = query.in("condition", filters.condition);
+        if (currentFilters?.condition && currentFilters.condition.length > 0) {
+          query = query.in("condition", currentFilters.condition);
         }
 
-        if (filters?.powerType) {
-          if (filters.powerType === "electric_all") {
+        if (currentFilters?.powerType) {
+          if (currentFilters.powerType === "electric_all") {
             query = query.or("power_type.eq.electric,power_type.eq.cordless");
           } else {
-            query = query.eq("power_type", filters.powerType);
+            query = query.eq("power_type", currentFilters.powerType);
           }
         }
 
@@ -151,7 +158,7 @@ export function useMarketplacePagination(options: UseMarketplacePaginationOption
         setLoading(false);
       }
     },
-    [pageSize, categoryId, searchQuery, filters]
+    [pageSize, categoryId, searchQuery]
   );
 
   const loadPage = useCallback(
@@ -170,13 +177,16 @@ export function useMarketplacePagination(options: UseMarketplacePaginationOption
 
   const reset = useCallback(() => {
     setProducts([]);
-    setPagination((prev) => ({ ...prev, page: 1 }));
+    setPagination((prev) => ({ ...prev, page: 1, total: 0, totalPages: 0, hasMore: false }));
     fetchProducts(1, false);
   }, [fetchProducts]);
 
   // Cargar primera página cuando cambian los filtros
   useEffect(() => {
-    reset();
+    setProducts([]);
+    setPagination((prev) => ({ ...prev, page: 1, total: 0, totalPages: 0, hasMore: false }));
+    fetchProducts(1, false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [categoryId, searchQuery, filters?.minPrice, filters?.maxPrice, filters?.condition, filters?.powerType]);
 
   return {

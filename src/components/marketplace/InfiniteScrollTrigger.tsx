@@ -20,6 +20,9 @@ export function InfiniteScrollTrigger({
   const observerTarget = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    // Solo crear observer si hay más contenido y no está cargando
+    if (!hasMore || loading) return;
+
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting && hasMore && !loading) {
