@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useMemo } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faSearch,
@@ -27,77 +27,30 @@ import { MarketplaceProduct } from "@/types/supabase";
 import ProductModal from "@/components/marketplace/ProductModal";
 import { MarketplaceSEO } from "@/components/marketplace/MarketplaceSEO";
 import { StructuredData } from "@/components/marketplace/StructuredData";
-import { supabase } from "@/lib/supabase/client";
+import { useMarketplacePagination } from "@/hooks/useMarketplacePagination";
+import { InfiniteScrollTrigger } from "@/components/marketplace/InfiniteScrollTrigger";
 import { MARKETPLACE_CATEGORIES, getCategoryUrl } from "@/lib/marketplace/categories";
 
 export default function MarketplacePage() {
-  const [products, setProducts] = useState<MarketplaceProduct[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    async function fetchProducts() {
-      try {
-        setLoading(true);
-        console.log("🛒 Fetching marketplace products...");
-
-        const { data, error } = await supabase
-          .from('marketplace_products')
-          .select(`
-            *,
-            seller:profiles(
-              full_name,
-              avatar_url
-            )
-          `)
-          .eq('status', 'active')
-          .order('created_at', { ascending: false });
-
-        if (error) {
-          console.error("Supabase Error Object:", JSON.stringify(error, null, 2));
-          throw error;
-        }
-
-        if (data) {
-          console.log(`✅ Loaded ${data.length} products`);
-
-          const mappedProducts: MarketplaceProduct[] = (data as any[]).map(item => {
-            const sellerData = Array.isArray(item.seller) ? item.seller[0] : item.seller;
-
-            // LOGIC: Identify "Official" Sumee Supply products by contact phone
-            // All products with contact_phone 5636741156 are from Sumee Supply official catalog
-            const isOfficialStore = item.contact_phone === '5636741156';
-
-            return {
-              ...item,
-              seller: {
-                full_name: isOfficialStore ? "Sumee Supply" : (sellerData?.full_name || "Usuario Sumee"),
-                avatar_url: isOfficialStore ? null : (sellerData?.avatar_url || null),
-                verified: isOfficialStore ? true : true,
-                calificacion_promedio: isOfficialStore ? 5.0 : 4.9,
-                review_count: isOfficialStore ? 1250 : 12
-              }
-            };
-          });
-          setProducts(mappedProducts);
-        }
-      } catch (err: any) {
-        console.error("❌ Catch Error Raw:", err);
-        console.error("❌ Catch Error Message:", err?.message);
-        console.error("❌ Catch Error Stack:", err?.stack);
-        console.error("❌ Catch Error JSON:", JSON.stringify(err, Object.getOwnPropertyNames(err)));
-        setError(err.message || "Error al cargar productos");
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    fetchProducts();
-  }, []);
-
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedPowerType, setSelectedPowerType] = useState<string | null>(null);
+
+  // Usar hook de paginación con infinite scroll
+  const {
+    products,
+    loading,
+    error,
+    pagination,
+    loadNextPage,
+  } = useMarketplacePagination({
+    pageSize: 24,
+    categoryId: selectedCategory || undefined,
+    searchQuery: searchQuery || undefined,
+    filters: {
+      powerType: selectedPowerType || undefined,
+    },
+  });
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -113,29 +66,18 @@ export default function MarketplacePage() {
     setTimeout(() => setSelectedProduct(null), 300);
   };
 
-  // Filtrar productos con filtros básicos
-  const baseFilteredProducts = products.filter((product) => {
-    const matchesSearch = product.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      product.description.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = selectedCategory ? product.category_id === selectedCategory : true;
-    const matchesPowerType = selectedPowerType ? (product.power_type === selectedPowerType || (selectedPowerType === 'electric_all' && (product.power_type === 'electric' || product.power_type === 'cordless'))) : true;
-
-    return matchesSearch && matchesCategory && matchesPowerType;
-  });
-
-  // Filtrar solo productos con imágenes y ordenar por importancia
-  const featuredProducts = baseFilteredProducts
-    .filter((product) => product.images && product.images.length > 0 && product.images[0])
-    .sort((a, b) => {
-      // Ordenar por importancia: más vistas + más likes + más reciente
-      const scoreA = (a.views_count || 0) + (a.likes_count || 0) * 2 + (a.seller?.verified ? 10 : 0);
-      const scoreB = (b.views_count || 0) + (b.likes_count || 0) * 2 + (b.seller?.verified ? 10 : 0);
-      return scoreB - scoreA;
-    })
-    .slice(0, 12); // Mostrar solo los 12 más importantes
-
-  // Contar total de productos filtrados (con y sin imagen)
-  const totalFilteredProducts = baseFilteredProducts.length;
+  // Filtrar solo productos con imágenes y ordenar por importancia (para la página principal)
+  const featuredProducts = useMemo(() => {
+    return products
+      .filter((product) => product.images && product.images.length > 0 && product.images[0])
+      .sort((a, b) => {
+        // Ordenar por importancia: más vistas + más likes + más reciente
+        const scoreA = (a.views_count || 0) + (a.likes_count || 0) * 2 + (a.seller?.verified ? 10 : 0);
+        const scoreB = (b.views_count || 0) + (b.likes_count || 0) * 2 + (b.seller?.verified ? 10 : 0);
+        return scoreB - scoreA;
+      })
+      .slice(0, 12); // Mostrar solo los 12 más importantes en la página principal
+  }, [products]);
 
   // Calcular contadores reales por categoría
   const categoriesWithCounts = MARKETPLACE_CATEGORIES.map((cat) => ({
@@ -500,7 +442,7 @@ export default function MarketplacePage() {
               </div>
 
               {/* Enlace para explorar todos los artículos */}
-              {totalFilteredProducts > featuredProducts.length && (
+              {pagination.total > featuredProducts.length && (
                 <div className="mt-8 sm:mt-12 text-center px-4">
                   <Link
                     href="/marketplace/all"
@@ -511,7 +453,7 @@ export default function MarketplacePage() {
                       <FontAwesomeIcon icon={faRocket} className="text-lg sm:text-xl" />
                     </div>
                     <span className="bg-white/20 px-3 py-1 rounded-full text-xs sm:text-sm">
-                      {totalFilteredProducts - featuredProducts.length} más disponibles
+                      {pagination.total - featuredProducts.length} más disponibles
                     </span>
                   </Link>
                 </div>

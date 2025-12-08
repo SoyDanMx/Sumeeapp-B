@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Image from "next/image";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faMapMarkerAlt,
@@ -58,10 +59,15 @@ export function ProductGrid({
                 {/* Imagen */}
                 <div className="relative w-32 h-32 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
                   {product.images && product.images.length > 0 ? (
-                    <img
+                    <Image
                       src={product.images[0]}
                       alt={product.title}
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                      width={128}
+                      height={128}
+                      className="object-cover group-hover:scale-110 transition-transform duration-500"
+                      loading="lazy"
+                      quality={85}
+                      sizes="128px"
                     />
                   ) : (
                     <div className="absolute inset-0 flex items-center justify-center">
@@ -151,10 +157,14 @@ export function ProductGrid({
             {/* Imagen */}
             <div className="relative h-48 bg-gradient-to-br from-gray-200 to-gray-300 overflow-hidden">
               {product.images && product.images.length > 0 ? (
-                <img
+                <Image
                   src={product.images[0]}
                   alt={product.title}
-                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                  fill
+                  className="object-cover group-hover:scale-110 transition-transform duration-500"
+                  loading="lazy"
+                  quality={85}
+                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
                 />
               ) : (
                 <div className="absolute inset-0 flex items-center justify-center">

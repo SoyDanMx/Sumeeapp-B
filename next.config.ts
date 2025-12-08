@@ -133,6 +133,13 @@ const nextConfig = {
       "@fortawesome/free-brands-svg-icons",
     ],
   },
+  
+  // Compilador optimizado
+  compiler: {
+    removeConsole: process.env.NODE_ENV === "production" ? {
+      exclude: ["error", "warn"],
+    } : false,
+  },
 
   turbopack: {
     rules: {

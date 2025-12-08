@@ -10,7 +10,6 @@ import {
   faTimes,
 } from "@fortawesome/free-solid-svg-icons";
 import Link from "next/link";
-import { Metadata } from "next";
 import { MarketplaceProduct } from "@/types/supabase";
 import ProductModal from "@/components/marketplace/ProductModal";
 import { CategoryBreadcrumbs } from "@/components/marketplace/CategoryBreadcrumbs";
@@ -32,7 +31,8 @@ import {
   SortOption,
   ViewMode,
 } from "@/lib/marketplace/filters";
-import { supabase } from "@/lib/supabase/client";
+import { useMarketplacePagination } from "@/hooks/useMarketplacePagination";
+import { InfiniteScrollTrigger } from "@/components/marketplace/InfiniteScrollTrigger";
 
 export default function CategoryPage() {
   const params = useParams();
@@ -40,8 +40,6 @@ export default function CategoryPage() {
   const slug = params.slug as string;
 
   const category = getCategoryBySlug(slug);
-  const [products, setProducts] = useState<MarketplaceProduct[]>([]);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filters, setFilters] = useState<MarketplaceFilters>({
     ...DEFAULT_FILTERS,
@@ -52,67 +50,31 @@ export default function CategoryPage() {
   const [selectedProduct, setSelectedProduct] = useState<MarketplaceProduct | null>(null);
   const [showMobileFilters, setShowMobileFilters] = useState(false);
 
-  // Fetch products
+  // Usar hook de paginación con infinite scroll
+  const {
+    products,
+    loading,
+    error: paginationError,
+    pagination,
+    loadNextPage,
+  } = useMarketplacePagination({
+    pageSize: 24,
+    categoryId: category?.id || undefined,
+    searchQuery: filters.searchQuery || undefined,
+    filters: {
+      minPrice: filters.priceRange?.min || undefined,
+      maxPrice: filters.priceRange?.max || undefined,
+      condition: filters.conditions.length > 0 ? filters.conditions : undefined,
+      powerType: filters.powerType || undefined,
+    },
+  });
+
+  // Sincronizar estados
   useEffect(() => {
-    async function fetchProducts() {
-      try {
-        setLoading(true);
-        console.log("🛒 Fetching marketplace products for category:", slug);
-
-        const { data, error } = await supabase
-          .from("marketplace_products")
-          .select(
-            `
-            *,
-            seller:profiles(
-              full_name,
-              avatar_url
-            )
-          `
-          )
-          .eq("status", "active")
-          .order("created_at", { ascending: false });
-
-        if (error) {
-          console.error("Supabase Error:", error);
-          throw error;
-        }
-
-        if (data) {
-          console.log(`✅ Loaded ${data.length} products`);
-
-          const mappedProducts: MarketplaceProduct[] = (data as any[]).map((item) => {
-            const sellerData = Array.isArray(item.seller)
-              ? item.seller[0]
-              : item.seller;
-
-            const isOfficialStore = item.contact_phone === "5636741156";
-
-            return {
-              ...item,
-              seller: {
-                full_name: isOfficialStore
-                  ? "Sumee Supply"
-                  : sellerData?.full_name || "Usuario Sumee",
-                avatar_url: isOfficialStore ? null : sellerData?.avatar_url || null,
-                verified: isOfficialStore ? true : true,
-                calificacion_promedio: isOfficialStore ? 5.0 : 4.9,
-                review_count: isOfficialStore ? 1250 : 12,
-              },
-            };
-          });
-          setProducts(mappedProducts);
-        }
-      } catch (err: any) {
-        console.error("Error fetching products:", err);
-        setError(err.message || "Error al cargar productos");
-      } finally {
-        setLoading(false);
-      }
+    if (paginationError) {
+      setError(paginationError);
     }
-
-    fetchProducts();
-  }, [slug]);
+  }, [paginationError]);
 
   // Update filters when category changes
   useEffect(() => {
@@ -124,12 +86,12 @@ export default function CategoryPage() {
     }
   }, [category]);
 
-  // Apply filters
-  const filteredProducts = useMemo(() => {
-    return applyFilters(products, filters);
-  }, [products, filters]);
+  // Los productos ya vienen filtrados del hook, solo aplicar filtros adicionales si es necesario
+  const filteredProducts = products;
 
-  // Calculate stats
+  // Calculate stats basado en todos los productos de la categoría (no solo los cargados)
+  // Nota: Para estadísticas precisas, idealmente deberíamos hacer una consulta separada
+  // Por ahora usamos los productos cargados como aproximación
   const priceStats = useMemo(() => {
     if (filteredProducts.length === 0) {
       return { min: 0, max: 0 };
@@ -300,13 +262,22 @@ export default function CategoryPage() {
                 </button>
               </div>
             ) : (
-              <div className="mt-6">
-                <ProductGrid
-                  products={filteredProducts}
-                  viewMode={filters.viewMode}
-                  onProductClick={handleProductClick}
+              <>
+                <div className="mt-6">
+                  <ProductGrid
+                    products={filteredProducts}
+                    viewMode={filters.viewMode}
+                    onProductClick={handleProductClick}
+                  />
+                </div>
+
+                {/* Infinite Scroll Trigger */}
+                <InfiniteScrollTrigger
+                  onLoadMore={loadNextPage}
+                  hasMore={pagination.hasMore}
+                  loading={loading}
                 />
-              </div>
+              </>
             )}
           </main>
         </div>
