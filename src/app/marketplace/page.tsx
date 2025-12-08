@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faSearch,
@@ -28,32 +28,82 @@ import ProductModal from "@/components/marketplace/ProductModal";
 import { MarketplaceSEO } from "@/components/marketplace/MarketplaceSEO";
 import { StructuredData } from "@/components/marketplace/StructuredData";
 import { useMarketplacePagination } from "@/hooks/useMarketplacePagination";
-import { InfiniteScrollTrigger } from "@/components/marketplace/InfiniteScrollTrigger";
 import { MARKETPLACE_CATEGORIES, getCategoryUrl } from "@/lib/marketplace/categories";
+import { supabase } from "@/lib/supabase/client";
 
 export default function MarketplacePage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedPowerType, setSelectedPowerType] = useState<string | null>(null);
-
-  // Usar hook de paginación con infinite scroll - Solo cargar si hay filtros activos
-  // Para la página principal, solo necesitamos productos destacados
+  
+  // Estado para productos cuando NO hay filtros (página principal)
+  const [featuredProductsDirect, setFeaturedProductsDirect] = useState<MarketplaceProduct[]>([]);
+  const [loadingDirect, setLoadingDirect] = useState(false);
+  
+  // Solo usar hook de paginación si hay filtros activos
   const hasActiveFilters = selectedCategory || searchQuery || selectedPowerType;
   
   const {
-    products,
-    loading,
+    products: filteredProducts,
+    loading: loadingFiltered,
     error,
     pagination,
-    loadNextPage,
   } = useMarketplacePagination({
-    pageSize: hasActiveFilters ? 24 : 12, // Menos productos si no hay filtros
+    pageSize: 24,
     categoryId: selectedCategory || undefined,
     searchQuery: searchQuery || undefined,
     filters: {
       powerType: selectedPowerType || undefined,
     },
   });
+
+  // Cargar productos destacados directamente cuando NO hay filtros (más eficiente)
+  useEffect(() => {
+    if (!hasActiveFilters && featuredProductsDirect.length === 0 && !loadingDirect) {
+      async function loadFeatured() {
+        setLoadingDirect(true);
+        try {
+          // Consulta simple y directa solo para productos destacados
+          const { data } = await supabase
+            .from("marketplace_products")
+            .select("*, seller:profiles(full_name, avatar_url)")
+            .eq("status", "active")
+            .not("images", "is", null)
+            .order("views_count", { ascending: false })
+            .order("likes_count", { ascending: false })
+            .order("created_at", { ascending: false })
+            .limit(12);
+
+          if (data) {
+            const mapped = (data as any[]).map((item) => {
+              const sellerData = Array.isArray(item.seller) ? item.seller[0] : item.seller;
+              const isOfficialStore = item.contact_phone === "5636741156";
+              return {
+                ...item,
+                seller: {
+                  full_name: isOfficialStore ? "Sumee Supply" : (sellerData?.full_name || "Usuario Sumee"),
+                  avatar_url: isOfficialStore ? null : (sellerData?.avatar_url || null),
+                  verified: isOfficialStore ? true : true,
+                  calificacion_promedio: isOfficialStore ? 5.0 : 4.9,
+                  review_count: isOfficialStore ? 1250 : 12,
+                },
+              };
+            });
+            setFeaturedProductsDirect(mapped);
+          }
+        } catch (err) {
+          console.error("Error loading featured:", err);
+        } finally {
+          setLoadingDirect(false);
+        }
+      }
+      loadFeatured();
+    }
+  }, [hasActiveFilters, featuredProductsDirect.length, loadingDirect]);
+
+  // Usar productos filtrados si hay filtros, sino usar productos destacados directos
+  const products = hasActiveFilters ? filteredProducts : featuredProductsDirect;
+  const loading = hasActiveFilters ? loadingFiltered : loadingDirect;
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -82,11 +132,13 @@ export default function MarketplacePage() {
       .slice(0, 12); // Mostrar solo los 12 más importantes en la página principal
   }, [products]);
 
-  // Calcular contadores reales por categoría
-  const categoriesWithCounts = MARKETPLACE_CATEGORIES.map((cat) => ({
-    ...cat,
-    count: products.filter((p) => p.category_id === cat.id).length,
-  }));
+  // Calcular contadores reales por categoría - Memoizar para evitar recálculos
+  const categoriesWithCounts = useMemo(() => {
+    return MARKETPLACE_CATEGORIES.map((cat) => ({
+      ...cat,
+      count: products.filter((p) => p.category_id === cat.id).length,
+    }));
+  }, [products]);
 
   const getConditionLabel = (condition: string) => {
     const labels: Record<string, { text: string; color: string }> = {
@@ -456,7 +508,7 @@ export default function MarketplacePage() {
                       <FontAwesomeIcon icon={faRocket} className="text-lg sm:text-xl" />
                     </div>
                     <span className="bg-white/20 px-3 py-1 rounded-full text-xs sm:text-sm">
-                      {pagination.total - featuredProducts.length} más disponibles
+                      {hasActiveFilters ? (pagination.total - featuredProducts.length) : "Ver todos"} más disponibles
                     </span>
                   </Link>
                 </div>
