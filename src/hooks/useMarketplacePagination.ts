@@ -20,10 +20,11 @@ export interface UseMarketplacePaginationOptions {
     condition?: string[];
     powerType?: string | null;
   };
+  forceInitialLoad?: boolean; // Forzar carga inicial incluso sin filtros
 }
 
 export function useMarketplacePagination(options: UseMarketplacePaginationOptions = {}) {
-  const { pageSize = 24, categoryId, searchQuery, filters } = options;
+  const { pageSize = 24, categoryId, searchQuery, filters, forceInitialLoad = false } = options;
 
   const [products, setProducts] = useState<MarketplaceProduct[]>([]);
   const [loading, setLoading] = useState(false);
@@ -186,8 +187,8 @@ export function useMarketplacePagination(options: UseMarketplacePaginationOption
   const isInitialMount = useRef(true);
   
   useEffect(() => {
-    // Evitar ejecución en el mount inicial si no hay filtros
-    if (isInitialMount.current && !categoryId && !searchQuery && !filters) {
+    // Evitar ejecución en el mount inicial si no hay filtros Y no se fuerza la carga
+    if (isInitialMount.current && !forceInitialLoad && !categoryId && !searchQuery && !filters) {
       isInitialMount.current = false;
       return;
     }
@@ -197,7 +198,7 @@ export function useMarketplacePagination(options: UseMarketplacePaginationOption
     setPagination((prev) => ({ ...prev, page: 1, total: 0, totalPages: 0, hasMore: false }));
     fetchProducts(1, false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [categoryId, searchQuery, filters?.minPrice, filters?.maxPrice, filters?.condition, filters?.powerType]);
+  }, [categoryId, searchQuery, filters?.minPrice, filters?.maxPrice, filters?.condition, filters?.powerType, forceInitialLoad]);
 
   return {
     products,

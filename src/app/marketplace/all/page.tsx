@@ -20,6 +20,7 @@ export default function MarketplaceAllPage() {
     const [viewMode, setViewMode] = useState<ViewMode>("grid");
 
     // Usar hook de paginación con infinite scroll
+    // forceInitialLoad=true para que siempre cargue productos, incluso sin filtros
     const {
         products,
         loading,
@@ -29,6 +30,7 @@ export default function MarketplaceAllPage() {
     } = useMarketplacePagination({
         pageSize: 24,
         searchQuery: searchQuery || undefined,
+        forceInitialLoad: true, // Forzar carga inicial para mostrar todos los productos
     });
 
     // Modal State
@@ -86,10 +88,20 @@ export default function MarketplaceAllPage() {
                     </span>
                 </div>
 
-                {error ? (
+                {loading && products.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-20">
+                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mb-4"></div>
+                        <p className="text-gray-500">Cargando productos...</p>
+                    </div>
+                ) : error ? (
                     <div className="text-center py-20">
                         <FontAwesomeIcon icon={faTools} className="text-4xl text-red-300 mb-4" />
                         <p className="text-red-500">{error}</p>
+                    </div>
+                ) : products.length === 0 ? (
+                    <div className="text-center py-20">
+                        <FontAwesomeIcon icon={faTools} className="text-4xl text-gray-300 mb-4" />
+                        <p className="text-gray-500">No se encontraron productos.</p>
                     </div>
                 ) : (
                     <>
