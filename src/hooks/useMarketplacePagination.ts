@@ -147,7 +147,12 @@ export function useMarketplacePagination(options: UseMarketplacePaginationOption
           });
 
           if (append) {
-            setProducts((prev) => [...prev, ...mappedProducts]);
+            // Filtrar duplicados al hacer append (evitar productos con mismo ID)
+            setProducts((prev) => {
+              const existingIds = new Set(prev.map(p => p.id));
+              const newProducts = mappedProducts.filter(p => !existingIds.has(p.id));
+              return [...prev, ...newProducts];
+            });
           } else {
             setProducts(mappedProducts);
           }
@@ -171,8 +176,9 @@ export function useMarketplacePagination(options: UseMarketplacePaginationOption
 
   const loadNextPage = useCallback(() => {
     if (pagination.hasMore && !loading) {
-      fetchProducts(pagination.page + 1, true);
-      setPagination((prev) => ({ ...prev, page: prev.page + 1 }));
+      const nextPage = pagination.page + 1;
+      setPagination((prev) => ({ ...prev, page: nextPage }));
+      fetchProducts(nextPage, true);
     }
   }, [pagination.hasMore, pagination.page, loading, fetchProducts]);
 
