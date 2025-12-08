@@ -36,7 +36,10 @@ export default function MarketplacePage() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedPowerType, setSelectedPowerType] = useState<string | null>(null);
 
-  // Usar hook de paginación con infinite scroll
+  // Usar hook de paginación con infinite scroll - Solo cargar si hay filtros activos
+  // Para la página principal, solo necesitamos productos destacados
+  const hasActiveFilters = selectedCategory || searchQuery || selectedPowerType;
+  
   const {
     products,
     loading,
@@ -44,7 +47,7 @@ export default function MarketplacePage() {
     pagination,
     loadNextPage,
   } = useMarketplacePagination({
-    pageSize: 24,
+    pageSize: hasActiveFilters ? 24 : 12, // Menos productos si no hay filtros
     categoryId: selectedCategory || undefined,
     searchQuery: searchQuery || undefined,
     filters: {
