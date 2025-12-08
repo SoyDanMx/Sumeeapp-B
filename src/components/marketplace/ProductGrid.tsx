@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useMemo } from "react";
 import Image from "next/image";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -44,6 +44,18 @@ export function ProductGrid({
   viewMode,
   onProductClick,
 }: ProductGridProps) {
+  // Filtrar duplicados por ID antes de renderizar (seguridad adicional)
+  const uniqueProducts = useMemo(() => {
+    const seen = new Set<string>();
+    return products.filter((product) => {
+      if (seen.has(product.id)) {
+        return false;
+      }
+      seen.add(product.id);
+      return true;
+    });
+  }, [products]);
+
   if (viewMode === "list") {
     return (
       <div className="space-y-4">
@@ -146,7 +158,7 @@ export function ProductGrid({
   // Vista Grid
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-      {products.map((product) => {
+      {uniqueProducts.map((product) => {
         const condition = getConditionLabel(product.condition);
         return (
           <div
