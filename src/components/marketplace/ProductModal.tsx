@@ -90,11 +90,14 @@ export default function ProductModal({
                         <div className="relative w-full h-full">
                             {/* Main Image */}
                             <div className="relative h-full bg-gray-200">
-                                {/* eslint-disable-next-line @next/next/no-img-element */}
-                                <img
+                                <Image
                                     src={images[currentImageIndex]}
                                     alt={product.title}
-                                    className="w-full h-full object-cover"
+                                    fill
+                                    className="object-cover"
+                                    quality={90}
+                                    priority={currentImageIndex === 0}
+                                    sizes="(max-width: 768px) 100vw, 50vw"
                                 />
                             </div>
 

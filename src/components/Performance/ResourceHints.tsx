@@ -5,7 +5,9 @@ import React from 'react';
 export default function ResourceHints() {
   return (
     <>
-      {/* DNS Prefetch para recursos externos */}
+      {/* DNS Prefetch y Preconnect para recursos externos críticos */}
+      <link rel="preconnect" href="https://jkdvrwmanmwoyyoixmnt.supabase.co" />
+      <link rel="dns-prefetch" href="https://jkdvrwmanmwoyyoixmnt.supabase.co" />
       <link rel="dns-prefetch" href="//www.google-analytics.com" />
       <link rel="dns-prefetch" href="//www.googletagmanager.com" />
       <link rel="dns-prefetch" href="//images.unsplash.com" />
@@ -33,6 +35,7 @@ export default function ResourceHints() {
       <link rel="prefetch" href="/servicios" />
       <link rel="prefetch" href="/tecnicos" />
       <link rel="prefetch" href="/join-as-pro" />
+      <link rel="prefetch" href="/marketplace" />
       
       {/* Modulepreload removido - Next.js maneja esto automáticamente */}
     </>

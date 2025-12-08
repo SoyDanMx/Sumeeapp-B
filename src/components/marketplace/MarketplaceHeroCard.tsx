@@ -49,12 +49,12 @@ export function MarketplaceHeroCard() {
         {/* Efecto de brillo animado */}
         <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700">
           <div
-            className="absolute inset-0"
+            className="absolute inset-0 animate-shimmer"
             style={{
               background:
                 "linear-gradient(135deg, rgba(255,255,255,0.1) 0%, transparent 50%, rgba(255,255,255,0.1) 100%)",
               backgroundSize: "200% 200%",
-              animation: "shimmer 3s infinite",
+              animationDuration: "3s",
             }}
           />
         </div>
@@ -64,11 +64,11 @@ export function MarketplaceHeroCard() {
           {[...Array(6)].map((_, i) => (
             <div
               key={i}
-              className="absolute w-2 h-2 bg-white/30 rounded-full"
+              className="absolute w-2 h-2 bg-white/30 rounded-full animate-float"
               style={{
                 left: `${20 + i * 15}%`,
                 top: `${10 + (i % 3) * 30}%`,
-                animation: `float ${3 + i * 0.5}s ease-in-out infinite`,
+                animationDuration: `${3 + i * 0.5}s`,
                 animationDelay: `${i * 0.3}s`,
               }}
             />
@@ -195,40 +195,15 @@ export function MarketplaceHeroCard() {
         {/* Borde brillante animado */}
         <div className="absolute inset-0 rounded-2xl md:rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none">
           <div
-            className="absolute inset-0 rounded-2xl md:rounded-3xl"
+            className="absolute inset-0 rounded-2xl md:rounded-3xl animate-shimmer"
             style={{
               background:
                 "linear-gradient(135deg, rgba(255,255,255,0.3) 0%, transparent 50%, rgba(255,255,255,0.3) 100%)",
               backgroundSize: "200% 200%",
-              animation: "shimmer 2s infinite",
             }}
           />
         </div>
       </div>
-
-      {/* Estilos de animación inline */}
-      <style jsx>{`
-        @keyframes float {
-          0%,
-          100% {
-            transform: translateY(0px);
-            opacity: 0.3;
-          }
-          50% {
-            transform: translateY(-10px);
-            opacity: 0.6;
-          }
-        }
-
-        @keyframes shimmer {
-          0% {
-            background-position: -200% 0;
-          }
-          100% {
-            background-position: 200% 0;
-          }
-        }
-      `}</style>
     </Link>
   );
 }
