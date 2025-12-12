@@ -70,42 +70,26 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith(route)
   );
 
-  // Solo verificar sesión si es necesario (ruta protegida o ruta de auth)
-  // NOTA: Hacemos el middleware completamente permisivo para rutas protegidas
-  // El componente del cliente verificará la autenticación correctamente
-  if (isProtectedRoute || isAuthRoute) {
+  // ✅ OPTIMIZACIÓN: Solo verificar sesión para rutas de auth (login/register)
+  // Para rutas protegidas, dejar que el cliente maneje la verificación
+  if (isAuthRoute) {
     try {
-      // Refresca la sesión si ha expirado (sin bloquear si falla)
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      // Solo verificar sesión para rutas de auth (más rápido)
+      const { data: { session } } = await supabase.auth.getSession();
 
       // Si está autenticado e intenta acceder a login/register, redirigir al dashboard
-      if (session && isAuthRoute) {
+      if (session) {
         return NextResponse.redirect(new URL('/dashboard/client', request.url));
       }
-
-      // Para rutas protegidas: PERMITIR SIEMPRE el acceso
-      // El componente del cliente verificará la autenticación y redirigirá si es necesario
-      // Esto evita problemas de sincronización entre servidor y cliente
-      if (isProtectedRoute) {
-        // Si hay sesión, permitir acceso
-        if (session) {
-          return response;
-        }
-
-        // Si no hay sesión, PERMITIR ACCESO DE TODAS FORMAS
-        // El componente del dashboard verificará y manejará la redirección si es necesario
-        // Esto es más seguro porque el cliente puede verificar mejor la sesión
-        console.log('⚠️ Middleware - No se detectó sesión en servidor, pero permitiendo acceso para verificación del cliente');
-        return response;
-      }
     } catch (error) {
-      // En caso de cualquier error, ser permisivo
-      // El componente del dashboard verificará la autenticación del lado del cliente
-      console.error('❌ Middleware - Error inesperado, permitiendo acceso:', error);
-      // Permitir acceso - el cliente manejará la autenticación
-      return response;
+      // En caso de error, permitir acceso - el cliente manejará la autenticación
+      console.error('❌ Middleware - Error verificando sesión:', error);
     }
   }
+
+  // Para rutas protegidas: PERMITIR SIEMPRE el acceso sin verificar sesión
+  // El componente del cliente verificará la autenticación correctamente
+  // Esto mejora el rendimiento al evitar llamadas innecesarias a getSession()
 
   // Agregar security headers
   response.headers.set('X-DNS-Prefetch-Control', 'on');

@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/lib/supabase/client";
 import { Profesional, Lead } from "@/types/supabase";
 import { PostgrestError, User } from "@supabase/supabase-js";
+import { useUser } from "./useUser"; // ✅ OPTIMIZACIÓN: Usar hook useUser en lugar de consultas separadas
 
 type UseProfesionalDataReturn = {
   profesional: Profesional | null;
@@ -14,11 +15,12 @@ type UseProfesionalDataReturn = {
 };
 
 export function useProfesionalData(): UseProfesionalDataReturn {
+  // ✅ OPTIMIZACIÓN: Usar useUser hook en lugar de manejar usuario separadamente
+  const { user, isLoading: userLoading } = useUser();
   const [profesional, setProfesional] = useState<Profesional | null>(null);
   const [leads, setLeads] = useState<Lead[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<PostgrestError | string | null>(null);
-  const [user, setUser] = useState<User | null>(null);
 
   const cacheKey = "sumeeapp/professional-dashboard";
 
@@ -43,7 +45,7 @@ export function useProfesionalData(): UseProfesionalDataReturn {
       setError(null);
 
       try {
-        // Primero obtener el perfil para verificar el rol
+        // ✅ OPTIMIZACIÓN: Obtener perfil completo directamente (ya sabemos que es profesional)
         const profesionalResult = await supabase
           .from("profiles")
           .select("*")
@@ -237,20 +239,64 @@ export function useProfesionalData(): UseProfesionalDataReturn {
 
   useEffect(() => {
     let isMounted = true;
-    let authListener: { subscription: { unsubscribe: () => void } } | null =
-      null;
     let timeoutId: NodeJS.Timeout | null = null;
 
-    // ✅ FIX: Timeout de seguridad aumentado a 15 segundos para manejar latencia de Supabase
-    // Durante mantenimiento de Supabase, las operaciones pueden tardar más tiempo
+    // ✅ OPTIMIZACIÓN: Timeout más inteligente - solo si realmente está bloqueado
     timeoutId = setTimeout(() => {
-      if (isMounted) {
-        console.warn("⚠️ useProfesionalData - Timeout de 15 segundos, forzando setIsLoading(false) (puede deberse a latencia de Supabase)");
-        setIsLoading(false);
-        // No establecer error, solo dejar de cargar
+      if (isMounted && isLoading) {
+        if (!user) {
+          console.warn("⚠️ useProfesionalData - Timeout: sin usuario después de 5s");
+          setIsLoading(false);
+        } else {
+          // Si hay usuario pero aún carga, dar 3s más
+          setTimeout(() => {
+            if (isMounted && isLoading) {
+              console.warn("⚠️ useProfesionalData - Timeout extendido: forzando setIsLoading(false) después de 8s");
+              setIsLoading(false);
+            }
+          }, 3000);
+        }
       }
-    }, 15000); // Aumentado de 8s a 15s para manejar latencia durante mantenimiento
+    }, 5000); // Reducido de 15s a 5s inicial + 3s extendido
 
+    // ✅ OPTIMIZACIÓN: Usar el hook useUser en lugar de getSession
+    if (userLoading) {
+      setIsLoading(true);
+      return () => {
+        isMounted = false;
+        if (timeoutId) clearTimeout(timeoutId);
+      };
+    }
+
+    if (!user) {
+      // No hay usuario, no cargar datos
+      setProfesional(null);
+      setLeads([]);
+      setIsLoading(false);
+      if (timeoutId) clearTimeout(timeoutId);
+      return () => {
+        isMounted = false;
+        if (timeoutId) clearTimeout(timeoutId);
+      };
+    }
+
+    // ✅ OPTIMIZACIÓN: Usar el rol del hook useUser (ya viene del caché)
+    // @ts-ignore - Supabase types inference issue
+    const userRole = (user as any)?.role;
+    
+    if (userRole === 'client') {
+      // Usuario es cliente, no cargar datos de profesional
+      setProfesional(null);
+      setLeads([]);
+      setIsLoading(false);
+      if (timeoutId) clearTimeout(timeoutId);
+      return () => {
+        isMounted = false;
+        if (timeoutId) clearTimeout(timeoutId);
+      };
+    }
+
+    // Verificar caché primero
     try {
       const cached = sessionStorage.getItem(cacheKey);
       if (cached) {
@@ -259,7 +305,6 @@ export function useProfesionalData(): UseProfesionalDataReturn {
           profesional: Profesional;
           leads: Lead[];
         };
-        // ✅ FIX: Verificar que el caché no sea muy viejo (máximo 2 minutos)
         const cacheAge = Date.now() - parsed.updatedAt;
         const MAX_CACHE_AGE = 2 * 60 * 1000; // 2 minutos
         
@@ -268,18 +313,15 @@ export function useProfesionalData(): UseProfesionalDataReturn {
           setLeads(parsed.leads.map(normalizeLead));
           setIsLoading(false);
           if (timeoutId) clearTimeout(timeoutId);
-          // ✅ FIX: Aún así hacer fetch en background para verificar que los leads existan
-          // No bloquear la UI, pero actualizar si hay cambios
-          supabase.auth.getSession().then(async ({ data: { session } }) => {
-            if (session?.user?.id) {
-              fetchData(session.user.id).catch(() => {
-                // Si falla el fetch, mantener el caché
-              });
-            }
+          // Fetch en background para actualizar si hay cambios
+          fetchData(user.id).catch(() => {
+            // Si falla, mantener el caché
           });
-          return; // Salir temprano si hay cache válido
+          return () => {
+            isMounted = false;
+            if (timeoutId) clearTimeout(timeoutId);
+          };
         } else {
-          // Caché expirado, eliminarlo
           sessionStorage.removeItem(cacheKey);
         }
       }
@@ -287,95 +329,17 @@ export function useProfesionalData(): UseProfesionalDataReturn {
       /* ignore cache read failures */
     }
 
-    // Obtener sesión inicial
-    supabase.auth
-      .getSession()
-      .then(async ({ data: { session } }) => {
-        if (!isMounted) return;
-
-        if (timeoutId) clearTimeout(timeoutId);
-
-        const currentUser = session?.user ?? null;
-        setUser(currentUser);
-
-        if (currentUser) {
-          // Verificar el rol antes de hacer fetchData
-          // Si es cliente, no hacer fetchData y establecer loading=false inmediatamente
-          const { data: profileCheck } = await supabase
-            .from("profiles")
-            .select("role")
-            .eq("user_id", currentUser.id)
-            .single();
-          
-          // @ts-ignore - Supabase types inference issue
-          if ((profileCheck as any)?.role === 'client') {
-            // Usuario es cliente, no cargar datos de profesional
-            setProfesional(null);
-            setLeads([]);
-            setIsLoading(false);
-            return;
-          }
-          
-          await fetchData(currentUser.id);
-        } else {
-          setProfesional(null);
-          setLeads([]);
-          setIsLoading(false);
-        }
-      })
-      .catch(() => {
-        if (isMounted) {
-          setError("Error al obtener la sesión de usuario");
-          setIsLoading(false);
-        }
-        if (timeoutId) clearTimeout(timeoutId);
-      });
-
-    // Escuchar cambios de autenticación
-    const { data: listener } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
-        if (!isMounted) return;
-
-        const currentUser = session?.user ?? null;
-        setUser(currentUser);
-
-        if (currentUser) {
-          // Verificar el rol antes de hacer fetchData
-          const { data: profileCheck } = await supabase
-            .from("profiles")
-            .select("role")
-            .eq("user_id", currentUser.id)
-            .single();
-          
-          // @ts-ignore - Supabase types inference issue
-          if ((profileCheck as any)?.role === 'client') {
-            // Usuario es cliente, no cargar datos de profesional
-            setProfesional(null);
-            setLeads([]);
-            setIsLoading(false);
-            return;
-          }
-          
-          await fetchData(currentUser.id);
-        } else {
-          setProfesional(null);
-          setLeads([]);
-          setIsLoading(false);
-        }
-      }
-    );
-
-    authListener = listener;
+    // Usuario es profesional, cargar datos
+    setIsLoading(true);
+    fetchData(user.id);
 
     return () => {
       isMounted = false;
       if (timeoutId) clearTimeout(timeoutId);
-      if (authListener) {
-        authListener.subscription.unsubscribe();
-      }
     };
+    // ✅ OPTIMIZACIÓN: Depender de user y userLoading del hook useUser
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Array vacío - solo ejecutar una vez al montar
+  }, [user?.id, userLoading]); // Ejecutar cuando cambie el usuario o su estado de carga
 
   useEffect(() => {
     if (!user?.id) return;
