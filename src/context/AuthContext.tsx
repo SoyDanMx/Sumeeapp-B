@@ -99,14 +99,23 @@ export function AuthProvider({ children }: AuthProviderProps) {
     // Ejecutar actualización
     updateProfile();
 
-    // ✅ FIX: Timeout de seguridad aumentado a 10 segundos para manejar latencia de Supabase
-    // Durante mantenimiento de Supabase, las operaciones pueden tardar más tiempo
+    // ✅ OPTIMIZACIÓN: Timeout más inteligente - solo activar si realmente está bloqueado
+    // Solo aplicar timeout si después de 5 segundos aún está cargando Y no hay usuario
     timeoutId = setTimeout(() => {
-      if (isMounted && isLoading) {
-        console.warn('⚠️ AuthContext - Timeout de seguridad: forzando isLoading=false (puede deberse a latencia de Supabase)');
+      if (isMounted && isLoading && !user) {
+        console.warn('⚠️ AuthContext - Timeout de seguridad: forzando isLoading=false (sin usuario después de 5s)');
         setIsLoading(false);
       }
-    }, 10000); // Aumentado de 5s a 10s para manejar latencia durante mantenimiento
+      // Si hay usuario pero aún carga, dar más tiempo (hasta 8s total)
+      else if (isMounted && isLoading && user) {
+        setTimeout(() => {
+          if (isMounted && isLoading) {
+            console.warn('⚠️ AuthContext - Timeout extendido: forzando isLoading=false después de 8s');
+            setIsLoading(false);
+          }
+        }, 3000); // 3 segundos adicionales si hay usuario
+      }
+    }, 5000); // Reducido de 10s a 5s para mejor UX
 
     return () => {
       isMounted = false;

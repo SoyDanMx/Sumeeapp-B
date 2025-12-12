@@ -67,69 +67,51 @@ export default function LoginForm() {
     try {
       console.log('🔐 Intentando login...');
       
-      // ✅ FIX: Timeout aumentado a 45 segundos para manejar latencia de Supabase durante mantenimiento
-      // Durante mantenimiento de Supabase, la autenticación puede tardar más tiempo
+      // ✅ OPTIMIZACIÓN: Timeout reducido a 15 segundos (suficiente para login normal)
       timeoutId = setTimeout(() => {
         if (!loginCompleted) {
           setLoading(false);
-          setError('La autenticación está tardando más de lo normal. Esto puede deberse al mantenimiento de Supabase. Por favor, espera unos momentos e intenta de nuevo. Si el problema persiste, verifica tu conexión a internet.');
+          setError('La autenticación está tardando más de lo normal. Por favor, verifica tu conexión a internet e intenta de nuevo.');
         }
-      }, 45000); // Aumentado de 30s a 45s para manejar latencia durante mantenimiento
+      }, 15000); // Reducido de 45s a 15s para mejor UX
       
-      // ✅ FIX: Agregar retry logic con exponential backoff para manejar latencia de Supabase
+      // ✅ OPTIMIZACIÓN: Simplificar lógica de retry - solo 1 reintento rápido
       let authData: any = null;
       let error: any = null;
-      const maxRetries = 2;
-      let retryCount = 0;
+      const maxRetries = 1; // Reducido de 2 a 1
       
-      while (retryCount <= maxRetries) {
-        try {
-          const result = await supabase.auth.signInWithPassword({
-            email,
-            password,
-          });
-          
-          // Si hay error de red o timeout, intentar retry
-          if (result.error) {
-            const errorMsg = result.error.message?.toLowerCase() || '';
-            const isNetworkError = errorMsg.includes('timeout') || 
-                                  errorMsg.includes('network') || 
-                                  errorMsg.includes('fetch') ||
-                                  errorMsg.includes('connection');
-            
-            if (isNetworkError && retryCount < maxRetries) {
-              retryCount++;
-              const delay = Math.min(1000 * Math.pow(2, retryCount), 5000); // Exponential backoff, max 5s
-              console.log(`⚠️ Error de red en intento ${retryCount}, reintentando en ${delay}ms...`);
-              await new Promise(resolve => setTimeout(resolve, delay));
-              continue;
-            }
-          }
-          
-          // Si llegamos aquí, tenemos resultado (éxito o error no recuperable)
-          authData = result.data;
-          error = result.error;
-          break;
-        } catch (err: any) {
-          // Si es un error de timeout o red, intentar retry
-          const errorMsg = err.message?.toLowerCase() || '';
+      try {
+        const result = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+        
+        authData = result.data;
+        error = result.error;
+        
+        // Solo reintentar si es un error de red claro y es el primer intento
+        if (error && maxRetries > 0) {
+          const errorMsg = error.message?.toLowerCase() || '';
           const isNetworkError = errorMsg.includes('timeout') || 
                                 errorMsg.includes('network') || 
                                 errorMsg.includes('fetch') ||
                                 errorMsg.includes('connection');
           
-          if (isNetworkError && retryCount < maxRetries) {
-            retryCount++;
-            const delay = Math.min(1000 * Math.pow(2, retryCount), 5000);
-            console.log(`⚠️ Excepción de red en intento ${retryCount}, reintentando en ${delay}ms...`);
-            await new Promise(resolve => setTimeout(resolve, delay));
-            continue;
+          if (isNetworkError) {
+            console.log('⚠️ Error de red detectado, reintentando una vez...');
+            await new Promise(resolve => setTimeout(resolve, 1000)); // Esperar 1s antes de reintentar
+            
+            const retryResult = await supabase.auth.signInWithPassword({
+              email,
+              password,
+            });
+            
+            authData = retryResult.data;
+            error = retryResult.error;
           }
-          
-          // Error no recuperable
-          error = err;
-          break;
         }
+      } catch (err: any) {
+        error = err;
       }
 
       loginCompleted = true;
@@ -159,25 +141,8 @@ export default function LoginForm() {
 
       console.log('✅ Login exitoso, redirigiendo...');
       
-      // Obtener perfil de forma no bloqueante (opcional)
-      // No esperamos a que termine, solo intentamos obtenerlo en background
-      (async () => {
-        try {
-          const { data: profile, error } = await supabase
-            .from('profiles')
-            .select('role')
-            .eq('user_id', authData.user.id)
-            .single();
-          
-          if (error) {
-            console.warn('⚠️ No se pudo obtener perfil (no crítico):', error);
-          } else {
-            console.log('Usuario:', authData.user.email, 'Rol:', (profile as any)?.role || 'sin perfil');
-          }
-        } catch (err) {
-          console.warn('⚠️ Error al obtener perfil (no crítico):', err);
-        }
-      })();
+      // ✅ OPTIMIZACIÓN: Eliminada consulta no bloqueante al perfil
+      // El perfil se obtendrá cuando sea necesario en el dashboard
       
       // Verificar si hay un redirect guardado (de sessionStorage o URL)
       const redirectParam = searchParams.get('redirect');

@@ -39,35 +39,17 @@ export async function GET(request: NextRequest) {
         console.log('- Session:', session ? 'Present' : 'Missing');
 
         // --- LÓGICA DE REDIRECCIÓN INTELIGENTE ---
-        // 4. SI TENEMOS UNA SESIÓN, usamos el ID del usuario para buscar su rol.
-        const userId = session.user.id;
+        // ✅ OPTIMIZACIÓN: Redirigir directamente a /dashboard que manejará el routing
+        // Esto evita una consulta adicional a profiles aquí
+        // El dashboard usará useUserRole que tiene caché y es más eficiente
         
-        console.log('🔍 FETCHING USER PROFILE FOR ROLE...');
-        const { data: profile, error: profileError } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('user_id', userId)
-          .single();
+        console.log('✅ SESSION ESTABLISHED, REDIRECTING TO DASHBOARD...');
+        console.log('- User ID:', session.user.id);
+        console.log('- User email:', session.user.email);
         
-        if (profileError) {
-          console.error('❌ ERROR FETCHING PROFILE ROLE:', profileError);
-          console.error('- Error message:', profileError.message);
-          // Si no podemos obtener el perfil, lo enviamos a una página genérica como fallback.
-          return NextResponse.redirect(`${origin}/dashboard/client`);
-        }
-        
-        console.log('✅ PROFILE FETCHED SUCCESSFULLY');
-        const profileData = profile as any;
-        console.log('- User role:', profileData.role);
-        
-        // 5. REDIRIGIMOS BASADO EN EL ROL.
-        if (profileData.role === 'profesional') {
-          console.log('🎯 REDIRECTING PROFESSIONAL USER TO PROFESSIONAL DASHBOARD...');
-          return NextResponse.redirect(`${origin}/professional-dashboard`);
-        } else {
-          console.log('🎯 REDIRECTING CLIENT USER TO CLIENT DASHBOARD...');
-          return NextResponse.redirect(`${origin}/dashboard/client`);
-        }
+        // Redirigir a /dashboard que manejará el routing basado en el rol
+        // usando los hooks optimizados con caché
+        return NextResponse.redirect(`${origin}/dashboard`);
       } else {
         console.error('❌ NO SESSION AFTER CODE EXCHANGE');
         return NextResponse.redirect(`${origin}/auth/auth-code-error`);
