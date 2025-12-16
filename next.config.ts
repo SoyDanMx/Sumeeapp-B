@@ -21,6 +21,18 @@ const nextConfig = {
         port: "",
         pathname: "/**",
       },
+      {
+        protocol: "https",
+        hostname: "www.truper.com",
+        port: "",
+        pathname: "/media/import/imagenes/**",
+      },
+      {
+        protocol: "https",
+        hostname: "ftp3.syscom.mx",
+        port: "",
+        pathname: "/**",
+      },
     ],
     formats: ["image/webp", "image/avif"],
     minimumCacheTTL: 60,

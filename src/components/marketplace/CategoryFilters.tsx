@@ -11,6 +11,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { MarketplaceFilters, PriceRange } from "@/lib/marketplace/filters";
 import { MARKETPLACE_CATEGORIES, getCategoryById, getSubcategoryById } from "@/lib/marketplace/categories";
+import { extractBrandsFromProducts, getAvailableBrands } from "@/lib/marketplace/brands";
 
 interface CategoryFiltersProps {
   filters: MarketplaceFilters;
@@ -18,6 +19,7 @@ interface CategoryFiltersProps {
   showPowerType?: boolean;
   availableConditions?: string[];
   priceStats?: { min: number; max: number };
+  products?: Array<{ title: string; description?: string }>; // Para extraer marcas disponibles
 }
 
 const CONDITION_LABELS: Record<string, string> = {
@@ -42,13 +44,27 @@ export function CategoryFilters({
   showPowerType = false,
   availableConditions = [],
   priceStats,
+  products = [],
 }: CategoryFiltersProps) {
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
     subcategory: true,
     condition: true,
+    brands: true,
     price: true,
     powerType: showPowerType,
   });
+  
+  // Extraer marcas disponibles de los productos
+  // Si hay productos, extraer marcas de ellos; si no, usar marcas conocidas
+  const extractedBrands = products.length > 0
+    ? extractBrandsFromProducts(products, filters.categoryId)
+    : [];
+  
+  // Obtener marcas conocidas para la categoría
+  const knownBrands = getAvailableBrands(filters.categoryId);
+  
+  // Combinar marcas extraídas con marcas conocidas (evitar duplicados)
+  const availableBrands = Array.from(new Set([...extractedBrands, ...knownBrands])).sort();
 
   const toggleSection = (section: string) => {
     setExpandedSections((prev) => ({
@@ -103,6 +119,17 @@ export function CategoryFilters({
     });
   };
 
+  const handleBrandToggle = (brand: string) => {
+    const newBrands = filters.brands.includes(brand)
+      ? filters.brands.filter((b) => b !== brand)
+      : [...filters.brands, brand];
+    
+    onFiltersChange({
+      ...filters,
+      brands: newBrands,
+    });
+  };
+
   const clearFilters = () => {
     onFiltersChange({
       ...filters,
@@ -110,6 +137,7 @@ export function CategoryFilters({
       priceRange: { min: null, max: null },
       powerType: null,
       subcategoryId: null,
+      brands: [],
     });
   };
 
@@ -118,7 +146,8 @@ export function CategoryFilters({
     filters.priceRange.min !== null ||
     filters.priceRange.max !== null ||
     filters.powerType !== null ||
-    filters.subcategoryId !== null;
+    filters.subcategoryId !== null ||
+    filters.brands.length > 0;
 
   // Obtener categoría actual y sus subcategorías
   const currentCategory = filters.categoryId ? getCategoryById(filters.categoryId) : null;
@@ -232,6 +261,56 @@ export function CategoryFilters({
                     </span>
                   </label>
                 ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Marcas */}
+        {availableBrands.length > 0 && (
+          <div>
+            <button
+              onClick={() => toggleSection("brands")}
+              className="w-full px-4 py-3 flex items-center justify-between hover:bg-gray-50 transition-colors"
+            >
+              <span className="font-medium text-gray-900">Marcas</span>
+              <FontAwesomeIcon
+                icon={expandedSections.brands ? faChevronUp : faChevronDown}
+                className="text-gray-400 text-xs"
+              />
+            </button>
+            {expandedSections.brands && (
+              <div className="px-4 pb-4 space-y-2 max-h-64 overflow-y-auto">
+                {availableBrands.map((brand) => (
+                  <label
+                    key={brand}
+                    className="flex items-center gap-2 cursor-pointer group"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={filters.brands.includes(brand)}
+                      onChange={() => handleBrandToggle(brand)}
+                      className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                    />
+                    <span
+                      className={`text-sm flex-1 ${
+                        filters.brands.includes(brand)
+                          ? "font-semibold text-indigo-600"
+                          : "text-gray-700 group-hover:text-gray-900"
+                      }`}
+                    >
+                      {brand}
+                    </span>
+                  </label>
+                ))}
+                {filters.brands.length > 0 && (
+                  <button
+                    onClick={() => onFiltersChange({ ...filters, brands: [] })}
+                    className="w-full mt-2 text-xs text-indigo-600 hover:text-indigo-700 font-medium"
+                  >
+                    Limpiar marcas
+                  </button>
+                )}
               </div>
             )}
           </div>

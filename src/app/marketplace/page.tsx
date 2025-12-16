@@ -25,6 +25,8 @@ import {
   faWandSparkles,
   faUserPlus,
   faChevronDown,
+  faServer,
+  faList,
 } from "@fortawesome/free-solid-svg-icons";
 import Link from "next/link";
 import { MarketplaceProduct } from "@/types/supabase";
@@ -47,6 +49,7 @@ import {
   ViewMode,
   applyFilters,
 } from "@/lib/marketplace/filters";
+import { getFeaturedProducts } from "@/lib/marketplace/productScoring";
 
 export default function MarketplacePage() {
   const [filters, setFilters] = useState<MarketplaceFilters>(DEFAULT_FILTERS);
@@ -93,24 +96,49 @@ export default function MarketplacePage() {
     forceInitialLoad: hasActiveFilters, // Forzar carga cuando hay filtros activos
   });
 
-  // Cargar productos destacados directamente cuando NO hay filtros (más eficiente)
+  // Cargar productos destacados basados en tracción cuando NO hay filtros
   useEffect(() => {
     if (!shouldUsePagination && featuredProductsDirect.length === 0 && !loadingDirect) {
       async function loadFeaturedProducts() {
         setLoadingDirect(true);
         try {
+          // Cargar más productos para calcular scores (necesitamos una muestra grande)
+          // Luego seleccionaremos los mejores basados en tracción
           const { data, error } = await supabase
             .from("marketplace_products")
             .select("*")
             .eq("status", "active")
-            .is("seller_id", null)
-            .order("created_at", { ascending: false })
-            .limit(24);
+            .order("views_count", { ascending: false }) // Ordenar por vistas primero para obtener productos con más tracción
+            .limit(200); // Cargar más para tener mejor muestra para scoring
 
           if (error) throw error;
-          if (data) setFeaturedProductsDirect(data);
+          
+          if (data && data.length > 0) {
+            // Calcular scores y obtener productos destacados basados en tracción
+            const featured = getFeaturedProducts(data as MarketplaceProduct[], 24);
+            setFeaturedProductsDirect(featured);
+            
+            if (process.env.NODE_ENV === 'development') {
+              console.log('🎯 [PRODUCTOS DESTACADOS] Productos seleccionados por tracción:', featured.length);
+            }
+          }
         } catch (err) {
           console.error("Error loading featured products:", err);
+          // Fallback: cargar productos más recientes si falla el scoring
+          try {
+            const { data: fallbackData, error: fallbackError } = await supabase
+              .from("marketplace_products")
+              .select("*")
+              .eq("status", "active")
+              .order("created_at", { ascending: false })
+              .limit(24);
+            
+            if (!fallbackError && fallbackData) {
+              setFeaturedProductsDirect(fallbackData as MarketplaceProduct[]);
+            }
+          } catch (fallbackErr) {
+            console.error("Error en fallback de productos destacados:", fallbackErr);
+          }
         } finally {
           setLoadingDirect(false);
         }
@@ -474,6 +502,7 @@ export default function MarketplacePage() {
               mecanica: faTools,
               pintura: faPaintRoller,
               jardineria: faTree,
+              sistemas: faServer,
             };
             const Icon = iconMap[category.slug] || faTools;
             
@@ -554,7 +583,18 @@ export default function MarketplacePage() {
               <div className="flex items-center gap-4 flex-1 flex-wrap">
                 <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900">
                   {hasActiveFilters ? "Resultados de Búsqueda" : "Productos Destacados"}
-                </h2>
+              </h2>
+                
+                {/* Botón Ver Todos los Productos - Solo cuando NO hay filtros */}
+                {!hasActiveFilters && (
+            <Link
+              href="/marketplace/all"
+                    className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold rounded-xl transition-all shadow-lg hover:shadow-xl transform hover:scale-105 text-sm sm:text-base"
+            >
+                    <FontAwesomeIcon icon={faList} className="text-sm" />
+                    <span>Ver Todos los Productos</span>
+            </Link>
+                )}
                 
                 {/* Botón Filtros Móvil */}
                 {hasActiveFilters && (

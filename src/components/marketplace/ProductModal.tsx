@@ -20,13 +20,26 @@ interface ProductModalProps {
     product: MarketplaceProduct;
     isOpen: boolean;
     onClose: () => void;
+    exchangeRate?: { rate: number } | null; // Para conversión USD → MXN
 }
 
 export default function ProductModal({
     product,
     isOpen,
     onClose,
+    exchangeRate,
 }: ProductModalProps) {
+    // Función helper para formatear precio con conversión
+    const formatPrice = (price: number) => {
+        if (exchangeRate) {
+            const mxnPrice = price * exchangeRate.rate;
+            return `$${mxnPrice.toLocaleString("es-MX", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+            })}`;
+        }
+        return `$${price.toLocaleString("es-MX")}`;
+    };
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
     if (!isOpen) return null;
@@ -47,7 +60,10 @@ export default function ProductModal({
     const getWhatsappLink = () => {
         // Use product-specific contact phone if available, otherwise fallback to support/default number
         const sellerPhone = product.contact_phone || "525636741156";
-        const message = `Hola, estoy interesado en "${product.title}" que vi en el Marketplace de Sumee por $${product.price.toLocaleString("es-MX")}. ¿Sigue disponible?`;
+        const priceText = exchangeRate 
+            ? formatPrice(product.price)
+            : `$${product.price.toLocaleString("es-MX")}`;
+        const message = `Hola, estoy interesado en "${product.title}" que vi en el Marketplace de Sumee por ${priceText}. ¿Sigue disponible?`;
         return `https://wa.me/${sellerPhone.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`;
     };
 
@@ -164,11 +180,11 @@ export default function ProductModal({
                             {/* Price */}
                             <div className="flex items-baseline gap-3 mb-6">
                                 <span className="text-3xl font-black text-gray-900">
-                                    ${product.price.toLocaleString("es-MX")}
+                                    {formatPrice(product.price)}
                                 </span>
                                 {product.original_price && (
                                     <span className="text-lg text-gray-400 line-through decoration-red-400">
-                                        ${product.original_price.toLocaleString("es-MX")}
+                                        {formatPrice(product.original_price)}
                                     </span>
                                 )}
                                 {product.original_price && (

@@ -17,6 +17,7 @@ interface ProductGridProps {
   products: MarketplaceProduct[];
   viewMode: ViewMode;
   onProductClick: (product: MarketplaceProduct) => void;
+  exchangeRate?: { rate: number } | null; // Para conversión USD → MXN
 }
 
 const getConditionLabel = (condition: string) => {
@@ -43,7 +44,19 @@ export function ProductGrid({
   products,
   viewMode,
   onProductClick,
+  exchangeRate,
 }: ProductGridProps) {
+  // Función helper para formatear precio con conversión
+  const formatPrice = (price: number) => {
+    if (exchangeRate) {
+      const mxnPrice = price * exchangeRate.rate;
+      return `$${mxnPrice.toLocaleString("es-MX", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      })}`;
+    }
+    return `$${Number(price).toLocaleString("es-MX")}`;
+  };
   // Filtrar duplicados por ID antes de renderizar (seguridad adicional)
   const uniqueProducts = useMemo(() => {
     const seen = new Set<string>();
@@ -137,11 +150,11 @@ export function ProductGrid({
                     {/* Precio */}
                     <div className="flex-shrink-0 text-right">
                       <div className="text-2xl font-black text-indigo-600 mb-1">
-                        ${Number(product.price).toLocaleString("es-MX")}
+                        {formatPrice(product.price)}
                       </div>
                       {product.original_price && (
                         <div className="text-sm text-gray-400 line-through">
-                          ${Number(product.original_price).toLocaleString("es-MX")}
+                          {formatPrice(product.original_price)}
                         </div>
                       )}
                     </div>
@@ -227,11 +240,11 @@ export function ProductGrid({
               {/* Precio */}
               <div className="flex items-baseline gap-2 mb-2 sm:mb-3">
                 <span className="text-lg sm:text-xl md:text-2xl font-black text-indigo-600">
-                  ${Number(product.price).toLocaleString("es-MX")}
+                  {formatPrice(product.price)}
                 </span>
                 {product.original_price && (
                   <span className="text-xs sm:text-sm text-gray-400 line-through decoration-red-300">
-                    ${Number(product.original_price).toLocaleString("es-MX")}
+                    {formatPrice(product.original_price)}
                   </span>
                 )}
               </div>
