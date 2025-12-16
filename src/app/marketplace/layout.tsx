@@ -1,9 +1,11 @@
 import { Metadata } from "next";
 
+const baseUrl = "https://www.sumeeapp.com";
+
 export const metadata: Metadata = {
   title: "Marketplace de Herramientas y Equipos | Sumee App",
   description:
-    "Compra y vende herramientas, equipos y suministros de construcción entre profesionales verificados. Marketplace exclusivo para técnicos confiables en CDMX.",
+    "Compra y vende herramientas, equipos y suministros de construcción entre profesionales verificados. Marketplace exclusivo para técnicos confiables en CDMX. Más de 13,000 productos disponibles.",
   keywords: [
     "marketplace herramientas",
     "herramientas construcción CDMX",
@@ -17,17 +19,28 @@ export const metadata: Metadata = {
     "herramientas usadas CDMX",
     "equipos profesionales CDMX",
     "suministros construcción",
+    "TRUPER",
+    "herramientas profesionales",
+    "marketplace B2B",
   ],
+  authors: [{ name: "Sumee App" }],
+  creator: "Sumee App",
+  publisher: "Sumee App",
+  formatDetection: {
+    email: false,
+    address: false,
+    telephone: false,
+  },
   openGraph: {
     title: "Marketplace de Herramientas y Equipos | Sumee App",
     description:
-      "Compra y vende herramientas, equipos y suministros de construcción entre profesionales verificados en CDMX.",
+      "Compra y vende herramientas, equipos y suministros de construcción entre profesionales verificados en CDMX. Más de 13,000 productos disponibles.",
     type: "website",
-    url: "https://www.sumeeapp.com/marketplace",
+    url: `${baseUrl}/marketplace`,
     siteName: "Sumee App",
     images: [
       {
-        url: "/og-marketplace.png",
+        url: `${baseUrl}/og-marketplace.png`,
         width: 1200,
         height: 630,
         alt: "Marketplace Sumee App - Herramientas y Equipos",
@@ -40,10 +53,11 @@ export const metadata: Metadata = {
     title: "Marketplace de Herramientas y Equipos | Sumee App",
     description:
       "Compra y vende herramientas entre profesionales verificados en CDMX.",
-    images: ["/og-marketplace.png"],
+    images: [`${baseUrl}/og-marketplace.png`],
+    creator: "@sumeeapp",
   },
   alternates: {
-    canonical: "https://www.sumeeapp.com/marketplace",
+    canonical: `${baseUrl}/marketplace`,
   },
   robots: {
     index: true,
@@ -55,6 +69,9 @@ export const metadata: Metadata = {
       "max-image-preview": "large",
       "max-snippet": -1,
     },
+  },
+  verification: {
+    google: process.env.NEXT_PUBLIC_GOOGLE_VERIFICATION,
   },
 };
 

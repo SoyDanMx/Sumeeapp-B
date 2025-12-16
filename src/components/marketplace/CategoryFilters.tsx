@@ -10,6 +10,7 @@ import {
   faDollarSign,
 } from "@fortawesome/free-solid-svg-icons";
 import { MarketplaceFilters, PriceRange } from "@/lib/marketplace/filters";
+import { MARKETPLACE_CATEGORIES, getCategoryById, getSubcategoryById } from "@/lib/marketplace/categories";
 
 interface CategoryFiltersProps {
   filters: MarketplaceFilters;
@@ -43,6 +44,7 @@ export function CategoryFilters({
   priceStats,
 }: CategoryFiltersProps) {
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
+    subcategory: true,
     condition: true,
     price: true,
     powerType: showPowerType,
@@ -84,12 +86,30 @@ export function CategoryFilters({
     });
   };
 
+  const handleSubcategoryChange = (subcategoryId: string | null) => {
+    // Si se selecciona una subcategoría, asegurar que la categoría también esté seleccionada
+    // Esto es necesario para que se carguen productos de esa categoría
+    if (subcategoryId && !filters.categoryId) {
+      // Si no hay categoría seleccionada, usar la categoría actual del filtro
+      // (esto debería estar siempre presente cuando se muestra este componente)
+      console.warn("Se seleccionó subcategoría sin categoría padre");
+    }
+    
+    onFiltersChange({
+      ...filters,
+      subcategoryId: subcategoryId === filters.subcategoryId ? null : subcategoryId,
+      // Asegurar que categoryId esté presente si se selecciona subcategoría
+      categoryId: subcategoryId && !filters.categoryId ? currentCategory?.id || filters.categoryId : filters.categoryId,
+    });
+  };
+
   const clearFilters = () => {
     onFiltersChange({
       ...filters,
       conditions: [],
       priceRange: { min: null, max: null },
       powerType: null,
+      subcategoryId: null,
     });
   };
 
@@ -97,7 +117,12 @@ export function CategoryFilters({
     filters.conditions.length > 0 ||
     filters.priceRange.min !== null ||
     filters.priceRange.max !== null ||
-    filters.powerType !== null;
+    filters.powerType !== null ||
+    filters.subcategoryId !== null;
+
+  // Obtener categoría actual y sus subcategorías
+  const currentCategory = filters.categoryId ? getCategoryById(filters.categoryId) : null;
+  const subcategories = currentCategory?.subcategories || [];
 
   return (
     <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
@@ -119,6 +144,57 @@ export function CategoryFilters({
       </div>
 
       <div className="divide-y divide-gray-200">
+        {/* Tipo de Equipo (Subcategorías) */}
+        {subcategories.length > 0 && (
+          <div>
+            <button
+              onClick={() => toggleSection("subcategory")}
+              className="w-full px-4 py-3 flex items-center justify-between hover:bg-gray-50 transition-colors"
+            >
+              <span className="font-medium text-gray-900">Tipo de Equipo</span>
+              <FontAwesomeIcon
+                icon={expandedSections.subcategory ? faChevronUp : faChevronDown}
+                className="text-gray-400 text-xs"
+              />
+            </button>
+            {expandedSections.subcategory && (
+              <div className="px-4 pb-4 space-y-2 max-h-64 overflow-y-auto">
+                {subcategories.map((subcategory) => (
+                  <label
+                    key={subcategory.id}
+                    className="flex items-center gap-2 cursor-pointer group"
+                  >
+                    <input
+                      type="radio"
+                      name="subcategory"
+                      checked={filters.subcategoryId === subcategory.id}
+                      onChange={() => handleSubcategoryChange(subcategory.id)}
+                      className="w-4 h-4 text-indigo-600 border-gray-300 focus:ring-indigo-500"
+                    />
+                    <span
+                      className={`text-sm flex-1 ${
+                        filters.subcategoryId === subcategory.id
+                          ? "font-semibold text-indigo-600"
+                          : "text-gray-700 group-hover:text-gray-900"
+                      }`}
+                    >
+                      {subcategory.name}
+                    </span>
+                  </label>
+                ))}
+                {filters.subcategoryId && (
+                  <button
+                    onClick={() => handleSubcategoryChange(null)}
+                    className="w-full mt-2 text-xs text-indigo-600 hover:text-indigo-700 font-medium"
+                  >
+                    Ver todos los tipos
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Condición */}
         {availableConditions.length > 0 && (
           <div>
@@ -251,4 +327,3 @@ export function CategoryFilters({
     </div>
   );
 }
-

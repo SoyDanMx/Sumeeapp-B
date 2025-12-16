@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { MarketplaceProduct } from "@/types/supabase";
 import { supabase } from "@/lib/supabase/client";
 
@@ -53,6 +53,30 @@ export function useMarketplacePagination(options: UseMarketplacePaginationOption
         // Usar ref para obtener los filtros actuales sin causar recreación del callback
         const currentFilters = filtersRef.current;
 
+        // Resolver categoryId: si es slug, obtener UUID primero
+        let categoryUUID = categoryId;
+        if (categoryId && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(categoryId)) {
+          // Es un slug, intentar obtener el UUID de la categoría
+          // Primero verificar si existe la tabla marketplace_categories
+          try {
+            const { data: categoryData } = await supabase
+              .from("marketplace_categories")
+              .select("id")
+              .eq("slug", categoryId)
+              .single();
+            
+            if (categoryData && (categoryData as any).id) {
+              categoryUUID = (categoryData as any).id;
+            } else {
+              // Si no se encuentra, intentar usar el slug directamente (compatibilidad hacia atrás)
+              console.warn(`Categoría no encontrada por slug: ${categoryId}, usando slug directamente`);
+            }
+          } catch (err) {
+            // Si falla (tabla no existe o error), usar slug directamente
+            console.warn("Error obteniendo UUID de categoría, usando slug:", err);
+          }
+        }
+
         // Construir consulta base
         let query = supabase
           .from("marketplace_products")
@@ -69,14 +93,16 @@ export function useMarketplacePagination(options: UseMarketplacePaginationOption
           .eq("status", "active");
 
         // Aplicar filtros
-        if (categoryId) {
-          query = query.eq("category_id", categoryId);
+        if (categoryUUID) {
+          query = query.eq("category_id", categoryUUID);
         }
 
-        if (searchQuery) {
-          query = query.or(
-            `title.ilike.%${searchQuery}%,description.ilike.%${searchQuery}%`
-          );
+        if (searchQuery && searchQuery.trim() !== "") {
+          // Búsqueda en título y descripción usando ilike (case-insensitive)
+          // Sintaxis correcta para Supabase: campo.operador.valor
+          const trimmedQuery = searchQuery.trim();
+          // Usar la sintaxis correcta de Supabase para .or() con ilike
+          query = query.or(`title.ilike.%${trimmedQuery}%,description.ilike.%${trimmedQuery}%`);
         }
 
         if (currentFilters?.minPrice !== null && currentFilters?.minPrice !== undefined) {
@@ -105,7 +131,10 @@ export function useMarketplacePagination(options: UseMarketplacePaginationOption
           .range(from, to);
 
         if (queryError) {
-          throw queryError;
+          console.error("Error en query de productos:", queryError);
+          // Proporcionar más información del error
+          const errorMessage = queryError.message || JSON.stringify(queryError) || "Error desconocido al obtener productos";
+          throw new Error(errorMessage);
         }
 
         if (data) {
@@ -192,6 +221,19 @@ export function useMarketplacePagination(options: UseMarketplacePaginationOption
   // Usar un flag para evitar múltiples ejecuciones
   const isInitialMount = useRef(true);
   
+  // Crear una clave única para detectar cambios en los filtros
+  const filtersKey = useMemo(() => {
+    return JSON.stringify({
+      categoryId,
+      searchQuery,
+      minPrice: filters?.minPrice,
+      maxPrice: filters?.maxPrice,
+      condition: filters?.condition ? [...filters.condition].sort().join(',') : null,
+      powerType: filters?.powerType,
+      forceInitialLoad,
+    });
+  }, [categoryId, searchQuery, filters?.minPrice, filters?.maxPrice, filters?.condition, filters?.powerType, forceInitialLoad]);
+  
   useEffect(() => {
     // Evitar ejecución en el mount inicial si no hay filtros Y no se fuerza la carga
     if (isInitialMount.current && !forceInitialLoad && !categoryId && !searchQuery && !filters) {
@@ -204,7 +246,7 @@ export function useMarketplacePagination(options: UseMarketplacePaginationOption
     setPagination((prev) => ({ ...prev, page: 1, total: 0, totalPages: 0, hasMore: false }));
     fetchProducts(1, false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [categoryId, searchQuery, filters?.minPrice, filters?.maxPrice, filters?.condition, filters?.powerType, forceInitialLoad]);
+  }, [filtersKey, fetchProducts]);
 
   return {
     products,

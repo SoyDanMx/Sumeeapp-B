@@ -1,6 +1,7 @@
 /**
  * Sistema de Categorías del Marketplace
  * Estructura organizada tipo MercadoLibre con slugs SEO-friendly
+ * Incluye subcategorías detalladas para filtrado avanzado
  */
 
 import {
@@ -13,6 +14,12 @@ import {
   IconDefinition,
 } from "@fortawesome/free-solid-svg-icons";
 
+export interface MarketplaceSubcategory {
+  id: string;
+  name: string;
+  keywords: string[]; // Palabras clave para búsqueda en título/descripción
+}
+
 export interface MarketplaceCategory {
   id: string;
   slug: string; // URL-friendly slug
@@ -22,7 +29,7 @@ export interface MarketplaceCategory {
   color: string;
   gradient: string;
   description: string;
-  subcategories?: string[];
+  subcategories: MarketplaceSubcategory[];
   filters?: {
     condition?: boolean;
     priceRange?: boolean;
@@ -41,7 +48,14 @@ export const MARKETPLACE_CATEGORIES: MarketplaceCategory[] = [
     color: "yellow",
     gradient: "from-yellow-400 to-yellow-600",
     description: "Herramientas eléctricas, cables, interruptores y accesorios eléctricos",
-    subcategories: ["herramientas-electricas", "cables", "interruptores", "iluminacion"],
+    subcategories: [
+      { id: "herramientas-electricas", name: "Herramientas Eléctricas", keywords: ["taladro", "atornillador", "sierra", "esmeril", "lijadora", "pulidora", "caladora", "soldadora"] },
+      { id: "cables", name: "Cables y Alambres", keywords: ["cable", "alambre", "conductor", "cableado", "cable eléctrico", "cable electrico", "calibre", "awg", "thwn", "thw", "nyp", "cable calibre"] },
+      { id: "interruptores", name: "Interruptores y Tomacorrientes", keywords: ["interruptor", "tomacorriente", "enchufe", "apagador", "switch", "contacto"] },
+      { id: "iluminacion", name: "Iluminación", keywords: ["foco", "lámpara", "led", "luminaria", "reflector", "spot", "plafón"] },
+      { id: "cajas-y-tuberias", name: "Cajas y Tuberías", keywords: ["caja", "tubería", "conduit", "canaleta", "registro"] },
+      { id: "accesorios-electricos", name: "Accesorios Eléctricos", keywords: ["cinta", "aislante", "terminal", "conector", "cable", "manguera"] },
+    ],
     filters: {
       condition: true,
       priceRange: true,
@@ -58,7 +72,16 @@ export const MARKETPLACE_CATEGORIES: MarketplaceCategory[] = [
     color: "blue",
     gradient: "from-blue-400 to-blue-600",
     description: "Herramientas y accesorios para trabajos de plomería",
-    subcategories: ["llaves", "tuberias", "accesorios", "herramientas-especializadas"],
+    subcategories: [
+      { id: "bombas-agua", name: "Bombas de Agua", keywords: ["bomba", "bomba de agua", "bomba sumergible", "bomba centrífuga", "bomba periférica"] },
+      { id: "tuberia-pvc", name: "Tubería PVC", keywords: ["tubería pvc", "pvc", "tubo pvc", "caño pvc", "conduit pvc"] },
+      { id: "tuberia-cobre", name: "Tubería de Cobre", keywords: ["tubería cobre", "cobre", "tubo cobre", "caño cobre", "tubería de cobre"] },
+      { id: "tuberia-hierro", name: "Tubería de Hierro", keywords: ["tubería hierro", "hierro", "tubo hierro", "caño hierro", "galvanizado"] },
+      { id: "llaves-y-valvulas", name: "Llaves y Válvulas", keywords: ["llave", "válvula", "valvula", "llave de paso", "llave de bola", "compuerta"] },
+      { id: "conexiones-y-accesorios", name: "Conexiones y Accesorios", keywords: ["codo", "tee", "reducción", "unión", "tapón", "niple", "adaptador", "manguera"] },
+      { id: "herramientas-plomeria", name: "Herramientas de Plomería", keywords: ["llave", "pinza", "tenaza", "destapacaños", "sopapa", "desarmador"] },
+      { id: "sanitarios", name: "Sanitarios", keywords: ["wc", "inodoro", "lavabo", "lavamanos", "mingitorio", "taza"] },
+    ],
     filters: {
       condition: true,
       priceRange: true,
@@ -74,7 +97,14 @@ export const MARKETPLACE_CATEGORIES: MarketplaceCategory[] = [
     color: "orange",
     gradient: "from-orange-500 to-red-500",
     description: "Herramientas pesadas y equipos para construcción",
-    subcategories: ["demolicion", "medicion", "nivelacion", "equipos-pesados"],
+    subcategories: [
+      { id: "demolicion", name: "Demolición", keywords: ["martillo", "demolición", "rompedor", "picota", "mazo", "barreta"] },
+      { id: "medicion", name: "Medición y Nivelación", keywords: ["nivel", "plomada", "cinta", "metro", "escuadra", "regla", "medición"] },
+      { id: "mezcladoras", name: "Mezcladoras y Revolvedoras", keywords: ["mezcladora", "revolvedora", "batidora", "concreto", "cemento"] },
+      { id: "equipos-pesados", name: "Equipos Pesados", keywords: ["compactadora", "vibrador", "cortadora", "sierra", "pulidora"] },
+      { id: "andamios", name: "Andamios y Escaleras", keywords: ["andamio", "escalera", "escalera de tijera", "escalera extensible"] },
+      { id: "herramientas-manuales", name: "Herramientas Manuales", keywords: ["paleta", "llana", "cuchara", "pala", "pico", "azadón"] },
+    ],
     filters: {
       condition: true,
       priceRange: true,
@@ -90,7 +120,16 @@ export const MARKETPLACE_CATEGORIES: MarketplaceCategory[] = [
     color: "gray",
     gradient: "from-gray-500 to-gray-700",
     description: "Herramientas para trabajos mecánicos y automotrices",
-    subcategories: ["llaves-mecanicas", "destornilladores", "equipos-automotrices"],
+    subcategories: [
+      { id: "llaves-mecanicas", name: "Llaves Mecánicas", keywords: ["llave", "llave inglesa", "llave francesa", "llave de tubo", "llave allen", "llave torx", "llave combinada", "llave ajustable", "llave de carraca", "llave de impacto"] },
+      { id: "destornilladores", name: "Destornilladores y Desarmadores", keywords: ["destornillador", "desarmador", "phillips", "plano", "estrella", "torx", "phillips", "pozidriv", "hexagonal"] },
+      { id: "equipos-automotrices", name: "Equipos Automotrices", keywords: ["gato", "elevador", "compresor", "llave de rueda", "herramienta automotriz", "gato hidráulico", "gato mecánico", "elevador de autos"] },
+      { id: "herramientas-especializadas", name: "Herramientas Especializadas", keywords: ["pinza", "tenaza", "alicate", "cortador", "remachadora", "pinza de presión", "pinza de punta", "alicate de corte", "tenaza de corte"] },
+      { id: "medicion-mecanica", name: "Medición Mecánica", keywords: ["calibrador", "vernier", "micrómetro", "escalímetro", "regla", "nivel", "escuadra", "transportador", "metro"] },
+      { id: "herramientas-electricas-mecanica", name: "Herramientas Eléctricas Mecánicas", keywords: ["taladro", "atornillador", "llave de impacto eléctrica", "pulidora", "esmeril", "lijadora", "sierra"] },
+      { id: "tornillos-y-tuercas", name: "Tornillos y Tuercas", keywords: ["tornillo", "tuerca", "perno", "arandela", "chaveta", "remache", "clavo", "grapa"] },
+      { id: "lubricantes-y-aceites", name: "Lubricantes y Aceites", keywords: ["aceite", "lubricante", "grasa", "wd-40", "penetrante", "aceite motor", "aceite transmisión"] },
+    ],
     filters: {
       condition: true,
       priceRange: true,
@@ -106,7 +145,16 @@ export const MARKETPLACE_CATEGORIES: MarketplaceCategory[] = [
     color: "purple",
     gradient: "from-purple-500 to-pink-500",
     description: "Rodillos, brochas, pistolas y accesorios para pintura",
-    subcategories: ["rodillos", "brochas", "pistolas", "accesorios"],
+    subcategories: [
+      { id: "rodillos", name: "Rodillos y Mangos", keywords: ["rodillo", "rodillo de pintura", "manga", "mangos", "rodillo liso", "rodillo texturizado", "rodillo de espuma", "mango telescópico"] },
+      { id: "brochas", name: "Brochas y Pinceles", keywords: ["brocha", "pincel", "brocha de pintura", "pincel de pintura", "brocha plana", "brocha redonda", "pincel angular", "brocha de esponja"] },
+      { id: "pistolas", name: "Pistolas de Pintura", keywords: ["pistola", "pistola de pintura", "airless", "compresor", "pistola airless", "pistola de aire", "pulverizador", "spray"] },
+      { id: "accesorios-pintura", name: "Accesorios de Pintura", keywords: ["bandeja", "cubeta", "papel", "masking", "cinta", "lona", "plástico", "cinta de enmascarar", "papel de lija", "lija"] },
+      { id: "escaleras-pintura", name: "Escaleras y Andamios", keywords: ["escalera", "andamio", "plataforma", "trabajo en altura", "escalera de tijera", "escalera extensible", "andamio tubular"] },
+      { id: "pinturas-y-barnices", name: "Pinturas y Barnices", keywords: ["pintura", "barniz", "esmalte", "látex", "acrílico", "vinilo", "pintura epóxica", "pintura anticorrosiva"] },
+      { id: "preparacion-superficie", name: "Preparación de Superficie", keywords: ["masilla", "sellador", "imprimante", "primer", "enduido", "lijadora", "pulidora", "lijado"] },
+      { id: "herramientas-especiales", name: "Herramientas Especiales", keywords: ["raspador", "espátula", "cuchilla", "cuchillo de pintor", "removedor", "decapante", "limpiador"] },
+    ],
     filters: {
       condition: true,
       priceRange: true,
@@ -122,7 +170,17 @@ export const MARKETPLACE_CATEGORIES: MarketplaceCategory[] = [
     color: "green",
     gradient: "from-green-500 to-emerald-600",
     description: "Herramientas y equipos para jardinería y paisajismo",
-    subcategories: ["podadoras", "rastrillos", "equipos-riego", "herramientas-manuales"],
+    subcategories: [
+      { id: "podadoras", name: "Podadoras y Cortadoras", keywords: ["podadora", "cortadora", "desbrozadora", "tijera", "tijeras de podar", "podadora eléctrica", "podadora de altura", "cortadora de césped", "cortadora manual"] },
+      { id: "rastrillos", name: "Rastrillos y Palas", keywords: ["rastrillo", "pala", "azadón", "pico", "rastro", "pala de jardín", "azada", "rastrillo de hojas", "rastrillo de jardín"] },
+      { id: "equipos-riego", name: "Equipos de Riego", keywords: ["manguera", "aspersor", "regadera", "riego", "bomba", "sistema de riego", "manguera de riego", "aspersor rotativo", "regadera de jardín", "bomba de agua"] },
+      { id: "herramientas-manuales", name: "Herramientas Manuales", keywords: ["tijera", "pala", "rastrillo", "azadón", "pico", "herramienta manual", "tijeras de jardín", "transplantador", "desplantador", "cuchillo de jardín"] },
+      { id: "maquinaria-jardineria", name: "Maquinaria de Jardinería", keywords: ["cortadora", "podadora", "soplador", "trituradora", "máquina", "cortadora de césped", "soplador de hojas", "trituradora de ramas", "motosierra"] },
+      { id: "fertilizantes-y-sustratos", name: "Fertilizantes y Sustratos", keywords: ["fertilizante", "abono", "sustrato", "tierra", "compost", "humus", "turba", "perlita", "vermiculita"] },
+      { id: "macetas-y-contenedores", name: "Macetas y Contenedores", keywords: ["maceta", "macetero", "contenedor", "jardín", "maceta de barro", "maceta plástica", "jardín vertical", "maceta colgante"] },
+      { id: "semillas-y-plantas", name: "Semillas y Plantas", keywords: ["semilla", "planta", "bulbo", "esqueje", "semilla de césped", "planta de jardín", "árbol", "arbusto"] },
+      { id: "accesorios-jardineria", name: "Accesorios de Jardinería", keywords: ["guante", "rodillera", "delantal", "carretilla", "cubo", "regadera", "pulverizador", "tijeras de podar"] },
+    ],
     filters: {
       condition: true,
       priceRange: true,
@@ -146,6 +204,14 @@ export function getCategoryById(id: string): MarketplaceCategory | undefined {
 }
 
 /**
+ * Obtiene una subcategoría por su ID
+ */
+export function getSubcategoryById(categoryId: string, subcategoryId: string): MarketplaceSubcategory | undefined {
+  const category = getCategoryById(categoryId);
+  return category?.subcategories.find((sub) => sub.id === subcategoryId);
+}
+
+/**
  * Genera la URL de una categoría
  */
 export function getCategoryUrl(category: MarketplaceCategory | string): string {
@@ -154,4 +220,3 @@ export function getCategoryUrl(category: MarketplaceCategory | string): string {
     : category.slug;
   return `/marketplace/categoria/${slug}`;
 }
-

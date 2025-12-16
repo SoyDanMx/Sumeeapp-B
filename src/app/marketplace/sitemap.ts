@@ -1,13 +1,14 @@
 import { MetadataRoute } from "next";
 import { MARKETPLACE_CATEGORIES } from "@/lib/marketplace/categories";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
+
+const baseUrl = "https://www.sumeeapp.com";
 
 /**
  * Genera sitemap dinámico para el marketplace
- * Incluye todas las categorías y la página principal
+ * Incluye todas las categorías, páginas principales y productos destacados
  */
-export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = "https://www.sumeeapp.com";
-
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Página principal del marketplace
   const marketplacePages: MetadataRoute.Sitemap = [
     {
@@ -26,7 +27,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
       url: `${baseUrl}/marketplace/sell`,
       lastModified: new Date(),
       changeFrequency: "weekly",
-      priority: 0.8,
+      priority: 0.7,
     },
   ];
 
@@ -40,6 +41,31 @@ export default function sitemap(): MetadataRoute.Sitemap {
     })
   );
 
-  return [...marketplacePages, ...categoryPages];
-}
+  // Productos destacados (limitado a 1000 para no sobrecargar el sitemap)
+  let productPages: MetadataRoute.Sitemap = [];
+  
+  try {
+    const supabase = await createSupabaseServerClient();
+    const { data: products } = await supabase
+      .from("marketplace_products")
+      .select("id, updated_at")
+      .eq("status", "active")
+      .is("seller_id", null) // Solo productos oficiales de Sumee
+      .order("updated_at", { ascending: false })
+      .limit(1000);
 
+    if (products) {
+      productPages = products.map((product) => ({
+        url: `${baseUrl}/marketplace/${product.id}`,
+        lastModified: product.updated_at ? new Date(product.updated_at) : new Date(),
+        changeFrequency: "weekly" as const,
+        priority: 0.8,
+      }));
+    }
+  } catch (error) {
+    console.error("Error fetching products for sitemap:", error);
+    // Continuar sin productos si hay error
+  }
+
+  return [...marketplacePages, ...categoryPages, ...productPages];
+}
