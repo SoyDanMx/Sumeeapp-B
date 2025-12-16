@@ -3,6 +3,8 @@
  * Tipos y utilidades para filtrado avanzado tipo MercadoLibre
  */
 
+import { getSubcategoryById } from "./categories";
+
 export type SortOption = 
   | "relevance"
   | "price_asc"
@@ -25,6 +27,9 @@ export interface MarketplaceFilters {
   
   // Categoría
   categoryId: string | null;
+  
+  // Subcategoría (tipo de equipo específico)
+  subcategoryId: string | null;
   
   // Condición
   conditions: string[]; // ["nuevo", "usado_excelente", etc.]
@@ -53,6 +58,7 @@ export interface MarketplaceFilters {
 export const DEFAULT_FILTERS: MarketplaceFilters = {
   searchQuery: "",
   categoryId: null,
+  subcategoryId: null,
   conditions: [],
   priceRange: { min: null, max: null },
   locationCity: null,
@@ -96,8 +102,156 @@ export function applyFilters<T extends {
   }
 
   // Categoría
+  // Nota: category_id en la BD es UUID, pero filters.categoryId puede ser slug
+  // Por lo tanto, NO filtramos por categoría aquí si ya viene filtrado desde la BD
+  // Este filtro solo se aplica si los productos no vienen pre-filtrados
+  // (por ejemplo, cuando se cargan productos destacados sin filtros)
+  // Si filters.categoryId es un UUID válido, comparar directamente
+  // Si es un slug, los productos ya deberían venir filtrados desde la BD
   if (filters.categoryId) {
-    filtered = filtered.filter((p) => p.category_id === filters.categoryId);
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(filters.categoryId);
+    if (isUUID) {
+      // Es UUID, comparar directamente
+      filtered = filtered.filter((p) => p.category_id === filters.categoryId);
+    }
+    // Si es slug, asumimos que los productos ya vienen filtrados desde la BD
+  }
+
+  // Subcategoría (filtrado por palabras clave en título/descripción)
+  if (filters.subcategoryId && filters.categoryId) {
+    const subcategory = getSubcategoryById(filters.categoryId, filters.subcategoryId);
+    
+    if (!subcategory) {
+      console.warn(`⚠️ Subcategoría no encontrada: categoryId=${filters.categoryId}, subcategoryId=${filters.subcategoryId}`);
+    } else if (!subcategory.keywords || subcategory.keywords.length === 0) {
+      console.warn(`⚠️ Subcategoría "${subcategory.name}" no tiene keywords definidas`);
+    } else {
+      const keywords = subcategory.keywords.map((k) => k.toLowerCase().trim());
+      
+      // Debug en desarrollo
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`🔍 Filtrando por subcategoría "${subcategory.name}":`, {
+          keywords,
+          productosAntes: filtered.length,
+          categoryId: filters.categoryId,
+          subcategoryId: filters.subcategoryId,
+        });
+      }
+      
+      const productosAntesFiltro = filtered.length;
+      const productosOriginales = [...filtered]; // Guardar copia para debug
+      
+      filtered = filtered.filter((p) => {
+        const titleLower = (p.title || "").toLowerCase();
+        const descLower = (p.description || "").toLowerCase();
+        const combinedText = `${titleLower} ${descLower}`;
+        
+        // Buscar si alguna keyword está presente en el título o descripción
+        // Búsqueda más flexible: busca palabras individuales dentro de keywords compuestas
+        const matches = keywords.some((keyword) => {
+          const keywordLower = keyword.toLowerCase().trim();
+          
+          // Normalizar acentos y caracteres especiales para búsqueda más flexible
+          const normalizeText = (text: string) => {
+            return text
+              .normalize('NFD')
+              .replace(/[\u0300-\u036f]/g, '') // Eliminar acentos
+              .toLowerCase();
+          };
+          
+          const normalizedTitle = normalizeText(titleLower);
+          const normalizedDesc = normalizeText(descLower);
+          const normalizedKeyword = normalizeText(keywordLower);
+          
+          // Si la keyword es una frase (múltiples palabras), buscar cada palabra
+          const keywordWords = normalizedKeyword.split(/\s+/).filter(w => w.length > 2); // Filtrar palabras muy cortas
+          
+          // Si es una keyword simple (una palabra), buscar directamente
+          if (keywordWords.length === 1) {
+            const singleKeyword = keywordWords[0];
+            
+            // Buscar en título (normalizado)
+            if (normalizedTitle.includes(singleKeyword)) {
+              return true;
+            }
+            
+            // Buscar en descripción (normalizado)
+            if (normalizedDesc.includes(singleKeyword)) {
+              return true;
+            }
+            
+            // También buscar en texto original (por si acaso)
+            if (titleLower.includes(keywordLower) || descLower.includes(keywordLower)) {
+              return true;
+            }
+            
+            // Buscar palabra completa con regex
+            try {
+              const escapedKeyword = singleKeyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+              const regex = new RegExp(`\\b${escapedKeyword}`, 'i');
+              if (regex.test(combinedText)) {
+                return true;
+              }
+            } catch (e) {
+              // Si falla el regex, continuar con búsqueda simple
+            }
+          } else {
+            // Si es una frase, buscar si todas las palabras están presentes (en cualquier orden)
+            const allWordsMatch = keywordWords.every(word => {
+              return normalizedTitle.includes(word) || normalizedDesc.includes(word);
+            });
+            
+            if (allWordsMatch) {
+              return true;
+            }
+            
+            // También buscar la frase completa (normalizada)
+            if (normalizedTitle.includes(normalizedKeyword) || normalizedDesc.includes(normalizedKeyword)) {
+              return true;
+            }
+            
+            // También buscar en texto original
+            if (titleLower.includes(keywordLower) || descLower.includes(keywordLower)) {
+              return true;
+            }
+          }
+          
+          return false;
+        });
+        
+        return matches;
+      });
+      
+      // Debug adicional: mostrar productos que no coincidieron
+      if (process.env.NODE_ENV === 'development' && filtered.length === 0 && productosAntesFiltro > 0) {
+        const productosNoCoincidentes = productosOriginales.slice(0, 5).map(p => ({
+          titulo: p.title,
+          descripcion: p.description?.substring(0, 100),
+          categoria_id: p.category_id,
+        }));
+        console.log(`📋 Ejemplos de productos que NO coincidieron (primeros 5):`, productosNoCoincidentes);
+        console.log(`💡 Keywords buscadas:`, keywords);
+        console.log(`💡 Sugerencia: Verifica que los productos tengan alguna de estas palabras en su título o descripción.`);
+      }
+      
+      // Debug en desarrollo
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`✅ Productos después del filtro de subcategoría:`, {
+          antes: productosAntesFiltro,
+          despues: filtered.length,
+          eliminados: productosAntesFiltro - filtered.length,
+        });
+        
+        // Mostrar información útil cuando no hay resultados
+        if (filtered.length === 0 && productosAntesFiltro > 0) {
+          console.log(`⚠️ Ningún producto coincidió con las keywords:`, keywords);
+          console.log(`⚠️ Total de productos antes del filtro:`, productosAntesFiltro);
+          console.log(`💡 Sugerencia: Verifica que los productos tengan alguna de estas palabras en título o descripción:`, keywords.slice(0, 5));
+        } else if (filtered.length === 0 && productosAntesFiltro === 0) {
+          console.log(`⚠️ No hay productos cargados para filtrar. Verifica que la categoría tenga productos.`);
+        }
+      }
+    }
   }
 
   // Condición

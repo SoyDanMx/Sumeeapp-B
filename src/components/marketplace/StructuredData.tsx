@@ -68,6 +68,7 @@ export function StructuredData({ type, data }: StructuredDataProps) {
 
 /**
  * Genera structured data para un producto individual
+ * Optimizado para Google Rich Results y Shopping
  */
 export function ProductStructuredData({
   product,
@@ -77,20 +78,33 @@ export function ProductStructuredData({
   category?: MarketplaceCategory;
 }) {
   const baseUrl = "https://www.sumeeapp.com";
-  const productUrl = `${baseUrl}/marketplace/producto/${product.id}`;
+  const productUrl = `${baseUrl}/marketplace/${product.id}`;
   const imageUrl = product.images && product.images.length > 0 
     ? product.images[0].startsWith("http")
       ? product.images[0]
       : `${baseUrl}${product.images[0]}`
     : `${baseUrl}/images/marketplace/default-product.jpg`;
 
+  // Preparar todas las imágenes
+  const images = product.images && product.images.length > 0
+    ? product.images.map(img => 
+        img.startsWith("http") ? img : `${baseUrl}${img}`
+      )
+    : [imageUrl];
+
   const structuredData = {
     "@context": "https://schema.org",
     "@type": "Product",
     name: product.title,
-    description: product.description,
-    image: imageUrl,
+    description: product.description || product.title,
+    image: images,
     sku: product.id,
+    mpn: product.id,
+    brand: {
+      "@type": "Brand",
+      name: product.seller?.full_name || "TRUPER" || "Sumee Supply",
+    },
+    category: category?.name || "Herramientas",
     offers: {
       "@type": "Offer",
       url: productUrl,
@@ -105,22 +119,55 @@ export function ProductStructuredData({
           : "https://schema.org/OutOfStock",
       itemCondition: getConditionSchema(product.condition),
       seller: {
-        "@type": "Organization",
+        "@type": product.seller_id ? "Person" : "Organization",
         name: product.seller?.full_name || "Sumee Supply",
+        ...(product.seller_id ? {} : {
+          "@id": `${baseUrl}#organization`,
+        }),
+      },
+      shippingDetails: {
+        "@type": "OfferShippingDetails",
+        shippingRate: {
+          "@type": "MonetaryAmount",
+          value: "0",
+          currency: "MXN",
+        },
+        shippingDestination: {
+          "@type": "DefinedRegion",
+          addressCountry: "MX",
+          addressRegion: "CDMX",
+        },
+        deliveryTime: {
+          "@type": "ShippingDeliveryTime",
+          businessDays: {
+            "@type": "OpeningHoursSpecification",
+            dayOfWeek: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+          },
+          cutoffTime: "14:00",
+          handlingTime: {
+            "@type": "QuantitativeValue",
+            minValue: 1,
+            maxValue: 2,
+            unitCode: "DAY",
+          },
+          transitTime: {
+            "@type": "QuantitativeValue",
+            minValue: 1,
+            maxValue: 3,
+            unitCode: "DAY",
+          },
+        },
       },
     },
-    brand: {
-      "@type": "Brand",
-      name: product.seller?.full_name || "Sumee Supply",
-    },
-    category: category?.name || "Herramientas",
-    aggregateRating: product.seller?.calificacion_promedio
-      ? {
-          "@type": "AggregateRating",
-          ratingValue: product.seller.calificacion_promedio.toString(),
-          reviewCount: product.seller.review_count?.toString() || "0",
-        }
-      : undefined,
+    ...(product.seller?.calificacion_promedio ? {
+      aggregateRating: {
+        "@type": "AggregateRating",
+        ratingValue: product.seller.calificacion_promedio.toString(),
+        reviewCount: product.seller.review_count?.toString() || "0",
+        bestRating: "5",
+        worstRating: "1",
+      },
+    } : {}),
   };
 
   return (

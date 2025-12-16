@@ -155,19 +155,19 @@ export function ProductGrid({
     );
   }
 
-  // Vista Grid
+  // Vista Grid - Optimizado para móvil (2 columnas)
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+    <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6 animate-fade-in">
       {uniqueProducts.map((product) => {
         const condition = getConditionLabel(product.condition);
         return (
           <div
             key={product.id}
             onClick={() => onProductClick(product)}
-            className="bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden group cursor-pointer transform hover:-translate-y-1"
+            className="bg-white rounded-2xl shadow-md hover:shadow-2xl transition-all duration-300 overflow-hidden group cursor-pointer transform hover:-translate-y-2 border border-gray-100"
           >
-            {/* Imagen */}
-            <div className="relative h-48 bg-gradient-to-br from-gray-200 to-gray-300 overflow-hidden">
+            {/* Imagen - Altura optimizada para móvil */}
+            <div className="relative h-40 sm:h-44 md:h-48 bg-gradient-to-br from-gray-100 via-gray-50 to-gray-100 overflow-hidden">
               {product.images && product.images.length > 0 ? (
                 <Image
                   src={product.images[0]}
@@ -211,7 +211,7 @@ export function ProductGrid({
             </div>
 
             {/* Contenido */}
-            <div className="p-5">
+            <div className="p-3 sm:p-4 md:p-5">
               <div className="mb-2">
                 <span
                   className={`inline-block px-2 py-1 rounded-lg text-xs font-semibold ${condition.color}`}
@@ -220,17 +220,17 @@ export function ProductGrid({
                 </span>
               </div>
 
-              <h3 className="font-bold text-gray-900 mb-2 line-clamp-2 h-12 leading-tight group-hover:text-indigo-600 transition-colors">
+              <h3 className="font-bold text-gray-900 mb-2 line-clamp-2 h-10 sm:h-12 leading-tight group-hover:text-indigo-600 transition-colors text-sm sm:text-base">
                 {product.title}
               </h3>
 
               {/* Precio */}
-              <div className="flex items-baseline gap-2 mb-3">
-                <span className="text-2xl font-black text-indigo-600">
+              <div className="flex items-baseline gap-2 mb-2 sm:mb-3">
+                <span className="text-lg sm:text-xl md:text-2xl font-black text-indigo-600">
                   ${Number(product.price).toLocaleString("es-MX")}
                 </span>
                 {product.original_price && (
-                  <span className="text-sm text-gray-400 line-through decoration-red-300">
+                  <span className="text-xs sm:text-sm text-gray-400 line-through decoration-red-300">
                     ${Number(product.original_price).toLocaleString("es-MX")}
                   </span>
                 )}

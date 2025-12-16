@@ -50,6 +50,19 @@ export default function CategoryPage() {
   const [selectedProduct, setSelectedProduct] = useState<MarketplaceProduct | null>(null);
   const [showMobileFilters, setShowMobileFilters] = useState(false);
 
+  // Determinar si hay filtros activos (para forzar carga)
+  const hasActiveFilters = useMemo(() => {
+    return (
+      filters.searchQuery !== "" ||
+      filters.categoryId !== null ||
+      filters.subcategoryId !== null ||
+      filters.conditions.length > 0 ||
+      filters.priceRange.min !== null ||
+      filters.priceRange.max !== null ||
+      filters.powerType !== null
+    );
+  }, [filters]);
+
   // Usar hook de paginación con infinite scroll
   const {
     products,
@@ -67,6 +80,7 @@ export default function CategoryPage() {
       condition: filters.conditions.length > 0 ? filters.conditions : undefined,
       powerType: filters.powerType || undefined,
     },
+    forceInitialLoad: hasActiveFilters || !!category?.id, // Forzar carga cuando hay categoría o filtros activos
   });
 
   // Sincronizar estados
@@ -86,8 +100,66 @@ export default function CategoryPage() {
     }
   }, [category]);
 
-  // Los productos ya vienen filtrados del hook, solo aplicar filtros adicionales si es necesario
-  const filteredProducts = products;
+  // Debug: Log cuando cambian los filtros
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🔄 [CATEGORÍA] Filtros actualizados:', {
+        subcategoryId: filters.subcategoryId,
+        categoryId: filters.categoryId,
+        conditions: filters.conditions,
+        priceRange: filters.priceRange,
+        powerType: filters.powerType,
+      });
+    }
+  }, [filters.subcategoryId, filters.categoryId, filters.conditions.length, filters.priceRange.min, filters.priceRange.max, filters.powerType]);
+
+  // Aplicar filtros adicionales incluyendo subcategoría (keywords)
+  const filteredProducts = useMemo(() => {
+    // Debug en desarrollo
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🔍 [CATEGORÍA] Aplicando filtros:', {
+        productosAntes: products.length,
+        categoria: category?.name,
+        categoriaId: category?.id,
+        filters: {
+          subcategoryId: filters.subcategoryId,
+          categoryId: filters.categoryId,
+          conditions: filters.conditions,
+          priceRange: filters.priceRange,
+          powerType: filters.powerType,
+        },
+      });
+      
+      // Si hay subcategoría seleccionada, mostrar información
+      if (filters.subcategoryId && filters.categoryId) {
+        const { getSubcategoryById } = require('@/lib/marketplace/categories');
+        const subcategory = getSubcategoryById(filters.categoryId, filters.subcategoryId);
+        if (subcategory) {
+          console.log(`📌 Subcategoría seleccionada: "${subcategory.name}"`, {
+            keywords: subcategory.keywords,
+          });
+        }
+      }
+    }
+    
+    const result = applyFilters(products, filters);
+    
+    // Debug en desarrollo
+    if (process.env.NODE_ENV === 'development') {
+      console.log('✅ [CATEGORÍA] Productos después de aplicar filtros:', result.length);
+      if (filters.subcategoryId && result.length === 0 && products.length > 0) {
+        console.warn('⚠️ El filtro de subcategoría filtró todos los productos.');
+        console.warn('⚠️ Esto puede significar que:');
+        console.warn('   1. Las keywords no coinciden con los títulos/descripciones');
+        console.warn('   2. Los productos no tienen las palabras clave esperadas');
+        console.warn('   3. Hay un problema con la búsqueda de keywords');
+      } else if (products.length === 0) {
+        console.warn('⚠️ No hay productos cargados. Verifica que la categoría tenga productos en la BD.');
+      }
+    }
+    
+    return result;
+  }, [products, filters, category]);
 
   // Calculate stats basado en todos los productos de la categoría (no solo los cargados)
   // Nota: Para estadísticas precisas, idealmente deberíamos hacer una consulta separada

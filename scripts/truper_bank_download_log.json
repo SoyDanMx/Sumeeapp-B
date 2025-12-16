@@ -1,0 +1,12 @@
+{
+  "downloaded": [],
+  "skipped": [],
+  "failed": [],
+  "stats": {
+    "total_processed": 5,
+    "downloaded": 0,
+    "already_exists": 5,
+    "not_found": 0,
+    "errors": 0
+  }
+}

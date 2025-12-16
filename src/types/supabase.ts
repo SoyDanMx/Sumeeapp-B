@@ -72,7 +72,7 @@ export interface MarketplaceProduct {
   id: string;
   created_at: string;
   updated_at: string;
-  seller_id: string;
+  seller_id: string | null; // Nullable para productos oficiales de Sumee
   title: string;
   description: string;
   price: number;

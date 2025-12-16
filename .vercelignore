@@ -1,0 +1,15 @@
+# Excluir imágenes grandes de TRUPER del deploy
+# Estas imágenes se moverán a Supabase Storage
+public/images/marketplace/truper/
+
+# Excluir archivos grandes de migraciones SQL
+supabase/migrations/20250120_import_truper_full_catalog.sql
+supabase/migrations/truper_chunks/
+
+# Excluir logs grandes
+scripts/truper_*.json
+scripts/truper_*.log
+
+# Excluir CSV grandes
+data/truper_catalog_full.csv
+
