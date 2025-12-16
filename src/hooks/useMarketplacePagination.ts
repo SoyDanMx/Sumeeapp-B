@@ -2,6 +2,9 @@ import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { MarketplaceProduct } from "@/types/supabase";
 import { supabase } from "@/lib/supabase/client";
 
+// Cache para resolución de slug a UUID (evita queries repetidas)
+const categorySlugCache = new Map<string, string>();
+
 export interface PaginationState {
   page: number;
   pageSize: number;
@@ -40,6 +43,10 @@ export function useMarketplacePagination(options: UseMarketplacePaginationOption
   // Usar ref para evitar recrear callbacks cuando cambian los filtros
   const filtersRef = useRef(filters);
   filtersRef.current = filters;
+  
+  // Ref para mantener el estado de paginación más reciente
+  const paginationRef = useRef(pagination);
+  paginationRef.current = pagination;
 
   const fetchProducts = useCallback(
     async (page: number, append: boolean = false) => {
@@ -47,46 +54,63 @@ export function useMarketplacePagination(options: UseMarketplacePaginationOption
         setLoading(true);
         setError(null);
 
-        const from = (page - 1) * pageSize;
-        const to = from + pageSize - 1;
+        // Validar página y pageSize
+        const validPage = Math.max(1, page); // Asegurar que page sea al menos 1
+        const validPageSize = Math.max(1, pageSize); // Asegurar que pageSize sea al menos 1
+        
+        const from = (validPage - 1) * validPageSize;
+        const to = from + validPageSize - 1;
+        
+        // Validar que from y to sean válidos
+        if (from < 0 || to < 0 || from > to) {
+          console.error("⚠️ [PAGINACIÓN] Rango inválido:", { from, to, page: validPage, pageSize: validPageSize });
+          throw new Error(`Rango de paginación inválido: from=${from}, to=${to}`);
+        }
 
         // Usar ref para obtener los filtros actuales sin causar recreación del callback
         const currentFilters = filtersRef.current;
 
-        // Resolver categoryId: si es slug, obtener UUID primero
+        // Resolver categoryId: si es slug, obtener UUID primero (con cache)
         let categoryUUID = categoryId;
         if (categoryId && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(categoryId)) {
-          // Es un slug, intentar obtener el UUID de la categoría
-          // Primero verificar si existe la tabla marketplace_categories
-          try {
-            const { data: categoryData } = await supabase
-              .from("marketplace_categories")
-              .select("id")
-              .eq("slug", categoryId)
-              .single();
-            
-            if (categoryData && (categoryData as any).id) {
-              categoryUUID = (categoryData as any).id;
-            } else {
-              // Si no se encuentra, intentar usar el slug directamente (compatibilidad hacia atrás)
-              console.warn(`Categoría no encontrada por slug: ${categoryId}, usando slug directamente`);
+          // Verificar cache primero
+          if (categorySlugCache.has(categoryId)) {
+            categoryUUID = categorySlugCache.get(categoryId)!;
+          } else {
+            // Es un slug, intentar obtener el UUID de la categoría
+            try {
+              const { data: categoryData } = await supabase
+                .from("marketplace_categories")
+                .select("id")
+                .eq("slug", categoryId)
+                .single();
+              
+              if (categoryData && (categoryData as any).id) {
+                categoryUUID = (categoryData as any).id;
+                // Guardar en cache solo si categoryUUID es válido
+                if (categoryUUID) {
+                  categorySlugCache.set(categoryId, categoryUUID);
+                }
+              } else {
+                // Si no se encuentra, intentar usar el slug directamente (compatibilidad hacia atrás)
+                console.warn(`Categoría no encontrada por slug: ${categoryId}, usando slug directamente`);
+              }
+            } catch (err) {
+              // Si falla (tabla no existe o error), usar slug directamente
+              console.warn("Error obteniendo UUID de categoría, usando slug:", err);
             }
-          } catch (err) {
-            // Si falla (tabla no existe o error), usar slug directamente
-            console.warn("Error obteniendo UUID de categoría, usando slug:", err);
           }
         }
 
         // Construir consulta base
+        // OPTIMIZACIÓN: Solo hacer JOIN con profiles si realmente necesitamos datos del seller
+        // Para productos oficiales (Sumee Supply), no necesitamos el JOIN
+        // Usar count: "exact" siempre para calcular correctamente hasMore
         let query = supabase
           .from("marketplace_products")
           .select(
             `
-            *,
-            seller:profiles(
-              full_name,
-              avatar_url
-            )
+            *
           `,
             { count: "exact" }
           )
@@ -126,36 +150,47 @@ export function useMarketplacePagination(options: UseMarketplacePaginationOption
         }
 
         // Ordenar y paginar
-        const { data, error: queryError, count } = await query
+        const queryResult = await query
           .order("created_at", { ascending: false })
           .range(from, to);
+        
+        const { data, error: queryError, count } = queryResult;
 
         if (queryError) {
-          console.error("Error en query de productos:", queryError);
+          console.error("❌ [PAGINACIÓN] Error en query de productos:", {
+            error: queryError,
+            message: queryError.message,
+            details: queryError.details,
+            hint: queryError.hint,
+            code: queryError.code,
+            from,
+            to,
+            page: validPage,
+            pageSize: validPageSize,
+          });
+          
           // Proporcionar más información del error
-          const errorMessage = queryError.message || JSON.stringify(queryError) || "Error desconocido al obtener productos";
+          const errorMessage = queryError.message 
+            || queryError.details 
+            || queryError.hint 
+            || JSON.stringify(queryError) 
+            || "Error desconocido al obtener productos";
           throw new Error(errorMessage);
         }
 
         if (data) {
+          // OPTIMIZACIÓN: Mapear productos sin JOIN innecesario
+          // Determinar seller basado en contact_phone (más rápido que JOIN)
           const mappedProducts: MarketplaceProduct[] = (data as any[]).map(
             (item) => {
-              const sellerData = Array.isArray(item.seller)
-                ? item.seller[0]
-                : item.seller;
-
               const isOfficialStore = item.contact_phone === "5636741156";
 
               return {
                 ...item,
                 seller: {
-                  full_name: isOfficialStore
-                    ? "Sumee Supply"
-                    : sellerData?.full_name || "Usuario Sumee",
-                  avatar_url: isOfficialStore
-                    ? null
-                    : sellerData?.avatar_url || null,
-                  verified: isOfficialStore ? true : true,
+                  full_name: isOfficialStore ? "Sumee Supply" : "Usuario Sumee",
+                  avatar_url: null,
+                  verified: true,
                   calificacion_promedio: isOfficialStore ? 5.0 : 4.9,
                   review_count: isOfficialStore ? 1250 : 12,
                 },
@@ -163,10 +198,30 @@ export function useMarketplacePagination(options: UseMarketplacePaginationOption
             }
           );
 
-          const total = count || 0;
-          const totalPages = Math.ceil(total / pageSize);
-          const hasMore = page < totalPages;
+          // Calcular total y páginas
+          const total = count !== undefined && count !== null ? count : pagination.total;
+          const totalPages = total > 0 ? Math.ceil(total / pageSize) : 0;
+          
+          // Calcular hasMore: hay más si estamos en una página anterior a la última
+          // Si no tenemos count pero recibimos una página completa, asumir que hay más
+          const hasMore = count !== undefined && count !== null
+            ? page < totalPages
+            : data.length === pageSize; // Si recibimos una página completa, probablemente hay más
 
+          // Debug en desarrollo
+          if (process.env.NODE_ENV === 'development') {
+            console.log('📊 [PAGINACIÓN] Estado:', {
+              page,
+              totalPages,
+              total,
+              count,
+              dataLength: data.length,
+              hasMore,
+              append,
+            });
+          }
+
+          // Actualizar paginación ANTES de actualizar productos
           setPagination({
             page,
             pageSize,
@@ -204,12 +259,23 @@ export function useMarketplacePagination(options: UseMarketplacePaginationOption
   );
 
   const loadNextPage = useCallback(() => {
-    if (pagination.hasMore && !loading) {
-      const nextPage = pagination.page + 1;
-      setPagination((prev) => ({ ...prev, page: nextPage }));
+    // Usar ref para obtener valores más recientes
+    const currentPagination = paginationRef.current;
+    
+    if (!loading && currentPagination.hasMore) {
+      const nextPage = currentPagination.page + 1;
+      console.log('🔄 [PAGINACIÓN] Cargando página', nextPage, 'de', currentPagination.totalPages);
       fetchProducts(nextPage, true);
+    } else {
+      console.log('⚠️ [PAGINACIÓN] No se puede cargar más:', {
+        loading,
+        hasMore: currentPagination.hasMore,
+        currentPage: currentPagination.page,
+        totalPages: currentPagination.totalPages,
+        total: currentPagination.total,
+      });
     }
-  }, [pagination.hasMore, pagination.page, loading, fetchProducts]);
+  }, [loading, fetchProducts]);
 
   const reset = useCallback(() => {
     setProducts([]);

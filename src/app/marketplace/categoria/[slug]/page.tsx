@@ -33,6 +33,8 @@ import {
 } from "@/lib/marketplace/filters";
 import { useMarketplacePagination } from "@/hooks/useMarketplacePagination";
 import { InfiniteScrollTrigger } from "@/components/marketplace/InfiniteScrollTrigger";
+import { ExchangeRateModal } from "@/components/marketplace/ExchangeRateModal";
+import { useExchangeRate } from "@/hooks/useExchangeRate";
 
 export default function CategoryPage() {
   const params = useParams();
@@ -49,6 +51,11 @@ export default function CategoryPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<MarketplaceProduct | null>(null);
   const [showMobileFilters, setShowMobileFilters] = useState(false);
+  const [showExchangeRateModal, setShowExchangeRateModal] = useState(false);
+  
+  // Hook para tasa de cambio (solo para categoría sistemas)
+  const isSistemasCategory = slug === "sistemas";
+  const { exchangeRate, convertToMXN, formatMXN } = useExchangeRate();
 
   // Determinar si hay filtros activos (para forzar carga)
   const hasActiveFilters = useMemo(() => {
@@ -212,6 +219,18 @@ export default function CategoryPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* SEO Structured Data */}
+      <ProductCollectionStructuredData
+        category={category}
+        productCount={filteredProducts.length}
+      />
+      <BreadcrumbStructuredData
+        items={[
+          { name: "Marketplace", url: "https://www.sumeeapp.com/marketplace" },
+          { name: category.name, url: `https://www.sumeeapp.com/marketplace/categoria/${category.slug}` },
+        ]}
+      />
+
       {/* Breadcrumbs */}
       <CategoryBreadcrumbs
         category={category}
@@ -264,6 +283,7 @@ export default function CategoryPage() {
                 showPowerType={category.filters?.powerType}
                 availableConditions={availableConditions}
                 priceStats={priceStats}
+                products={products}
               />
             </div>
           </aside>
@@ -272,21 +292,37 @@ export default function CategoryPage() {
           <main className="flex-1 min-w-0">
             {/* Header de categoría */}
             <div className="mb-6">
-              <div className="flex items-center gap-3 mb-2">
-                <div
-                  className={`w-12 h-12 rounded-xl bg-gradient-to-br ${category.gradient} flex items-center justify-center`}
-                >
-                  <FontAwesomeIcon
-                    icon={category.icon}
-                    className="text-white text-xl"
-                  />
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-3">
+                  <div
+                    className={`w-12 h-12 rounded-xl bg-gradient-to-br ${category.gradient} flex items-center justify-center`}
+                  >
+                    <FontAwesomeIcon
+                      icon={category.icon}
+                      className="text-white text-xl"
+                    />
+                  </div>
+                  <div>
+                    <h1 className="text-3xl font-bold text-gray-900">
+                      {category.namePlural}
+                    </h1>
+                    <p className="text-gray-600">{category.description}</p>
+                  </div>
                 </div>
-                <div>
-                  <h1 className="text-3xl font-bold text-gray-900">
-                    {category.namePlural}
-                  </h1>
-                  <p className="text-gray-600">{category.description}</p>
-                </div>
+                {/* Botón de tasa de cambio para categoría sistemas */}
+                {isSistemasCategory && exchangeRate && (
+                  <button
+                    onClick={() => setShowExchangeRateModal(true)}
+                    className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg hover:from-indigo-700 hover:to-purple-700 transition-all shadow-md hover:shadow-lg"
+                  >
+                    <span className="text-sm font-semibold">
+                      1 USD = ${exchangeRate.rate.toLocaleString("es-MX", {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })} MXN
+                    </span>
+                  </button>
+                )}
               </div>
             </div>
 
@@ -302,12 +338,12 @@ export default function CategoryPage() {
             />
 
             {/* Grid de productos */}
-            {loading ? (
+            {loading && products.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-20">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mb-4"></div>
                 <p className="text-gray-500">Cargando productos...</p>
               </div>
-            ) : filteredProducts.length === 0 ? (
+            ) : filteredProducts.length === 0 && !loading ? (
               <div className="text-center py-20 bg-white rounded-3xl shadow-sm">
                 <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                   <FontAwesomeIcon
@@ -340,15 +376,32 @@ export default function CategoryPage() {
                     products={filteredProducts}
                     viewMode={filters.viewMode}
                     onProductClick={handleProductClick}
+                    exchangeRate={isSistemasCategory ? exchangeRate : null}
                   />
                 </div>
 
                 {/* Infinite Scroll Trigger */}
-                <InfiniteScrollTrigger
-                  onLoadMore={loadNextPage}
-                  hasMore={pagination.hasMore}
-                  loading={loading}
-                />
+                {pagination.hasMore && (
+                  <InfiniteScrollTrigger
+                    onLoadMore={loadNextPage}
+                    hasMore={pagination.hasMore}
+                    loading={loading}
+                  />
+                )}
+                
+                {/* Debug info en desarrollo */}
+                {process.env.NODE_ENV === 'development' && (
+                  <div className="mt-4 p-4 bg-gray-100 rounded-lg text-xs">
+                    <p>📊 Debug Info:</p>
+                    <p>Productos cargados: {products.length}</p>
+                    <p>Productos filtrados: {filteredProducts.length}</p>
+                    <p>Página actual: {pagination.page}</p>
+                    <p>Total páginas: {pagination.totalPages}</p>
+                    <p>Total productos: {pagination.total}</p>
+                    <p>Has more: {pagination.hasMore ? 'Sí' : 'No'}</p>
+                    <p>Loading: {loading ? 'Sí' : 'No'}</p>
+                  </div>
+                )}
               </>
             )}
           </main>
@@ -382,6 +435,7 @@ export default function CategoryPage() {
                 showPowerType={category.filters?.powerType}
                 availableConditions={availableConditions}
                 priceStats={priceStats}
+                products={products}
               />
             </div>
           </div>
@@ -394,6 +448,15 @@ export default function CategoryPage() {
           product={selectedProduct}
           isOpen={isModalOpen}
           onClose={handleCloseModal}
+          exchangeRate={isSistemasCategory ? exchangeRate : null}
+        />
+      )}
+
+      {/* Modal de tasa de cambio */}
+      {isSistemasCategory && (
+        <ExchangeRateModal
+          isOpen={showExchangeRateModal}
+          onClose={() => setShowExchangeRateModal(false)}
         />
       )}
     </div>

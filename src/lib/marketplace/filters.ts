@@ -44,6 +44,9 @@ export interface MarketplaceFilters {
   // Tipo de energía (para herramientas eléctricas)
   powerType: string | null; // "electric", "cordless", "electric_all"
   
+  // Marcas
+  brands: string[]; // ["HIKVISION", "KLEIN", etc.]
+  
   // Ordenamiento
   sortBy: SortOption;
   
@@ -64,6 +67,7 @@ export const DEFAULT_FILTERS: MarketplaceFilters = {
   locationCity: null,
   locationZone: null,
   powerType: null,
+  brands: [],
   sortBy: "relevance",
   viewMode: "grid",
   page: 1,
@@ -284,6 +288,21 @@ export function applyFilters<T extends {
     } else {
       filtered = filtered.filter((p) => p.power_type === filters.powerType);
     }
+  }
+
+  // Marcas
+  if (filters.brands.length > 0) {
+    filtered = filtered.filter((p) => {
+      const titleUpper = (p.title || "").toUpperCase();
+      const descUpper = (p.description || "").toUpperCase();
+      const combinedText = `${titleUpper} ${descUpper}`;
+      
+      // Verificar si alguna marca está presente en título o descripción
+      return filters.brands.some((brand) => {
+        const brandUpper = brand.toUpperCase();
+        return combinedText.includes(brandUpper);
+      });
+    });
   }
 
   // Ordenamiento

@@ -81,6 +81,19 @@ export async function generateCategoryMetadata(
         "equipos jardinería",
         "herramientas paisajismo",
       ],
+      sistemas: [
+        "sistemas informáticos",
+        "redes",
+        "informática",
+        "sistemas fotovoltaicos",
+        "cámaras CCTV",
+        "videovigilancia",
+        "equipos de red",
+        "servidores",
+        "almacenamiento",
+        "equipos de cómputo",
+        "sistemas de seguridad",
+      ],
     };
 
     return [

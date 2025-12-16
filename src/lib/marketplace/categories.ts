@@ -11,6 +11,7 @@ import {
   faTools,
   faPaintRoller,
   faTree,
+  faServer,
   IconDefinition,
 } from "@fortawesome/free-solid-svg-icons";
 
@@ -180,6 +181,30 @@ export const MARKETPLACE_CATEGORIES: MarketplaceCategory[] = [
       { id: "macetas-y-contenedores", name: "Macetas y Contenedores", keywords: ["maceta", "macetero", "contenedor", "jardín", "maceta de barro", "maceta plástica", "jardín vertical", "maceta colgante"] },
       { id: "semillas-y-plantas", name: "Semillas y Plantas", keywords: ["semilla", "planta", "bulbo", "esqueje", "semilla de césped", "planta de jardín", "árbol", "arbusto"] },
       { id: "accesorios-jardineria", name: "Accesorios de Jardinería", keywords: ["guante", "rodillera", "delantal", "carretilla", "cubo", "regadera", "pulverizador", "tijeras de podar"] },
+    ],
+    filters: {
+      condition: true,
+      priceRange: true,
+      location: true,
+    },
+  },
+  {
+    id: "sistemas",
+    slug: "sistemas",
+    name: "Sistemas",
+    namePlural: "Sistemas e Informática",
+    icon: faServer,
+    color: "indigo",
+    gradient: "from-indigo-500 to-purple-600",
+    description: "Equipos de cómputo, redes, sistemas fotovoltaicos, cámaras CCTV y tecnología",
+    subcategories: [
+      { id: "minisplits", name: "Minisplits y Climatización", keywords: ["minisplit", "mini split", "aire acondicionado", "climatización", "aufit", "inverter", "seer", "btu", "r32", "r410", "split", "aire"] },
+      { id: "redes", name: "Redes e Infraestructura", keywords: ["router", "switch", "access point", "red", "networking", "wifi", "ethernet", "cable utp", "patch panel", "rack"] },
+      { id: "videovigilancia", name: "Videovigilancia y CCTV", keywords: ["cámara", "cctv", "dvr", "nvr", "videovigilancia", "seguridad", "ip camera", "cámara ip", "grabador", "monitor"] },
+      { id: "computo", name: "Equipos de Cómputo", keywords: ["computadora", "laptop", "servidor", "workstation", "pc", "notebook", "desktop", "estación de trabajo"] },
+      { id: "almacenamiento", name: "Almacenamiento", keywords: ["disco duro", "hdd", "ssd", "nas", "storage", "almacenamiento", "raid", "backup"] },
+      { id: "fotovoltaicos", name: "Sistemas Fotovoltaicos", keywords: ["solar", "fotovoltaico", "panel solar", "inversor", "batería", "energía solar", "sistema solar"] },
+      { id: "accesorios-sistemas", name: "Accesorios y Componentes", keywords: ["cable", "conector", "adaptador", "fuente de poder", "ups", "regulador", "protector"] },
     ],
     filters: {
       condition: true,

@@ -10,8 +10,10 @@ const baseUrl = "https://www.sumeeapp.com";
 export async function generateMetadata({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }): Promise<Metadata> {
+  const { id } = await params;
+  
   try {
     const supabase = await createSupabaseServerClient();
     const { data: product, error } = await supabase
@@ -27,7 +29,7 @@ export async function generateMetadata({
         category_id,
         category:marketplace_categories(name, slug)
       `)
-      .eq("id", params.id)
+      .eq("id", id)
       .eq("status", "active")
       .single();
 
