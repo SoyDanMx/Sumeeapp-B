@@ -18,66 +18,58 @@ const BROKEN_IMAGE_URLS = new Set<string>([
 ]);
 
 /**
- * Verifica si un producto tiene al menos una imagen válida.
- * Una imagen es válida si:
- * - Es una URL externa (http/https) con formato válido
- * - Es una ruta local que empieza con /images/
+ * Verifica si un producto tiene al menos una imagen válida O puede tener una imagen local.
  * 
- * NOTA: Este filtro es menos estricto para permitir que el sistema híbrido
- * maneje el fallback. Solo filtra URLs claramente inválidas o rotas conocidas.
+ * NOTA CRÍTICA: Este filtro es MUY permisivo porque:
+ * 1. El sistema híbrido manejará automáticamente el fallback a imágenes locales
+ * 2. No queremos ocultar productos que pueden tener imágenes locales disponibles
+ * 3. Solo filtramos productos que claramente NO tienen ninguna posibilidad de imagen
  * 
- * Se filtran:
- * - Arrays vacíos
- * - Strings vacíos o solo espacios
- * - Valores null/undefined
- * - URLs rotas conocidas explícitamente
+ * Se filtran SOLO:
+ * - Arrays completamente vacíos o null/undefined
+ * - Productos sin título (no podemos extraer código para buscar imagen local)
+ * 
+ * NO se filtran:
+ * - URLs externas (aunque puedan fallar, el sistema híbrido las manejará)
+ * - Productos con título (pueden tener imagen local disponible)
  */
 export function hasValidImages(product: MarketplaceProduct): boolean {
   const images = product.images;
   
-  // Si no hay imágenes o es null/undefined
-  if (!images || !Array.isArray(images) || images.length === 0) {
-    return false;
+  // Si no hay imágenes en absoluto Y no tenemos título para buscar imagen local
+  if ((!images || !Array.isArray(images) || images.length === 0)) {
+    // Si el producto tiene título, permitirlo (el sistema híbrido buscará imagen local)
+    if (product.title && product.title.trim().length > 0) {
+      return true; // Permitir productos con título aunque no tengan imágenes (fallback local)
+    }
+    return false; // Solo filtrar si no hay imágenes NI título
   }
   
-  // Verificar si hay al menos una imagen válida
+  // Si hay imágenes, verificar que al menos una tenga formato válido
   for (const img of images) {
-    // Filtrar valores null, undefined, o no-string
     if (!img || typeof img !== 'string') {
       continue;
     }
     
     const trimmedImg = img.trim();
     
-    // Filtrar strings vacíos después de trim
     if (trimmedImg.length === 0) {
       continue;
     }
     
-    // URL externa válida (debe empezar con http:// o https://)
-    if (trimmedImg.startsWith('http://') || trimmedImg.startsWith('https://')) {
-      // Verificar que no sea solo "http://" o "https://" sin más contenido
-      if (trimmedImg.length > 7) {
-        // Verificar si la URL está en la lista de URLs rotas conocidas
-        // Solo filtrar URLs explícitamente marcadas como rotas
-        if (BROKEN_IMAGE_URLS.has(trimmedImg)) {
-          continue; // Saltar esta URL rota conocida
-        }
-        // Aceptar cualquier URL externa válida (el sistema híbrido manejará el fallback)
-        // Incluyendo URLs de Truper, Syscom, etc.
-        return true;
+    // Cualquier URL externa o ruta local es válida
+    if (trimmedImg.startsWith('http://') || trimmedImg.startsWith('https://') || trimmedImg.startsWith('/images/')) {
+      // Solo filtrar URLs explícitamente marcadas como rotas
+      if (BROKEN_IMAGE_URLS.has(trimmedImg)) {
+        continue;
       }
-      continue;
+      return true;
     }
-    
-    // Ruta local válida (debe empezar con /images/ y tener más contenido)
-    if (trimmedImg.startsWith('/images/')) {
-      // Verificar que no sea solo "/images/" sin más contenido
-      if (trimmedImg.length > 8) {
-        return true;
-      }
-      continue;
-    }
+  }
+  
+  // Si llegamos aquí pero el producto tiene título, permitirlo (fallback local)
+  if (product.title && product.title.trim().length > 0) {
+    return true;
   }
   
   return false;
