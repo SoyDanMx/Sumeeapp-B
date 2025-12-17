@@ -28,6 +28,7 @@ export const Footer = () => {
   const legalLinks = useMemo(() => [
     { href: "/terminos", icon: faFileAlt, text: "Términos de Servicio" },
     { href: "/privacidad", icon: faLock, text: "Política de Privacidad" },
+    { href: "/politica-devoluciones", icon: faFileAlt, text: "Política de Devoluciones" },
     { href: "/contact", icon: faEnvelope, text: "Contáctanos" },
   ], []);
 
