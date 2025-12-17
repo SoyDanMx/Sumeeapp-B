@@ -14,6 +14,7 @@ interface MobileFiltersDrawerProps {
   showPowerType?: boolean;
   availableConditions?: string[];
   priceStats?: { min: number; max: number };
+  products?: Array<{ title: string; description?: string }>; // Para extraer marcas disponibles
 }
 
 export function MobileFiltersDrawer({
@@ -24,6 +25,7 @@ export function MobileFiltersDrawer({
   showPowerType,
   availableConditions,
   priceStats,
+  products = [],
 }: MobileFiltersDrawerProps) {
   if (!isOpen) return null;
 
@@ -61,6 +63,7 @@ export function MobileFiltersDrawer({
             showPowerType={showPowerType}
             availableConditions={availableConditions}
             priceStats={priceStats}
+            products={products}
           />
         </div>
 

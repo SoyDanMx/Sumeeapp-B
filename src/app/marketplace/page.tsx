@@ -50,6 +50,7 @@ import {
   applyFilters,
 } from "@/lib/marketplace/filters";
 import { getFeaturedProducts } from "@/lib/marketplace/productScoring";
+import { HeroSectionV2 } from "@/components/marketplace/HeroSectionV2";
 
 export default function MarketplacePage() {
   const [filters, setFilters] = useState<MarketplaceFilters>(DEFAULT_FILTERS);
@@ -374,126 +375,30 @@ export default function MarketplacePage() {
         priceStats={priceStats}
       />
 
-      {/* Hero Section - Diseño Original */}
-      <section className="relative bg-gradient-to-br from-blue-500 via-blue-600 to-green-500 text-white py-12 md:py-16 lg:py-24 px-4 overflow-hidden">
-        {/* Patrón de fondo con símbolos + */}
-        <div className="absolute inset-0 opacity-10" style={{
-          backgroundImage: 'repeating-linear-gradient(0deg, rgba(255,255,255,0.1) 0px, transparent 1px, transparent 20px, rgba(255,255,255,0.1) 21px), repeating-linear-gradient(90deg, rgba(255,255,255,0.1) 0px, transparent 1px, transparent 20px, rgba(255,255,255,0.1) 21px)',
-          }}></div>
+      {/* Hero Section V2 - Diseño Inspirado en Syscom */}
+      <HeroSectionV2
+        totalProducts={totalProducts}
+        totalSellers={totalSellers > 0 ? totalSellers : 456}
+        onSearch={(query) => {
+          setFilters((prev) => ({ ...prev, searchQuery: query }));
+          setSearchInput(query);
+        }}
+      />
 
-        <div className="container mx-auto relative z-10">
-          <div className="max-w-4xl mx-auto text-center">
-            {/* Badge destacado */}
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 rounded-full text-sm font-medium mb-6 border border-blue-400">
-              <FontAwesomeIcon icon={faWandSparkles} className="text-white" />
-              <span className="text-white">Marketplace Exclusivo para Profesionales</span>
-            </div>
-
-            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold mb-4 md:mb-6 leading-tight">
-              <span className="bg-clip-text text-transparent bg-gradient-to-r from-white via-orange-200 to-orange-300">
-                Marketplace de Herramientas y Equipos
-              </span>
-            </h1>
-            <p className="text-lg sm:text-xl md:text-2xl mb-8 md:mb-10 text-white max-w-2xl mx-auto leading-relaxed">
-              Compra y vende herramientas, equipos y suministros de construcción entre profesionales verificados. Red social de técnicos confiables.
-            </p>
-
-            {/* Search Bar con Botones */}
-            <div className="max-w-2xl mx-auto mb-8">
-              <div className="relative bg-white rounded-2xl shadow-2xl p-2 flex items-center gap-2">
-              <div className="flex-1 relative">
-                <FontAwesomeIcon
-                  icon={faSearch}
-                    className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 text-lg"
-                />
-                <input
-                  type="text"
-                  placeholder="Busca herramientas, equipos, suministros..."
-                    value={searchInput}
-                    onChange={(e) => setSearchInput(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        e.preventDefault();
-                        setFilters((prev) => ({ ...prev, searchQuery: searchInput }));
-                      }
-                    }}
-                    className="w-full pl-12 pr-4 py-4 md:py-5 rounded-xl text-gray-900 text-base md:text-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 border-0"
-                />
-              </div>
-                <button 
-                  type="button"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    setFilters((prev) => ({ ...prev, searchQuery: searchInput }));
-                  }}
-                  className="px-6 md:px-8 py-4 md:py-5 bg-purple-600 text-white font-semibold rounded-xl hover:bg-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl flex items-center gap-2"
-                >
-                <FontAwesomeIcon icon={faSearch} />
-                  <span>Buscar</span>
-              </button>
-              <button
-                  type="button"
-                  onClick={handleClearFilters}
-                  className="px-4 md:px-6 py-4 md:py-5 bg-white text-gray-700 font-semibold rounded-xl hover:bg-gray-50 transition-all duration-200 border border-gray-200 flex items-center gap-2"
-                >
-                  <FontAwesomeIcon icon={faChevronDown} className="rotate-180" />
-                  <span>Limpiar</span>
-              </button>
-              </div>
-            </div>
-
-            {/* Estadísticas */}
-            <div className="flex flex-wrap justify-center gap-6 md:gap-12 mt-8">
-              <div className="flex items-center gap-3">
-                <FontAwesomeIcon icon={faChartLine} className="text-2xl text-white" />
-                <div className="text-left">
-                  <div className="text-2xl md:text-3xl font-bold text-white">
-                    {loadingCounts ? (
-                      <span className="animate-pulse">...</span>
-                    ) : (
-                      totalProducts.toLocaleString('es-MX')
-                    )}
-                  </div>
-                  <div className="text-sm md:text-base text-blue-100">Productos</div>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <FontAwesomeIcon icon={faUserPlus} className="text-2xl text-white" />
-                <div className="text-left">
-                  <div className="text-2xl md:text-3xl font-bold text-white">
-                    {loadingCounts ? (
-                      <span className="animate-pulse">...</span>
-                    ) : (
-                      totalSellers > 0 ? `${totalSellers.toLocaleString('es-MX')}+` : "456+"
-                    )}
-                  </div>
-                  <div className="text-sm md:text-base text-blue-100">Vendedores Verificados</div>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <FontAwesomeIcon icon={faCheckCircle} className="text-2xl text-yellow-300" />
-                <div className="text-left">
-                  <div className="text-2xl md:text-3xl font-bold text-white">98%</div>
-                  <div className="text-sm md:text-base text-blue-100">Satisfacción</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Categories Section - Diseño Original */}
-      <section className="container mx-auto px-4 py-8 md:py-12 lg:py-16 bg-white">
-        <div className="text-center mb-8 md:mb-12">
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 mb-3">
+      {/* Categories Section - Compacta en una sola línea */}
+      <section id="categorias" className="container mx-auto px-3 sm:px-4 py-3 sm:py-4 bg-white">
+        <div className="mb-3 sm:mb-4">
+          <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 mb-1">
               Explora por Categoría
             </h2>
-          <p className="text-gray-600 text-lg max-w-2xl mx-auto">
+          <p className="text-gray-600 text-xs sm:text-sm max-w-2xl">
               Encuentra exactamente lo que necesitas para tu próximo proyecto
             </p>
           </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 md:gap-6">
+        {/* Scroll horizontal para una sola línea */}
+        <div className="overflow-x-auto pb-2 -mx-3 sm:-mx-4 px-3 sm:px-4">
+          <div className="flex gap-2 sm:gap-3 md:gap-4 min-w-max">
           {categoriesWithCounts.map((category, index) => {
             const iconMap: Record<string, any> = {
               electricidad: faBolt,
@@ -522,39 +427,43 @@ export default function MarketplacePage() {
                 key={category.id}
                 href={getCategoryUrl(category.slug)}
                 onClick={() => setFilters({ ...filters, categoryId: category.id })}
-                className="group relative bg-white rounded-2xl p-5 md:p-6 hover:shadow-2xl transition-all duration-300 hover:scale-105 hover:-translate-y-1 border border-gray-100 overflow-hidden"
+                className="group relative bg-white rounded-lg p-3 sm:p-4 hover:shadow-lg transition-all duration-300 hover:scale-105 hover:-translate-y-1 border border-gray-100 overflow-hidden flex-shrink-0 w-[140px] sm:w-[160px] md:w-[180px]"
                 style={{ animationDelay: `${index * 50}ms` }}
               >
                 {/* Efecto de brillo al hover */}
                 <div className="absolute inset-0 bg-gradient-to-br from-white/0 via-white/0 to-white/0 group-hover:from-white/10 group-hover:via-white/5 group-hover:to-white/0 transition-all duration-500"></div>
                 
-                {/* Icono con gradiente mejorado */}
-                <div className={`relative w-16 h-16 md:w-20 md:h-20 bg-gradient-to-br ${gradient} rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 shadow-lg`}>
-                  <FontAwesomeIcon icon={Icon} className="text-white text-2xl md:text-3xl relative z-10" />
-                  {/* Brillo en el icono */}
-                  <div className="absolute inset-0 bg-white/20 rounded-2xl blur-xl"></div>
-                </div>
-                
-                {/* Contenido */}
-                <div className="relative z-10">
-                  <h3 className="font-bold text-gray-900 mb-2 text-base md:text-lg group-hover:text-indigo-600 transition-colors">
-                    {category.name}
-                  </h3>
-                  <div className="flex items-center justify-center gap-2">
-                    <span className="text-sm md:text-base font-semibold text-indigo-600">
-                      {category.count}
-                    </span>
-                    <span className="text-xs md:text-sm text-gray-500">
-                      {category.count === 1 ? "producto" : "productos"}
-                    </span>
+                {/* Contenido en una sola línea compacta */}
+                <div className="flex flex-col items-center justify-center h-full">
+                  {/* Icono con gradiente - Más pequeño */}
+                  <div className={`relative w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 bg-gradient-to-br ${gradient} rounded-lg flex items-center justify-center mb-2 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 shadow-md`}>
+                    <FontAwesomeIcon icon={Icon} className="text-white text-base sm:text-lg md:text-xl relative z-10" />
+                    {/* Brillo en el icono */}
+                    <div className="absolute inset-0 bg-white/20 rounded-lg blur-xl"></div>
+                  </div>
+                  
+                  {/* Nombre y contador en una línea */}
+                  <div className="relative z-10 w-full text-center">
+                    <h3 className="font-bold text-gray-900 mb-1 text-xs sm:text-sm md:text-base group-hover:text-indigo-600 transition-colors leading-tight">
+                      {category.name}
+                    </h3>
+                    <div className="flex items-center justify-center gap-1">
+                      <span className="text-xs sm:text-sm font-semibold text-indigo-600">
+                        {category.count}
+                      </span>
+                      <span className="text-[10px] sm:text-xs text-gray-500">
+                        {category.count === 1 ? "prod." : "prods."}
+                      </span>
+                    </div>
                   </div>
                 </div>
                 
                 {/* Indicador de hover */}
-                <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-indigo-500 to-purple-500 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300"></div>
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-indigo-500 to-purple-500 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300"></div>
               </Link>
             );
           })}
+          </div>
         </div>
       </section>
 

@@ -92,6 +92,22 @@
   animation: float 3s ease-in-out infinite;
 }
 
+/* 🎯 Hero Section Animations */
+@keyframes counter {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-counter {
+  animation: counter 0.3s ease-out;
+}
+
 /* 🎯 Scroll Reveal Animations */
 @keyframes fadeInUp {
   from {
