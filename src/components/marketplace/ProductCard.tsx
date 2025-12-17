@@ -14,6 +14,7 @@ import {
   faStar,
 } from '@fortawesome/free-solid-svg-icons';
 import { MarketplaceProduct } from '@/types/supabase';
+import { HybridImage } from './HybridImage';
 
 interface ProductCardProps {
   product: MarketplaceProduct;
@@ -64,39 +65,27 @@ export function ProductCard({ product, onClick }: ProductCardProps) {
 
   const condition = getConditionLabel(product.condition);
 
-  // Manejar imagen fallida
-  const [imageError, setImageError] = React.useState(false);
-  const [imageSrc, setImageSrc] = React.useState<string | null>(
-    product.images && product.images.length > 0 ? product.images[0] : null
-  );
-
-  const handleImageError = () => {
-    setImageError(true);
-  };
-
   return (
     <div
       onClick={handleClick}
       className="bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden group cursor-pointer transform hover:-translate-y-1"
     >
-      {/* Imagen */}
+      {/* Imagen con fallback híbrido */}
       <div className="relative h-48 bg-gradient-to-br from-gray-200 to-gray-300 overflow-hidden">
-        {imageSrc && !imageError ? (
-          <Image
-            src={imageSrc}
-            alt={product.title}
-            fill
-            className="object-cover group-hover:scale-110 transition-transform duration-500"
-            onError={handleImageError}
-            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-            quality={85}
-          />
-        ) : (
-          <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200">
-            <FontAwesomeIcon icon={faWrench} className="text-6xl text-gray-400 mb-2" />
-            <span className="text-gray-500 text-sm">Sin imagen</span>
-          </div>
-        )}
+        <HybridImage
+          product={product}
+          alt={product.title}
+          fill
+          className="object-cover group-hover:scale-110 transition-transform duration-500"
+          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+          quality={85}
+          placeholder={
+            <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200">
+              <FontAwesomeIcon icon={faWrench} className="text-6xl text-gray-400 mb-2" />
+              <span className="text-gray-500 text-sm">Sin imagen</span>
+            </div>
+          }
+        />
 
         {/* Badges superpuestos */}
         <div className="absolute top-3 left-3 flex flex-col gap-2 z-10">

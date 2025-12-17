@@ -13,6 +13,7 @@ import {
 import { MarketplaceProduct } from "@/types/supabase";
 import { ViewMode } from "@/lib/marketplace/filters";
 import { filterProductsWithImages } from "@/lib/marketplace/imageFilter";
+import { HybridImage } from "./HybridImage";
 
 interface ProductGridProps {
   products: MarketplaceProduct[];
@@ -85,27 +86,26 @@ export function ProductGrid({
               className="bg-white rounded-xl border border-gray-200 hover:border-indigo-300 hover:shadow-lg transition-all duration-300 overflow-hidden group cursor-pointer"
             >
               <div className="flex gap-4 p-4">
-                {/* Imagen */}
+                {/* Imagen con fallback híbrido */}
                 <div className="relative w-32 h-32 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
-                  {product.images && product.images.length > 0 ? (
-                    <Image
-                      src={product.images[0]}
-                      alt={product.title}
-                      width={128}
-                      height={128}
-                      className="object-cover group-hover:scale-110 transition-transform duration-500"
-                      loading="lazy"
-                      quality={85}
-                      sizes="128px"
-                    />
-                  ) : (
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <FontAwesomeIcon
-                        icon={faTools}
-                        className="text-2xl text-gray-300"
-                      />
-                    </div>
-                  )}
+                  <HybridImage
+                    product={product}
+                    alt={product.title}
+                    width={128}
+                    height={128}
+                    className="object-cover group-hover:scale-110 transition-transform duration-500"
+                    loading="lazy"
+                    quality={85}
+                    sizes="128px"
+                    placeholder={
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <FontAwesomeIcon
+                          icon={faTools}
+                          className="text-2xl text-gray-300"
+                        />
+                      </div>
+                    }
+                  />
                 </div>
 
                 {/* Contenido */}
@@ -184,34 +184,25 @@ export function ProductGrid({
             onClick={() => onProductClick(product)}
             className="bg-white rounded-2xl shadow-md hover:shadow-2xl transition-all duration-300 overflow-hidden group cursor-pointer transform hover:-translate-y-2 border border-gray-100"
           >
-            {/* Imagen - Altura optimizada para móvil */}
+            {/* Imagen - Altura optimizada para móvil con fallback híbrido */}
             <div className="relative h-40 sm:h-44 md:h-48 bg-gradient-to-br from-gray-100 via-gray-50 to-gray-100 overflow-hidden">
-              {product.images && product.images.length > 0 ? (
-                <Image
-                  src={product.images[0]}
-                  alt={product.title}
-                  fill
-                  className="object-cover group-hover:scale-110 transition-transform duration-500"
-                  loading="lazy"
-                  quality={85}
-                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-                  onError={(e) => {
-                    // Si la imagen falla al cargar, ocultar el producto
-                    const target = e.target as HTMLElement;
-                    const productCard = target.closest('[data-product-id]') as HTMLElement;
-                    if (productCard) {
-                      productCard.style.display = 'none';
-                    }
-                  }}
-                />
-              ) : (
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <FontAwesomeIcon
-                    icon={faTools}
-                    className="text-6xl text-gray-400"
-                  />
-                </div>
-              )}
+              <HybridImage
+                product={product}
+                alt={product.title}
+                fill
+                className="object-cover group-hover:scale-110 transition-transform duration-500"
+                loading="lazy"
+                quality={85}
+                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                placeholder={
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <FontAwesomeIcon
+                      icon={faTools}
+                      className="text-6xl text-gray-400"
+                    />
+                  </div>
+                }
+              />
 
               {/* Badges */}
               <div className="absolute top-3 left-3 flex flex-col gap-2 z-10">

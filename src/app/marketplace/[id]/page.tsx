@@ -20,6 +20,7 @@ import { supabase } from '@/lib/supabase/client';
 import { MarketplaceProduct } from '@/types/supabase';
 import { ProductStructuredData } from '@/components/marketplace/StructuredData';
 import { getCategoryById } from '@/lib/marketplace/categories';
+import { HybridImageGallery } from '@/components/marketplace/HybridImageGallery';
 
 export default function ProductDetailPage() {
   const params = useParams();
@@ -181,50 +182,19 @@ export default function ProductDetailPage() {
 
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Galería de Imágenes */}
+          {/* Galería de Imágenes con fallback híbrido */}
           <div className="space-y-4">
-            {/* Imagen principal */}
-            <div className="relative aspect-square bg-gray-100 rounded-2xl overflow-hidden">
-              {product.images && product.images.length > 0 ? (
-                <Image
-                  src={product.images[selectedImageIndex]}
-                  alt={product.title}
-                  fill
-                  className="object-cover"
-                  sizes="(max-width: 1024px) 100vw, 50vw"
-                  priority
-                />
-              ) : (
-                <div className="absolute inset-0 flex items-center justify-center">
+            <HybridImageGallery
+              product={product}
+              currentIndex={selectedImageIndex}
+              onImageChange={setSelectedImageIndex}
+              showThumbnails={true}
+              placeholder={
+                <div className="relative aspect-square bg-gray-100 rounded-2xl overflow-hidden flex items-center justify-center">
                   <FontAwesomeIcon icon={faWrench} className="text-8xl text-gray-400" />
                 </div>
-              )}
-            </div>
-
-            {/* Miniaturas */}
-            {product.images && product.images.length > 1 && (
-              <div className="grid grid-cols-4 gap-2">
-                {product.images.map((image, index) => (
-                  <button
-                    key={index}
-                    onClick={() => setSelectedImageIndex(index)}
-                    className={`relative aspect-square rounded-lg overflow-hidden border-2 transition-all ${
-                      selectedImageIndex === index
-                        ? 'border-indigo-600'
-                        : 'border-transparent hover:border-gray-300'
-                    }`}
-                  >
-                    <Image
-                      src={image}
-                      alt={`${product.title} - Imagen ${index + 1}`}
-                      fill
-                      className="object-cover"
-                      sizes="(max-width: 1024px) 25vw, 12.5vw"
-                    />
-                  </button>
-                ))}
-              </div>
-            )}
+              }
+            />
           </div>
 
           {/* Información del Producto */}

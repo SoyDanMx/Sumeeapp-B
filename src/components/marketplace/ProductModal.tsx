@@ -15,6 +15,7 @@ import {
 import { faWhatsapp } from "@fortawesome/free-brands-svg-icons";
 import { MarketplaceProduct } from "@/types/supabase";
 import { ProductStructuredData } from "./StructuredData";
+import { HybridImageGallery } from "./HybridImageGallery";
 
 interface ProductModalProps {
     product: MarketplaceProduct;
@@ -101,40 +102,39 @@ export default function ProductModal({
                         <FontAwesomeIcon icon={faTimes} />
                     </button>
 
-                    {/* Left: Image Gallery */}
+                    {/* Left: Image Gallery con fallback híbrido */}
                     <div className="w-full md:w-1/2 bg-gray-100 relative h-64 md:h-auto flex-shrink-0">
                         <div className="relative w-full h-full">
-                            {/* Main Image */}
-                            <div className="relative h-full bg-gray-200">
-                                <Image
-                                    src={images[currentImageIndex]}
-                                    alt={product.title}
-                                    fill
-                                    className="object-cover"
-                                    quality={90}
-                                    priority={currentImageIndex === 0}
-                                    sizes="(max-width: 768px) 100vw, 50vw"
-                                />
-                            </div>
+                            <HybridImageGallery
+                                product={product}
+                                currentIndex={currentImageIndex}
+                                onImageChange={setCurrentImageIndex}
+                                showThumbnails={false}
+                                placeholder={
+                                    <div className="absolute inset-0 flex items-center justify-center bg-gray-200">
+                                        <span className="text-gray-400">Sin imagen</span>
+                                    </div>
+                                }
+                            />
 
                             {/* Navigation Arrows (if multiple images) */}
                             {images.length > 1 && (
                                 <>
                                     <button
                                         onClick={(e) => { e.stopPropagation(); prevImage(); }}
-                                        className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white text-gray-800 rounded-full p-2 w-10 h-10 flex items-center justify-center shadow-lg transition-all"
+                                        className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white text-gray-800 rounded-full p-2 w-10 h-10 flex items-center justify-center shadow-lg transition-all z-10"
                                     >
                                         <FontAwesomeIcon icon={faChevronLeft} />
                                     </button>
                                     <button
                                         onClick={(e) => { e.stopPropagation(); nextImage(); }}
-                                        className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white text-gray-800 rounded-full p-2 w-10 h-10 flex items-center justify-center shadow-lg transition-all"
+                                        className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white text-gray-800 rounded-full p-2 w-10 h-10 flex items-center justify-center shadow-lg transition-all z-10"
                                     >
                                         <FontAwesomeIcon icon={faChevronRight} />
                                     </button>
 
                                     {/* Dots */}
-                                    <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-2">
+                                    <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-2 z-10">
                                         {images.map((_, idx) => (
                                             <button
                                                 key={idx}
