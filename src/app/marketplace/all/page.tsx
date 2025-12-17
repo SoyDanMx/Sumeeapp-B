@@ -28,6 +28,7 @@ import {
 } from "@/lib/marketplace/filters";
 import { MARKETPLACE_CATEGORIES } from "@/lib/marketplace/categories";
 import { supabase } from "@/lib/supabase/client";
+import { filterProductsWithImages } from "@/lib/marketplace/imageFilter";
 
 export default function MarketplaceAllPage() {
     const [filters, setFilters] = useState<MarketplaceFilters>(DEFAULT_FILTERS);
@@ -72,7 +73,9 @@ export default function MarketplaceAllPage() {
 
     // Aplicar filtros adicionales (subcategorías, marcas, etc.)
     const products = useMemo(() => {
-        return applyFilters(paginatedProducts, filters);
+        // Filtrar productos sin imágenes válidas (ocultar del marketplace)
+        const productsWithImages = filterProductsWithImages(paginatedProducts);
+        return applyFilters(productsWithImages, filters);
     }, [paginatedProducts, filters]);
 
     // Calcular estadísticas de precio y condiciones disponibles
