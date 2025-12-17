@@ -12,6 +12,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { MarketplaceProduct } from "@/types/supabase";
 import { ViewMode } from "@/lib/marketplace/filters";
+import { filterProductsWithImages } from "@/lib/marketplace/imageFilter";
 
 interface ProductGridProps {
   products: MarketplaceProduct[];
@@ -57,10 +58,13 @@ export function ProductGrid({
     }
     return `$${Number(price).toLocaleString("es-MX")}`;
   };
-  // Filtrar duplicados por ID antes de renderizar (seguridad adicional)
+  // Filtrar productos sin imágenes válidas y duplicados por ID antes de renderizar
   const uniqueProducts = useMemo(() => {
+    // Primero filtrar productos sin imágenes válidas
+    const productsWithImages = filterProductsWithImages(products);
+    // Luego filtrar duplicados por ID
     const seen = new Set<string>();
-    return products.filter((product) => {
+    return productsWithImages.filter((product) => {
       if (seen.has(product.id)) {
         return false;
       }
@@ -72,7 +76,7 @@ export function ProductGrid({
   if (viewMode === "list") {
     return (
       <div className="space-y-4">
-        {products.map((product) => {
+        {uniqueProducts.map((product) => {
           const condition = getConditionLabel(product.condition);
           return (
             <div
@@ -176,6 +180,7 @@ export function ProductGrid({
         return (
           <div
             key={product.id}
+            data-product-id={product.id}
             onClick={() => onProductClick(product)}
             className="bg-white rounded-2xl shadow-md hover:shadow-2xl transition-all duration-300 overflow-hidden group cursor-pointer transform hover:-translate-y-2 border border-gray-100"
           >
@@ -190,6 +195,14 @@ export function ProductGrid({
                   loading="lazy"
                   quality={85}
                   sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                  onError={(e) => {
+                    // Si la imagen falla al cargar, ocultar el producto
+                    const target = e.target as HTMLElement;
+                    const productCard = target.closest('[data-product-id]') as HTMLElement;
+                    if (productCard) {
+                      productCard.style.display = 'none';
+                    }
+                  }}
                 />
               ) : (
                 <div className="absolute inset-0 flex items-center justify-center">

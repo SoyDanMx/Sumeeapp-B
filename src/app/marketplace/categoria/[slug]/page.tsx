@@ -35,6 +35,7 @@ import { useMarketplacePagination } from "@/hooks/useMarketplacePagination";
 import { InfiniteScrollTrigger } from "@/components/marketplace/InfiniteScrollTrigger";
 import { ExchangeRateModal } from "@/components/marketplace/ExchangeRateModal";
 import { useExchangeRate } from "@/hooks/useExchangeRate";
+import { filterProductsWithImages } from "@/lib/marketplace/imageFilter";
 
 export default function CategoryPage() {
   const params = useParams();
@@ -149,7 +150,9 @@ export default function CategoryPage() {
       }
     }
     
-    const result = applyFilters(products, filters);
+    // Filtrar productos sin imágenes válidas primero
+    const productsWithImages = filterProductsWithImages(products);
+    const result = applyFilters(productsWithImages, filters);
     
     // Debug en desarrollo
     if (process.env.NODE_ENV === 'development') {

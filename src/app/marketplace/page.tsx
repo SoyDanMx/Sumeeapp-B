@@ -51,6 +51,7 @@ import {
 } from "@/lib/marketplace/filters";
 import { getFeaturedProducts } from "@/lib/marketplace/productScoring";
 import { HeroSectionV2 } from "@/components/marketplace/HeroSectionV2";
+import { filterProductsWithImages } from "@/lib/marketplace/imageFilter";
 
 export default function MarketplacePage() {
   const [filters, setFilters] = useState<MarketplaceFilters>(DEFAULT_FILTERS);
@@ -115,8 +116,10 @@ export default function MarketplacePage() {
           if (error) throw error;
           
           if (data && data.length > 0) {
+            // Filtrar productos sin imágenes válidas primero
+            const productsWithImages = filterProductsWithImages(data as MarketplaceProduct[]);
             // Calcular scores y obtener productos destacados basados en tracción
-            const featured = getFeaturedProducts(data as MarketplaceProduct[], 24);
+            const featured = getFeaturedProducts(productsWithImages, 24);
             setFeaturedProductsDirect(featured);
             
             if (process.env.NODE_ENV === 'development') {
@@ -135,7 +138,9 @@ export default function MarketplacePage() {
               .limit(24);
             
             if (!fallbackError && fallbackData) {
-              setFeaturedProductsDirect(fallbackData as MarketplaceProduct[]);
+              // Filtrar productos sin imágenes válidas
+              const productsWithImages = filterProductsWithImages(fallbackData as MarketplaceProduct[]);
+              setFeaturedProductsDirect(productsWithImages);
             }
           } catch (fallbackErr) {
             console.error("Error en fallback de productos destacados:", fallbackErr);
@@ -151,8 +156,10 @@ export default function MarketplacePage() {
   // Aplicar ordenamiento y filtros a los productos
   const products = useMemo(() => {
     const baseProducts = shouldUsePagination ? filteredProducts : featuredProductsDirect;
+    // Filtrar productos sin imágenes válidas (ocultar del marketplace)
+    const productsWithImages = filterProductsWithImages(baseProducts);
     // Aplicar filtros incluyendo subcategoría (búsqueda por keywords)
-    return applyFilters(baseProducts, { ...filters, sortBy: filters.sortBy });
+    return applyFilters(productsWithImages, { ...filters, sortBy: filters.sortBy });
   }, [shouldUsePagination, filteredProducts, featuredProductsDirect, filters]);
 
   const loading = shouldUsePagination ? loadingFiltered : loadingDirect;

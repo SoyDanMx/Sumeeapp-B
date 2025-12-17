@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { MarketplaceProduct } from "@/types/supabase";
 import { supabase } from "@/lib/supabase/client";
+import { filterProductsWithImages } from "@/lib/marketplace/imageFilter";
 
 // Cache para resolución de slug a UUID (evita queries repetidas)
 const categorySlugCache = new Map<string, string>();
@@ -230,15 +231,18 @@ export function useMarketplacePagination(options: UseMarketplacePaginationOption
             hasMore,
           });
 
+          // Filtrar productos sin imágenes válidas (ocultar del marketplace)
+          const productsWithImages = filterProductsWithImages(mappedProducts);
+
           if (append) {
             // Filtrar duplicados al hacer append (evitar productos con mismo ID)
             setProducts((prev) => {
               const existingIds = new Set(prev.map(p => p.id));
-              const newProducts = mappedProducts.filter(p => !existingIds.has(p.id));
+              const newProducts = productsWithImages.filter(p => !existingIds.has(p.id));
               return [...prev, ...newProducts];
             });
           } else {
-            setProducts(mappedProducts);
+            setProducts(productsWithImages);
           }
         }
       } catch (err: any) {
