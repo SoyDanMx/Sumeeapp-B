@@ -116,14 +116,29 @@ export default function MarketplacePage() {
           if (error) throw error;
           
           if (data && data.length > 0) {
+            // Logging para debug en producción
+            console.log('📦 [MARKETPLACE] Productos cargados de BD:', data.length);
+            
             // Filtrar productos sin imágenes válidas primero
             const productsWithImages = filterProductsWithImages(data as MarketplaceProduct[]);
+            console.log('🖼️ [MARKETPLACE] Productos con imágenes válidas:', productsWithImages.length);
+            
             // Calcular scores y obtener productos destacados basados en tracción
             const featured = getFeaturedProducts(productsWithImages, 24);
             setFeaturedProductsDirect(featured);
             
-            if (process.env.NODE_ENV === 'development') {
-              console.log('🎯 [PRODUCTOS DESTACADOS] Productos seleccionados por tracción:', featured.length);
+            console.log('🎯 [PRODUCTOS DESTACADOS] Productos seleccionados por tracción:', featured.length);
+            
+            // Debug: mostrar ejemplos de imágenes
+            if (data.length > 0) {
+              const sampleProduct = data[0] as MarketplaceProduct;
+              console.log('🔍 [DEBUG] Ejemplo de producto:', {
+                id: sampleProduct.id,
+                title: sampleProduct.title?.substring(0, 50),
+                images: sampleProduct.images,
+                imagesLength: sampleProduct.images?.length || 0,
+                hasValidImages: productsWithImages.some(p => p.id === sampleProduct.id)
+              });
             }
           }
         } catch (err) {

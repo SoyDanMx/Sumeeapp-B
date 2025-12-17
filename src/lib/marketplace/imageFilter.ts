@@ -8,23 +8,29 @@ import { MarketplaceProduct } from "@/types/supabase";
 /**
  * Lista de URLs conocidas como rotas (404) que deben filtrarse.
  * Se actualiza cuando se detectan imágenes rotas.
+ * 
+ * NOTA: Esta lista debe mantenerse pequeña y solo incluir URLs explícitamente
+ * verificadas como rotas. El sistema híbrido manejará el fallback automático.
  */
 const BROKEN_IMAGE_URLS = new Set<string>([
-  'https://www.truper.com/media/import/imagenes/SK4.jpg',
-  // Agregar más URLs rotas aquí cuando se detecten
+  // Solo URLs explícitamente verificadas como rotas
+  // 'https://www.truper.com/media/import/imagenes/SK4.jpg', // Comentado: dejar que el sistema híbrido maneje
 ]);
 
 /**
  * Verifica si un producto tiene al menos una imagen válida.
  * Una imagen es válida si:
- * - Es una URL externa (http/https)
+ * - Es una URL externa (http/https) con formato válido
  * - Es una ruta local que empieza con /images/
+ * 
+ * NOTA: Este filtro es menos estricto para permitir que el sistema híbrido
+ * maneje el fallback. Solo filtra URLs claramente inválidas o rotas conocidas.
  * 
  * Se filtran:
  * - Arrays vacíos
  * - Strings vacíos o solo espacios
  * - Valores null/undefined
- * - URLs rotas o inválidas
+ * - URLs rotas conocidas explícitamente
  */
 export function hasValidImages(product: MarketplaceProduct): boolean {
   const images = product.images;
@@ -53,9 +59,12 @@ export function hasValidImages(product: MarketplaceProduct): boolean {
       // Verificar que no sea solo "http://" o "https://" sin más contenido
       if (trimmedImg.length > 7) {
         // Verificar si la URL está en la lista de URLs rotas conocidas
+        // Solo filtrar URLs explícitamente marcadas como rotas
         if (BROKEN_IMAGE_URLS.has(trimmedImg)) {
-          continue; // Saltar esta URL rota
+          continue; // Saltar esta URL rota conocida
         }
+        // Aceptar cualquier URL externa válida (el sistema híbrido manejará el fallback)
+        // Incluyendo URLs de Truper, Syscom, etc.
         return true;
       }
       continue;
