@@ -47,9 +47,18 @@ export async function GET(request: NextRequest) {
         console.log('- User ID:', session.user.id);
         console.log('- User email:', session.user.email);
         
-        // Redirigir a /dashboard que manejará el routing basado en el rol
-        // usando los hooks optimizados con caché
-        return NextResponse.redirect(`${origin}/dashboard`);
+        // 🆕 Preservar redirect si existe en los parámetros
+        const redirectParam = searchParams.get('redirect');
+        const redirectUrl = redirectParam || '/dashboard';
+        
+        // Validar que el redirect sea una URL interna (seguridad)
+        const isValidRedirect = redirectUrl.startsWith('/') && !redirectUrl.startsWith('//');
+        const finalRedirect = isValidRedirect ? redirectUrl : '/dashboard';
+        
+        console.log('🔗 REDIRECT URL:', finalRedirect);
+        
+        // Redirigir a la URL especificada o al dashboard por defecto
+        return NextResponse.redirect(`${origin}${finalRedirect}`);
       } else {
         console.error('❌ NO SESSION AFTER CODE EXCHANGE');
         return NextResponse.redirect(`${origin}/auth/auth-code-error`);

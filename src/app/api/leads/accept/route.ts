@@ -178,9 +178,9 @@ export async function POST(request: Request) {
     contactDeadline.setMinutes(contactDeadline.getMinutes() + 30); // 30 minutos para contactar
 
     // Determinar qué estado usar según el estado actual del lead
-    // ✅ Usar 'aceptado' que se normaliza a 'en_progreso' en el frontend
+    // ✅ Usar 'Asignado' que es válido en el constraint y indica que el lead fue aceptado
     const currentEstado = existingLead.estado?.toLowerCase();
-    const newEstado = 'aceptado'; // Siempre usar 'aceptado' que es válido y se normaliza correctamente
+    const newEstado = 'Asignado'; // Usar 'Asignado' que es válido en el constraint
 
     console.log(`🔄 [ACCEPT LEAD] Actualizando lead con ${useAdminClient ? 'admin client' : 'cliente autenticado'}...`);
     console.log(`🔄 [ACCEPT LEAD] Estado actual: ${currentEstado}, Nuevo estado: ${newEstado}`);

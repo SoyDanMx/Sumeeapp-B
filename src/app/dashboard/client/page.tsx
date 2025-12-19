@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback, Suspense } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import dynamic from "next/dynamic";
 import { useQuery } from "@tanstack/react-query";
 import { getClientLeadDetails, getClientLeads } from "@/lib/supabase/data";
@@ -107,7 +108,9 @@ import {
 import { faWhatsapp } from "@fortawesome/free-brands-svg-icons";
 import { useAgreementSubscription } from "@/hooks/useAgreementSubscription";
 
-export default function ClientDashboardPage() {
+// Componente interno que usa useSearchParams - debe estar envuelto en Suspense
+function ClientDashboardContent() {
+  const searchParams = useSearchParams();
   const { user, isLoading: userLoading, isAuthenticated } = useAuth();
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
@@ -116,6 +119,9 @@ export default function ClientDashboardPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isAIAssistantOpen, setIsAIAssistantOpen] = useState(false);
   const [selectedService, setSelectedService] = useState<string | null>(null);
+  const [selectedServiceName, setSelectedServiceName] = useState<string | null>(null);
+  const [selectedDescription, setSelectedDescription] = useState<string | null>(null);
+  const [initialModalStep, setInitialModalStep] = useState<number | undefined>(undefined);
   const [leadDetails, setLeadDetails] = useState<Lead | null>(null);
   const [isDetailsLoading, setIsDetailsLoading] = useState(false);
   const [detailsError, setDetailsError] = useState<string | null>(null);
@@ -485,8 +491,76 @@ export default function ClientDashboardPage() {
   const handleModalClose = () => {
     setIsModalOpen(false);
     setSelectedService(null);
+    setSelectedServiceName(null);
+    setSelectedDescription(null);
+    setInitialModalStep(undefined);
     setIsEmergencyMenuOpen(false);
+    
+    // Limpiar parámetros de URL después de cerrar el modal
+    if (typeof window !== "undefined") {
+      const url = new URL(window.location.href);
+      url.searchParams.delete("service");
+      url.searchParams.delete("discipline");
+      url.searchParams.delete("description");
+      url.searchParams.delete("step");
+      window.history.replaceState({}, "", url.toString());
+    }
   };
+
+  // 🆕 Leer parámetros de URL para pre-seleccionar servicio y abrir modal automáticamente
+  useEffect(() => {
+    if (!searchParams) return;
+    
+    const serviceParam = searchParams.get("service");
+    const disciplineParam = searchParams.get("discipline");
+    const descriptionParam = searchParams.get("description");
+    const stepParam = searchParams.get("step");
+    
+    if (serviceParam && disciplineParam) {
+      // Si el usuario NO está autenticado, redirigir a registro con los datos
+      if (!userLoading && !user) {
+        console.log('🚫 Usuario no autenticado, redirigiendo a registro con datos del formulario');
+        const registrationParams = new URLSearchParams({
+          service: serviceParam,
+          discipline: disciplineParam,
+          description: descriptionParam || "",
+          step: stepParam || "2",
+          redirect: "/dashboard/client",
+        });
+        window.location.href = `/registro?${registrationParams.toString()}`;
+        return;
+      }
+      
+      // Si el usuario está cargando, esperar
+      if (userLoading) {
+        console.log('⏳ Esperando autenticación del usuario...');
+        return;
+      }
+      
+      // Usuario autenticado: procesar parámetros
+      const decodedService = decodeURIComponent(serviceParam);
+      const decodedDiscipline = decodeURIComponent(disciplineParam);
+      const decodedDescription = descriptionParam ? decodeURIComponent(descriptionParam) : null;
+      const step = stepParam ? parseInt(stepParam, 10) : undefined;
+      
+      console.log('🔍 Parámetros detectados (usuario autenticado):', { 
+        service: decodedService, 
+        discipline: decodedDiscipline,
+        description: decodedDescription,
+        step
+      });
+      
+      setSelectedService(decodedDiscipline);
+      setSelectedServiceName(decodedService);
+      setSelectedDescription(decodedDescription);
+      setInitialModalStep(step);
+      
+      // Abrir el modal automáticamente
+      setIsModalOpen(true);
+      
+      console.log('✅ Modal abierto automáticamente con servicio pre-seleccionado', step ? `en paso ${step}` : '');
+    }
+  }, [searchParams, user, userLoading]);
 
   // 🆕 CALLBACK DE ONBOARDING COMPLETADO
   const handleOnboardingComplete = async () => {
@@ -1209,6 +1283,9 @@ export default function ClientDashboardPage() {
         onClose={handleModalClose}
         onLeadCreated={refreshLeads}
         initialService={selectedService}
+        initialServiceName={selectedServiceName}
+        initialDescription={selectedDescription}
+        initialStep={initialModalStep}
       />
 
       {/* Asistente IA Conversacional + Visión */}
@@ -1735,5 +1812,14 @@ function LeadDetailsModal({
         </form>
       </div>
     </div>
+  );
+}
+
+// Componente principal que envuelve el contenido en Suspense
+export default function ClientDashboardPage() {
+  return (
+    <Suspense fallback={<DashboardSkeleton />}>
+      <ClientDashboardContent />
+    </Suspense>
   );
 }

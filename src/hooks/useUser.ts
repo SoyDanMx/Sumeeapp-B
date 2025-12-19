@@ -94,12 +94,12 @@ export function useUser(): { user: AppUser | null; isLoading: boolean } {
       // Crear nueva consulta y agregarla a la cola
       const queryPromise = (async () => {
         try {
-          // Obtenemos el perfil para sacar el 'role'
+      // Obtenemos el perfil para sacar el 'role'
           const { data: profile, error } = await supabase
-            .from("profiles")
-            .select("role")
-            .eq("user_id", authUser.id)
-            .single();
+        .from("profiles")
+        .select("role")
+        .eq("user_id", authUser.id)
+        .single();
 
           if (error) {
             console.warn('⚠️ useUser: Error al obtener perfil:', error);
@@ -150,40 +150,40 @@ export function useUser(): { user: AppUser | null; isLoading: boolean } {
         return; // No hacer consulta al perfil en refresh de token
       }
 
-      console.log("Auth event:", event); // Útil para depurar
+        console.log("Auth event:", event); // Útil para depurar
 
-      // Manejar errores de refresh token silenciosamente
-      try {
-        const appUser = await fetchUserWithProfile(session?.user ?? null);
-        setUser(appUser);
-      } catch (error: unknown) {
-        // Si hay un error relacionado con refresh token, limpiar y continuar
-        const errorMessage =
-          error instanceof Error ? error.message : String(error);
-        if (
-          errorMessage.includes("Invalid Refresh Token") ||
-          errorMessage.includes("Refresh Token Not Found") ||
-          errorMessage.includes("refresh_token_not_found")
-        ) {
-          // Limpiar tokens inválidos
-          const authKeys = Object.keys(localStorage).filter(
-            (key) =>
-              key.includes("supabase") ||
-              key.includes("sb-") ||
-              key.includes("auth-token")
-          );
-          authKeys.forEach((key) => localStorage.removeItem(key));
-          setUser(null);
-        } else {
-          // Para otros errores, propagar normalmente
-          throw error;
+        // Manejar errores de refresh token silenciosamente
+        try {
+          const appUser = await fetchUserWithProfile(session?.user ?? null);
+          setUser(appUser);
+        } catch (error: unknown) {
+          // Si hay un error relacionado con refresh token, limpiar y continuar
+          const errorMessage =
+            error instanceof Error ? error.message : String(error);
+          if (
+            errorMessage.includes("Invalid Refresh Token") ||
+            errorMessage.includes("Refresh Token Not Found") ||
+            errorMessage.includes("refresh_token_not_found")
+          ) {
+            // Limpiar tokens inválidos
+            const authKeys = Object.keys(localStorage).filter(
+              (key) =>
+                key.includes("supabase") ||
+                key.includes("sb-") ||
+                key.includes("auth-token")
+            );
+            authKeys.forEach((key) => localStorage.removeItem(key));
+            setUser(null);
+          } else {
+            // Para otros errores, propagar normalmente
+            throw error;
+          }
         }
-      }
 
-      // Si la carga inicial no ha terminado, la terminamos aquí.
-      if (isLoading) {
-        setIsLoading(false);
-      }
+        // Si la carga inicial no ha terminado, la terminamos aquí.
+        if (isLoading) {
+          setIsLoading(false);
+        }
     };
 
     // ✅ OPTIMIZACIÓN: Suscribirse al listener global en lugar de crear uno nuevo

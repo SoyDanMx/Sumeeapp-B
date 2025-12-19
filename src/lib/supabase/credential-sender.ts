@@ -106,29 +106,32 @@ export async function sendCredentialToClient(
       return { success: false, error: "Profesional no encontrado" };
     }
 
-    // 4. Generar link de WhatsApp con la credencial - ✅ FIX: Incluir descripción del servicio
+    // 4. Generar link de WhatsApp con mensaje personalizado según requerimiento del usuario
     const leadData = lead as any;
-    const servicioDescripcion = leadData.servicio_solicitado || leadData.servicio || leadData.descripcion_proyecto || "tu solicitud de servicio";
+    const servicioNombre = leadData.servicio_solicitado || leadData.descripcion_proyecto || "tu servicio";
     
-    // ✅ FIX: Generar mensaje mejorado con servicio específico
-    const professionalUrl = `${
-      typeof window !== "undefined"
-        ? window.location.origin
-        : process.env.NEXT_PUBLIC_SITE_URL || ""
-    }/profesional/${profesional.user_id}`;
-
+    // Extraer precio de la descripción del proyecto si está disponible
+    // Formato esperado: "Me interesa: [servicio]. Precio: $[precio]..."
+    let precioTexto = "";
+    const precioMatch = leadData.descripcion_proyecto?.match(/Precio:\s*\$?([\d,]+)/i);
+    if (precioMatch) {
+      precioTexto = ` por $${precioMatch[1]}`;
+    }
+    
+    // Obtener ubicación
+    const ubicacionTexto = leadData.ubicacion_direccion || leadData.ubicacion || "la ubicación especificada";
+    
+    // Nombre del profesional (solo primer nombre si hay espacio)
+    const nombreProfesional = profesional.full_name?.split(" ")[0] || "tu técnico";
+    
     const cleanPhone = leadData.whatsapp.replace(/\D/g, "");
     const whatsappPhone = cleanPhone.startsWith("52")
       ? cleanPhone
       : `52${cleanPhone}`;
 
+    // Mensaje personalizado según requerimiento del usuario
     const message = encodeURIComponent(
-      `¡Hola! 👋\n\n` +
-        `Soy ${profesional.full_name || "tu técnico asignado"}, técnico verificado de SumeeApp.\n\n` +
-        `He aceptado el trabajo disponible "${servicioDescripcion}" y quiero compartirte mi credencial de profesional verificado para tu seguridad y confianza:\n\n` +
-        `${professionalUrl}\n\n` +
-        `Aquí puedes verificar mi información, calificaciones y experiencia. Estoy listo para ayudarte con tu proyecto.\n\n` +
-        `¿Cuándo te viene bien que coordinemos la visita? 🛠️`
+      `Hola, Soy ${nombreProfesional} y he aceptado tu servicio de ${servicioNombre}${precioTexto} en la ubicación "${ubicacionTexto}". Estaré en contacto para acordar fecha y hora contigo.`
     );
 
     const whatsappLink = `https://wa.me/${whatsappPhone}?text=${message}`;
