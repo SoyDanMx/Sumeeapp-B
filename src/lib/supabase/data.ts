@@ -319,49 +319,18 @@ export async function markLeadContacted(
   method: string,
   notes?: string
 ) {
-  // Intentar obtener sesión con reintentos
-  let session = null;
-  let sessionError = null;
-  
-  try {
-    const sessionResult = await supabase.auth.getSession();
-    session = sessionResult.data?.session;
-    sessionError = sessionResult.error;
-  } catch (err) {
-    console.error("Error obteniendo sesión:", err);
-    sessionError = err as any;
-  }
-
-  // Si no hay sesión, intentar refrescar
-  if (!session && !sessionError) {
-    try {
-      const refreshResult = await supabase.auth.refreshSession();
-      if (refreshResult.data?.session) {
-        session = refreshResult.data.session;
-        console.log("✅ Sesión refrescada exitosamente");
-      }
-    } catch (refreshError) {
-      console.warn("⚠️ No se pudo refrescar la sesión:", refreshError);
-    }
-  }
-
-  // Si aún no hay sesión después de intentar refrescar, lanzar error
-  if (!session) {
-    console.error("❌ No hay sesión activa. Error:", sessionError);
-    throw new Error(
-      "Debes iniciar sesión para marcar el contacto. Por favor, recarga la página e inicia sesión nuevamente."
-    );
-  }
+  // Intentar obtener sesión (similar a acceptLead)
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
 
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
   };
 
-  // Usar el token de acceso de la sesión
-  if (session.access_token) {
+  // Usar el token de acceso si está disponible
+  if (session?.access_token) {
     headers.Authorization = `Bearer ${session.access_token}`;
-  } else {
-    console.warn("⚠️ Sesión sin access_token, intentando sin Authorization header");
   }
 
   try {
@@ -373,8 +342,15 @@ export async function markLeadContacted(
     });
 
     if (!response.ok) {
-      const payload = await response.json().catch(() => null);
-      const errorMessage = payload?.error ?? "No se pudo registrar el contacto. Intenta nuevamente.";
+      let message = "No se pudo registrar el contacto. Intenta nuevamente.";
+      try {
+        const errorPayload = await response.json();
+        if (errorPayload?.error) {
+          message = errorPayload.error;
+        }
+      } catch {
+        // ignore json parsing errors
+      }
       
       // Mensaje más específico según el código de estado
       if (response.status === 401) {
@@ -383,7 +359,7 @@ export async function markLeadContacted(
         );
       }
       
-      throw new Error(errorMessage);
+      throw new Error(message);
     }
 
     const payload = (await response.json()) as { lead: Lead };

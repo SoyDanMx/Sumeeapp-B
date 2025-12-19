@@ -13,24 +13,24 @@ export function useUserRole() {
   const roleData = useMemo(() => {
     if (isLoading) {
       return { role: 'client' as UserRole, loading: true, error: null };
-    }
+        }
 
-    if (!user) {
+        if (!user) {
       return { role: 'client' as UserRole, loading: false, error: null };
-    }
-
-    // @ts-ignore - Supabase types inference issue
+          }
+          
+          // @ts-ignore - Supabase types inference issue
     const userRole = (user as any)?.role as UserRole;
-    
-    if (userRole === 'profesional' || userRole === 'client') {
+          
+          if (userRole === 'profesional' || userRole === 'client') {
       return { role: userRole, loading: false, error: null };
-    } else {
+          } else {
       return { 
         role: 'client' as UserRole, 
         loading: false, 
         error: `Rol inválido detectado: ${userRole}. Contacta a soporte.` 
       };
-    }
+        }
   }, [user, isLoading]);
 
   return roleData;

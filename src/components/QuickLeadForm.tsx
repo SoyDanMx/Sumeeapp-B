@@ -23,6 +23,9 @@ import {
   faBug,
   faBolt,
   faSun,
+  faStar,
+  faTv,
+  faCouch,
 } from "@fortawesome/free-solid-svg-icons";
 import { faWhatsapp } from "@fortawesome/free-brands-svg-icons";
 import { submitLead } from "@/lib/supabase/data";
@@ -32,6 +35,64 @@ interface QuickLeadFormProps {
   onLeadSubmit?: (leadData: any) => void;
 }
 
+// 🆕 Servicios Específicos Populares (aparecen primero)
+const POPULAR_SPECIFIC_SERVICES = [
+  {
+    id: "instalacion-contactos",
+    name: "Instalación de Contactos",
+    icon: faLightbulb,
+    description: "Instalación profesional de contactos eléctricos",
+    color: "yellow",
+    priceRange: "Desde $350 MXN",
+    isPopular: true,
+  },
+  {
+    id: "reparacion-fugas",
+    name: "Reparación de Fugas",
+    icon: faWrench,
+    description: "Reparación rápida de fugas de agua",
+    color: "blue",
+    priceRange: "Desde $400 MXN",
+    isPopular: true,
+  },
+  {
+    id: "montar-tv-pared",
+    name: "Montar TV en Pared",
+    icon: faTv,
+    description: "Instalación profesional de TV hasta 65 pulgadas",
+    color: "purple",
+    priceRange: "Desde $800 MXN",
+    isPopular: true,
+  },
+  {
+    id: "instalacion-camara-cctv",
+    name: "Instalación de Cámara CCTV",
+    icon: faVideo,
+    description: "Instalación de sistemas de seguridad y monitoreo",
+    color: "red",
+    priceRange: "Desde $800 MXN",
+    isPopular: true,
+  },
+  {
+    id: "armar-muebles",
+    name: "Armar Muebles",
+    icon: faCouch,
+    description: "Armado profesional de muebles estándar",
+    color: "green",
+    priceRange: "Desde $600 MXN",
+    isPopular: true,
+  },
+  {
+    id: "instalacion-lampara",
+    name: "Instalación de Lámpara",
+    icon: faLightbulb,
+    description: "Instalación de lámparas colgantes o empotradas",
+    color: "yellow",
+    priceRange: "Desde $500 MXN",
+    isPopular: true,
+  },
+];
+
 const SERVICES = [
   {
     id: "electricistas",
@@ -40,6 +101,7 @@ const SERVICES = [
     description: "Instalaciones, reparaciones y mantenimiento eléctrico",
     color: "yellow",
     priceRange: "Desde $350 MXN",
+    isPopular: false,
   },
   {
     id: "cctv-alarmas",
@@ -48,6 +110,7 @@ const SERVICES = [
     description: "Sistemas de seguridad y monitoreo",
     color: "red",
     priceRange: "Desde $800 MXN",
+    isPopular: false,
   },
   {
     id: "redes-wifi",
@@ -165,8 +228,46 @@ export default function QuickLeadForm({
     nombreCliente: "",
   });
 
+  // 🆕 Función para mapear IDs de servicios específicos a disciplinas válidas para la BD
+  const mapServiceIdToDiscipline = (serviceId: string): string => {
+    const serviceMapping: Record<string, string> = {
+      // Servicios específicos populares → Disciplinas válidas
+      "instalacion-contactos": "electricidad",
+      "instalacion-lampara": "electricidad",
+      "reparacion-fugas": "plomeria",
+      "montar-tv-pared": "montaje-armado",
+      "armar-muebles": "montaje-armado",
+      "instalacion-camara-cctv": "cctv",
+      // Servicios generales ya están correctos
+      "electricistas": "electricidad",
+      "cctv-alarmas": "cctv",
+      "redes-wifi": "wifi",
+      "plomeros": "plomeria",
+      "pintores": "pintura",
+      "aire-acondicionado": "aire-acondicionado",
+      "limpieza": "limpieza",
+      "jardineria": "jardineria",
+      "carpinteria": "carpinteria",
+      "construccion": "construccion",
+      "tablaroca": "tablaroca",
+      "fumigacion": "fumigacion",
+      "cargadores-electricos": "electricidad",
+      "paneles-solares": "electricidad",
+    };
+    
+    return serviceMapping[serviceId] || serviceId; // Si no hay mapeo, usar el ID original
+  };
+
+  // 🆕 Función para obtener el nombre completo del servicio
+  const getServiceFullName = (serviceId: string): string => {
+    const allServices = [...POPULAR_SPECIFIC_SERVICES, ...SERVICES];
+    const service = allServices.find((s) => s.id === serviceId);
+    return service?.name || serviceId;
+  };
+
   const handleServiceSelect = (serviceId: string) => {
     setSelectedService(serviceId);
+    // Guardar el ID original para mostrar el nombre correcto
     setFormData((prev) => ({ ...prev, service: serviceId }));
   };
 
@@ -186,12 +287,27 @@ export default function QuickLeadForm({
     setError("");
 
     try {
-      // Llamamos a la función submitLead de Supabase
+      // 🆕 Mapear el ID del servicio a la disciplina válida para la BD
+      const disciplineForDB = mapServiceIdToDiscipline(formData.service);
+      const serviceFullName = getServiceFullName(formData.service);
+      
+      // Construir descripción detallada con el nombre completo del servicio
+      const descripcion_proyecto = `Servicio solicitado: ${serviceFullName}. ${formData.location ? `Ubicación: ${formData.location}` : ''}`;
+      
+      console.log('🔍 [QuickLeadForm] Enviando lead:', {
+        servicio_original: formData.service,
+        servicio_nombre: serviceFullName,
+        disciplina_mapeada: disciplineForDB,
+        descripcion: descripcion_proyecto,
+      });
+
+      // Llamamos a la función submitLead de Supabase con la disciplina mapeada
       const result = await submitLead({
-        servicio: formData.service,
+        servicio: disciplineForDB, // Usar la disciplina mapeada para la BD
         ubicacion: formData.location,
         whatsapp: formData.whatsapp,
         nombre_cliente: formData.nombreCliente || undefined,
+        descripcion_proyecto: descripcion_proyecto, // Guardar el nombre completo del servicio
       });
 
       if (result.success) {
@@ -204,29 +320,34 @@ export default function QuickLeadForm({
           });
         }
 
-        // Redirigir a WhatsApp con el número proporcionado
-        // Si hay un número de WhatsApp en el formulario, usarlo; si no, usar número de soporte
-        const whatsappNumber = formData.whatsapp || "525636741156"; // Número de soporte por defecto
-        const cleanPhone = whatsappNumber.replace(/[^\d]/g, "");
-        // Agregar código de país si no lo tiene (México: 52)
-        const whatsappPhone = cleanPhone.startsWith("52")
-          ? cleanPhone
-          : `52${cleanPhone}`;
-
+        // 🚀 Mensaje de WhatsApp prellenado - Enviado a la empresa
+        // El mensaje se envía desde el cliente a la empresa (número de soporte)
+        const companyWhatsappNumber = "525636741156"; // Número de la empresa
+        
         // Mensaje pre-rellenado con información del servicio
-        const serviceInfo = SERVICES.find((s) => s.id === formData.service);
+        // Usar el nombre completo del servicio (no el ID)
+        const serviceFullName = getServiceFullName(formData.service);
+        const allServices = [...POPULAR_SPECIFIC_SERVICES, ...SERVICES];
+        const serviceInfo = allServices.find((s) => s.id === formData.service);
         // @ts-ignore - Supabase type inference issue
         const leadIdStr = String(result.leadId || '');
+        const serviceName = serviceFullName; // Usar el nombre completo
+        const servicePrice = serviceInfo?.priceRange || '';
+        const clientName = formData.nombreCliente || "Cliente";
+        const clientWhatsapp = formData.whatsapp || "No proporcionado";
+        
+        // Mensaje profesional y completo para la empresa
         const message = encodeURIComponent(
-          `Hola, necesito ayuda con el servicio de ${
-            serviceInfo?.name || formData.service
-          }. ` +
-            `Ubicación: ${formData.location}. ` +
-            `Mi solicitud ID: ${leadIdStr.substring(0, 8)}`
+          `Hola, soy ${clientName} y he solicitado el siguiente servicio:\n\n` +
+            `🔧 *Servicio:* ${serviceName}${servicePrice ? `\n💰 *Precio:* ${servicePrice}` : ''}\n` +
+            `📍 *Ubicación:* ${formData.location}\n` +
+            `📱 *Mi WhatsApp:* ${clientWhatsapp}\n` +
+            `🆔 *ID de solicitud:* ${leadIdStr.substring(0, 8)}\n\n` +
+            `Por favor, confírmame la disponibilidad y el horario para coordinar el servicio.`
         );
 
-        // Redirigir a WhatsApp
-        const whatsappUrl = `https://wa.me/${whatsappPhone}?text=${message}`;
+        // Redirigir a WhatsApp de la empresa con mensaje prellenado
+        const whatsappUrl = `https://wa.me/${companyWhatsappNumber}?text=${message}`;
         window.open(whatsappUrl, "_blank");
 
         // Opcional: también mostrar un mensaje de éxito
@@ -244,7 +365,8 @@ export default function QuickLeadForm({
   };
 
   const getServiceInfo = (serviceId: string) => {
-    return SERVICES.find((s) => s.id === serviceId);
+    const allServices = [...POPULAR_SPECIFIC_SERVICES, ...SERVICES];
+    return allServices.find((s) => s.id === serviceId);
   };
 
   const getColorClasses = (color: string) => {
@@ -255,6 +377,7 @@ export default function QuickLeadForm({
       red: "bg-red-100 text-red-800 border-red-200 hover:bg-red-200",
       green: "bg-green-100 text-green-800 border-green-200 hover:bg-green-200",
       gray: "bg-gray-100 text-gray-800 border-gray-200 hover:bg-gray-200",
+      purple: "bg-purple-100 text-purple-800 border-purple-200 hover:bg-purple-200",
     };
     return colors[color as keyof typeof colors] || colors.blue;
   };
@@ -266,6 +389,7 @@ export default function QuickLeadForm({
       red: "text-red-600",
       green: "text-green-600",
       gray: "text-gray-600",
+      purple: "text-purple-600",
     };
     return colors[color as keyof typeof colors] || "text-gray-600";
   };
@@ -360,6 +484,87 @@ export default function QuickLeadForm({
               <h3 className="text-xl font-bold text-gray-900 mb-4">
                 ¿Qué servicio necesitas?
               </h3>
+
+              {/* 🆕 Servicios Específicos Populares - Integrados en el mismo grid */}
+              <div className="mb-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <FontAwesomeIcon icon={faStar} className="text-yellow-500 text-lg" />
+                  <h4 className="text-base font-bold text-gray-900">
+                    ⭐ Servicios Más Solicitados
+                  </h4>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-4">
+                  {POPULAR_SPECIFIC_SERVICES.map((service) => (
+                    <button
+                      key={service.id}
+                      onClick={() => handleServiceSelect(service.id)}
+                      className={`p-4 rounded-xl border-2 transition-all duration-200 text-left group hover:shadow-lg ${
+                        selectedService === service.id
+                          ? `${getColorClasses(
+                              service.color
+                            )} border-current shadow-lg transform scale-[1.02]`
+                          : "border-gray-200 hover:border-gray-300 hover:shadow-md bg-white"
+                      }`}
+                    >
+                      <div className="flex flex-col space-y-3">
+                        <div className="flex items-center space-x-3">
+                          <div
+                            className={`w-10 h-10 rounded-lg flex items-center justify-center transition-colors ${
+                              selectedService === service.id
+                                ? "bg-white/20"
+                                : "bg-gray-100 group-hover:bg-gray-200"
+                            }`}
+                          >
+                            <FontAwesomeIcon
+                              icon={service.icon}
+                              className={`text-lg ${
+                                selectedService === service.id
+                                  ? getIconColorClasses(service.color)
+                                  : "text-gray-600"
+                              }`}
+                            />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <h4 className="font-semibold text-gray-900 text-sm leading-tight">
+                                {service.name}
+                              </h4>
+                              <FontAwesomeIcon icon={faStar} className="text-yellow-500 text-xs" />
+                            </div>
+                            <p className="text-xs text-gray-600 mt-1">
+                              {service.priceRange}
+                            </p>
+                          </div>
+                        </div>
+                        <p className="text-xs text-gray-600 leading-relaxed">
+                          {service.description}
+                        </p>
+                        {selectedService === service.id && (
+                          <div className="flex items-center justify-center text-green-600">
+                            <FontAwesomeIcon
+                              icon={faCheck}
+                              className="text-sm mr-1"
+                            />
+                            <span className="text-xs font-medium">
+                              Seleccionado
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Separador visual */}
+              <div className="flex items-center gap-2 my-4">
+                <div className="flex-1 border-t border-gray-300"></div>
+                <span className="text-sm text-gray-500 font-medium px-2">
+                  O explora por categoría
+                </span>
+                <div className="flex-1 border-t border-gray-300"></div>
+              </div>
+
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-4">
                 {SERVICES.map((service) => (
                   <button

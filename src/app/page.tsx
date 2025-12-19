@@ -45,6 +45,10 @@ const PopularServices = dynamic(() => import('@/components/landing/PopularServic
   ssr: true,
 });
 
+const PopularProjectsSection = dynamic(() => import('@/components/landing/PopularProjectsSection'), {
+  ssr: true,
+});
+
 const FloatingActionBtn = dynamic(
   () => import('@/components/FloatingActionBtn').then((mod) => mod.FloatingActionBtn)
 );
@@ -79,6 +83,10 @@ export default function Home() {
 
         {/* 🎯 SECCIÓN: Servicios Populares - Versión mejorada */}
         <PopularServices />
+        
+        {/* 🎯 SECCIÓN: Proyectos Populares con Precios Fijos */}
+        <PopularProjectsSection />
+        
         <ValueProposition />
         {/* 2. Mantenemos la sección original y añadimos el Asistente de IA debajo */}
         <HowItWorks />

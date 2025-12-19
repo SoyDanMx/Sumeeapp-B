@@ -24,6 +24,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabaseClient";
 import ActivityCard from "./ActivityCard";
+import HeroStatistics from "./HeroStatistics";
 import {
   getCurrentPostalCode,
   isValidMexicanPostalCode,
@@ -409,32 +410,7 @@ export const Hero = () => {
                 </div>
 
                 {/* Trust Bar - Estadísticas mejoradas para móviles */}
-                <div className="grid grid-cols-3 gap-3 sm:gap-4 md:gap-6 mt-6 sm:mt-8 md:mt-10 pt-5 sm:pt-6 md:pt-8 border-t border-white/20">
-                  <div className="text-center">
-                    <div className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-yellow-400 mb-1.5 sm:mb-2 drop-shadow-lg">
-                      50,000+
-                    </div>
-                    <div className="text-xs sm:text-sm md:text-base text-blue-100 font-medium">
-                      Servicios
-                    </div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-green-400 mb-1.5 sm:mb-2 drop-shadow-lg">
-                      2h
-                    </div>
-                    <div className="text-xs sm:text-sm md:text-base text-blue-100 font-medium">
-                      Tiempo Promedio
-                    </div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-purple-400 mb-1.5 sm:mb-2 drop-shadow-lg">
-                      4.8
-                    </div>
-                    <div className="text-xs sm:text-sm md:text-base text-blue-100 font-medium">
-                      Calificación
-                    </div>
-                  </div>
-                </div>
+                <HeroStatistics />
               </div>
             </div>
 

@@ -22,11 +22,124 @@ import {
   faArrowRight,
   faTools,
   faCheckCircle,
+  faStar,
+  faTv,
+  faCouch,
 } from "@fortawesome/free-solid-svg-icons";
 import { supabase } from "@/lib/supabase/client";
 
+// 🆕 Servicios populares hardcodeados (no vienen de BD)
+const popularServicesList: (ServiceCatalogItem & { icon?: any; color?: string; bgColor?: string })[] = [
+  {
+    id: "popular-montar-tv",
+    service_name: "Montar TV en Pared",
+    discipline: "montaje-armado",
+    price_type: "fixed",
+    min_price: 800,
+    max_price: null,
+    unit: "servicio",
+    includes_materials: false,
+    description: "Hasta 65 pulgadas",
+    icon: faTv,
+    color: "text-blue-600",
+    bgColor: "bg-blue-50",
+  },
+  {
+    id: "popular-armar-muebles",
+    service_name: "Armado de muebles",
+    discipline: "montaje-armado",
+    price_type: "fixed",
+    min_price: 600,
+    max_price: null,
+    unit: "servicio",
+    includes_materials: false,
+    description: "Muebles estándar",
+    icon: faCouch,
+    color: "text-purple-600",
+    bgColor: "bg-purple-50",
+  },
+  {
+    id: "popular-instalar-apagador",
+    service_name: "Instalación de Apagador",
+    discipline: "electricidad",
+    price_type: "fixed",
+    min_price: 350,
+    max_price: null,
+    unit: "servicio",
+    includes_materials: false,
+    description: "Precio fijo garantizado",
+    icon: faLightbulb,
+    color: "text-yellow-600",
+    bgColor: "bg-yellow-50",
+  },
+  {
+    id: "popular-reparar-fuga",
+    service_name: "Reparación de Fuga de Agua",
+    discipline: "plomeria",
+    price_type: "fixed",
+    min_price: 400,
+    max_price: null,
+    unit: "servicio",
+    includes_materials: false,
+    description: "Fuga simple",
+    icon: faWrench,
+    color: "text-blue-600",
+    bgColor: "bg-blue-50",
+  },
+  {
+    id: "popular-limpieza",
+    service_name: "Limpieza Residencial Básica",
+    discipline: "limpieza",
+    price_type: "fixed",
+    min_price: 800,
+    max_price: null,
+    unit: "servicio",
+    includes_materials: true,
+    description: "Hasta 80m²",
+    icon: faBroom,
+    color: "text-green-600",
+    bgColor: "bg-green-50",
+  },
+  {
+    id: "popular-instalar-lampara",
+    service_name: "Instalación de Lámpara",
+    discipline: "electricidad",
+    price_type: "fixed",
+    min_price: 500,
+    max_price: null,
+    unit: "servicio",
+    includes_materials: false,
+    description: "Colgante o empotrada",
+    icon: faLightbulb,
+    color: "text-yellow-600",
+    bgColor: "bg-yellow-50",
+  },
+  {
+    id: "popular-cctv-wifi",
+    service_name: "Instalación de Cámara CCTV",
+    discipline: "montaje-armado",
+    price_type: "fixed",
+    min_price: 800,
+    max_price: null,
+    unit: "servicio",
+    includes_materials: false,
+    description: "Cámara wifi",
+    icon: faVideo,
+    color: "text-indigo-600",
+    bgColor: "bg-indigo-50",
+  },
+];
+
 // Constante de categorías de servicio (debe coincidir con RequestServiceModal)
 const serviceCategories = [
+  {
+    id: "populares",
+    name: "Populares",
+    icon: faStar,
+    color: "text-yellow-600",
+    bgColor: "bg-gradient-to-r from-yellow-50 to-orange-50",
+    isPopular: true,
+  },
   {
     id: "plomeria",
     name: "Plomería",
@@ -118,6 +231,13 @@ const serviceCategories = [
     color: "text-red-600",
     bgColor: "bg-red-50",
   },
+  {
+    id: "montaje-armado",
+    name: "Misceláneos",
+    icon: faTools,
+    color: "text-indigo-600",
+    bgColor: "bg-indigo-50",
+  },
 ];
 
 // Tipo para servicio del catálogo
@@ -151,7 +271,7 @@ export default function ServicePricingSelector({
   onManualDescription,
 }: ServicePricingSelectorProps) {
   const [selectedCategory, setSelectedCategory] = useState<string>(
-    preSelectedCategory || "electricidad"
+    preSelectedCategory || "populares" // 🆕 Por defecto mostrar "Populares"
   );
   const [services, setServices] = useState<ServiceCatalogItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -166,6 +286,14 @@ export default function ServicePricingSelector({
       setError(null);
 
       try {
+        // 🆕 Si es categoría "Populares", usar lista hardcodeada
+        if (selectedCategory === "populares") {
+          setServices(popularServicesList as ServiceCatalogItem[]);
+          setLoading(false);
+          return;
+        }
+
+        // Si no, fetch normal desde BD
         const { data, error: fetchError } = await supabase
           .from("service_catalog")
           .select("*")
@@ -210,9 +338,9 @@ export default function ServicePricingSelector({
     const unitText = service.unit !== "servicio" ? ` por ${service.unit}` : "";
     const materialsText = service.includes_materials
       ? " (Incluye materiales)"
-      : "";
+      : " (Solo mano de obra - materiales aparte)";
 
-    return `Me interesa: ${service.service_name}. (Precio ref: ${priceText}${unitText}${materialsText})`;
+    return `Me interesa: ${service.service_name}. Precio: ${priceText}${unitText}${materialsText}`;
   };
 
   // Manejar selección de servicio
@@ -231,30 +359,47 @@ export default function ServicePricingSelector({
     <div className="space-y-1 md:space-y-1.5">
       {/* Tabs de Disciplinas (Scroll Horizontal) - Ultra Compacto */}
       <div className="overflow-x-auto pb-0.5 -mx-3 md:-mx-4 px-3 md:px-4 scrollbar-hide">
-        <div className="flex gap-0.5 min-w-max">
-          {serviceCategories.map((category) => {
+        <div className="flex gap-0.5 min-w-max items-center">
+          {serviceCategories.map((category, index) => {
             const isActive = selectedCategory === category.id;
+            const isPopular = category.id === "populares";
+            
             return (
-              <button
-                key={category.id}
-                onClick={() => setSelectedCategory(category.id)}
-                className={`
-                  flex items-center gap-0.5 px-1.5 py-0.5 md:px-2 md:py-1 rounded-md font-medium text-[9px] md:text-[10px]
-                  whitespace-nowrap transition-all duration-200
-                  ${
-                    isActive
-                      ? `${category.bgColor} ${category.color} scale-105 shadow-sm ring-1 ring-opacity-50`
-                      : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                  }
-                `}
-              >
-                <FontAwesomeIcon
-                  icon={category.icon}
-                  className={`text-[9px] md:text-[10px] ${isActive ? category.color : "text-gray-500"}`}
-                />
-                <span className="hidden sm:inline">{category.name}</span>
-                <span className="sm:hidden">{category.name.split(' ')[0]}</span>
-              </button>
+              <React.Fragment key={category.id}>
+                <button
+                  onClick={() => setSelectedCategory(category.id)}
+                  className={`
+                    flex items-center gap-0.5 px-1.5 py-0.5 md:px-2 md:py-1 rounded-md font-medium text-[9px] md:text-[10px]
+                    whitespace-nowrap transition-all duration-200
+                    ${
+                      isPopular
+                        ? isActive
+                          ? `${category.bgColor} ${category.color} scale-105 shadow-sm ring-2 ring-yellow-300 ring-opacity-50 font-bold`
+                          : "bg-gradient-to-r from-yellow-50 to-orange-50 text-yellow-700 hover:from-yellow-100 hover:to-orange-100 border border-yellow-200"
+                        : isActive
+                        ? `${category.bgColor} ${category.color} scale-105 shadow-sm ring-1 ring-opacity-50`
+                        : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                    }
+                  `}
+                >
+                  <FontAwesomeIcon
+                    icon={category.icon}
+                    className={`text-[9px] md:text-[10px] ${isActive ? (isPopular ? "text-yellow-600" : category.color) : (isPopular ? "text-yellow-600" : "text-gray-500")}`}
+                  />
+                  <span className="hidden sm:inline">{category.name}</span>
+                  <span className="sm:hidden">{isPopular ? "⭐" : category.name.split(' ')[0]}</span>
+                </button>
+                {/* Separador visual después de "Populares" */}
+                {isPopular && index === 0 && (
+                  <>
+                    <div className="h-4 w-px bg-gray-300 mx-0.5"></div>
+                    <span className="text-[8px] md:text-[9px] text-gray-500 font-medium px-1 hidden md:inline whitespace-nowrap">
+                      O explora por categoría
+                    </span>
+                    <div className="h-4 w-px bg-gray-300 mx-0.5 hidden md:block"></div>
+                  </>
+                )}
+              </React.Fragment>
             );
           })}
         </div>

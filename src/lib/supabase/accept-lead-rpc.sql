@@ -27,13 +27,14 @@ BEGIN
 
   UPDATE public.leads
   SET
-    estado = 'aceptado',
+    estado = 'Asignado',
     profesional_asignado_id = current_professional,
     contact_deadline_at = COALESCE(contact_deadline_at, NOW() + interval '30 minutes'),
     appointment_status = 'pendiente_contacto',
     fecha_asignacion = NOW(),
     fecha_actualizacion = NOW()
   WHERE id = lead_uuid
+    AND (profesional_asignado_id IS NULL OR profesional_asignado_id = current_professional)
   RETURNING * INTO updated_lead;
 
   IF NOT FOUND THEN

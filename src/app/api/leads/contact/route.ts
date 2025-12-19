@@ -44,6 +44,7 @@ export async function POST(request: Request) {
     }
 
     if (!currentUser) {
+      console.error("❌ [CONTACT LEAD] No hay usuario autenticado");
       return NextResponse.json(
         {
           error:
@@ -53,27 +54,115 @@ export async function POST(request: Request) {
       );
     }
 
-    const adminClient = createSupabaseAdminClient();
+    console.log("✅ [CONTACT LEAD] Usuario autenticado:", currentUser.id, currentUser.email);
 
-    if (!adminClient) {
-      return NextResponse.json(
-        {
-          error:
-            "No se pudo registrar el contacto porque falta la configuración administrativa.",
-        },
-        { status: 500 }
-      );
-    }
+    // Intentar primero con el cliente autenticado (para que auth.uid() funcione en el RPC)
+    let lead = null;
+    let error = null;
 
-    const { data: lead, error } = await adminClient
-      .rpc("mark_lead_contacted", {
+    try {
+      const rpcResult = await supabase.rpc("mark_lead_contacted", {
         lead_uuid: leadId,
         method: method ?? "whatsapp",
         notes: notes ?? null,
-      })
-      .maybeSingle();
+      });
 
+      if (rpcResult.data) {
+        lead = Array.isArray(rpcResult.data) ? rpcResult.data[0] : rpcResult.data;
+        error = rpcResult.error;
+      } else {
+        error = rpcResult.error || new Error("RPC retornó sin datos");
+      }
+    } catch (rpcException: any) {
+      console.warn("⚠️ [CONTACT LEAD] Excepción al llamar RPC mark_lead_contacted:", rpcException);
+      error = rpcException;
+    }
+
+    // Si el RPC falla, intentar con admin client como fallback
     if (error || !lead) {
+      console.warn("⚠️ [CONTACT LEAD] RPC falló, intentando con admin client. Error:", error?.message || error);
+      
+      const adminClient = createSupabaseAdminClient();
+
+      if (!adminClient) {
+        return NextResponse.json(
+          {
+            error: error?.message || "No se pudo registrar el contacto. Intenta nuevamente.",
+          },
+          { status: 500 }
+        );
+      }
+
+      // Con admin client, necesitamos actualizar directamente ya que auth.uid() no funcionará
+      const { data: existingLead } = await adminClient
+        .from("leads")
+        .select("*")
+        .eq("id", leadId)
+        .maybeSingle();
+
+      if (!existingLead) {
+        return NextResponse.json(
+          {
+            error: "Lead no encontrado.",
+          },
+          { status: 404 }
+        );
+      }
+
+      if (existingLead.profesional_asignado_id !== currentUser.id) {
+        return NextResponse.json(
+          {
+            error: "Este lead no está asignado a tu cuenta.",
+          },
+          { status: 403 }
+        );
+      }
+
+      // Actualizar directamente con admin client
+      const { data: updatedLead, error: updateError } = await adminClient
+        .from("leads")
+        .update({
+          contacted_at: new Date().toISOString(),
+          contact_method: method ?? "whatsapp",
+          contact_notes: notes ?? null,
+          appointment_status: "contactado",
+          estado: "contactado",
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", leadId)
+        .select("*")
+        .maybeSingle();
+
+      if (updateError || !updatedLead) {
+        return NextResponse.json(
+          {
+            error: updateError?.message || "No se pudo registrar el contacto.",
+          },
+          { status: 400 }
+        );
+      }
+
+      // Registrar evento manualmente
+      try {
+        await adminClient.from("lead_events").insert({
+          lead_id: leadId,
+          actor_id: currentUser.id,
+          actor_role: "profesional",
+          event_type: "contacted",
+          payload: {
+            method: method ?? "whatsapp",
+            notes: notes ?? null,
+          },
+        });
+      } catch (eventError) {
+        console.warn("⚠️ [CONTACT LEAD] No se pudo registrar evento (no crítico):", eventError);
+      }
+
+      lead = updatedLead;
+      error = null; // Limpiar el error ya que el fallback funcionó
+    }
+
+    if (!lead) {
       return NextResponse.json(
         {
           error: error?.message || "No se pudo registrar el contacto.",

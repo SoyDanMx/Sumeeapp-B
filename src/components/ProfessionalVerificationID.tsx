@@ -1223,20 +1223,17 @@ export default function ProfessionalVerificationID({
         {/* Header compacto con logo y badge */}
         <div className="relative px-3 sm:px-4 pt-3 sm:pt-4 pb-2 sm:pb-3 bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <div className="relative w-8 h-8 sm:w-10 sm:h-10 flex-shrink-0">
+            <div className="flex items-center">
+              <div className="relative w-12 h-12 sm:w-16 sm:h-16 flex-shrink-0">
                 <Image
                   src="/logo.png"
                   alt="Sumee Logo"
                   fill
-                  className="object-contain"
+                  className="object-contain brightness-0 invert"
                   priority
                   unoptimized
                 />
               </div>
-              <h3 className="text-base sm:text-xl font-black text-white tracking-tight">
-                SuMee
-              </h3>
             </div>
             <div className="flex items-center space-x-1 text-white px-2 sm:px-3 py-1 rounded-full bg-white/20 backdrop-blur-sm font-bold text-[10px] sm:text-xs">
               <FontAwesomeIcon icon={faShieldAlt} className="text-xs sm:text-sm" />

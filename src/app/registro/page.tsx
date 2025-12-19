@@ -1,8 +1,8 @@
 // src/app/registro/page.tsx
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useState, useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase/client';
 import Image from 'next/image';
@@ -17,7 +17,9 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import { normalizeWhatsappNumber } from '@/lib/utils';
 
-export default function RegistroPage() {
+function RegistroPageContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -32,7 +34,13 @@ export default function RegistroPage() {
   const userType = 'client';
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const router = useRouter();
+  
+  // 🆕 Leer parámetros para preservar el servicio seleccionado después del registro
+  const redirectParam = searchParams?.get('redirect') || '/dashboard/client';
+  const serviceParam = searchParams?.get('service');
+  const disciplineParam = searchParams?.get('discipline');
+  const descriptionParam = searchParams?.get('description');
+  const stepParam = searchParams?.get('step');
 
   // Capturar ubicación automáticamente al montar
   useEffect(() => {
@@ -196,12 +204,17 @@ export default function RegistroPage() {
         plan: 'express_free',
       };
 
+      // 🆕 Construir URL de redirect para incluir en emailRedirectTo
+      const emailRedirectUrl = redirectParam 
+        ? `${window.location.origin}/auth/callback?redirect=${encodeURIComponent(redirectParam)}`
+        : `${window.location.origin}/auth/callback`;
+      
       // Crear la cuenta en Supabase Auth con el tipo de usuario
       const { error } = await supabase.auth.signUp({
         email: email,
         password: password,
         options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
+          emailRedirectTo: emailRedirectUrl,
           data: metadata,
         },
       });
@@ -221,8 +234,30 @@ export default function RegistroPage() {
         return;
       }
 
+      // 🆕 Preservar el redirect y parámetros del servicio después del registro
+      // Guardar en localStorage para usarlo después de confirmar email y login
+      const redirectData = {
+        url: redirectParam,
+        params: {
+          service: serviceParam,
+          discipline: disciplineParam,
+          description: descriptionParam,
+          step: stepParam,
+        }
+      };
+      localStorage.setItem('pendingRedirect', JSON.stringify(redirectData));
+      
       alert('¡Registro exitoso! Por favor, revisa tu correo para confirmar tu cuenta.');
-      router.push('/login');
+      
+      // Redirigir a login con los parámetros preservados
+      const loginParams = new URLSearchParams();
+      if (serviceParam) loginParams.set('service', serviceParam);
+      if (disciplineParam) loginParams.set('discipline', disciplineParam);
+      if (descriptionParam) loginParams.set('description', descriptionParam);
+      if (stepParam) loginParams.set('step', stepParam);
+      if (redirectParam) loginParams.set('redirect', redirectParam);
+      
+      router.push(`/login?${loginParams.toString()}`);
 
     } catch (error: any) {
       console.error('Error en registro:', error);
@@ -463,5 +498,21 @@ export default function RegistroPage() {
         </p>
       </div>
     </div>
+  );
+}
+
+// Wrapper con Suspense para useSearchParams
+export default function RegistroPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex min-h-screen bg-gray-50 items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Cargando...</p>
+        </div>
+      </div>
+    }>
+      <RegistroPageContent />
+    </Suspense>
   );
 }

@@ -252,7 +252,7 @@ export function useProfesionalData(): UseProfesionalDataReturn {
           setTimeout(() => {
             if (isMounted && isLoading) {
               console.warn("⚠️ useProfesionalData - Timeout extendido: forzando setIsLoading(false) después de 8s");
-              setIsLoading(false);
+        setIsLoading(false);
             }
           }, 3000);
         }

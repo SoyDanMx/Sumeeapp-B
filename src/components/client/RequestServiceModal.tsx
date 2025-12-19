@@ -25,6 +25,10 @@ import {
   faHardHat,
   faCubes,
   faExclamationTriangle,
+  faTools,
+  faTv,
+  faCouch,
+  faStar,
 } from "@fortawesome/free-solid-svg-icons";
 import { faWhatsapp as faWhatsappBrand } from "@fortawesome/free-brands-svg-icons";
 import { supabase } from "@/lib/supabase/client";
@@ -33,15 +37,47 @@ import Link from "next/link";
 import { sanitizeInput, sanitizePhone } from "@/lib/sanitize";
 import { getAddressSuggestions, formatAddressSuggestion, AddressSuggestion } from "@/lib/address-autocomplete";
 import ServicePricingSelector from "@/components/services/ServicePricingSelector";
+import ServiceSummaryPanel from "@/components/services/ServiceSummaryPanel";
 
 interface RequestServiceModalProps {
   isOpen: boolean;
   onClose: () => void;
   onLeadCreated?: () => void;
   initialService?: string | null;
+  initialServiceName?: string | null; // Nombre específico del servicio del catálogo
+  initialDescription?: string | null; // Descripción prellenada para el paso 2
+  initialStep?: number; // Paso inicial del modal (1-4)
 }
 
+// 🆕 Lista de servicios populares para auto-selección de categoría
+const popularServiceNames = [
+  "Montar TV en Pared",
+  "Armado de muebles",
+  "Instalación de Apagador",
+  "Reparación de Fuga de Agua",
+  "Limpieza Residencial Básica",
+  "Instalación de Lámpara",
+  "Instalación de Cámara CCTV",
+];
+
+// Función helper para verificar si un servicio es popular
+const isPopularService = (serviceName: string | null | undefined): boolean => {
+  if (!serviceName) return false;
+  return popularServiceNames.some(
+    (popular) => serviceName.toLowerCase().includes(popular.toLowerCase()) ||
+                 popular.toLowerCase().includes(serviceName.toLowerCase())
+  );
+};
+
 const serviceCategories = [
+  {
+    id: "populares",
+    name: "Populares",
+    icon: faStar,
+    color: "text-yellow-600",
+    bgColor: "bg-gradient-to-r from-yellow-50 to-orange-50",
+    isPopular: true,
+  },
   {
     id: "plomeria",
     name: "Plomería",
@@ -132,6 +168,13 @@ const serviceCategories = [
     icon: faBug,
     color: "text-red-600",
     bgColor: "bg-red-50",
+  },
+  {
+    id: "montaje-armado",
+    name: "Misceláneos",
+    icon: faTools,
+    color: "text-indigo-600",
+    bgColor: "bg-indigo-50",
   },
 ];
 
@@ -241,8 +284,22 @@ export default function RequestServiceModal({
   onClose,
   onLeadCreated,
   initialService,
+  initialServiceName,
+  initialDescription,
+  initialStep,
 }: RequestServiceModalProps) {
-  const [currentStep, setCurrentStep] = useState(1);
+  // Inicializar el paso: si hay initialStep o initialDescription, usar paso 2, sino paso 1
+  const [currentStep, setCurrentStep] = useState(() => {
+    // Si hay initialStep explícito, usarlo
+    if (initialStep !== undefined && initialStep >= 1 && initialStep <= 4) {
+      return initialStep;
+    }
+    // Si hay initialDescription, abrir en paso 2
+    if (initialDescription && initialDescription.trim()) {
+      return 2;
+    }
+    return 1;
+  });
   const [formData, setFormData] = useState({
     servicio: "",
     descripcion: "",
@@ -259,6 +316,18 @@ export default function RequestServiceModal({
   const hasPrefilledWhatsapp = useRef(false);
   const router = useRouter();
   const { user, profile, isAuthenticated, isLoading } = useAuth();
+  
+  // 🆕 Debug: Log cuando el modal se abre con parámetros
+  useEffect(() => {
+    if (isOpen && initialService && initialServiceName) {
+      console.log('🎯 Modal abierto con servicio pre-seleccionado:', {
+        initialService,
+        initialServiceName,
+        hasUser: !!user,
+        hasProfile: !!profile,
+      });
+    }
+  }, [isOpen, initialService, initialServiceName, user, profile]);
   const [whatsappError, setWhatsappError] = useState<string | null>(null);
   const [iaStatus, setIaStatus] = useState<AiStatus>("idle");
   const [iaSuggestion, setIaSuggestion] = useState<AiSuggestion | null>(null);
@@ -370,40 +439,148 @@ export default function RequestServiceModal({
   );
 
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen) {
+      console.log('🚫 Modal cerrado, reseteando estado');
+      // Reset refs cuando el modal se cierra
+      hasPrefilledWhatsapp.current = false;
+      hasPrefilledLocation.current = false;
+      return;
+    }
 
-    if (initialService) {
-      const serviceId = initialService;
-      const isEmergencyService =
-        serviceId === "electricidad" || serviceId === "plomeria";
+    console.log('🔄 useEffect de prellenado ejecutado:', {
+      isOpen,
+      initialService,
+      initialServiceName,
+      hasUser: !!user,
+      hasProfile: !!profile,
+    });
 
-      // Mapeo de servicio a disciplina_ia para prellenado
-      const disciplinaMap: Record<string, string> = {
-        "electricidad": "Electricidad",
-        "plomeria": "Plomería",
-      };
+    const fetchServiceData = async () => {
+      if (initialService) {
+        const serviceId = initialService;
+        const isEmergencyService =
+          serviceId === "electricidad" || serviceId === "plomeria";
 
-      setFormData((prev) => ({
-        ...prev,
-        servicio: serviceId,
-        urgencia: isEmergencyService ? "emergencia" : prev.urgencia,
-      }));
-      setUserOverrodeService(true);
-      if (isEmergencyService) {
-        setUserOverrodeUrgency(true);
-        // Prellenar disciplina_ia para urgencias
-        if (disciplinaMap[serviceId]) {
-          setDisciplinaIa(disciplinaMap[serviceId]);
+        // Mapeo de servicio a disciplina_ia para prellenado
+        const disciplinaMap: Record<string, string> = {
+          "electricidad": "Electricidad",
+          "plomeria": "Plomería",
+          "montaje-armado": "Montaje y Armado",
+          "limpieza": "Limpieza",
+          "cctv": "CCTV",
+        };
+
+        // Si hay initialDescription, usarla directamente (tiene prioridad sobre búsqueda en catálogo)
+        if (initialDescription && initialDescription.trim()) {
+          console.log('✅ [PRIORIDAD] Usando descripción prellenada desde formulario detallado');
+          setFormData((prev) => ({
+            ...prev,
+            servicio: serviceId,
+            descripcion: initialDescription.trim(),
+            urgencia: isEmergencyService ? "emergencia" : prev.urgencia,
+          }));
+          setUserOverrodeService(true); // Marcar que el servicio fue prellenado
+          if (isEmergencyService) {
+            setUserOverrodeUrgency(true);
+            if (disciplinaMap[serviceId]) {
+              setDisciplinaIa(disciplinaMap[serviceId]);
+            }
+          }
+          prevInitialService.current = serviceId; // Marcar que ya se procesó este servicio
+          return; // Salir temprano, no buscar en catálogo
         }
-      }
+        // Si hay un nombre de servicio específico pero NO hay initialDescription, buscar en catálogo
+        else if (initialServiceName) {
+          console.log('🔍 Buscando servicio en catálogo:', { serviceName: initialServiceName, discipline: serviceId });
+          
+          // Buscar el servicio en el catálogo para obtener precio y descripción completa
+          try {
+            const { data: serviceData, error: serviceError } = await supabase
+              .from("service_catalog")
+              .select("*")
+              .eq("service_name", initialServiceName)
+              .eq("discipline", serviceId)
+              .eq("is_active", true)
+              .maybeSingle() as { data: any; error: any };
+            
+            if (serviceError) {
+              console.error('❌ Error al buscar servicio en catálogo:', serviceError);
+            }
+            
+            if (!serviceError && serviceData) {
+              const priceText = serviceData.price_type === "fixed"
+                ? `$${serviceData.min_price.toLocaleString("es-MX")}`
+                : serviceData.price_type === "range"
+                ? `$${serviceData.min_price.toLocaleString("es-MX")} - $${(serviceData.max_price || 0).toLocaleString("es-MX")}`
+                : `Desde $${serviceData.min_price.toLocaleString("es-MX")}`;
+              
+              const unitText = serviceData.unit !== "servicio" ? ` por ${serviceData.unit}` : "";
+              const materialsText = serviceData.includes_materials
+                ? " (Incluye materiales)"
+                : " (Solo mano de obra - materiales aparte)";
+              
+              const fullDescription = `Me interesa: ${serviceData.service_name}. Precio: ${priceText}${unitText}${materialsText}`;
+              
+              console.log('✅ Servicio encontrado en catálogo, prellenando descripción:', fullDescription);
+              
+              setFormData((prev) => ({
+                ...prev,
+                servicio: serviceId,
+                descripcion: fullDescription,
+                urgencia: isEmergencyService ? "emergencia" : prev.urgencia,
+              }));
+            } else {
+              // Si no se encuentra en el catálogo, usar descripción básica
+              console.log('⚠️ Servicio no encontrado en catálogo, usando descripción básica');
+              setFormData((prev) => ({
+                ...prev,
+                servicio: serviceId,
+                descripcion: `Me interesa: ${initialServiceName}`,
+                urgencia: isEmergencyService ? "emergencia" : prev.urgencia,
+              }));
+            }
+          } catch (error) {
+            console.error('❌ Error en búsqueda de catálogo:', error);
+            // Fallback a descripción básica
+            setFormData((prev) => ({
+              ...prev,
+              servicio: serviceId,
+              descripcion: `Me interesa: ${initialServiceName}`,
+              urgencia: isEmergencyService ? "emergencia" : prev.urgencia,
+            }));
+          }
+        } else {
+          setFormData((prev) => ({
+            ...prev,
+            servicio: serviceId,
+            urgencia: isEmergencyService ? "emergencia" : prev.urgencia,
+          }));
+        }
 
-      setCurrentStep((prev) => (prev === 1 ? 2 : prev));
-      prevInitialService.current = serviceId;
-    } else if (prevInitialService.current) {
+        setUserOverrodeService(true);
+        if (isEmergencyService) {
+          setUserOverrodeUrgency(true);
+          // Prellenar disciplina_ia para urgencias
+          if (disciplinaMap[serviceId]) {
+            setDisciplinaIa(disciplinaMap[serviceId]);
+          }
+        }
+
+        // 🚀 No avanzar automáticamente aquí - el useEffect de avance automático inteligente lo hará
+        // Esto permite que todos los prellenados se completen antes de avanzar
+        // setCurrentStep((prev) => (prev === 1 ? 2 : prev));
+        prevInitialService.current = serviceId;
+      }
+    };
+
+    fetchServiceData();
+    
+    if (!initialService && prevInitialService.current) {
       prevInitialService.current = null;
       setFormData((prev) => ({
         ...prev,
         servicio: "",
+        descripcion: "",
         urgencia: "normal",
       }));
       setUserOverrodeService(false);
@@ -417,7 +594,7 @@ export default function RequestServiceModal({
       lastClassifiedDescription.current = "";
       setCurrentStep(1);
     }
-  }, [initialService, isOpen]);
+  }, [initialService, initialServiceName, isOpen]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -884,6 +1061,11 @@ export default function RequestServiceModal({
   };
 
   useEffect(() => {
+    if (!isOpen) {
+      // Reset cuando el modal se cierra
+      hasPrefilledWhatsapp.current = false;
+      return;
+    }
     if (hasPrefilledWhatsapp.current) return;
     if (!user && !profile) return;
 
@@ -900,8 +1082,117 @@ export default function RequestServiceModal({
         : existingPhone;
       setFormData((prev) => ({ ...prev, whatsapp: displayValue }));
       hasPrefilledWhatsapp.current = true;
+      console.log('📱 WhatsApp pre-llenado desde perfil:', displayValue);
     }
-  }, [user, profile]);
+  }, [user, profile, isOpen]);
+
+  // 🆕 Prellenar ubicación desde perfil del usuario
+  const hasPrefilledLocation = useRef(false);
+  useEffect(() => {
+    if (!isOpen) {
+      // Reset cuando el modal se cierra
+      hasPrefilledLocation.current = false;
+      return;
+    }
+    if (hasPrefilledLocation.current) return;
+    if (!profile) return;
+
+    // Intentar obtener ubicación desde el perfil
+    const profileAddress = (profile as any).ubicacion_direccion;
+    if (profileAddress && typeof profileAddress === 'string' && profileAddress.trim()) {
+      setFormData((prev) => ({ ...prev, ubicacion: profileAddress.trim() }));
+      hasPrefilledLocation.current = true;
+      console.log('📍 Ubicación pre-llenada desde perfil:', profileAddress);
+    }
+  }, [profile, isOpen]);
+
+  // 🆕 Establecer paso inicial cuando el modal se abre (si viene del formulario detallado)
+  useEffect(() => {
+    if (!isOpen) return;
+    
+    // Si hay initialStep explícito, establecer el paso
+    if (initialStep !== undefined && initialStep >= 1 && initialStep <= 4) {
+      console.log('✅ [STEP] Forzando paso', initialStep, 'desde URL');
+      setCurrentStep(initialStep);
+    }
+    // Si hay initialDescription, forzar paso 2
+    else if (initialDescription && initialDescription.trim()) {
+      console.log('✅ [STEP] Forzando paso 2 (tiene descripción prellenada)');
+      setCurrentStep(2);
+    }
+  }, [isOpen, initialStep, initialDescription]);
+
+  // 🆕 Prellenar descripción cuando el modal se abre (si viene del formulario detallado)
+  useEffect(() => {
+    if (!isOpen) return;
+    
+    // Prellenar descripción si viene desde formulario detallado
+    if (initialDescription && initialDescription.trim()) {
+      console.log('📝 [PRIORIDAD] Prellenando descripción desde formulario detallado:', initialDescription);
+      setFormData((prev) => ({
+        ...prev,
+        servicio: initialService || prev.servicio,
+        descripcion: initialDescription.trim(),
+      }));
+    }
+  }, [isOpen, initialDescription, initialService]);
+
+  // 🚀 LÓGICA DE AVANCE AUTOMÁTICO: Prellenar todo y avanzar hasta el último paso necesario
+  // IMPORTANTE: Si hay un initialStep explícito o initialDescription, NO ejecutar auto-avance
+  useEffect(() => {
+    if (!isOpen) return;
+    // Si hay un initialStep explícito (viene de URL), NO ejecutar auto-avance
+    if (initialStep !== undefined && initialStep !== 1) {
+      console.log('🚫 Saltando auto-avance: initialStep ya está definido:', initialStep);
+      return;
+    }
+    // Si hay initialDescription, ya se abrió en paso 2, no hacer auto-avance
+    if (initialDescription && initialDescription.trim()) {
+      console.log('🚫 Saltando auto-avance: tiene descripción prellenada, ya está en paso 2');
+      return;
+    }
+    if (!initialService || !initialServiceName) return;
+    if (!user || !profile) return; // Solo para usuarios autenticados
+
+    // Esperar un momento para que todos los prellenados se completen
+    const autoAdvanceTimeout = setTimeout(() => {
+      const hasService = !!formData.servicio;
+      const hasDescription = !!formData.descripcion.trim();
+      const hasWhatsapp = !!formData.whatsapp.trim();
+      const hasLocation = !!formData.ubicacion.trim();
+
+      console.log('🔍 Estado del formulario:', {
+        hasService,
+        hasDescription,
+        hasWhatsapp,
+        hasLocation,
+        currentStep,
+      });
+
+      // Si todo está completo, avanzar directamente al paso 4 (confirmación)
+      if (hasService && hasDescription && hasWhatsapp && hasLocation) {
+        console.log('✅ Todo pre-llenado, avanzando al paso 4 (confirmación)');
+        setCurrentStep(4);
+        return;
+      }
+
+      // Si tenemos servicio y descripción, avanzar al paso 3 (WhatsApp + Ubicación)
+      if (hasService && hasDescription && currentStep < 3) {
+        console.log('✅ Servicio y descripción completos, avanzando al paso 3');
+        setCurrentStep(3);
+        return;
+      }
+
+      // Si tenemos servicio, avanzar al paso 2 (descripción)
+      if (hasService && currentStep < 2) {
+        console.log('✅ Servicio seleccionado, avanzando al paso 2');
+        setCurrentStep(2);
+        return;
+      }
+    }, 800); // Esperar 800ms para que todos los prellenados se completen
+
+    return () => clearTimeout(autoAdvanceTimeout);
+  }, [isOpen, initialService, initialServiceName, user, profile, formData, currentStep]);
 
   const handleSubmit = async () => {
     if (!user) {
@@ -945,18 +1236,50 @@ export default function RequestServiceModal({
         imagenUrl = publicUrl;
       }
 
+      // 🆕 Geocodificar ubicación si está disponible
+      let ubicacionLat = 19.4326; // CDMX por defecto
+      let ubicacionLng = -99.1332;
+      
+      if (formData.ubicacion && formData.ubicacion.trim()) {
+        try {
+          // Intentar usar coordenadas del perfil si están disponibles
+          if (profile && (profile as any).ubicacion_lat && (profile as any).ubicacion_lng) {
+            ubicacionLat = (profile as any).ubicacion_lat;
+            ubicacionLng = (profile as any).ubicacion_lng;
+            console.log('📍 Usando coordenadas del perfil:', { ubicacionLat, ubicacionLng });
+          } else {
+            // Si no hay coordenadas en el perfil, intentar geocodificar la dirección
+            const googleMapsApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+            if (googleMapsApiKey) {
+              const geocodeResponse = await fetch(
+                `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(formData.ubicacion)}&key=${googleMapsApiKey}&language=es&region=mx`
+              );
+              const geocodeData = await geocodeResponse.json();
+              if (geocodeData.status === "OK" && geocodeData.results && geocodeData.results.length > 0) {
+                ubicacionLat = geocodeData.results[0].geometry.location.lat;
+                ubicacionLng = geocodeData.results[0].geometry.location.lng;
+                console.log('📍 Coordenadas geocodificadas:', { ubicacionLat, ubicacionLng });
+              }
+            }
+          }
+        } catch (geocodeError) {
+          console.warn('⚠️ Error al geocodificar, usando coordenadas por defecto:', geocodeError);
+        }
+      }
+
       // Crear el lead
       const { data: leadData, error: leadError } = await supabase
         .from("leads")
         // @ts-ignore - Supabase types inference issue, but this works correctly at runtime
         .insert({
-          nombre_cliente: user.user_metadata?.full_name || "Cliente",
+          nombre_cliente: user.user_metadata?.full_name || (profile as any)?.full_name || "Cliente",
           whatsapp: normalizedWhatsapp,
           descripcion_proyecto: formData.descripcion || "Sin descripción",
-          ubicacion_lat: 19.4326, // CDMX por defecto - se puede mejorar con geocoding
-          ubicacion_lng: -99.1332,
+          ubicacion_lat: ubicacionLat,
+          ubicacion_lng: ubicacionLng,
           estado: "nuevo", // Usar 'nuevo' según el schema
           servicio: formData.servicio, // Campo correcto según schema
+          servicio_solicitado: initialServiceName || formData.servicio, // Nombre específico del servicio
           ubicacion_direccion: formData.ubicacion || null,
           cliente_id: user.id,
           disciplina_ia: disciplinaIa,
@@ -986,8 +1309,19 @@ export default function RequestServiceModal({
           leadError.message?.includes("violates") ||
           leadError.message?.includes("constraint")
         ) {
-          errorMessage =
-            "Error en los datos proporcionados. Por favor, verifica que todos los campos sean correctos.";
+          // 🆕 Mensaje específico para constraint de servicio
+          if (leadError.message?.includes("leads_servicio_check")) {
+            errorMessage =
+              `El servicio "${formData.servicio}" no está permitido en la base de datos. Por favor, contacta a soporte.`;
+            console.error("❌ Servicio no permitido en constraint:", {
+              servicio: formData.servicio,
+              servicio_solicitado: initialServiceName,
+              error: leadError.message,
+            });
+          } else {
+            errorMessage =
+              "Error en los datos proporcionados. Por favor, verifica que todos los campos sean correctos.";
+          }
         } else if (
           leadError.message?.includes("network") ||
           leadError.message?.includes("fetch")
@@ -1040,6 +1374,43 @@ export default function RequestServiceModal({
       setError(errorMessage);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // =========================================================================
+  // FUNCIÓN PARA ENVIAR ALERTA DE WHATSAPP A LA EMPRESA
+  // =========================================================================
+  const sendLeadAlertToWhatsApp = async (
+    leadId: string,
+    servicio: string,
+    servicioSolicitado: string | null
+  ) => {
+    try {
+      const response = await fetch('/api/whatsapp/lead-alert', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          leadId,
+          servicio,
+          servicioSolicitado: servicioSolicitado || servicio,
+          ubicacion: formData.ubicacion || 'No especificada',
+          clienteWhatsapp: formData.whatsapp || 'No proporcionado',
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Error al enviar alerta WhatsApp');
+      }
+
+      const result = await response.json();
+      console.log('✅ Alerta WhatsApp enviada exitosamente:', result);
+      return result;
+    } catch (error) {
+      console.error('❌ Error al enviar alerta WhatsApp:', error);
+      throw error;
     }
   };
 
@@ -1156,14 +1527,20 @@ export default function RequestServiceModal({
       }
       persistWhatsapp(normalizedWhatsapp).catch(console.warn);
 
-      // 8. Navegación y Cierre
+      // 8. Enviar alerta de WhatsApp a la empresa (en background, no bloquea)
+      // @ts-ignore - Supabase types inference issue
+      sendLeadAlertToWhatsApp(data.id, formData.servicio, initialServiceName || formData.descripcion).catch((error: any) => {
+        console.warn("⚠️ Error al enviar alerta WhatsApp (no crítico):", error);
+      });
+
+      // 9. Navegación y Cierre
       resetModal();
       onClose();
       
       // Pequeño delay para UX suave antes de redirigir
       setTimeout(() => {
-        // @ts-ignore - Supabase types inference issue
-        router.push(`/solicitudes/${data.id}`);
+        // Redirigir al dashboard del cliente donde se muestran todas las solicitudes
+        router.push('/dashboard/client');
         if (onLeadCreated) onLeadCreated();
       }, 100);
 
@@ -1430,7 +1807,7 @@ export default function RequestServiceModal({
           }}
         >
           {currentStep === 1 && (
-            <div className="space-y-1 md:space-y-1.5">
+            <div className="space-y-2 md:space-y-3">
               <div className="text-center mb-1 md:mb-1.5">
                 <h3 className="text-[10px] md:text-xs lg:text-sm font-bold text-gray-900 mb-0.5">
                   ¿Qué servicio necesitas?
@@ -1440,10 +1817,161 @@ export default function RequestServiceModal({
                 </p>
               </div>
 
-              {/* Nuevo Componente de Catálogo de Precios */}
+              {/* 🆕 Sección de Servicios Específicos Populares */}
+              <div className="mb-3 md:mb-4 bg-gradient-to-br from-yellow-50 to-orange-50 rounded-lg p-3 md:p-4 border-2 border-yellow-300 shadow-sm">
+                <div className="flex items-center gap-2 mb-2 md:mb-3">
+                  <FontAwesomeIcon icon={faStar} className="text-yellow-500 text-sm md:text-base" />
+                  <h4 className="text-xs md:text-sm font-bold text-gray-900">
+                    ⭐ Servicios Más Solicitados
+                  </h4>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 md:gap-2.5">
+                  {/* Instalación de Contactos */}
+                  <button
+                    onClick={() => {
+                      onClose(); // Cerrar modal primero
+                      router.push('/servicios/electricidad/instalacion-contactos');
+                    }}
+                    className="group relative p-2.5 md:p-3 rounded-lg border-2 border-yellow-300 hover:border-yellow-500 hover:shadow-md transition-all duration-200 text-left bg-white hover:bg-gradient-to-br hover:from-yellow-50 hover:to-orange-50 active:scale-[0.98]"
+                  >
+                    <div className="flex items-center gap-1.5 mb-1.5">
+                      <FontAwesomeIcon icon={faLightbulb} className="text-yellow-600 text-sm md:text-base flex-shrink-0" />
+                      <h5 className="font-bold text-gray-900 text-xs md:text-sm leading-tight line-clamp-2">
+                        Instalación de Contactos
+                      </h5>
+                    </div>
+                    <p className="text-xs md:text-sm font-semibold text-blue-600 mb-0.5">Desde $350</p>
+                    <p className="text-[10px] md:text-xs text-gray-500">Mano de obra</p>
+                    <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <FontAwesomeIcon icon={faArrowRight} className="text-yellow-600 text-xs" />
+                    </div>
+                  </button>
+
+                  {/* Reparación de Fugas */}
+                  <button
+                    onClick={() => {
+                      onClose(); // Cerrar modal primero
+                      router.push('/servicios/plomeria/reparacion-de-fugas');
+                    }}
+                    className="group relative p-2.5 md:p-3 rounded-lg border-2 border-blue-300 hover:border-blue-500 hover:shadow-md transition-all duration-200 text-left bg-white hover:bg-gradient-to-br hover:from-blue-50 hover:to-cyan-50 active:scale-[0.98]"
+                  >
+                    <div className="flex items-center gap-1.5 mb-1.5">
+                      <FontAwesomeIcon icon={faWrench} className="text-blue-600 text-sm md:text-base flex-shrink-0" />
+                      <h5 className="font-bold text-gray-900 text-xs md:text-sm leading-tight line-clamp-2">
+                        Reparación de Fugas
+                      </h5>
+                    </div>
+                    <p className="text-xs md:text-sm font-semibold text-blue-600 mb-0.5">Desde $400</p>
+                    <p className="text-[10px] md:text-xs text-gray-500">Mano de obra</p>
+                    <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <FontAwesomeIcon icon={faArrowRight} className="text-blue-600 text-xs" />
+                    </div>
+                  </button>
+
+                  {/* Montar TV en Pared */}
+                  <button
+                    onClick={() => {
+                      handleServiceCatalogSelect("Montar TV en Pared", "$800", "Me interesa: Montar TV en Pared. Precio: $800 (Solo mano de obra - materiales aparte)", "montaje-armado");
+                      nextStep();
+                    }}
+                    className="group relative p-2.5 md:p-3 rounded-lg border-2 border-purple-300 hover:border-purple-500 hover:shadow-md transition-all duration-200 text-left bg-white hover:bg-gradient-to-br hover:from-purple-50 hover:to-pink-50 active:scale-[0.98]"
+                  >
+                    <div className="flex items-center gap-1.5 mb-1.5">
+                      <FontAwesomeIcon icon={faTv} className="text-purple-600 text-sm md:text-base flex-shrink-0" />
+                      <h5 className="font-bold text-gray-900 text-xs md:text-sm leading-tight line-clamp-2">
+                        Montar TV en Pared
+                      </h5>
+                    </div>
+                    <p className="text-xs md:text-sm font-semibold text-blue-600 mb-0.5">Desde $800</p>
+                    <p className="text-[10px] md:text-xs text-gray-500">Mano de obra</p>
+                    <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <FontAwesomeIcon icon={faArrowRight} className="text-purple-600 text-xs" />
+                    </div>
+                  </button>
+
+                  {/* Instalación de Cámara CCTV */}
+                  <button
+                    onClick={() => {
+                      onClose(); // Cerrar modal primero
+                      router.push('/servicios/cctv/instalacion-de-camara-cctv');
+                    }}
+                    className="group relative p-2.5 md:p-3 rounded-lg border-2 border-indigo-300 hover:border-indigo-500 hover:shadow-md transition-all duration-200 text-left bg-white hover:bg-gradient-to-br hover:from-indigo-50 hover:to-blue-50 active:scale-[0.98]"
+                  >
+                    <div className="flex items-center gap-1.5 mb-1.5">
+                      <FontAwesomeIcon icon={faVideo} className="text-indigo-600 text-sm md:text-base flex-shrink-0" />
+                      <h5 className="font-bold text-gray-900 text-xs md:text-sm leading-tight line-clamp-2">
+                        Instalación de Cámara CCTV
+                      </h5>
+                    </div>
+                    <p className="text-xs md:text-sm font-semibold text-blue-600 mb-0.5">Desde $800</p>
+                    <p className="text-[10px] md:text-xs text-gray-500">Mano de obra</p>
+                    <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <FontAwesomeIcon icon={faArrowRight} className="text-indigo-600 text-xs" />
+                    </div>
+                  </button>
+
+                  {/* Armar Muebles */}
+                  <button
+                    onClick={() => {
+                      handleServiceCatalogSelect("Armado de muebles", "$600", "Me interesa: Armar muebles. Precio: $600 (Solo mano de obra - materiales aparte)", "montaje-armado");
+                      nextStep();
+                    }}
+                    className="group relative p-2.5 md:p-3 rounded-lg border-2 border-green-300 hover:border-green-500 hover:shadow-md transition-all duration-200 text-left bg-white hover:bg-gradient-to-br hover:from-green-50 hover:to-emerald-50 active:scale-[0.98]"
+                  >
+                    <div className="flex items-center gap-1.5 mb-1.5">
+                      <FontAwesomeIcon icon={faCouch} className="text-green-600 text-sm md:text-base flex-shrink-0" />
+                      <h5 className="font-bold text-gray-900 text-xs md:text-sm leading-tight line-clamp-2">
+                        Armar Muebles
+                      </h5>
+                    </div>
+                    <p className="text-xs md:text-sm font-semibold text-blue-600 mb-0.5">Desde $600</p>
+                    <p className="text-[10px] md:text-xs text-gray-500">Mano de obra</p>
+                    <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <FontAwesomeIcon icon={faArrowRight} className="text-green-600 text-xs" />
+                    </div>
+                  </button>
+
+                  {/* Instalación de Lámpara */}
+                  <button
+                    onClick={() => {
+                      onClose(); // Cerrar modal primero
+                      router.push('/servicios/electricidad/instalacion-de-luminarias');
+                    }}
+                    className="group relative p-2.5 md:p-3 rounded-lg border-2 border-yellow-300 hover:border-yellow-500 hover:shadow-md transition-all duration-200 text-left bg-white hover:bg-gradient-to-br hover:from-yellow-50 hover:to-amber-50 active:scale-[0.98]"
+                  >
+                    <div className="flex items-center gap-1.5 mb-1.5">
+                      <FontAwesomeIcon icon={faLightbulb} className="text-yellow-600 text-sm md:text-base flex-shrink-0" />
+                      <h5 className="font-bold text-gray-900 text-xs md:text-sm leading-tight line-clamp-2">
+                        Instalación de Lámpara
+                      </h5>
+                    </div>
+                    <p className="text-xs md:text-sm font-semibold text-blue-600 mb-0.5">Desde $500</p>
+                    <p className="text-[10px] md:text-xs text-gray-500">Mano de obra</p>
+                    <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <FontAwesomeIcon icon={faArrowRight} className="text-yellow-600 text-xs" />
+                    </div>
+                  </button>
+                </div>
+              </div>
+
+              {/* Separador visual */}
+              <div className="flex items-center gap-2 my-2 md:my-3">
+                <div className="flex-1 border-t border-gray-300"></div>
+                <span className="text-xs md:text-sm text-gray-500 font-medium px-2">
+                  O explora por categoría
+                </span>
+                <div className="flex-1 border-t border-gray-300"></div>
+              </div>
+
+              {/* Componente de Catálogo de Precios con Categoría "Populares" */}
               <ServicePricingSelector
                 onServiceSelect={handleServiceCatalogSelect}
-                preSelectedCategory={formData.servicio || undefined}
+                preSelectedCategory={
+                  // 🆕 Si el servicio inicial es uno de los populares, seleccionar "populares"
+                  initialService && isPopularService(initialServiceName || "")
+                    ? "populares"
+                    : formData.servicio || undefined
+                }
                 onManualDescription={handleManualDescription}
               />
             </div>
@@ -1751,6 +2279,37 @@ export default function RequestServiceModal({
                   Revisa los detalles de tu solicitud
                 </p>
               </div>
+
+              {/* Resumen Visual del Servicio */}
+              <ServiceSummaryPanel
+                serviceName={
+                  initialServiceName ||
+                  serviceCategories.find((s) => s.id === formData.servicio)?.name ||
+                  "Servicio"
+                }
+                serviceId={formData.servicio}
+                formData={(() => {
+                  // Intentar extraer información del formulario detallado desde la descripción
+                  const desc = formData.descripcion.toLowerCase();
+                  const quantityMatch = desc.match(/(\d+)\s*(contacto|interruptor|unidad)/i);
+                  const hasMaterials = desc.includes("cliente proporciona") || desc.includes("tengo los");
+                  const hasExistingContact = desc.includes("ya existe") || desc.includes("contacto existente");
+                  const action = desc.includes("reemplazar") ? "reemplazar" : desc.includes("visita") ? "visita" : "instalar";
+                  
+                  return {
+                    action: action as "instalar" | "reemplazar" | "visita" | null,
+                    quantity: quantityMatch ? parseInt(quantityMatch[1]) : null,
+                    hasMaterials: hasMaterials ? true : desc.includes("necesario cotizar") ? false : null,
+                    hasExistingInfrastructure: hasExistingContact ? true : null,
+                    additionalInfo: formData.descripcion.length > 100 ? formData.descripcion : "",
+                  };
+                })()}
+                onShowConditions={() => {
+                  // TODO: Abrir modal de condiciones del servicio
+                  alert("Modal de condiciones del servicio (próximamente)");
+                }}
+                className="mb-4"
+              />
 
               <div className="bg-gray-50 rounded-lg p-4 space-y-2.5">
                 <div className="flex items-center space-x-2 text-sm">

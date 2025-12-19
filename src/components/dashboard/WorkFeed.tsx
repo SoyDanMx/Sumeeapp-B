@@ -31,7 +31,17 @@ import {
   faList,
   faArrowRight,
   faLocationDot,
+  faCheck,
+  faSpinner,
 } from "@fortawesome/free-solid-svg-icons";
+import { faWhatsapp as faWhatsappBrand } from "@fortawesome/free-brands-svg-icons";
+import { acceptLead } from "@/lib/supabase/data";
+import { supabase } from "@/lib/supabase/client";
+import {
+  sendCredentialToClient,
+  openWhatsAppLink,
+} from "@/lib/supabase/credential-sender";
+import { useAuth } from "@/context/AuthContext";
 
 interface WorkFeedProps {
   leads: Lead[];
@@ -75,6 +85,8 @@ export default function WorkFeed({
   const [viewType, setViewTypeState] = useState<ViewType>("mapa");
   const [isMobile, setIsMobile] = useState(false);
   const [localLeads, setLocalLeads] = useState<Lead[]>(leads);
+  const [isAcceptingLead, setIsAcceptingLead] = useState<string | null>(null);
+  const { user } = useAuth();
 
   useEffect(() => {
     setLocalLeads(leads);
@@ -122,8 +134,7 @@ export default function WorkFeed({
           lead.profesional_asignado_id === profesionalId;
         
         // Incluir si está asignado al profesional actual Y tiene un estado activo
-        // Nota: "aceptado" se normaliza a "en_progreso" en useProfesionalData
-        // También incluir "asignado" por si acaso el API lo guarda así temporalmente
+        // Estados válidos: "Asignado", "aceptado", "contactado", "en_progreso", "en_camino"
         const validStates = ["aceptado", "asignado", "contactado", "en_progreso", "en_camino"];
         const isValid = isAssignedToCurrentProfessional && validStates.includes(estado);
         
@@ -508,7 +519,7 @@ export default function WorkFeed({
               <div
                 className={`absolute inset-x-0 ${
                   isMobile ? "bottom-0" : "bottom-4"
-                } px-3 pb-4`}
+                } px-3 ${isMobile ? "pb-2" : "pb-4"} z-[999]`}
               >
                 <div
                   className={`bg-white rounded-3xl shadow-2xl border border-gray-200 overflow-hidden ${
@@ -590,29 +601,126 @@ export default function WorkFeed({
                         )}
                       </span>
                     </div>
-                    <div
-                      className={`flex ${
-                        isMobile
-                          ? "flex-col"
-                          : "flex-col sm:flex-row sm:items-center"
-                      } sm:justify-between mt-4 gap-2`}
-                    >
+                    {/* Botones de Acción - Reorganizados para mejor UX */}
+                    <div className="mt-4 space-y-2">
+                      {/* Botón Aceptar Trabajo - Full Width */}
                       <button
-                        onClick={() => {
-                          changeActiveTab("nuevos");
-                          handleChangeView("lista");
-                          onLeadClick?.(primaryLead.id);
+                        onClick={async () => {
+                          if (!user?.id || isAcceptingLead === primaryLead.id) return;
+                          
+                          setIsAcceptingLead(primaryLead.id);
+                          try {
+                            const result = await acceptLead(primaryLead.id);
+                            
+                            if (result.success && result.lead) {
+                              const updatedLead: Lead = {
+                                ...primaryLead,
+                                ...result.lead,
+                                estado: result.lead.estado || "aceptado",
+                              };
+                              
+                              // Enviar credencial automáticamente al cliente
+                              try {
+                                const credentialResult = await sendCredentialToClient(
+                                  primaryLead.id,
+                                  user.id
+                                );
+                                
+                                if (credentialResult.success && credentialResult.whatsappLink) {
+                                  openWhatsAppLink(credentialResult.whatsappLink);
+                                }
+                              } catch (credentialError) {
+                                console.warn("Error al enviar credencial (no crítico):", credentialError);
+                              }
+                              
+                              // Llamar callback para actualizar estado
+                              if (onLeadAccepted) {
+                                onLeadAccepted(updatedLead);
+                              }
+                              
+                              // Cambiar a vista de "En Progreso"
+                              changeActiveTab("en_progreso");
+                              handleChangeView("lista");
+                            }
+                          } catch (error: any) {
+                            console.error("Error al aceptar el lead:", error);
+                            alert(error.message || "Error al aceptar el trabajo. Intenta de nuevo.");
+                          } finally {
+                            setIsAcceptingLead(null);
+                          }
                         }}
-                        className="w-full sm:w-auto bg-blue-600 text-white px-4 py-3 rounded-xl text-sm font-semibold hover:bg-blue-700 transition-colors"
+                        disabled={isAcceptingLead === primaryLead.id}
+                        className="w-full bg-green-600 text-white px-4 py-3 rounded-xl text-sm font-semibold hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-md hover:shadow-lg"
                       >
-                        Ver detalles
+                        {isAcceptingLead === primaryLead.id ? (
+                          <>
+                            <FontAwesomeIcon icon={faSpinner} spin className="text-sm" />
+                            <span>Aceptando...</span>
+                          </>
+                        ) : (
+                          <>
+                            <FontAwesomeIcon icon={faCheck} className="text-sm" />
+                            <span>Aceptar Trabajo</span>
+                          </>
+                        )}
                       </button>
-                      <button
-                        onClick={() => onLeadClick?.(primaryLead.id)}
-                        className="w-full sm:w-auto bg-gray-100 text-gray-700 px-4 py-3 rounded-xl text-sm font-semibold hover:bg-gray-200 transition-colors"
-                      >
-                        Centrar en el mapa
-                      </button>
+                      
+                      {/* Botones Secundarios - Grid de 2 columnas */}
+                      <div className="grid grid-cols-2 gap-2">
+                        {/* Botón WhatsApp */}
+                        {primaryLead.whatsapp && (() => {
+                          const cleanPhone = primaryLead.whatsapp.replace(/\D/g, "");
+                          const whatsappPhone = cleanPhone.startsWith("52") ? cleanPhone : `52${cleanPhone}`;
+                          const whatsappMessage = encodeURIComponent(
+                            `Hola, soy un técnico certificado de SumeeApp y me interesa ayudarte con tu proyecto de "${primaryLead.servicio_solicitado || "servicio profesional"}". ¿Cuándo te viene bien que coordinemos?`
+                          );
+                          const whatsappUrl = `https://wa.me/${whatsappPhone}?text=${whatsappMessage}`;
+                          
+                          return (
+                            <button
+                              onClick={() => window.open(whatsappUrl, "_blank")}
+                              className="w-full bg-green-500 text-white px-3 py-2.5 rounded-xl text-xs sm:text-sm font-semibold hover:bg-green-600 transition-colors flex items-center justify-center gap-1.5 shadow-md hover:shadow-lg"
+                            >
+                              <FontAwesomeIcon icon={faWhatsappBrand} className="text-base sm:text-lg" />
+                              <span>WhatsApp</span>
+                            </button>
+                          );
+                        })()}
+                        
+                        {/* Botón Ubicación */}
+                        {primaryLead.ubicacion_lat && primaryLead.ubicacion_lng && (() => {
+                          const refLat = currentLat ?? profesionalLat;
+                          const refLng = currentLng ?? profesionalLng;
+                          const googleMapsUrl = `https://www.google.com/maps/dir/${refLat},${refLng}/${primaryLead.ubicacion_lat},${primaryLead.ubicacion_lng}`;
+                          
+                          return (
+                            <button
+                              onClick={() => window.open(googleMapsUrl, "_blank")}
+                              className="w-full bg-blue-600 text-white px-3 py-2.5 rounded-xl text-xs sm:text-sm font-semibold hover:bg-blue-700 transition-colors flex items-center justify-center gap-1.5 shadow-md hover:shadow-lg"
+                            >
+                              <FontAwesomeIcon icon={faLocationDot} className="text-sm" />
+                              <span>Ubicación</span>
+                            </button>
+                          );
+                        })()}
+                        
+                        {/* Si no hay WhatsApp, el botón de ubicación ocupa todo el ancho */}
+                        {!primaryLead.whatsapp && primaryLead.ubicacion_lat && primaryLead.ubicacion_lng && (() => {
+                          const refLat = currentLat ?? profesionalLat;
+                          const refLng = currentLng ?? profesionalLng;
+                          const googleMapsUrl = `https://www.google.com/maps/dir/${refLat},${refLng}/${primaryLead.ubicacion_lat},${primaryLead.ubicacion_lng}`;
+                          
+                          return (
+                            <button
+                              onClick={() => window.open(googleMapsUrl, "_blank")}
+                              className="col-span-2 w-full bg-blue-600 text-white px-3 py-2.5 rounded-xl text-xs sm:text-sm font-semibold hover:bg-blue-700 transition-colors flex items-center justify-center gap-1.5 shadow-md hover:shadow-lg"
+                            >
+                              <FontAwesomeIcon icon={faLocationDot} className="text-sm" />
+                              <span>Ver Ubicación en Mapa</span>
+                            </button>
+                          );
+                        })()}
+                      </div>
                     </div>
                   </div>
                 </div>

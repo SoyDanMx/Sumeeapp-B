@@ -1,6 +1,10 @@
 import { Metadata } from "next";
 import Link from "next/link";
 
+// Forzar regeneración de la página para asegurar que los cambios se reflejen
+export const revalidate = 0; // Regenerar en cada request (solo para desarrollo, cambiar a 3600 en producción)
+export const dynamic = 'force-dynamic'; // Forzar renderizado dinámico
+
 export const metadata: Metadata = {
   title: "Política de Devoluciones y Reembolsos | Sumee Marketplace",
   description: "Política de devoluciones y reembolsos de Sumee Marketplace. Conoce nuestros términos y condiciones para devoluciones de productos.",

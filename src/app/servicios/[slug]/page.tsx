@@ -488,23 +488,59 @@ export default async function ServiceDetailPage({ params }: ServicePageProps) {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {config.services.map((serviceItem, index) => (
-              <div
-                key={`${slug}-service-${index}-${serviceItem}`}
-                className="bg-gray-50 rounded-lg p-6 hover:shadow-md transition-shadow"
-              >
-                <FontAwesomeIcon
-                  icon={config.icon}
-                  className="text-2xl text-blue-600 mb-3"
-                />
-                <h3 className="font-semibold text-gray-900 mb-2">
-                  {serviceItem}
-                </h3>
-                <p className="text-sm text-gray-600">
-                  Servicio profesional con garantía
-                </p>
-              </div>
-            ))}
+            {config.services.map((serviceItem, index) => {
+              // Función para generar slug de URL desde el nombre del servicio
+              const generateServiceSlug = (service: string): string => {
+                return service
+                  .toLowerCase()
+                  .normalize("NFD")
+                  .replace(/[\u0300-\u036f]/g, "") // Remover acentos
+                  .replace(/[^a-z0-9]+/g, "-") // Reemplazar espacios y caracteres especiales con guiones
+                  .replace(/^-+|-+$/g, ""); // Remover guiones al inicio y final
+              };
+
+              // Mapear servicios específicos a sus rutas de formulario
+              const getServiceRoute = (service: string, slug: string): string | null => {
+                // Generar ruta base
+                const serviceSlug = generateServiceSlug(service);
+                // Usar la ruta dinámica genérica que funciona para todas las disciplinas
+                const baseRoute = `/servicios/${slug}/${serviceSlug}`;
+                
+                // Todas las disciplinas ahora tienen formularios
+                return baseRoute;
+              };
+
+              const serviceRoute = getServiceRoute(serviceItem, slug);
+
+              return (
+                <Link
+                  key={`${slug}-service-${index}-${serviceItem}`}
+                  href={serviceRoute || "#"}
+                  className="bg-gray-50 rounded-lg p-6 hover:shadow-lg hover:bg-white transition-all duration-200 border border-transparent hover:border-blue-200 group cursor-pointer"
+                >
+                  <div className="flex items-start justify-between mb-3">
+                    <FontAwesomeIcon
+                      icon={config.icon}
+                      className="text-2xl text-blue-600 group-hover:text-blue-700 transition-colors"
+                    />
+                    <span className="text-xs text-blue-600 font-semibold opacity-0 group-hover:opacity-100 transition-opacity">
+                      →
+                    </span>
+                  </div>
+                  <h3 className="font-semibold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors">
+                    {serviceItem}
+                  </h3>
+                  <p className="text-sm text-gray-600 mb-3">
+                    Servicio profesional con garantía
+                  </p>
+                  <div className="mt-4 pt-3 border-t border-gray-200">
+                    <span className="text-sm text-blue-600 font-semibold group-hover:text-blue-700 transition-colors">
+                      Solicitar servicio
+                    </span>
+                  </div>
+                </Link>
+              );
+            })}
           </div>
         </div>
       </div>

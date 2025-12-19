@@ -13,6 +13,7 @@ import {
   faCalendarDays,
   faFlagCheckered,
   faBell,
+  faLocationDot,
 } from "@fortawesome/free-solid-svg-icons";
 import { faWhatsapp as faWhatsappBrand } from "@fortawesome/free-brands-svg-icons";
 import {
@@ -564,27 +565,89 @@ export default function LeadCard({
 
       {!accepted && (
         <div className="space-y-3">
-                        <button
-                            onClick={handleAcceptLead}
-                            disabled={isAccepting}
-            className={`w-full flex items-center justify-center gap-2 py-3 rounded-lg text-sm font-semibold transition-colors ${
-              isAccepting
-                ? "bg-gray-300 text-gray-600"
-                : "bg-green-500 hover:bg-green-600 text-white"
-            }`}
-                        >
-                            {isAccepting ? (
-                                <>
-                <FontAwesomeIcon icon={faSpinner} className="animate-spin" />
-                                    <span>Aceptando...</span>
-                                </>
-                            ) : (
-                                <>
-                                    <FontAwesomeIcon icon={faCheck} />
-                                    <span>Aceptar Trabajo</span>
-                                </>
-                            )}
-                        </button>
+          {/* Botones de Acción Rápida */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            {/* Botón Aceptar Trabajo */}
+            <button
+              onClick={handleAcceptLead}
+              disabled={isAccepting}
+              className={`col-span-1 sm:col-span-3 flex items-center justify-center gap-2 py-3 rounded-lg text-sm font-semibold transition-colors ${
+                isAccepting
+                  ? "bg-gray-300 text-gray-600"
+                  : "bg-green-600 hover:bg-green-700 text-white shadow-md hover:shadow-lg"
+              }`}
+            >
+              {isAccepting ? (
+                <>
+                  <FontAwesomeIcon icon={faSpinner} className="animate-spin" />
+                  <span>Aceptando...</span>
+                </>
+              ) : (
+                <>
+                  <FontAwesomeIcon icon={faCheck} />
+                  <span>Aceptar Trabajo</span>
+                </>
+              )}
+            </button>
+
+            {/* Botón WhatsApp */}
+            {normalizedClientWhatsapp && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (contactClientWhatsappLink) {
+                    openWhatsAppLink(contactClientWhatsappLink);
+                  } else {
+                    // Fallback: crear link manualmente
+                    const cleanPhone = leadInfo.whatsapp?.replace(/\D/g, "") || "";
+                    const whatsappPhone = cleanPhone.startsWith("52") ? cleanPhone : `52${cleanPhone}`;
+                    const servicioNombre = leadInfo.servicio_solicitado || leadInfo.servicio || "servicio profesional";
+                    const mensaje = encodeURIComponent(
+                      `Hola, soy un técnico certificado de SumeeApp y me interesa ayudarte con tu proyecto de "${servicioNombre}". ¿Cuándo te viene bien que coordinemos?`
+                    );
+                    const whatsappUrl = `https://wa.me/${whatsappPhone}?text=${mensaje}`;
+                    window.open(whatsappUrl, "_blank");
+                  }
+                }}
+                className="flex items-center justify-center gap-2 py-2.5 px-3 rounded-lg text-sm font-semibold transition-colors bg-green-500 hover:bg-green-600 text-white shadow-md hover:shadow-lg"
+              >
+                <FontAwesomeIcon icon={faWhatsappBrand} className="text-lg" />
+                <span className="hidden sm:inline">WhatsApp</span>
+                <span className="sm:hidden">Chat</span>
+              </button>
+            )}
+
+            {/* Botón Ubicación */}
+            {hasLeadLocation && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  const googleMapsUrl = `https://www.google.com/maps/dir/${profesionalLat},${profesionalLng}/${leadInfo.ubicacion_lat},${leadInfo.ubicacion_lng}`;
+                  window.open(googleMapsUrl, "_blank");
+                }}
+                className="flex items-center justify-center gap-2 py-2.5 px-3 rounded-lg text-sm font-semibold transition-colors bg-blue-600 hover:bg-blue-700 text-white shadow-md hover:shadow-lg"
+              >
+                <FontAwesomeIcon icon={faLocationDot} />
+                <span className="hidden sm:inline">Ubicación</span>
+                <span className="sm:hidden">Mapa</span>
+              </button>
+            )}
+
+            {/* Botón Ver Ruta (alternativa si no hay WhatsApp) */}
+            {!normalizedClientWhatsapp && hasLeadLocation && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  const googleMapsUrl = `https://www.google.com/maps/dir/${profesionalLat},${profesionalLng}/${leadInfo.ubicacion_lat},${leadInfo.ubicacion_lng}`;
+                  window.open(googleMapsUrl, "_blank");
+                }}
+                className="flex items-center justify-center gap-2 py-2.5 px-3 rounded-lg text-sm font-semibold transition-colors bg-blue-600 hover:bg-blue-700 text-white shadow-md hover:shadow-lg col-span-2"
+              >
+                <FontAwesomeIcon icon={faRoute} />
+                <span>Ver Ruta</span>
+              </button>
+            )}
+          </div>
         </div>
       )}
 

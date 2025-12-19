@@ -542,24 +542,24 @@ export default function ProfessionalMapView({
         })}
       </MapContainer>
 
-        {/* Leyenda del mapa */}
-        <div className="absolute bottom-4 left-4 bg-white rounded-lg shadow-lg p-3 z-[1000] text-xs">
-          <div className="space-y-2">
-            <div className="flex items-center space-x-2">
-              <div className="w-4 h-4 bg-blue-600 rounded-full"></div>
-              <span>Tú</span>
+        {/* Leyenda del mapa - Movida a la parte superior para no bloquear botones */}
+        <div className="absolute top-16 left-4 bg-white/95 backdrop-blur-sm rounded-lg shadow-lg p-2.5 z-[1000] text-xs border border-gray-200">
+          <div className="grid grid-cols-2 gap-1.5">
+            <div className="flex items-center space-x-1.5">
+              <div className="w-3 h-3 bg-blue-600 rounded-full flex-shrink-0"></div>
+              <span className="text-xs">Tú</span>
             </div>
-            <div className="flex items-center space-x-2">
-              <div className="w-4 h-4 bg-yellow-500 rounded-full"></div>
-              <span>Lead disponible</span>
+            <div className="flex items-center space-x-1.5">
+              <div className="w-3 h-3 bg-yellow-500 rounded-full flex-shrink-0"></div>
+              <span className="text-xs">Disponible</span>
             </div>
-            <div className="flex items-center space-x-2">
-              <div className="w-4 h-4 bg-green-600 rounded-full"></div>
-              <span>Lead seleccionado</span>
+            <div className="flex items-center space-x-1.5">
+              <div className="w-3 h-3 bg-green-600 rounded-full flex-shrink-0"></div>
+              <span className="text-xs">Seleccionado</span>
             </div>
-            <div className="flex items-center space-x-2">
-              <div className="w-3 h-3 border-2 border-blue-500 rounded-full bg-blue-100"></div>
-              <span>Radio de búsqueda ({searchRadius} km)</span>
+            <div className="flex items-center space-x-1.5">
+              <div className="w-2.5 h-2.5 border-2 border-blue-500 rounded-full bg-blue-100 flex-shrink-0"></div>
+              <span className="text-xs">Radio {searchRadius}km</span>
             </div>
           </div>
         </div>

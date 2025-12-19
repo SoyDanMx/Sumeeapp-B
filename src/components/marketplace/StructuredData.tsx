@@ -161,9 +161,9 @@ export function ProductStructuredData({
     },
     ...(product.seller?.calificacion_promedio ? {
       aggregateRating: {
-        "@type": "AggregateRating",
-        ratingValue: product.seller.calificacion_promedio.toString(),
-        reviewCount: product.seller.review_count?.toString() || "0",
+          "@type": "AggregateRating",
+          ratingValue: product.seller.calificacion_promedio.toString(),
+          reviewCount: product.seller.review_count?.toString() || "0",
         bestRating: "5",
         worstRating: "1",
       },
