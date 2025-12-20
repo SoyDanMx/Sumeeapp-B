@@ -223,3 +223,4 @@
 - La función `search_marketplace_products()` usa similitud de pg_trgm para resultados más relevantes
 - Los filtros se aplican en el cliente para mejor UX (pueden moverse al servidor si hay muchos productos)
 
+

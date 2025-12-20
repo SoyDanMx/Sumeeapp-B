@@ -26,3 +26,4 @@ echo "📋 Opción 2: Ejecutar con psql (si tienes credenciales)"
 echo "   psql 'postgresql://postgres:[PASSWORD]@db.jkdvrwmanmwoyyoixmnt.supabase.co:5432/postgres' -f $SQL_FILE"
 echo ""
 
+

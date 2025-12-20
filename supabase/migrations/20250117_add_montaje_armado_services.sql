@@ -185,3 +185,4 @@ FROM public.service_catalog
 GROUP BY discipline
 ORDER BY discipline;
 
+

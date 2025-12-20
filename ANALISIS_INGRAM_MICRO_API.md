@@ -157,3 +157,4 @@ Ingram Micro tiene APIs robustas y bien documentadas, pero **NO es adecuada para
 
 **Recomendación Final:** Mantener y expandir la integración con Syscom, que ya está funcionando y es más adecuada para tu modelo de negocio actual.
 
+

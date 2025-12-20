@@ -281,3 +281,4 @@ export function MarketplaceGrid({ products, onProductClick }: MarketplaceGridPro
   );
 }
 
+

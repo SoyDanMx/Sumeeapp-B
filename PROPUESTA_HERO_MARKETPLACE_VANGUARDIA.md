@@ -332,3 +332,4 @@ export function HeroSection() {
 **Estado**: Pendiente de Aprobación
 **Tiempo Estimado**: 4-6 horas de desarrollo
 
+

@@ -166,3 +166,4 @@ Si encuentras problemas:
 2. Verificar errores en consola del navegador
 3. Verificar estado de productos en Supabase Dashboard
 
+

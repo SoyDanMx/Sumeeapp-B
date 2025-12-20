@@ -244,3 +244,4 @@ CREATE INDEX idx_lead_notifications_status ON lead_notifications(status);
 *Documento creado el 17 de enero de 2025*
 *Versión: 1.0*
 
+

@@ -234,3 +234,4 @@ WHERE status = 'active';
 **Última actualización:** 21 de Enero, 2025  
 **Versión:** 1.0
 
+

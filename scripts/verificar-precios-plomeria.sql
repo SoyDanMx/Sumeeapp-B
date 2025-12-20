@@ -65,3 +65,4 @@ FROM public.service_catalog
 WHERE discipline = 'plomeria'
   AND is_active = true;
 
+

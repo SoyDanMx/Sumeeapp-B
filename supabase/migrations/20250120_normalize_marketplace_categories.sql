@@ -151,3 +151,4 @@ BEGIN
     RAISE NOTICE '   Productos sin categoría: %', unmapped_count;
 END $$;
 
+

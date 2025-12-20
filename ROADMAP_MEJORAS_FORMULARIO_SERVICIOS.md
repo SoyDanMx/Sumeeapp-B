@@ -287,3 +287,4 @@ CREATE INDEX idx_coupon_usage_coupon ON coupon_usage(coupon_id);
 *Documento creado el 17 de enero de 2025*
 *Versión: 1.0 - Roadmap de Mejoras*
 
+

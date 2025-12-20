@@ -44,3 +44,4 @@ Después de ejecutar:
 - ✅ Productos visibles en `/marketplace`
 - ✅ Mensaje: "✅ Importación completada: X productos de TRUPER importados"
 
+

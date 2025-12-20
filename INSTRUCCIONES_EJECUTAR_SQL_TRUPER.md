@@ -169,3 +169,4 @@ Después de ejecutar el SQL:
    - Los índices ya están creados en `20250120_marketplace_search_indexes.sql`
    - La búsqueda debería ser rápida
 
+

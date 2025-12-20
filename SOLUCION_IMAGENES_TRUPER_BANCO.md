@@ -147,3 +147,4 @@ La solución implementada utiliza URLs directas de Truper basadas en la clave de
 **Productos actualizados**: ~1,269 productos con URLs de Truper
 **Método principal**: URL directa por clave (`https://www.truper.com/media/import/imagenes/{clave}.jpg`)
 
+

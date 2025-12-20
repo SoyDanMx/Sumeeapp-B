@@ -132,3 +132,4 @@ Este diseño asegura:
 - ✅ Consistencia con la identidad visual de Sumee
 - ✅ Compatibilidad con todos los navegadores y plataformas
 
+

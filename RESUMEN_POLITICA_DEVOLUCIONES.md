@@ -92,3 +92,4 @@ Si tienes preguntas sobre la política o necesitas modificaciones:
 - Revisar `POLITICA_DEVOLUCIONES.md` para la versión completa
 - Contactar: soporte@sumeeapp.com
 
+

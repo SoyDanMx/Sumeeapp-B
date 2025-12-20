@@ -258,3 +258,4 @@ El marketplace ahora tiene:
 
 El marketplace ahora está al nivel de referentes del mercado como MercadoLibre y Amazon en términos de UX/UI.
 
+
