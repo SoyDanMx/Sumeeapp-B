@@ -85,3 +85,4 @@ Si después de ejecutar el script SQL aún aparece el error:
 *Documento creado el 17 de enero de 2025*
 *Versión: 1.0*
 
+

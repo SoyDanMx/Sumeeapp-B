@@ -253,3 +253,4 @@ Ya existe, solo necesita agregar dominio de TRUPER.
 **Documento generado:** 15 de Diciembre, 2025  
 **Versión:** 1.0
 
+

@@ -398,3 +398,4 @@ Con estas mejoras, el marketplace alcanzaría un nivel **⭐⭐⭐⭐⭐ (5/5)**
 4. Realizar pruebas de usabilidad
 5. Iterar basado en feedback
 
+

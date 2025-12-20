@@ -201,3 +201,4 @@
 3. Uso de búsqueda vs navegación
 4. Conversión de visualización a solicitud
 
+

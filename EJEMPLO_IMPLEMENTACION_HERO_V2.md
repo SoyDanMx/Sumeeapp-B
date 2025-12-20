@@ -245,3 +245,4 @@ const steps = 60; // Cambiar suavidad (más steps = más suave)
 **Estado**: Listo para Implementación
 **Tiempo Estimado de Integración**: 15-30 minutos
 
+

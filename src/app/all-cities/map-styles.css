@@ -1,0 +1,11 @@
+/* Animación para líneas punteadas del mapa */
+@keyframes dash {
+  to {
+    stroke-dashoffset: -20;
+  }
+}
+
+.map-line {
+  animation: dash 3s linear infinite;
+}
+

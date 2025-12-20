@@ -119,3 +119,4 @@ La leyenda del mapa (que muestra "Tú", "Lead disponible", "Lead seleccionado", 
 *Documento creado el 17 de enero de 2025*
 *Versión: 1.0*
 
+

@@ -13,7 +13,7 @@ export const PageLayout: React.FC<PageLayoutProps> = ({ children }) => {
   return (
     <div className="flex flex-col min-h-screen">
       <Header />
-      <main className="flex-grow pt-20 bg-gray-50">
+      <main className="flex-grow pt-24 md:pt-28 bg-gray-50">
         {children}
       </main>
       <Footer />

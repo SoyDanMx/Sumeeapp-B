@@ -14,6 +14,7 @@ import {
   faChevronDown,
   faWrench,
   faUser,
+  faDollarSign,
 } from "@fortawesome/free-solid-svg-icons";
 
 import dynamic from "next/dynamic";
@@ -312,6 +313,15 @@ export const Header = () => {
           >
             <FontAwesomeIcon icon={faMapMarkerAlt} className="mr-3 text-lg" />
             <span className="font-medium">Nuestros Servicios</span>
+          </Link>
+
+          <Link
+            href="/precios"
+            onClick={closeAllModals}
+            className="flex items-center text-gray-700 hover:text-blue-600 hover:bg-gray-50 p-3 rounded-lg transition-colors"
+          >
+            <FontAwesomeIcon icon={faDollarSign} className="mr-3 text-lg" />
+            <span className="font-medium">Guía de Precios</span>
           </Link>
 
           <Link

@@ -183,3 +183,4 @@ Implementación de botones de acción rápida ("Aceptar trabajo" y "Contactar po
 *Documento creado el 17 de enero de 2025*
 *Versión: 1.0*
 
+

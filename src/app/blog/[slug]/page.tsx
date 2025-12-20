@@ -909,6 +909,139 @@ const blogPosts: Record<string, BlogPost> = {
     views: 0,
     tags: ["electricidad", "seguridad", "hogar", "protección"],
   },
+  "guia-precios-servicios-hogar-cdmx": {
+    id: "3",
+    title: "Guía Completa de Precios para Servicios del Hogar en CDMX 2025",
+    content: `
+      <p>Saber cuánto cuesta un servicio antes de contratarlo es fundamental para tomar decisiones informadas y evitar sorpresas desagradables. En Sumee App creemos firmemente en la <strong>transparencia total</strong>, por eso hemos creado una guía completa de precios actualizada según los estándares del mercado mexicano.</p>
+
+      <h2>¿Por Qué Precios Fijos y Transparentes?</h2>
+      <p>En el mercado tradicional de servicios para el hogar, es común encontrarse con cotizaciones que varían enormemente entre diferentes proveedores, generando confusión e incertidumbre. En Sumee App, trabajamos con <strong>precios fijos garantizados</strong> para servicios estándar, lo que significa que:</p>
+      <ul>
+        <li><strong>Sabes exactamente cuánto pagarás</strong> antes de contratar el servicio</li>
+        <li><strong>No hay sorpresas ni costos ocultos</strong> - el precio que ves es el precio que pagas</li>
+        <li><strong>Puedes comparar fácilmente</strong> entre diferentes servicios y técnicos</li>
+        <li><strong>Confianza total</strong> - trabajamos con técnicos verificados que respetan nuestros precios</li>
+      </ul>
+
+      <div style="background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); border-left: 4px solid #2563eb; padding: 1.5rem; margin: 2rem 0; border-radius: 0.75rem;">
+        <h3 style="color:#1e3a8a; margin-bottom:0.75rem;">💡 Nuestro Compromiso</h3>
+        <p style="color:#1e3a8a; line-height:1.8; margin:0;">
+          Todos nuestros precios están investigados y actualizados constantemente según los estándares del mercado mexicano, específicamente para la Ciudad de México y área metropolitana. Revisamos nuestros precios trimestralmente para asegurar que siempre reflejen el mercado actual.
+        </p>
+      </div>
+
+      <h2>Servicios con Precio Fijo Garantizado</h2>
+      <p>Ofrecemos más de <strong>50 servicios con precio fijo</strong> en diferentes categorías. Aquí te mostramos algunos ejemplos:</p>
+
+      <h3>🔌 Electricidad</h3>
+      <ul>
+        <li><strong>Instalación de Apagador:</strong> $350 MXN (precio fijo)</li>
+        <li><strong>Instalación de Contacto:</strong> $350 MXN (precio fijo)</li>
+        <li><strong>Instalación de Lámpara:</strong> $500 MXN (precio fijo)</li>
+      </ul>
+
+      <h3>🔧 Plomería</h3>
+      <ul>
+        <li><strong>Reparación de Fuga de Agua:</strong> $400 MXN (precio fijo)</li>
+        <li><strong>Instalación de Llave de Agua:</strong> $350 MXN (precio fijo)</li>
+        <li><strong>Desazolve de Drenaje Simple:</strong> Desde $800 MXN</li>
+      </ul>
+
+      <h3>🛠️ Montaje y Armado</h3>
+      <ul>
+        <li><strong>Montar TV en Pared (hasta 65"):</strong> $800 MXN (precio fijo)</li>
+        <li><strong>Armar Mueble IKEA Estándar:</strong> $600 MXN (precio fijo)</li>
+        <li><strong>Colgar Cuadros (hasta 3):</strong> $400 MXN (precio fijo)</li>
+        <li><strong>Montar Estantes en Pared:</strong> $500 MXN (precio fijo)</li>
+        <li><strong>Instalar Cortinas (hasta 3 ventanas):</strong> $600 MXN (precio fijo)</li>
+      </ul>
+
+      <h2>¿Cómo Funcionan los Precios en Sumee App?</h2>
+      <p>Nuestro sistema de precios está diseñado para ser completamente transparente:</p>
+
+      <h3>1. Precios Fijos</h3>
+      <p>Para servicios estándar y comunes, ofrecemos <strong>precios fijos garantizados</strong>. Esto significa que el precio que ves en nuestra plataforma es exactamente lo que pagarás, sin importar qué técnico realice el trabajo.</p>
+
+      <h3>2. Precios por Rango</h3>
+      <p>Para servicios que pueden variar según la complejidad (como renovaciones o instalaciones grandes), mostramos un <strong>rango de precios</strong> basado en el tamaño y complejidad del proyecto. El técnico te dará una cotización precisa después de evaluar tu caso específico.</p>
+
+      <h3>3. Precios "Desde"</h3>
+      <p>Algunos servicios tienen un precio base que puede aumentar según factores específicos. En estos casos, mostramos el precio mínimo y el técnico te explicará cualquier costo adicional antes de comenzar.</p>
+
+      <div style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-left: 4px solid #f59e0b; padding: 1.5rem; margin: 2rem 0; border-radius: 0.75rem;">
+        <h3 style="color:#92400e; margin-bottom:0.75rem;">⚠️ Factores que Afectan el Precio</h3>
+        <p style="color:#92400e; line-height:1.8; margin-bottom:0.75rem;">
+          Aunque trabajamos con precios fijos siempre que es posible, algunos factores pueden afectar el costo final:
+        </p>
+        <ul style="color:#92400e; line-height:1.8;">
+          <li><strong>Complejidad del trabajo:</strong> Instalaciones en lugares de difícil acceso pueden requerir tiempo adicional</li>
+          <li><strong>Materiales:</strong> Si necesitas materiales especiales o de alta gama, estos se cotizan por separado</li>
+          <li><strong>Urgencia:</strong> Servicios de emergencia pueden tener un costo adicional</li>
+          <li><strong>Ubicación:</strong> Algunas zonas pueden tener costos de desplazamiento adicionales</li>
+        </ul>
+        <p style="color:#92400e; line-height:1.8; margin-top:0.75rem; margin-bottom:0;">
+          <strong>Importante:</strong> Todos estos factores se discuten contigo antes de comenzar el trabajo. Nunca habrá sorpresas en tu factura final.
+        </p>
+      </div>
+
+      <h2>Actualización Constante de Precios</h2>
+      <p>En Sumee App entendemos que el mercado de servicios para el hogar está en constante evolución. Por eso:</p>
+      <ul>
+        <li><strong>Revisamos nuestros precios trimestralmente</strong> para asegurar que reflejen el mercado actual</li>
+        <li><strong>Investigamos precios en diferentes zonas</strong> de la CDMX y área metropolitana</li>
+        <li><strong>Consultamos con nuestros técnicos verificados</strong> para validar que los precios sean justos tanto para clientes como para profesionales</li>
+        <li><strong>Ajustamos según inflación y costos de materiales</strong> para mantener precios realistas</li>
+      </ul>
+
+      <h2>¿Dónde Puedo Ver Todos los Precios?</h2>
+      <p>Hemos creado una <strong><a href="/precios" style="color: #2563eb; text-decoration: underline;">Guía Completa de Precios</a></strong> donde puedes:</p>
+      <ul>
+        <li>Ver todos los servicios disponibles organizados por categoría</li>
+        <li>Filtrar por servicios con precio fijo</li>
+        <li>Buscar servicios específicos</li>
+        <li>Ver descripciones detalladas de cada servicio</li>
+        <li>Acceder directamente a solicitar el servicio que necesitas</li>
+      </ul>
+
+      <h2>Ventajas de Conocer los Precios Antes</h2>
+      <p>Saber cuánto cuesta un servicio antes de contratarlo te permite:</p>
+      <ul>
+        <li><strong>Planificar tu presupuesto:</strong> Sabes exactamente cuánto necesitas ahorrar</li>
+        <li><strong>Comparar opciones:</strong> Puedes evaluar diferentes servicios y técnicos</li>
+        <li><strong>Evitar sorpresas:</strong> No hay costos ocultos ni facturas inesperadas</li>
+        <li><strong>Tomar decisiones informadas:</strong> Contratas con confianza sabiendo que estás pagando un precio justo</li>
+      </ul>
+
+      <div style="background: linear-gradient(135deg, #fb7185 0%, #f97316 100%); color: white; padding: 2rem; border-radius: 0.75rem; margin: 3rem 0; text-align: center;">
+        <h3 style="font-size:1.8rem; margin-bottom:1rem;">Consulta Nuestra Guía Completa de Precios</h3>
+        <p style="font-size:1.1rem; max-width:600px; margin:0 auto 1.5rem;">
+          Explora todos nuestros servicios con precios transparentes y fijos. Encuentra el técnico perfecto para tu proyecto sabiendo exactamente cuánto pagarás.
+        </p>
+        <a
+          href="/precios"
+          style="display:inline-block; padding:0.9rem 2.2rem; background:white; color:#f97316; font-weight:700; border-radius:9999px; text-decoration:none; transition:all 0.3s ease;"
+          onmouseover="this.style.background='#fff7ed'"
+          onmouseout="this.style.background='white'"
+        >
+          Ver Guía de Precios Completa
+        </a>
+      </div>
+
+      <h2>Conclusión</h2>
+      <p>En Sumee App creemos que la transparencia en los precios es fundamental para construir confianza con nuestros clientes. Nuestra <strong>Guía de Precios</strong> está diseñada para que siempre sepas cuánto pagarás antes de contratar cualquier servicio.</p>
+      <p>Recuerda que nuestros precios están <strong>investigados y actualizados constantemente</strong> según los estándares del mercado mexicano, específicamente para la Ciudad de México. Revisamos y ajustamos nuestros precios trimestralmente para asegurar que siempre reflejen el mercado actual.</p>
+      <p>¿Tienes preguntas sobre nuestros precios? <a href="/contact" style="color: #2563eb; text-decoration: underline;">Contáctanos</a> y con gusto te ayudamos a encontrar el servicio perfecto para tu proyecto.</p>
+    `,
+    author: "Equipo Sumee",
+    publishDate: "2025-01-19",
+    readTime: "8 min",
+    category: "Precios y Transparencia",
+    image: "/images/blog/precios-hero.jpg",
+    slug: "guia-precios-servicios-hogar-cdmx",
+    views: 0,
+    tags: ["precios", "transparencia", "servicios", "CDMX", "guía", "cotización"],
+  },
   // Más posts se agregarían aquí...
 };
 

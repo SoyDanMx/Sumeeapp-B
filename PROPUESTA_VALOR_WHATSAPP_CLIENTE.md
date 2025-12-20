@@ -286,3 +286,4 @@ TWILIO_WHATSAPP_FROM=whatsapp:+5215636741156  # Número de la empresa
 *Documento creado el 17 de enero de 2025*
 *Versión: 2.0 - Confirmación al Cliente*
 
+

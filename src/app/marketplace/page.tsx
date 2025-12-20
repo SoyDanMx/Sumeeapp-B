@@ -344,7 +344,7 @@ export default function MarketplacePage() {
   }, [categoryCounts]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-50 pb-24 sm:pb-20">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-50 pt-24 md:pt-28 pb-24 sm:pb-20">
       {/* SEO Component */}
       <MarketplaceSEO
         type="home"
@@ -495,7 +495,7 @@ export default function MarketplacePage() {
           {/* Sidebar de Filtros - Desktop */}
           {hasActiveFilters && (
             <aside className="hidden lg:block w-64 flex-shrink-0">
-              <div className="sticky top-24">
+              <div className="sticky top-32 md:top-36">
                 <CategoryFilters
                   filters={filters}
                   onFiltersChange={setFilters}

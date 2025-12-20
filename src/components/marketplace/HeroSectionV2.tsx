@@ -70,8 +70,8 @@ export function HeroSectionV2({
   };
 
   return (
-    <section className="relative h-[500px] sm:h-[600px] md:h-[700px] lg:h-[800px] overflow-hidden">
-      {/* Imagen de fondo con overlay */}
+    <section className="relative -mt-32 md:-mt-36 pt-32 md:pt-36 h-[500px] sm:h-[600px] md:h-[700px] lg:h-[800px] overflow-hidden">
+      {/* Imagen de fondo con overlay - Extendido hacia arriba */}
       <div className="absolute inset-0 z-0">
         {/* Imagen de fondo - Usar imagen profesional de herramientas */}
         <div className="absolute inset-0 bg-gradient-to-br from-blue-600 via-indigo-700 to-green-600">
@@ -82,9 +82,17 @@ export function HeroSectionV2({
         {/* Overlay con gradiente */}
         <div className="absolute inset-0 bg-gradient-to-br from-blue-600/85 via-indigo-700/80 to-green-600/85"></div>
         
-        {/* Patrón decorativo sutil */}
+        {/* Patrón decorativo tecnológico */}
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute inset-0" style={{
+            backgroundImage: `radial-gradient(circle at 2px 2px, white 1px, transparent 0)`,
+            backgroundSize: '40px 40px'
+          }}></div>
+        </div>
+        
+        {/* Patrón decorativo sutil adicional */}
         <div 
-          className="absolute inset-0 opacity-10"
+          className="absolute inset-0 opacity-5"
           style={{
             backgroundImage: 'repeating-linear-gradient(0deg, rgba(255,255,255,0.1) 0px, transparent 1px, transparent 20px, rgba(255,255,255,0.1) 21px), repeating-linear-gradient(90deg, rgba(255,255,255,0.1) 0px, transparent 1px, transparent 20px, rgba(255,255,255,0.1) 21px)',
           }}

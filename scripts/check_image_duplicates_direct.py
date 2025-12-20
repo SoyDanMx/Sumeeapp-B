@@ -112,3 +112,4 @@ print("\n" + "=" * 60)
 print("✅ ANÁLISIS COMPLETADO")
 print("=" * 60)
 
+

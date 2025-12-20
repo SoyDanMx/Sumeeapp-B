@@ -153,3 +153,4 @@ LIMIT 10;
 - [ ] Verificación ejecutada
 - [ ] Productos visibles en `/marketplace`
 
+

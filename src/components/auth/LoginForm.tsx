@@ -144,44 +144,12 @@ export default function LoginForm() {
       // ✅ OPTIMIZACIÓN: Eliminada consulta no bloqueante al perfil
       // El perfil se obtendrá cuando sea necesario en el dashboard
       
-      // Verificar si hay un redirect guardado (de sessionStorage, localStorage o URL)
+      // Verificar si hay un redirect guardado (de sessionStorage o URL)
       const redirectParam = searchParams.get('redirect');
       const redirectFromStorage = typeof window !== 'undefined' 
         ? sessionStorage.getItem('redirectAfterLogin') 
         : null;
-      
-      // 🆕 Verificar localStorage para parámetros del servicio (desde registro)
-      let redirectData: any = null;
-      if (typeof window !== 'undefined') {
-        const pendingRedirect = localStorage.getItem('pendingRedirect');
-        if (pendingRedirect) {
-          try {
-            redirectData = JSON.parse(pendingRedirect);
-            localStorage.removeItem('pendingRedirect');
-          } catch (e) {
-            console.warn('Error parsing pendingRedirect:', e);
-          }
-        }
-      }
-      
-      // Construir URL de redirect con parámetros del servicio
-      let redirectTo = redirectParam || redirectFromStorage || redirectData?.url || '/dashboard/client';
-      
-      // Si hay parámetros del servicio en la URL o en localStorage, agregarlos
-      const serviceParam = searchParams.get('service') || redirectData?.params?.service;
-      const disciplineParam = searchParams.get('discipline') || redirectData?.params?.discipline;
-      const descriptionParam = searchParams.get('description') || redirectData?.params?.description;
-      const stepParam = searchParams.get('step') || redirectData?.params?.step;
-      
-      if (serviceParam && disciplineParam) {
-        const urlParams = new URLSearchParams();
-        urlParams.set('service', serviceParam);
-        urlParams.set('discipline', disciplineParam);
-        if (descriptionParam) urlParams.set('description', descriptionParam);
-        if (stepParam) urlParams.set('step', stepParam);
-        
-        redirectTo = `${redirectTo}?${urlParams.toString()}`;
-      }
+      const redirectTo = redirectParam || redirectFromStorage;
       
       // Limpiar sessionStorage si existe
       if (redirectFromStorage && typeof window !== 'undefined') {
@@ -190,8 +158,14 @@ export default function LoginForm() {
       
       // Redirigir inmediatamente sin esperar el perfil
       // El dashboard determinará el rol automáticamente
-      console.log('🎯 Redirigiendo a:', redirectTo);
-      router.push(redirectTo);
+      if (redirectTo) {
+        console.log('🎯 Redirigiendo a:', redirectTo);
+        router.push(redirectTo);
+      } else {
+        // Redirigir a /dashboard que maneja el routing automáticamente
+        console.log('🎯 Redirigiendo a dashboard...');
+        router.push('/dashboard');
+      }
 
     } catch (error: any) {
       if (timeoutId) clearTimeout(timeoutId);

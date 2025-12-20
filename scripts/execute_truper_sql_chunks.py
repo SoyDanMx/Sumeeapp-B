@@ -101,3 +101,4 @@ for batch_num in range(total_batches):
 print("\n✅ Mejor opción: Ejecutar manualmente en Supabase SQL Editor")
 print("   El archivo está listo para copiar y pegar")
 
+

@@ -481,3 +481,4 @@ GROUP BY discipline;
 *Documento generado el 17 de enero de 2025*  
 *Basado en análisis de TaskRabbit.com y SumeeApp.com*
 
+

@@ -50,3 +50,4 @@ WHERE tablename = 'marketplace_products'
 AND indexname LIKE '%category%' OR indexname LIKE '%status%'
 ORDER BY indexname;
 
+

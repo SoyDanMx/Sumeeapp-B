@@ -285,3 +285,4 @@ Agregar tabs horizontales para categorías principales:
 4. **Garantía Visible**: Badge de garantía en cada servicio
 5. **IA Integrada**: Asistente IA para ayudar a encontrar servicio
 
+

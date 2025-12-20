@@ -141,3 +141,4 @@ node scripts/generate-favicons.js
 4. ⏳ Verificar en navegadores
 5. ⏳ Desplegar y esperar reindexación de Google
 
+

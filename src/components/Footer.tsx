@@ -5,7 +5,7 @@ import React, { useMemo } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faShieldAlt, faLock, faFileAlt, faStar, faMapMarkerAlt, faPhoneAlt, faEnvelope, faInfoCircle, faPen, faCreditCard, faCheckCircle, faShoppingCart, faBriefcase } from '@fortawesome/free-solid-svg-icons';
+import { faShieldAlt, faLock, faFileAlt, faStar, faMapMarkerAlt, faPhoneAlt, faEnvelope, faInfoCircle, faPen, faCreditCard, faCheckCircle, faShoppingCart, faBriefcase, faDollarSign, faGlobe } from '@fortawesome/free-solid-svg-icons';
 import { faFacebookF, faLinkedinIn } from '@fortawesome/free-brands-svg-icons';
 import { NewsletterForm } from './NewsletterForm';
 import { FooterLinkColumn } from './FooterLinkColumn';
@@ -15,6 +15,7 @@ export const Footer = () => {
   const quickLinks = useMemo(() => [
     { href: "/about", icon: faInfoCircle, text: "Sobre Nosotros" },
     { href: "/servicios", icon: faShieldAlt, text: "Servicios" },
+    { href: "/precios", icon: faDollarSign, text: "Guía de Precios" },
     { href: "/verificacion", icon: faCheckCircle, text: "Proceso de Verificación" },
     { href: "/#como-funciona", icon: faStar, text: "Cómo Funciona" },
     { href: "/pago-de-servicios", icon: faCreditCard, text: "Pago de Servicios" },
@@ -32,10 +33,14 @@ export const Footer = () => {
     { href: "/contact", icon: faEnvelope, text: "Contáctanos" },
   ], []);
 
+  const citiesLinks = useMemo(() => [
+    { href: "/all-cities", icon: faGlobe, text: "Ciudades Donde Operamos" },
+  ], []);
+
   return (
     <footer className="bg-gray-900 text-white pt-16 pb-8">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-12">
 
           <div className="space-y-6">
             <Link href="/">
@@ -68,6 +73,7 @@ export const Footer = () => {
 
           <FooterLinkColumn title="Enlaces Rápidos" links={quickLinks} />
           <FooterLinkColumn title="Legal y Soporte" links={legalLinks} />
+          <FooterLinkColumn title="Ciudades" links={citiesLinks} />
           <NewsletterForm />
 
         </div>

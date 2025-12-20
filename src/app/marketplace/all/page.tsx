@@ -137,7 +137,7 @@ export default function MarketplaceAllPage() {
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-50 pb-24 sm:pb-20">
+        <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-50 pt-24 md:pt-28 pb-24 sm:pb-20">
             {/* Breadcrumbs */}
             <MarketplaceBreadcrumbs
                 searchQuery={filters.searchQuery || undefined}
@@ -167,7 +167,7 @@ export default function MarketplaceAllPage() {
             )}
 
             {/* Header con búsqueda y navegación */}
-            <div className="bg-white shadow-sm sticky top-0 z-30 border-b border-gray-200">
+            <div className="bg-white shadow-sm sticky top-24 md:top-28 z-30 border-b border-gray-200">
                 <div className="container mx-auto px-4 py-4">
                     <div className="flex items-center justify-between gap-4 mb-4">
                         <Link href="/marketplace" className="text-gray-500 hover:text-indigo-600 transition-colors flex items-center gap-2">
@@ -233,7 +233,7 @@ export default function MarketplaceAllPage() {
                 <div className="flex flex-col lg:flex-row gap-6">
                     {/* Sidebar de Filtros - Desktop - Siempre visible para facilitar filtrado */}
                     <aside className="hidden lg:block w-64 flex-shrink-0">
-                        <div className="sticky top-24 bg-white rounded-xl border border-gray-200 shadow-sm p-4">
+                        <div className="sticky top-32 md:top-36 bg-white rounded-xl border border-gray-200 shadow-sm p-4">
                             <div className="flex items-center justify-between mb-4 pb-3 border-b border-gray-200">
                                 <h3 className="font-semibold text-gray-900 flex items-center gap-2">
                                     <FontAwesomeIcon icon={faFilter} className="text-indigo-600" />

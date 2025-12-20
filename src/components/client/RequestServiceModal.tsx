@@ -456,29 +456,29 @@ export default function RequestServiceModal({
     });
 
     const fetchServiceData = async () => {
-      if (initialService) {
-        const serviceId = initialService;
-        const isEmergencyService =
-          serviceId === "electricidad" || serviceId === "plomeria";
+    if (initialService) {
+      const serviceId = initialService;
+      const isEmergencyService =
+        serviceId === "electricidad" || serviceId === "plomeria";
 
-        // Mapeo de servicio a disciplina_ia para prellenado
-        const disciplinaMap: Record<string, string> = {
-          "electricidad": "Electricidad",
-          "plomeria": "Plomería",
+      // Mapeo de servicio a disciplina_ia para prellenado
+      const disciplinaMap: Record<string, string> = {
+        "electricidad": "Electricidad",
+        "plomeria": "Plomería",
           "montaje-armado": "Montaje y Armado",
           "limpieza": "Limpieza",
           "cctv": "CCTV",
-        };
+      };
 
         // Si hay initialDescription, usarla directamente (tiene prioridad sobre búsqueda en catálogo)
         if (initialDescription && initialDescription.trim()) {
           console.log('✅ [PRIORIDAD] Usando descripción prellenada desde formulario detallado');
-          setFormData((prev) => ({
-            ...prev,
-            servicio: serviceId,
+      setFormData((prev) => ({
+        ...prev,
+        servicio: serviceId,
             descripcion: initialDescription.trim(),
-            urgencia: isEmergencyService ? "emergencia" : prev.urgencia,
-          }));
+        urgencia: isEmergencyService ? "emergencia" : prev.urgencia,
+      }));
           setUserOverrodeService(true); // Marcar que el servicio fue prellenado
           if (isEmergencyService) {
             setUserOverrodeUrgency(true);
@@ -557,19 +557,19 @@ export default function RequestServiceModal({
           }));
         }
 
-        setUserOverrodeService(true);
-        if (isEmergencyService) {
-          setUserOverrodeUrgency(true);
-          // Prellenar disciplina_ia para urgencias
-          if (disciplinaMap[serviceId]) {
-            setDisciplinaIa(disciplinaMap[serviceId]);
-          }
+      setUserOverrodeService(true);
+      if (isEmergencyService) {
+        setUserOverrodeUrgency(true);
+        // Prellenar disciplina_ia para urgencias
+        if (disciplinaMap[serviceId]) {
+          setDisciplinaIa(disciplinaMap[serviceId]);
         }
+      }
 
         // 🚀 No avanzar automáticamente aquí - el useEffect de avance automático inteligente lo hará
         // Esto permite que todos los prellenados se completen antes de avanzar
         // setCurrentStep((prev) => (prev === 1 ? 2 : prev));
-        prevInitialService.current = serviceId;
+      prevInitialService.current = serviceId;
       }
     };
 
@@ -1319,8 +1319,8 @@ export default function RequestServiceModal({
               error: leadError.message,
             });
           } else {
-            errorMessage =
-              "Error en los datos proporcionados. Por favor, verifica que todos los campos sean correctos.";
+          errorMessage =
+            "Error en los datos proporcionados. Por favor, verifica que todos los campos sean correctos.";
           }
         } else if (
           leadError.message?.includes("network") ||
@@ -1746,8 +1746,8 @@ export default function RequestServiceModal({
 
   return (
     <>
-      <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex justify-center items-center p-1 md:p-3 z-50 overflow-y-auto">
-      <div className="bg-white rounded-lg md:rounded-xl shadow-2xl w-full max-w-3xl max-h-[98vh] md:max-h-[96vh] overflow-hidden my-auto flex flex-col">
+      <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex justify-center items-start pt-24 md:pt-28 p-1 md:p-3 z-[110] overflow-y-auto">
+      <div className="bg-white rounded-lg md:rounded-xl shadow-2xl w-full max-w-3xl max-h-[calc(100vh-7rem)] md:max-h-[calc(100vh-8rem)] overflow-hidden my-auto flex flex-col">
         {/* Header Compacto - Se oculta al hacer scroll */}
         <div 
           className={`bg-gradient-to-r from-blue-600 via-blue-700 to-purple-700 text-white p-2 md:p-3 flex-shrink-0 shadow-lg transition-transform duration-300 ${
@@ -1808,11 +1808,11 @@ export default function RequestServiceModal({
         >
           {currentStep === 1 && (
             <div className="space-y-2 md:space-y-3">
-              <div className="text-center mb-1 md:mb-1.5">
-                <h3 className="text-[10px] md:text-xs lg:text-sm font-bold text-gray-900 mb-0.5">
+              <div className="text-center mb-2 md:mb-3 pt-1 md:pt-2">
+                <h3 className="text-xs md:text-sm lg:text-base font-bold text-gray-900 mb-1">
                   ¿Qué servicio necesitas?
                 </h3>
-                <p className="text-[8px] md:text-[9px] lg:text-[10px] text-gray-600">
+                <p className="text-[9px] md:text-[10px] lg:text-xs text-gray-600">
                   Explora nuestros servicios con precios estandarizados
                 </p>
               </div>

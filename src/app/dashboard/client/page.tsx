@@ -107,11 +107,13 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { faWhatsapp } from "@fortawesome/free-brands-svg-icons";
 import { useAgreementSubscription } from "@/hooks/useAgreementSubscription";
+import { useHeaderOffset } from "@/hooks/useHeaderOffset";
 
 // Componente interno que usa useSearchParams - debe estar envuelto en Suspense
 function ClientDashboardContent() {
   const searchParams = useSearchParams();
   const { user, isLoading: userLoading, isAuthenticated } = useAuth();
+  const headerOffset = useHeaderOffset();
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -772,7 +774,10 @@ function ClientDashboardContent() {
   const recentCompleted = getRecentCompleted();
 
   return (
-    <div className="min-h-screen bg-gray-50 pt-[calc(var(--header-offset,72px)+2rem)]">
+    <div 
+      className="min-h-screen bg-gray-50"
+      style={{ paddingTop: `${headerOffset}px` }}
+    >
       {/* Banner de notificación de acuerdo confirmado */}
       {agreementConfirmedLead && (
         <div className="container mx-auto px-4 py-4 max-w-7xl">
@@ -810,19 +815,28 @@ function ClientDashboardContent() {
           </div>
         </div>
       )}
-      {/* Header con Hero Section */}
-      <div className="bg-gradient-to-r from-blue-600 via-blue-700 to-purple-700 text-white shadow-lg">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      {/* Header con Hero Section - Extendido hacia arriba para cubrir el header del sitio */}
+      <div className="relative bg-gradient-to-r from-blue-600 via-blue-700 to-purple-700 text-white shadow-lg -mt-32 md:-mt-36 pt-32 md:pt-36">
+        {/* Overlay decorativo tecnológico */}
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute inset-0" style={{
+            backgroundImage: `radial-gradient(circle at 2px 2px, white 1px, transparent 0)`,
+            backgroundSize: '40px 40px'
+          }}></div>
+        </div>
+        
+        {/* Contenido del Hero */}
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between">
             <div className="mb-6 md:mb-0">
-              <h1 className="text-3xl md:text-4xl font-bold mb-3">
+              <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-3 drop-shadow-lg">
                 Dashboard de tu Hogar
               </h1>
-              <p className="text-blue-100 text-lg">
+              <p className="text-blue-100 text-lg md:text-xl drop-shadow-md">
                 Gestiona todos tus servicios en un solo lugar
               </p>
               <div className="mt-4 flex flex-wrap items-center gap-4 text-sm">
-                <div className="flex items-center bg-white/20 backdrop-blur-sm px-3 py-1.5 rounded-full">
+                <div className="flex items-center bg-white/20 backdrop-blur-sm px-3 py-1.5 rounded-full border border-white/30 shadow-md">
                   <FontAwesomeIcon icon={faWrench} className="mr-2" />
                   {leads.length} solicitud{leads.length !== 1 ? "es" : ""}
                 </div>
@@ -833,14 +847,14 @@ function ClientDashboardContent() {
             <div className="flex flex-col sm:flex-row gap-3">
               <button
                 onClick={() => setIsModalOpen(true)}
-                className="bg-white text-blue-600 px-6 py-3 rounded-lg hover:bg-blue-50 transition-colors font-semibold flex items-center justify-center shadow-lg"
+                className="bg-white text-blue-600 px-6 py-3 rounded-lg hover:bg-blue-50 transition-all duration-200 font-semibold flex items-center justify-center shadow-lg hover:shadow-xl hover:scale-105"
               >
                 <FontAwesomeIcon icon={faPlus} className="mr-2" />
                 Solicitar un Servicio
               </button>
               <Link
                 href="/tecnicos"
-                className="bg-white/20 backdrop-blur-sm text-white px-6 py-3 rounded-lg hover:bg-white/30 transition-colors font-semibold flex items-center justify-center border border-white/30"
+                className="bg-white/20 backdrop-blur-sm text-white px-6 py-3 rounded-lg hover:bg-white/30 transition-all duration-200 font-semibold flex items-center justify-center border border-white/30 shadow-md hover:shadow-lg"
               >
                 Buscar Profesionales
               </Link>
