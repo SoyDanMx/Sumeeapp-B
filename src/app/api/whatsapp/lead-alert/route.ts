@@ -29,7 +29,8 @@ export async function POST(request: Request) {
       );
     }
 
-    const { data: lead, error: leadError } = await adminClient
+    // Primero intentar obtener el lead sin la relación de profiles (más rápido y menos propenso a errores)
+    let { data: lead, error: leadError } = await adminClient
       .from("leads")
       .select(`
         id,
@@ -40,17 +41,46 @@ export async function POST(request: Request) {
         whatsapp,
         fecha_creacion,
         estado,
-        cliente_id,
-        profiles:cliente_id (
-          full_name,
-          email
-        )
+        cliente_id
       `)
       .eq("id", leadId)
       .single();
 
+    // Si falla, intentar con un delay (puede ser que el lead aún no esté disponible)
     if (leadError || !lead) {
-      console.error("Error al obtener lead:", leadError);
+      console.warn("⚠️ Error al obtener lead en primer intento, reintentando...", leadError);
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      const retryResult = await adminClient
+        .from("leads")
+        .select(`
+          id,
+          servicio,
+          servicio_solicitado,
+          descripcion_proyecto,
+          ubicacion_direccion,
+          whatsapp,
+          fecha_creacion,
+          estado,
+          cliente_id
+        `)
+        .eq("id", leadId)
+        .single();
+      
+      if (retryResult.error || !retryResult.data) {
+        console.error("❌ Error al obtener lead después del reintento:", retryResult.error);
+        return NextResponse.json(
+          { error: "No se pudo obtener la información del lead. El lead puede no existir aún o hubo un error de conexión." },
+          { status: 404 }
+        );
+      }
+      
+      lead = retryResult.data;
+      leadError = retryResult.error;
+    }
+
+    if (!lead) {
+      console.error("❌ Lead no encontrado después de todos los intentos");
       return NextResponse.json(
         { error: "No se pudo obtener la información del lead." },
         { status: 404 }

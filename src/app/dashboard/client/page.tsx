@@ -57,6 +57,11 @@ const RecentActivityWidget = dynamic(
   { ssr: true }
 );
 
+const MaintenanceLogWidget = dynamic(
+  () => import("@/components/dashboard/MaintenanceLogWidget"),
+  { ssr: true }
+);
+
 const NearbyProfessionalsWidget = dynamic(
   () => import("@/components/dashboard/NearbyProfessionalsWidget"),
   { ssr: true }
@@ -1030,6 +1035,114 @@ function ClientDashboardContent() {
 
       {/* Contenido Principal - Grid de Widgets COMPACTO RESPONSIVE */}
       <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 md:py-8">
+        {/* Empty State Moderno - Solo si NO hay leads - POSICIONADO PROMINENTEMENTE AL INICIO - COMPACTO */}
+        {!hasLeads && (
+          <div className="mb-4 sm:mb-6">
+            <div className="relative bg-gradient-to-br from-indigo-50 via-blue-50 to-purple-50 rounded-xl sm:rounded-2xl shadow-lg border-2 border-indigo-200/50 overflow-hidden">
+              {/* Patrón decorativo de fondo */}
+              <div className="absolute inset-0 opacity-5">
+                <div className="absolute inset-0" style={{
+                  backgroundImage: `radial-gradient(circle at 2px 2px, indigo-500 1px, transparent 0)`,
+                  backgroundSize: '40px 40px'
+                }}></div>
+              </div>
+              
+              {/* Contenido - Más compacto */}
+              <div className="relative z-10 p-5 sm:p-6 lg:p-8">
+                <div className="max-w-3xl mx-auto">
+                  <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
+                    {/* Icono animado - Más pequeño */}
+                    <div className="relative flex-shrink-0">
+                      <div className="absolute inset-0 bg-gradient-to-r from-indigo-400 to-purple-500 rounded-full blur-xl opacity-30 animate-pulse"></div>
+                      <div className="relative w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-indigo-500 via-blue-500 to-purple-600 rounded-full flex items-center justify-center shadow-xl transform hover:scale-110 transition-transform duration-300">
+                        <FontAwesomeIcon icon={faWrench} className="text-white text-2xl sm:text-3xl animate-bounce" style={{ animationDuration: '2s' }} />
+                      </div>
+                    </div>
+
+                    {/* Contenido de texto y CTAs */}
+                    <div className="flex-1 text-center sm:text-left">
+                      {/* Título principal - Más pequeño */}
+                      <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-gray-900 mb-2 bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 via-blue-600 to-purple-600">
+                        Comienza tu Primer Servicio
+                      </h2>
+                      
+                      {/* Subtítulo - Más compacto */}
+                      <p className="text-base sm:text-lg text-gray-700 mb-1 leading-relaxed">
+                        Aún no tienes solicitudes activas
+                      </p>
+                      <p className="text-sm sm:text-base text-gray-600 mb-4">
+                        Solicita tu primer servicio y te conectaremos con especialistas verificados en minutos.
+                        <span className="block sm:inline sm:ml-1 mt-1 sm:mt-0 font-semibold text-indigo-600">¡Es rápido, fácil y seguro!</span>
+                      </p>
+
+                      {/* CTAs - Más compactos */}
+                      <div className="flex flex-col sm:flex-row gap-3 justify-center sm:justify-start">
+                        <button
+                          onClick={() => setIsModalOpen(true)}
+                          className="group relative inline-flex items-center justify-center gap-2 bg-gradient-to-r from-indigo-600 via-blue-600 to-purple-600 text-white px-6 py-2.5 rounded-lg font-bold text-sm sm:text-base shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 overflow-hidden"
+                        >
+                          {/* Efecto de brillo animado */}
+                          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent transform -skew-x-12 translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000"></div>
+                          <FontAwesomeIcon icon={faPlus} className="relative z-10 text-lg group-hover:rotate-90 transition-transform duration-300" />
+                          <span className="relative z-10">Solicitar Servicio Ahora</span>
+                        </button>
+                        <Link
+                          href="/tecnicos"
+                          className="group inline-flex items-center justify-center gap-2 bg-white text-indigo-600 px-6 py-2.5 rounded-lg font-bold text-sm sm:text-base border-2 border-indigo-300 shadow-md hover:shadow-lg hover:border-indigo-400 hover:bg-indigo-50 transition-all duration-300"
+                        >
+                          <FontAwesomeIcon icon={faRocket} className="text-base group-hover:translate-x-1 transition-transform duration-300" />
+                          <span>Explorar Profesionales</span>
+                        </Link>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Características destacadas - Más compactas */}
+                  <div className="grid grid-cols-3 gap-3 mt-5 pt-4 border-t border-indigo-200">
+                    <div className="flex flex-col items-center gap-1">
+                      <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                        <FontAwesomeIcon icon={faCheckCircle} className="text-green-600 text-lg" />
+                      </div>
+                      <span className="text-xs font-semibold text-gray-900">Técnicos Verificados</span>
+                      <span className="text-[10px] text-gray-600">100% confiables</span>
+                    </div>
+                    <div className="flex flex-col items-center gap-1">
+                      <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                        <FontAwesomeIcon icon={faBolt} className="text-blue-600 text-lg" />
+                      </div>
+                      <span className="text-xs font-semibold text-gray-900">Respuesta Rápida</span>
+                      <span className="text-[10px] text-gray-600">En menos de 25 min</span>
+                    </div>
+                    <div className="flex flex-col items-center gap-1">
+                      <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
+                        <FontAwesomeIcon icon={faShieldAlt} className="text-purple-600 text-lg" />
+                      </div>
+                      <span className="text-xs font-semibold text-gray-900">Garantía Total</span>
+                      <span className="text-[10px] text-gray-600">Trabajo asegurado</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Elementos decorativos flotantes - Reducidos */}
+              <div className="absolute inset-0 pointer-events-none overflow-hidden">
+                {[...Array(6)].map((_, i) => (
+                  <div
+                    key={i}
+                    className="absolute w-2 h-2 bg-indigo-300/20 rounded-full animate-float"
+                    style={{
+                      left: `${10 + i * 15}%`,
+                      top: `${15 + (i % 3) * 30}%`,
+                      animationDelay: `${i * 0.4}s`,
+                      animationDuration: `${4 + i * 0.3}s`,
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* CTA de Emergencias Express */}
         <div className="mb-4 sm:mb-6">
           <div className="bg-gradient-to-br from-indigo-600 via-blue-600 to-cyan-500 text-white rounded-2xl sm:rounded-3xl shadow-xl overflow-hidden border border-white/10 p-5 sm:p-7 lg:p-8 flex flex-col lg:flex-row gap-5 lg:gap-8 items-start">
@@ -1116,14 +1229,21 @@ function ClientDashboardContent() {
 
         {/* Grid de Widgets Principal - Layout Compacto Responsive */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4 mb-4 sm:mb-6">
-          {/* Widget de Próximo Servicio - Ocupa 2 columnas */}
-          <div className="lg:col-span-2">
-            <UpcomingServiceWidget
-              upcomingLead={upcomingService}
-              onViewDetails={handleViewLead}
-              onRequestService={() => setIsModalOpen(true)}
-            />
-          </div>
+          {/* Widget de Próximo Servicio - Solo se muestra si hay un servicio próximo real */}
+          {upcomingService && (
+            <div className="lg:col-span-2">
+              <UpcomingServiceWidget
+                upcomingLead={upcomingService}
+                onViewDetails={handleViewLead}
+                onRequestService={() => setIsModalOpen(true)}
+              />
+            </div>
+          )}
+          
+          {/* Cuando no hay servicio próximo, el espacio se ajusta automáticamente */}
+          {!upcomingService && (
+            <div className="lg:col-span-2"></div>
+          )}
 
           {/* Columna Lateral - Widgets Compactos Apilados - RESPONSIVE */}
           <div className="lg:col-span-1 space-y-3 sm:space-y-4">
@@ -1192,119 +1312,22 @@ function ClientDashboardContent() {
           </div>
         </div>
 
-        {/* Empty State Moderno - Solo si NO hay leads - POSICIONADO PROMINENTEMENTE */}
-        {!hasLeads && (
-          <div className="mb-6 sm:mb-8">
-            <div className="relative bg-gradient-to-br from-indigo-50 via-blue-50 to-purple-50 rounded-2xl sm:rounded-3xl shadow-xl border-2 border-indigo-200/50 overflow-hidden">
-              {/* Patrón decorativo de fondo */}
-              <div className="absolute inset-0 opacity-5">
-                <div className="absolute inset-0" style={{
-                  backgroundImage: `radial-gradient(circle at 2px 2px, indigo-500 1px, transparent 0)`,
-                  backgroundSize: '40px 40px'
-                }}></div>
-              </div>
-              
-              {/* Contenido */}
-              <div className="relative z-10 p-8 sm:p-12 lg:p-16">
-                <div className="max-w-3xl mx-auto text-center">
-                  {/* Icono animado grande */}
-                  <div className="relative inline-block mb-6">
-                    <div className="absolute inset-0 bg-gradient-to-r from-indigo-400 to-purple-500 rounded-full blur-2xl opacity-30 animate-pulse"></div>
-                    <div className="relative w-24 h-24 sm:w-32 sm:h-32 bg-gradient-to-br from-indigo-500 via-blue-500 to-purple-600 rounded-full flex items-center justify-center shadow-2xl transform hover:scale-110 transition-transform duration-300">
-                      <FontAwesomeIcon icon={faWrench} className="text-white text-4xl sm:text-5xl animate-bounce" style={{ animationDuration: '2s' }} />
-                    </div>
-                    {/* Partículas decorativas alrededor del icono */}
-                    {[...Array(6)].map((_, i) => (
-                      <div
-                        key={i}
-                        className="absolute w-2 h-2 bg-indigo-400 rounded-full animate-ping"
-                        style={{
-                          top: `${20 + (i % 3) * 30}%`,
-                          left: `${10 + (i % 2) * 80}%`,
-                          animationDelay: `${i * 0.3}s`,
-                          animationDuration: '2s'
-                        }}
-                      />
-                    ))}
-                  </div>
-
-                  {/* Título principal */}
-                  <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-gray-900 mb-4 bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 via-blue-600 to-purple-600">
-                    Comienza tu Primer Servicio
-                  </h2>
-                  
-                  {/* Subtítulo */}
-                  <p className="text-lg sm:text-xl text-gray-700 mb-2 max-w-2xl mx-auto leading-relaxed">
-                    Aún no tienes solicitudes activas
-                  </p>
-                  <p className="text-base sm:text-lg text-gray-600 mb-8 max-w-xl mx-auto">
-                    Solicita tu primer servicio y te conectaremos con especialistas verificados en minutos. 
-                    <span className="block mt-2 font-semibold text-indigo-600">¡Es rápido, fácil y seguro!</span>
-                  </p>
-
-                  {/* CTAs prominentes */}
-                  <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-8">
-                    <button
-                      onClick={() => setIsModalOpen(true)}
-                      className="group relative inline-flex items-center justify-center gap-3 bg-gradient-to-r from-indigo-600 via-blue-600 to-purple-600 text-white px-8 py-4 rounded-xl font-bold text-base sm:text-lg shadow-xl hover:shadow-2xl hover:scale-105 transition-all duration-300 overflow-hidden min-w-[240px]"
-                    >
-                      {/* Efecto de brillo animado */}
-                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent transform -skew-x-12 translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000"></div>
-                      <FontAwesomeIcon icon={faPlus} className="relative z-10 text-xl group-hover:rotate-90 transition-transform duration-300" />
-                      <span className="relative z-10">Solicitar Servicio Ahora</span>
-                    </button>
-                    <Link
-                      href="/tecnicos"
-                      className="group inline-flex items-center justify-center gap-3 bg-white text-indigo-600 px-8 py-4 rounded-xl font-bold text-base sm:text-lg border-2 border-indigo-300 shadow-lg hover:shadow-xl hover:border-indigo-400 hover:bg-indigo-50 transition-all duration-300 min-w-[240px]"
-                    >
-                      <FontAwesomeIcon icon={faRocket} className="text-lg group-hover:translate-x-1 transition-transform duration-300" />
-                      <span>Explorar Profesionales</span>
-                    </Link>
-                  </div>
-
-                  {/* Características destacadas */}
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-10 pt-8 border-t border-indigo-200">
-                    <div className="flex flex-col items-center gap-2">
-                      <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-                        <FontAwesomeIcon icon={faCheckCircle} className="text-green-600 text-xl" />
-                      </div>
-                      <span className="text-sm font-semibold text-gray-900">Técnicos Verificados</span>
-                      <span className="text-xs text-gray-600">100% confiables</span>
-                    </div>
-                    <div className="flex flex-col items-center gap-2">
-                      <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                        <FontAwesomeIcon icon={faBolt} className="text-blue-600 text-xl" />
-                      </div>
-                      <span className="text-sm font-semibold text-gray-900">Respuesta Rápida</span>
-                      <span className="text-xs text-gray-600">En menos de 25 min</span>
-                    </div>
-                    <div className="flex flex-col items-center gap-2">
-                      <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
-                        <FontAwesomeIcon icon={faShieldAlt} className="text-purple-600 text-xl" />
-                      </div>
-                      <span className="text-sm font-semibold text-gray-900">Garantía Total</span>
-                      <span className="text-xs text-gray-600">Trabajo asegurado</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Elementos decorativos flotantes */}
-              <div className="absolute inset-0 pointer-events-none overflow-hidden">
-                {[...Array(8)].map((_, i) => (
-                  <div
-                    key={i}
-                    className="absolute w-3 h-3 bg-indigo-300/30 rounded-full animate-float"
-                    style={{
-                      left: `${5 + i * 12}%`,
-                      top: `${10 + (i % 4) * 25}%`,
-                      animationDelay: `${i * 0.4}s`,
-                      animationDuration: `${4 + i * 0.3}s`,
-                    }}
-                  />
-                ))}
-              </div>
-            </div>
+        {/* Widget de Log de Mantenimiento - Full Width */}
+        {hasLeads && leads.filter(l => l.estado === "completado").length > 0 && (
+          <div className="mb-4 sm:mb-6">
+            <MaintenanceLogWidget
+              completedLeads={leads.filter(l => l.estado === "completado")}
+              onRequestService={(service) => {
+                if (service) {
+                  setSelectedService(null);
+                  setSelectedServiceName(service);
+                  setInitialModalStep(undefined);
+                  setIsModalOpen(true);
+                } else {
+                  setIsModalOpen(true);
+                }
+              }}
+            />
           </div>
         )}
 

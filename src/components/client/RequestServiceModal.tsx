@@ -1386,6 +1386,9 @@ export default function RequestServiceModal({
     servicioSolicitado: string | null
   ) => {
     try {
+      // Esperar un pequeño delay para asegurar que el lead esté disponible en la BD
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
       const response = await fetch('/api/whatsapp/lead-alert', {
         method: 'POST',
         headers: {
@@ -1402,15 +1405,50 @@ export default function RequestServiceModal({
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || 'Error al enviar alerta WhatsApp');
+        const errorMessage = errorData.error || 'Error al enviar alerta WhatsApp';
+        
+        // Si el error es que no se encontró el lead, intentar una vez más después de un delay
+        if (response.status === 404 && errorMessage.includes('No se pudo obtener la información del lead')) {
+          console.warn('⚠️ Lead no encontrado en primer intento, reintentando...');
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          
+          const retryResponse = await fetch('/api/whatsapp/lead-alert', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              leadId,
+              servicio,
+              servicioSolicitado: servicioSolicitado || servicio,
+              ubicacion: formData.ubicacion || 'No especificada',
+              clienteWhatsapp: formData.whatsapp || 'No proporcionado',
+            }),
+          });
+          
+          if (!retryResponse.ok) {
+            // Si el segundo intento también falla, solo loguear el error pero no lanzarlo
+            console.warn('⚠️ No se pudo enviar alerta WhatsApp después del reintento:', errorMessage);
+            return null; // Retornar null en lugar de lanzar error
+          }
+          
+          const retryResult = await retryResponse.json();
+          console.log('✅ Alerta WhatsApp enviada exitosamente (reintento):', retryResult);
+          return retryResult;
+        }
+        
+        // Para otros errores, solo loguear pero no lanzar
+        console.warn('⚠️ Error al enviar alerta WhatsApp (no crítico):', errorMessage);
+        return null; // Retornar null en lugar de lanzar error
       }
 
       const result = await response.json();
       console.log('✅ Alerta WhatsApp enviada exitosamente:', result);
       return result;
     } catch (error) {
-      console.error('❌ Error al enviar alerta WhatsApp:', error);
-      throw error;
+      // No lanzar el error, solo loguearlo como advertencia
+      console.warn('⚠️ Error al enviar alerta WhatsApp (no crítico):', error);
+      return null; // Retornar null para que no bloquee el flujo
     }
   };
 
@@ -1529,9 +1567,16 @@ export default function RequestServiceModal({
 
       // 8. Enviar alerta de WhatsApp a la empresa (en background, no bloquea)
       // @ts-ignore - Supabase types inference issue
-      sendLeadAlertToWhatsApp(data.id, formData.servicio, initialServiceName || formData.descripcion).catch((error: any) => {
-        console.warn("⚠️ Error al enviar alerta WhatsApp (no crítico):", error);
-      });
+      sendLeadAlertToWhatsApp(data.id, formData.servicio, initialServiceName || formData.descripcion)
+        .then((result) => {
+          if (result) {
+            console.log("✅ Alerta WhatsApp procesada:", result);
+          }
+        })
+        .catch((error: any) => {
+          // El error ya está manejado dentro de la función, esto es solo por seguridad
+          console.warn("⚠️ Error al enviar alerta WhatsApp (no crítico):", error);
+        });
 
       // 9. Navegación y Cierre
       resetModal();
