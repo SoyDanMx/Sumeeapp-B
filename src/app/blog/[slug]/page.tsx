@@ -915,6 +915,11 @@ const blogPosts: Record<string, BlogPost> = {
     content: `
       <p>Saber cuánto cuesta un servicio antes de contratarlo es fundamental para tomar decisiones informadas y evitar sorpresas desagradables. En Sumee App creemos firmemente en la <strong>transparencia total</strong>, por eso hemos creado una guía completa de precios actualizada según los estándares del mercado mexicano.</p>
 
+      <div style="text-align: center; margin: 2rem 0;">
+        <img src="https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=800&h=400&fit=crop&q=80" alt="Guía de precios transparentes para servicios del hogar" style="width: 100%; max-width: 700px; height: 400px; object-fit: cover; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.15);">
+        <p style="color: #666; font-size: 0.9rem; margin-top: 0.5rem; font-style: italic;">Transparencia total en precios: sabes exactamente cuánto pagarás antes de contratar</p>
+      </div>
+
       <h2>¿Por Qué Precios Fijos y Transparentes?</h2>
       <p>En el mercado tradicional de servicios para el hogar, es común encontrarse con cotizaciones que varían enormemente entre diferentes proveedores, generando confusión e incertidumbre. En Sumee App, trabajamos con <strong>precios fijos garantizados</strong> para servicios estándar, lo que significa que:</p>
       <ul>
@@ -933,6 +938,11 @@ const blogPosts: Record<string, BlogPost> = {
 
       <h2>Servicios con Precio Fijo Garantizado</h2>
       <p>Ofrecemos más de <strong>50 servicios con precio fijo</strong> en diferentes categorías. Aquí te mostramos algunos ejemplos:</p>
+
+      <div style="text-align: center; margin: 2rem 0;">
+        <img src="https://images.unsplash.com/photo-1621905251918-48416bd8575a?w=800&h=400&fit=crop&q=80" alt="Servicios eléctricos con precios fijos" style="width: 100%; max-width: 600px; height: 300px; object-fit: cover; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.15);">
+        <p style="color: #666; font-size: 0.9rem; margin-top: 0.5rem; font-style: italic;">Más de 50 servicios con precios fijos garantizados</p>
+      </div>
 
       <h3>🔌 Electricidad</h3>
       <ul>
@@ -994,6 +1004,11 @@ const blogPosts: Record<string, BlogPost> = {
         <li><strong>Ajustamos según inflación y costos de materiales</strong> para mantener precios realistas</li>
       </ul>
 
+      <div style="text-align: center; margin: 2rem 0;">
+        <img src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&h=400&fit=crop&q=80" alt="Tabla de precios y cotizaciones" style="width: 100%; max-width: 600px; height: 300px; object-fit: cover; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.15);">
+        <p style="color: #666; font-size: 0.9rem; margin-top: 0.5rem; font-style: italic;">Consulta nuestra guía completa de precios en línea</p>
+      </div>
+
       <h2>¿Dónde Puedo Ver Todos los Precios?</h2>
       <p>Hemos creado una <strong><a href="/precios" style="color: #2563eb; text-decoration: underline;">Guía Completa de Precios</a></strong> donde puedes:</p>
       <ul>
@@ -1037,10 +1052,186 @@ const blogPosts: Record<string, BlogPost> = {
     publishDate: "2025-01-19",
     readTime: "8 min",
     category: "Precios y Transparencia",
-    image: "/images/blog/precios-hero.jpg",
+    image: "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=800&h=400&fit=crop&q=80",
     slug: "guia-precios-servicios-hogar-cdmx",
     views: 0,
     tags: ["precios", "transparencia", "servicios", "CDMX", "guía", "cotización"],
+  },
+  "guia-precios-electricistas-cdmx-2025": {
+    id: "9",
+    title: "Guía de Precios: ¿Cuánto Cuesta una Instalación Eléctrica en CDMX? (2025)",
+    content: `
+      <p><strong>¿Necesitas servicios eléctricos en tu hogar pero no sabes cuánto deberías pagar? Esta guía completa te ayudará a entender los costos reales de los servicios eléctricos más comunes en la Ciudad de México.</strong></p>
+      
+      <p>Contratar un electricista puede generar incertidumbre, especialmente cuando no conoces los precios del mercado. En Sumee App creemos en la transparencia total, por eso hemos creado esta guía detallada basada en los estándares actuales del mercado mexicano.</p>
+
+      <div style="text-align: center; margin: 2rem 0;">
+        <img src="https://images.unsplash.com/photo-1621905251918-48416bd8575a?auto=format&fit=crop&w=800&h=400&q=80" alt="Electricista profesional trabajando en instalación eléctrica" style="width: 100%; max-width: 600px; height: 300px; object-fit: cover; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.15);">
+        <p style="color: #666; font-size: 0.9rem; margin-top: 0.5rem; font-style: italic;">Un electricista certificado trabajando en instalación eléctrica residencial</p>
+      </div>
+
+      <h2>⚡ Servicios Eléctricos Comunes y sus Precios</h2>
+      
+      <div style="background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); border-left: 4px solid #2563eb; padding: 2rem; margin: 2rem 0; border-radius: 0.75rem;">
+        <h3 style="color:#1e3a8a; margin-bottom:1rem; font-size: 1.5rem;">Instalaciones Básicas</h3>
+        
+        <div style="overflow-x: auto; margin-top: 1rem;">
+          <table style="width: 100%; border-collapse: collapse; background: rgba(255,255,255,0.95); border-radius: 0.5rem; overflow: hidden;">
+            <thead>
+              <tr style="background: #1e40af; color: white;">
+                <th style="padding: 12px 15px; text-align: left;">Servicio</th>
+                <th style="padding: 12px 15px; text-align: left;">Precio (MXN)</th>
+                <th style="padding: 12px 15px; text-align: left;">Tiempo Estimado</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr style="border-bottom: 1px solid #e5e7eb;">
+                <td style="padding: 12px 15px;"><strong>Instalación de Apagador</strong></td>
+                <td style="padding: 12px 15px;">$350</td>
+                <td style="padding: 12px 15px;">30-45 min</td>
+              </tr>
+              <tr style="border-bottom: 1px solid #e5e7eb;">
+                <td style="padding: 12px 15px;"><strong>Instalación de Contacto</strong></td>
+                <td style="padding: 12px 15px;">$350</td>
+                <td style="padding: 12px 15px;">30-45 min</td>
+              </tr>
+              <tr style="border-bottom: 1px solid #e5e7eb;">
+                <td style="padding: 12px 15px;"><strong>Instalación de Lámpara</strong></td>
+                <td style="padding: 12px 15px;">$500</td>
+                <td style="padding: 12px 15px;">45-60 min</td>
+              </tr>
+              <tr style="border-bottom: 1px solid #e5e7eb;">
+                <td style="padding: 12px 15px;"><strong>Instalación de Ventilador de Techo</strong></td>
+                <td style="padding: 12px 15px;">$800 - $1,200</td>
+                <td style="padding: 12px 15px;">1-2 hrs</td>
+              </tr>
+              <tr>
+                <td style="padding: 12px 15px;"><strong>Instalación de Lámpara Colgante</strong></td>
+                <td style="padding: 12px 15px;">$600 - $900</td>
+                <td style="padding: 12px 15px;">1 hr</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-left: 4px solid #f59e0b; padding: 2rem; margin: 2rem 0; border-radius: 0.75rem;">
+        <h3 style="color:#92400e; margin-bottom:1rem; font-size: 1.5rem;">Reparaciones y Mantenimiento</h3>
+        
+        <div style="overflow-x: auto; margin-top: 1rem;">
+          <table style="width: 100%; border-collapse: collapse; background: rgba(255,255,255,0.95); border-radius: 0.5rem; overflow: hidden;">
+            <thead>
+              <tr style="background: #92400e; color: white;">
+                <th style="padding: 12px 15px; text-align: left;">Servicio</th>
+                <th style="padding: 12px 15px; text-align: left;">Precio (MXN)</th>
+                <th style="padding: 12px 15px; text-align: left;">Complejidad</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr style="border-bottom: 1px solid #e5e7eb;">
+                <td style="padding: 12px 15px;"><strong>Reparación de Contacto Defectuoso</strong></td>
+                <td style="padding: 12px 15px;">$300 - $500</td>
+                <td style="padding: 12px 15px;">Baja</td>
+              </tr>
+              <tr style="border-bottom: 1px solid #e5e7eb;">
+                <td style="padding: 12px 15px;"><strong>Reparación de Apagador</strong></td>
+                <td style="padding: 12px 15px;">$300 - $500</td>
+                <td style="padding: 12px 15px;">Baja</td>
+              </tr>
+              <tr style="border-bottom: 1px solid #e5e7eb;">
+                <td style="padding: 12px 15px;"><strong>Reparación de Lámpara</strong></td>
+                <td style="padding: 12px 15px;">$400 - $600</td>
+                <td style="padding: 12px 15px;">Media</td>
+              </tr>
+              <tr>
+                <td style="padding: 12px 15px;"><strong>Diagnóstico de Problema Eléctrico</strong></td>
+                <td style="padding: 12px 15px;">$500 - $800</td>
+                <td style="padding: 12px 15px;">Variable</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div style="background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%); border-left: 4px solid #10b981; padding: 2rem; margin: 2rem 0; border-radius: 0.75rem;">
+        <h3 style="color:#065f46; margin-bottom:1rem; font-size: 1.5rem;">Instalaciones Avanzadas</h3>
+        
+        <div style="overflow-x: auto; margin-top: 1rem;">
+          <table style="width: 100%; border-collapse: collapse; background: rgba(255,255,255,0.95); border-radius: 0.5rem; overflow: hidden;">
+            <thead>
+              <tr style="background: #065f46; color: white;">
+                <th style="padding: 12px 15px; text-align: left;">Servicio</th>
+                <th style="padding: 12px 15px; text-align: left;">Precio (MXN)</th>
+                <th style="padding: 12px 15px; text-align: left;">Tiempo Estimado</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr style="border-bottom: 1px solid #e5e7eb;">
+                <td style="padding: 12px 15px;"><strong>Instalación de Breaker/Tablero</strong></td>
+                <td style="padding: 12px 15px;">$1,500 - $3,000</td>
+                <td style="padding: 12px 15px;">2-4 hrs</td>
+              </tr>
+              <tr style="border-bottom: 1px solid #e5e7eb;">
+                <td style="padding: 12px 15px;"><strong>Instalación de Línea Dedicada (220V)</strong></td>
+                <td style="padding: 12px 15px;">$1,200 - $2,500</td>
+                <td style="padding: 12px 15px;">2-3 hrs</td>
+              </tr>
+              <tr style="border-bottom: 1px solid #e5e7eb;">
+                <td style="padding: 12px 15px;"><strong>Recableado de Circuito</strong></td>
+                <td style="padding: 12px 15px;">$2,000 - $4,000</td>
+                <td style="padding: 12px 15px;">3-5 hrs</td>
+              </tr>
+              <tr>
+                <td style="padding: 12px 15px;"><strong>Instalación de Sistema de Iluminación LED</strong></td>
+                <td style="padding: 12px 15px;">$1,000 - $2,500</td>
+                <td style="padding: 12px 15px;">2-4 hrs</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <h2>💡 Factores que Afectan el Precio</h2>
+      <p>Varios factores pueden influir en el costo final de un servicio eléctrico:</p>
+      <ul>
+        <li><strong>Complejidad del trabajo:</strong> Instalaciones en lugares de difícil acceso o con cableado antiguo pueden requerir más tiempo</li>
+        <li><strong>Materiales:</strong> La calidad de los materiales (cables, contactos, apagadores) afecta el precio final</li>
+        <li><strong>Urgencia:</strong> Servicios de emergencia pueden tener un costo adicional del 30-50%</li>
+        <li><strong>Certificaciones:</strong> Trabajos que requieren certificación CFE pueden tener costos adicionales</li>
+        <li><strong>Ubicación:</strong> Algunas zonas pueden tener costos de desplazamiento adicionales</li>
+      </ul>
+
+      <div style="background: #f0fdf4; border-left: 4px solid #10b981; padding: 1.5rem; margin: 2rem 0; border-radius: 0.5rem;">
+        <h3 style="color: #15803d; margin-bottom: 0.5rem;">✅ Importante: Siempre Contrata Electricistas Certificados</h3>
+        <p style="color: #15803d; margin: 0;">Los trabajos eléctricos mal realizados pueden causar incendios y poner en riesgo tu vida. En Sumee App, todos nuestros electricistas están verificados y certificados por CFE.</p>
+      </div>
+
+      <h2>📋 Conclusión</h2>
+      <p>Conocer los precios antes de contratar un servicio eléctrico te ayuda a tomar decisiones informadas y evitar sorpresas. En Sumee App trabajamos con precios transparentes y técnicos verificados para garantizar tu seguridad y satisfacción.</p>
+      
+      <div style="background: linear-gradient(135deg, #fb7185 0%, #f97316 100%); color: white; padding: 2rem; border-radius: 0.75rem; margin: 3rem 0; text-align: center;">
+        <h3 style="font-size:1.8rem; margin-bottom:1rem;">¿Necesitas un Electricista Certificado?</h3>
+        <p style="font-size:1.1rem; max-width:600px; margin:0 auto 1.5rem;">
+          Encuentra electricistas verificados y certificados en tu zona. Precios transparentes y garantía de trabajo.
+        </p>
+        <a
+          href="/dashboard/client"
+          style="display:inline-block; padding:0.9rem 2.2rem; background:white; color:#f97316; font-weight:700; border-radius:9999px; text-decoration:none; transition:all 0.3s ease;"
+          onmouseover="this.style.background='#fff7ed'"
+          onmouseout="this.style.background='white'"
+        >
+          Solicitar Servicio Eléctrico
+        </a>
+      </div>
+    `,
+    author: "Ing. Ana Herrera",
+    publishDate: "2024-02-15",
+    readTime: "12 min",
+    category: "Guía de Costos",
+    image: "https://images.unsplash.com/photo-1621905251918-48416bd8575a?auto=format&fit=crop&w=800&q=80",
+    slug: "guia-precios-electricistas-cdmx-2025",
+    views: 3450,
+    tags: ["electricidad", "precios", "CDMX", "guía", "instalación eléctrica", "costos"],
   },
   // Más posts se agregarían aquí...
 };

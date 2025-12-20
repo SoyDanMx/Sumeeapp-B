@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useCallback, Suspense } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import dynamic from "next/dynamic";
@@ -104,6 +104,10 @@ import {
   faUser,
   faFileAlt,
   faCheckCircle,
+  faStar,
+  faClock,
+  faShieldAlt,
+  faChartLine,
 } from "@fortawesome/free-solid-svg-icons";
 import { faWhatsapp } from "@fortawesome/free-brands-svg-icons";
 import { useAgreementSubscription } from "@/hooks/useAgreementSubscription";
@@ -733,6 +737,60 @@ function ClientDashboardContent() {
   };
 
   // Obtener el próximo servicio (el más reciente no completado)
+  // Estados para contadores animados - DEBEN estar ANTES de los returns condicionales
+  const [countedTotal, setCountedTotal] = useState(0);
+  const [countedCompleted, setCountedCompleted] = useState(0);
+  const [countedActive, setCountedActive] = useState(0);
+  const [countedRate, setCountedRate] = useState(0);
+
+  // Calcular estadísticas del usuario usando useMemo para evitar recálculos innecesarios
+  const userStats = useMemo(() => {
+    const totalServices = leads.length;
+    const completedServices = leads.filter(l => l.estado === "completado").length;
+    const activeServices = leads.filter(l => l.estado !== "completado" && l.estado !== "cancelado").length;
+    const completionRate = totalServices > 0 
+      ? Math.round((completedServices / totalServices) * 100)
+      : 0;
+    
+    return {
+      totalServices,
+      completedServices,
+      activeServices,
+      completionRate,
+    };
+  }, [leads]);
+
+  // Animación de contadores (similar a HeroSectionV2) - DEBE estar ANTES de los returns condicionales
+  useEffect(() => {
+    const duration = 1500; // 1.5 segundos
+    const steps = 60;
+    const stepDuration = duration / steps;
+    
+    const totalStep = userStats.totalServices / steps;
+    const completedStep = userStats.completedServices / steps;
+    const activeStep = userStats.activeServices / steps;
+    const rateStep = userStats.completionRate / steps;
+
+    let currentStep = 0;
+    const interval = setInterval(() => {
+      currentStep++;
+      setCountedTotal(Math.min(Math.floor(totalStep * currentStep), userStats.totalServices));
+      setCountedCompleted(Math.min(Math.floor(completedStep * currentStep), userStats.completedServices));
+      setCountedActive(Math.min(Math.floor(activeStep * currentStep), userStats.activeServices));
+      setCountedRate(Math.min(Math.floor(rateStep * currentStep), userStats.completionRate));
+
+      if (currentStep >= steps) {
+        clearInterval(interval);
+        setCountedTotal(userStats.totalServices);
+        setCountedCompleted(userStats.completedServices);
+        setCountedActive(userStats.activeServices);
+        setCountedRate(userStats.completionRate);
+      }
+    }, stepDuration);
+
+    return () => clearInterval(interval);
+  }, [userStats.totalServices, userStats.completedServices, userStats.activeServices, userStats.completionRate]);
+
   const getUpcomingService = (): Lead | null => {
     const incompleteLeads = leads.filter(
       (lead) => lead.estado !== "completado" && lead.estado !== "cancelado"
@@ -815,51 +873,157 @@ function ClientDashboardContent() {
           </div>
         </div>
       )}
-      {/* Header con Hero Section - Extendido hacia arriba para cubrir el header del sitio */}
-      <div className="relative bg-gradient-to-r from-blue-600 via-blue-700 to-purple-700 text-white shadow-lg -mt-32 md:-mt-36 pt-32 md:pt-36">
-        {/* Overlay decorativo tecnológico */}
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute inset-0" style={{
-            backgroundImage: `radial-gradient(circle at 2px 2px, white 1px, transparent 0)`,
-            backgroundSize: '40px 40px'
+      {/* Header con Hero Section V2 - Extendido hacia arriba para cubrir el header del sitio */}
+      <div className="relative -mt-32 md:-mt-36 pt-32 md:pt-36 h-[500px] sm:h-[600px] md:h-[650px] lg:h-[700px] overflow-hidden">
+        {/* Imagen de fondo con overlay - Estilo HeroSectionV2 */}
+        <div className="absolute inset-0 z-0">
+          {/* Gradiente de fondo base */}
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-600 via-indigo-700 to-purple-700">
+            {/* Imagen de fondo opcional - puedes agregar una imagen aquí */}
+            <div className="absolute inset-0 bg-[url('/images/services/construccion.jpg')] bg-cover bg-center opacity-20"></div>
+          </div>
+          
+          {/* Overlay con gradiente */}
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-600/90 via-indigo-700/85 to-purple-700/90"></div>
+          
+          {/* Patrón decorativo tecnológico */}
+          <div className="absolute inset-0 opacity-10">
+            <div className="absolute inset-0" style={{
+              backgroundImage: `radial-gradient(circle at 2px 2px, white 1px, transparent 0)`,
+              backgroundSize: '40px 40px'
+            }}></div>
+          </div>
+          
+          {/* Patrón decorativo sutil adicional */}
+          <div className="absolute inset-0 opacity-5" style={{
+            backgroundImage: 'repeating-linear-gradient(0deg, rgba(255,255,255,0.1) 0px, transparent 1px, transparent 20px, rgba(255,255,255,0.1) 21px), repeating-linear-gradient(90deg, rgba(255,255,255,0.1) 0px, transparent 1px, transparent 20px, rgba(255,255,255,0.1) 21px)',
           }}></div>
         </div>
         
         {/* Contenido del Hero */}
-        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between">
-            <div className="mb-6 md:mb-0">
-              <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-3 drop-shadow-lg">
-                Dashboard de tu Hogar
-              </h1>
-              <p className="text-blue-100 text-lg md:text-xl drop-shadow-md">
-                Gestiona todos tus servicios en un solo lugar
-              </p>
-              <div className="mt-4 flex flex-wrap items-center gap-4 text-sm">
-                <div className="flex items-center bg-white/20 backdrop-blur-sm px-3 py-1.5 rounded-full border border-white/30 shadow-md">
-                  <FontAwesomeIcon icon={faWrench} className="mr-2" />
-                  {leads.length} solicitud{leads.length !== 1 ? "es" : ""}
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-center">
+          <div className="w-full">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-8">
+              <div className="mb-6 md:mb-0 flex-1">
+                {/* Badge de bienvenida animado */}
+                <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-md px-4 py-1.5 rounded-full border border-white/30 shadow-lg mb-4 animate-pulse">
+                  <FontAwesomeIcon icon={faRocket} className="text-yellow-300" />
+                  <span className="text-sm font-semibold text-white">Dashboard Premium</span>
+                </div>
+                
+                <h1 className="text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-extrabold mb-3 drop-shadow-lg leading-tight text-white">
+                  Dashboard de tu Hogar
+                </h1>
+                <p className="text-blue-100 text-lg md:text-xl drop-shadow-md mb-6 text-white/90">
+                  Gestiona todos tus servicios en un solo lugar
+                </p>
+                
+                {/* Estadísticas del usuario con contadores animados - Estilo HeroSectionV2 */}
+                <div className="flex flex-wrap gap-4 sm:gap-6 mb-6">
+                  {/* Total Servicios */}
+                  <div className="flex items-center gap-3 bg-white/10 backdrop-blur-md rounded-2xl px-4 sm:px-6 py-3 sm:py-4 border border-white/20 shadow-lg">
+                    <div className="bg-white/20 rounded-full p-2 sm:p-3">
+                      <FontAwesomeIcon icon={faWrench} className="text-xl sm:text-2xl text-blue-200" />
+                    </div>
+                    <div className="text-left">
+                      <div className="text-2xl sm:text-3xl md:text-4xl font-bold text-white">
+                        {countedTotal}+
+                      </div>
+                      <div className="text-xs sm:text-sm text-white/90">Total Servicios</div>
+                    </div>
+                  </div>
+                  
+                  {/* Completados */}
+                  <div className="flex items-center gap-3 bg-white/10 backdrop-blur-md rounded-2xl px-4 sm:px-6 py-3 sm:py-4 border border-white/20 shadow-lg">
+                    <div className="bg-white/20 rounded-full p-2 sm:p-3">
+                      <FontAwesomeIcon icon={faCheckCircle} className="text-xl sm:text-2xl text-green-300" />
+                    </div>
+                    <div className="text-left">
+                      <div className="text-2xl sm:text-3xl md:text-4xl font-bold text-white">
+                        {countedCompleted}
+                      </div>
+                      <div className="text-xs sm:text-sm text-white/90">Completados</div>
+                    </div>
+                  </div>
+                  
+                  {/* Activos */}
+                  <div className="flex items-center gap-3 bg-white/10 backdrop-blur-md rounded-2xl px-4 sm:px-6 py-3 sm:py-4 border border-white/20 shadow-lg">
+                    <div className="bg-white/20 rounded-full p-2 sm:p-3">
+                      <FontAwesomeIcon icon={faBolt} className="text-xl sm:text-2xl text-yellow-300" />
+                    </div>
+                    <div className="text-left">
+                      <div className="text-2xl sm:text-3xl md:text-4xl font-bold text-white">
+                        {countedActive}
+                      </div>
+                      <div className="text-xs sm:text-sm text-white/90">Activos</div>
+                    </div>
+                  </div>
+                  
+                  {/* Tasa de Completitud */}
+                  <div className="flex items-center gap-3 bg-white/10 backdrop-blur-md rounded-2xl px-4 sm:px-6 py-3 sm:py-4 border border-white/20 shadow-lg">
+                    <div className="bg-white/20 rounded-full p-2 sm:p-3">
+                      <FontAwesomeIcon icon={faChartLine} className="text-xl sm:text-2xl text-purple-300" />
+                    </div>
+                    <div className="text-left">
+                      <div className="text-2xl sm:text-3xl md:text-4xl font-bold text-white">
+                        {countedRate}%
+                      </div>
+                      <div className="text-xs sm:text-sm text-white/90">Completitud</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Badges adicionales */}
+                <div className="flex flex-wrap items-center gap-3 text-sm">
+                  <div className="flex items-center bg-white/20 backdrop-blur-sm px-3 py-1.5 rounded-full border border-white/30 shadow-md">
+                    <FontAwesomeIcon icon={faShieldAlt} className="mr-2 text-green-300" />
+                    <span className="text-white">100% Verificados</span>
+                  </div>
+                  <div className="flex items-center bg-white/20 backdrop-blur-sm px-3 py-1.5 rounded-full border border-white/30 shadow-md">
+                    <FontAwesomeIcon icon={faClock} className="mr-2 text-blue-200" />
+                    <span className="text-white">Respuesta rápida</span>
+                  </div>
+                  <div className="flex items-center bg-white/20 backdrop-blur-sm px-3 py-1.5 rounded-full border border-white/30 shadow-md">
+                    <FontAwesomeIcon icon={faStar} className="mr-2 text-yellow-300" />
+                    <span className="text-white">4.8+ Calificación</span>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            {/* CTA Principal */}
-            <div className="flex flex-col sm:flex-row gap-3">
-              <button
-                onClick={() => setIsModalOpen(true)}
-                className="bg-white text-blue-600 px-6 py-3 rounded-lg hover:bg-blue-50 transition-all duration-200 font-semibold flex items-center justify-center shadow-lg hover:shadow-xl hover:scale-105"
-              >
-                <FontAwesomeIcon icon={faPlus} className="mr-2" />
-                Solicitar un Servicio
-              </button>
-              <Link
-                href="/tecnicos"
-                className="bg-white/20 backdrop-blur-sm text-white px-6 py-3 rounded-lg hover:bg-white/30 transition-all duration-200 font-semibold flex items-center justify-center border border-white/30 shadow-md hover:shadow-lg"
-              >
-                Buscar Profesionales
-              </Link>
+              {/* CTA Principal */}
+              <div className="flex flex-col sm:flex-row gap-3 md:min-w-[280px]">
+                <button
+                  onClick={() => setIsModalOpen(true)}
+                  className="bg-white text-blue-600 px-6 py-3 rounded-lg hover:bg-blue-50 transition-all duration-200 font-semibold flex items-center justify-center shadow-lg hover:shadow-xl hover:scale-105 group"
+                >
+                  <FontAwesomeIcon icon={faPlus} className="mr-2 group-hover:rotate-90 transition-transform duration-300" />
+                  Solicitar un Servicio
+                </button>
+                <Link
+                  href="/tecnicos"
+                  className="bg-white/20 backdrop-blur-sm text-white px-6 py-3 rounded-lg hover:bg-white/30 transition-all duration-200 font-semibold flex items-center justify-center border border-white/30 shadow-md hover:shadow-lg hover:scale-105"
+                >
+                  Buscar Profesionales
+                </Link>
+              </div>
             </div>
           </div>
+        </div>
+
+        {/* Elementos decorativos flotantes (opcional) */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          {[...Array(6)].map((_, i) => (
+            <div
+              key={i}
+              className="absolute w-2 h-2 bg-white/20 rounded-full animate-pulse"
+              style={{
+                left: `${10 + i * 15}%`,
+                top: `${20 + (i % 3) * 30}%`,
+                animationDelay: `${i * 0.5}s`,
+                animationDuration: `${3 + i * 0.5}s`,
+              }}
+            />
+          ))}
         </div>
       </div>
 
@@ -1027,6 +1191,122 @@ function ClientDashboardContent() {
             <RecentActivityWidget recentLeads={recentCompleted} />
           </div>
         </div>
+
+        {/* Empty State Moderno - Solo si NO hay leads - POSICIONADO PROMINENTEMENTE */}
+        {!hasLeads && (
+          <div className="mb-6 sm:mb-8">
+            <div className="relative bg-gradient-to-br from-indigo-50 via-blue-50 to-purple-50 rounded-2xl sm:rounded-3xl shadow-xl border-2 border-indigo-200/50 overflow-hidden">
+              {/* Patrón decorativo de fondo */}
+              <div className="absolute inset-0 opacity-5">
+                <div className="absolute inset-0" style={{
+                  backgroundImage: `radial-gradient(circle at 2px 2px, indigo-500 1px, transparent 0)`,
+                  backgroundSize: '40px 40px'
+                }}></div>
+              </div>
+              
+              {/* Contenido */}
+              <div className="relative z-10 p-8 sm:p-12 lg:p-16">
+                <div className="max-w-3xl mx-auto text-center">
+                  {/* Icono animado grande */}
+                  <div className="relative inline-block mb-6">
+                    <div className="absolute inset-0 bg-gradient-to-r from-indigo-400 to-purple-500 rounded-full blur-2xl opacity-30 animate-pulse"></div>
+                    <div className="relative w-24 h-24 sm:w-32 sm:h-32 bg-gradient-to-br from-indigo-500 via-blue-500 to-purple-600 rounded-full flex items-center justify-center shadow-2xl transform hover:scale-110 transition-transform duration-300">
+                      <FontAwesomeIcon icon={faWrench} className="text-white text-4xl sm:text-5xl animate-bounce" style={{ animationDuration: '2s' }} />
+                    </div>
+                    {/* Partículas decorativas alrededor del icono */}
+                    {[...Array(6)].map((_, i) => (
+                      <div
+                        key={i}
+                        className="absolute w-2 h-2 bg-indigo-400 rounded-full animate-ping"
+                        style={{
+                          top: `${20 + (i % 3) * 30}%`,
+                          left: `${10 + (i % 2) * 80}%`,
+                          animationDelay: `${i * 0.3}s`,
+                          animationDuration: '2s'
+                        }}
+                      />
+                    ))}
+                  </div>
+
+                  {/* Título principal */}
+                  <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-gray-900 mb-4 bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 via-blue-600 to-purple-600">
+                    Comienza tu Primer Servicio
+                  </h2>
+                  
+                  {/* Subtítulo */}
+                  <p className="text-lg sm:text-xl text-gray-700 mb-2 max-w-2xl mx-auto leading-relaxed">
+                    Aún no tienes solicitudes activas
+                  </p>
+                  <p className="text-base sm:text-lg text-gray-600 mb-8 max-w-xl mx-auto">
+                    Solicita tu primer servicio y te conectaremos con especialistas verificados en minutos. 
+                    <span className="block mt-2 font-semibold text-indigo-600">¡Es rápido, fácil y seguro!</span>
+                  </p>
+
+                  {/* CTAs prominentes */}
+                  <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-8">
+                    <button
+                      onClick={() => setIsModalOpen(true)}
+                      className="group relative inline-flex items-center justify-center gap-3 bg-gradient-to-r from-indigo-600 via-blue-600 to-purple-600 text-white px-8 py-4 rounded-xl font-bold text-base sm:text-lg shadow-xl hover:shadow-2xl hover:scale-105 transition-all duration-300 overflow-hidden min-w-[240px]"
+                    >
+                      {/* Efecto de brillo animado */}
+                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent transform -skew-x-12 translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000"></div>
+                      <FontAwesomeIcon icon={faPlus} className="relative z-10 text-xl group-hover:rotate-90 transition-transform duration-300" />
+                      <span className="relative z-10">Solicitar Servicio Ahora</span>
+                    </button>
+                    <Link
+                      href="/tecnicos"
+                      className="group inline-flex items-center justify-center gap-3 bg-white text-indigo-600 px-8 py-4 rounded-xl font-bold text-base sm:text-lg border-2 border-indigo-300 shadow-lg hover:shadow-xl hover:border-indigo-400 hover:bg-indigo-50 transition-all duration-300 min-w-[240px]"
+                    >
+                      <FontAwesomeIcon icon={faRocket} className="text-lg group-hover:translate-x-1 transition-transform duration-300" />
+                      <span>Explorar Profesionales</span>
+                    </Link>
+                  </div>
+
+                  {/* Características destacadas */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-10 pt-8 border-t border-indigo-200">
+                    <div className="flex flex-col items-center gap-2">
+                      <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                        <FontAwesomeIcon icon={faCheckCircle} className="text-green-600 text-xl" />
+                      </div>
+                      <span className="text-sm font-semibold text-gray-900">Técnicos Verificados</span>
+                      <span className="text-xs text-gray-600">100% confiables</span>
+                    </div>
+                    <div className="flex flex-col items-center gap-2">
+                      <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                        <FontAwesomeIcon icon={faBolt} className="text-blue-600 text-xl" />
+                      </div>
+                      <span className="text-sm font-semibold text-gray-900">Respuesta Rápida</span>
+                      <span className="text-xs text-gray-600">En menos de 25 min</span>
+                    </div>
+                    <div className="flex flex-col items-center gap-2">
+                      <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
+                        <FontAwesomeIcon icon={faShieldAlt} className="text-purple-600 text-xl" />
+                      </div>
+                      <span className="text-sm font-semibold text-gray-900">Garantía Total</span>
+                      <span className="text-xs text-gray-600">Trabajo asegurado</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Elementos decorativos flotantes */}
+              <div className="absolute inset-0 pointer-events-none overflow-hidden">
+                {[...Array(8)].map((_, i) => (
+                  <div
+                    key={i}
+                    className="absolute w-3 h-3 bg-indigo-300/30 rounded-full animate-float"
+                    style={{
+                      left: `${5 + i * 12}%`,
+                      top: `${10 + (i % 4) * 25}%`,
+                      animationDelay: `${i * 0.4}s`,
+                      animationDuration: `${4 + i * 0.3}s`,
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Widget de Servicios Rápidos - Full Width */}
         {hasLeads && (
@@ -1201,31 +1481,9 @@ function ClientDashboardContent() {
             </div>
           </div>
         ) : (
-          <div className="bg-white rounded-xl border border-dashed border-blue-200 p-8 sm:p-10 text-center shadow-sm">
-            <div className="w-16 h-16 sm:w-20 sm:h-20 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4">
-              <FontAwesomeIcon icon={faWrench} className="text-2xl sm:text-3xl text-blue-500" />
-            </div>
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">
-              Aún no tienes solicitudes activas
-            </h3>
-            <p className="text-sm sm:text-base text-gray-600 max-w-xl mx-auto">
-              Puedes comenzar desde el botón “Solicitar servicio” en la parte superior derecha o explorar profesionales destacados para inspirarte.
-            </p>
-            <div className="mt-6 flex flex-col sm:flex-row justify-center gap-3">
-              <button
-                onClick={() => setIsModalOpen(true)}
-                className="inline-flex items-center justify-center gap-2 bg-blue-600 text-white px-5 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
-              >
-                <FontAwesomeIcon icon={faPlus} className="text-sm" />
-                Solicitar servicio
-              </button>
-              <Link
-                href="/tecnicos"
-                className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-lg font-semibold border border-blue-100 text-blue-600 bg-blue-50 hover:bg-blue-100 transition-colors"
-              >
-                Explorar profesionales
-              </Link>
-            </div>
+          // Esta sección ya no se muestra porque el empty state está arriba
+          <div className="bg-white rounded-xl border border-gray-200 p-6 text-center shadow-sm">
+            <p className="text-gray-500 text-sm">No hay solicitudes para mostrar</p>
           </div>
         )}
       </div>

@@ -36,12 +36,10 @@ const createSupabaseClient = () => {
       // Configuraciones de almacenamiento específicas para PKCE
       storage: typeof window !== "undefined" ? window.localStorage : undefined,
       storageKey: "sb-auth-token",
-      // Configuración de debug para desarrollo
-      debug: process.env.NODE_ENV === "development",
+      // Configuración de debug para desarrollo (desactivado para evitar ruido)
+      debug: false,
       // Configuraciones adicionales para PKCE
       ...(typeof window !== "undefined" ? {
-        // Forzar regeneración de code_verifier si es necesario
-        refreshToken: true,
         // Configuración específica para el navegador
         browser: {
           localStorage: window.localStorage,
@@ -74,7 +72,29 @@ if (typeof window !== "undefined") {
   supabase.auth
     .getSession()
     .then(({ data: { session }, error }) => {
-      if (error || !session) {
+      // Si hay error de refresh token, limpiar silenciosamente
+      if (error) {
+        const errorMessage = error.message || String(error);
+        if (
+          errorMessage.includes("Invalid Refresh Token") ||
+          errorMessage.includes("Refresh Token Not Found") ||
+          errorMessage.includes("refresh_token_not_found")
+        ) {
+          // Limpiar tokens inválidos silenciosamente
+          const authKeys = Object.keys(localStorage).filter(
+            (key) =>
+              key.includes("supabase") ||
+              key.includes("sb-") ||
+              key.includes("auth-token")
+          );
+          if (authKeys.length > 0) {
+            authKeys.forEach((key) => localStorage.removeItem(key));
+          }
+          return;
+        }
+      }
+      
+      if (!session) {
         // Limpiar tokens residuales si no hay sesión válida
         const authKeys = Object.keys(localStorage).filter(
           (key) =>
@@ -87,29 +107,53 @@ if (typeof window !== "undefined") {
         }
       }
     })
-    .catch(() => {
-      // Ignorar errores en getSession inicial
+    .catch((error: any) => {
+      // Silenciar errores de refresh token en getSession inicial
+      const errorMessage = error?.message || String(error);
+      if (
+        errorMessage.includes("Invalid Refresh Token") ||
+        errorMessage.includes("Refresh Token Not Found") ||
+        errorMessage.includes("refresh_token_not_found")
+      ) {
+        // Limpiar tokens y continuar silenciosamente
+        const authKeys = Object.keys(localStorage).filter(
+          (key) =>
+            key.includes("supabase") ||
+            key.includes("sb-") ||
+            key.includes("auth-token")
+        );
+        if (authKeys.length > 0) {
+          authKeys.forEach((key) => localStorage.removeItem(key));
+        }
+        return;
+      }
+      // Para otros errores, ignorar también (no críticos en inicialización)
     });
 
   // Interceptar errores no capturados relacionados con refresh token
+  // MEJORADO: Captura más específica del error AuthApiError
   window.addEventListener("unhandledrejection", (event) => {
-    const errorMessage =
-      event.reason?.message || event.reason?.toString() || "";
-    const errorCode = event.reason?.code || event.reason?.status || "";
+    const error = event.reason;
+    const errorMessage = error?.message || error?.toString() || "";
+    const errorCode = error?.code || error?.status || "";
+    const errorName = error?.name || "";
     
-    if (
-      typeof errorMessage === "string" &&
-      (errorMessage.includes("Invalid Refresh Token") ||
-        errorMessage.includes("Refresh Token Not Found") ||
-        errorMessage.includes("refresh_token_not_found") ||
-        errorMessage.includes("AuthApiError") ||
-        errorCode === "refresh_token_not_found")
-    ) {
+    // Detectar errores de refresh token de múltiples formas
+    const isRefreshTokenError = 
+      (typeof errorMessage === "string" &&
+        (errorMessage.includes("Invalid Refresh Token") ||
+          errorMessage.includes("Refresh Token Not Found") ||
+          errorMessage.includes("refresh_token_not_found") ||
+          errorMessage.includes("refresh_token_not_found"))) ||
+      errorCode === "refresh_token_not_found" ||
+      errorName === "AuthApiError" && errorMessage.includes("refresh");
+    
+    if (isRefreshTokenError) {
       // Prevenir que el error se muestre en la consola
       event.preventDefault();
-      console.log("🔄 Limpiando tokens inválidos automáticamente...");
+      event.stopPropagation();
       
-      // Limpiar tokens inválidos automáticamente
+      // Limpiar tokens inválidos automáticamente (silenciosamente)
       const authKeys = Object.keys(localStorage).filter(
         (key) =>
           key.includes("supabase") ||
@@ -118,15 +162,34 @@ if (typeof window !== "undefined") {
       );
       if (authKeys.length > 0) {
         authKeys.forEach((key) => localStorage.removeItem(key));
-        console.log("✅ Tokens limpiados. Por favor, inicia sesión nuevamente.");
       }
       
       // Intentar cerrar sesión silenciosamente
       supabase.auth.signOut({ scope: 'local' }).catch(() => {
         // Ignorar errores al hacer signOut
       });
+      
+      // No loguear nada - error manejado silenciosamente
+      return;
     }
   });
+
+  // Interceptar errores de consola también (para errores que se loguean directamente)
+  const originalConsoleError = console.error;
+  console.error = (...args: any[]) => {
+    const errorString = args.join(' ');
+    if (
+      errorString.includes("Invalid Refresh Token") ||
+      errorString.includes("Refresh Token Not Found") ||
+      errorString.includes("refresh_token_not_found") ||
+      errorString.includes("AuthApiError") && errorString.includes("refresh")
+    ) {
+      // Silenciar este error específico - ya está siendo manejado
+      return;
+    }
+    // Para otros errores, usar el console.error original
+    originalConsoleError.apply(console, args);
+  };
 
   // Listener optimizado: Solo maneja limpieza de tokens, no lógica de negocio
   // Se ejecuta solo una vez al inicializar el cliente, no en cada cambio de estado
@@ -135,29 +198,44 @@ if (typeof window !== "undefined") {
   // Solo registrar listener si no existe ya (evitar múltiples suscripciones)
   if (!authCleanupListener) {
     authCleanupListener = supabase.auth.onAuthStateChange(async (event, session) => {
-      // Solo manejar eventos críticos de limpieza, ignorar eventos normales
-      if (event === "TOKEN_REFRESHED" && !session) {
-        // Limpiar tokens inválidos silenciosamente
-        const authKeys = Object.keys(localStorage).filter(
-          (key) =>
-            key.includes("supabase") ||
-            key.includes("sb-") ||
-            key.includes("auth-token")
-        );
-        if (authKeys.length > 0) {
-          authKeys.forEach((key) => localStorage.removeItem(key));
+      try {
+        // Manejar errores de refresh token en el evento
+        if (event === "TOKEN_REFRESHED" && !session) {
+          // Limpiar tokens inválidos silenciosamente
+          const authKeys = Object.keys(localStorage).filter(
+            (key) =>
+              key.includes("supabase") ||
+              key.includes("sb-") ||
+              key.includes("auth-token")
+          );
+          if (authKeys.length > 0) {
+            authKeys.forEach((key) => localStorage.removeItem(key));
+          }
+        } else if (event === "SIGNED_OUT") {
+          // Limpiar tokens al cerrar sesión
+          const authKeys = Object.keys(localStorage).filter(
+            (key) =>
+              key.includes("supabase") ||
+              key.includes("sb-") ||
+              key.includes("auth-token")
+          );
+          if (authKeys.length > 0) {
+            authKeys.forEach((key) => localStorage.removeItem(key));
+          }
         }
-      } else if (event === "SIGNED_OUT") {
-        // Limpiar tokens al cerrar sesión
-        const authKeys = Object.keys(localStorage).filter(
-          (key) =>
-            key.includes("supabase") ||
-            key.includes("sb-") ||
-            key.includes("auth-token")
-        );
-        if (authKeys.length > 0) {
-          authKeys.forEach((key) => localStorage.removeItem(key));
+      } catch (error: any) {
+        // Silenciar errores de refresh token en el listener
+        const errorMessage = error?.message || String(error);
+        if (
+          errorMessage.includes("Invalid Refresh Token") ||
+          errorMessage.includes("Refresh Token Not Found") ||
+          errorMessage.includes("refresh_token_not_found")
+        ) {
+          // Error ya manejado, no hacer nada
+          return;
         }
+        // Para otros errores, permitir que se propaguen
+        throw error;
       }
       // Ignorar otros eventos - los hooks se encargan de ellos
     });

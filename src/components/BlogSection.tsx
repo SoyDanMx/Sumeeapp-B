@@ -185,6 +185,20 @@ const blogPosts: BlogPost[] = [
     views: 4120,
     featured: true,
   },
+  {
+    id: "11",
+    title: "Guía Completa de Precios para Servicios del Hogar en CDMX 2025",
+    excerpt:
+      "Saber cuánto cuesta un servicio antes de contratarlo es fundamental. Consulta nuestra guía completa de precios transparentes y fijos para servicios del hogar en CDMX.",
+    author: "Equipo Sumee",
+    publishDate: "2025-01-19",
+    readTime: "8 min",
+    category: "Precios y Transparencia",
+    image: "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=800&h=400&fit=crop&q=80",
+    slug: "guia-precios-servicios-hogar-cdmx",
+    views: 0,
+    featured: true,
+  },
 ];
 
 const categories = [
@@ -197,6 +211,7 @@ const categories = [
   "Plomería",
   "Electricidad",
   "Guía de Costos",
+  "Precios y Transparencia",
 ];
 
 interface BlogSectionProps {

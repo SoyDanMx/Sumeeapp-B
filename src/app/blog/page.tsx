@@ -25,19 +25,19 @@ export default function BlogPage() {
     <div className="flex flex-col min-h-screen bg-gray-50">
       <Header />
       
-      <main className="flex-grow pt-24">
-        {/* Hero Section del Blog */}
-        <section className="bg-gradient-to-r from-indigo-600 to-blue-700 py-16">
-          <div className="container mx-auto px-4 text-center">
+      <main className="flex-grow">
+        {/* Hero Section del Blog - Extendido hacia arriba para cubrir el header */}
+        <section className="bg-gradient-to-r from-indigo-600 to-blue-700 -mt-24 md:-mt-28 pt-24 md:pt-28 pb-12 md:pb-16 overflow-hidden">
+          <div className="container mx-auto px-4 text-center pt-12 md:pt-16 lg:pt-20">
             <h1 className="text-4xl md:text-5xl font-bold text-white mb-6">
               Blog Sumee
             </h1>
-            <p className="text-xl text-blue-100 max-w-3xl mx-auto mb-8">
+            <p className="text-xl text-blue-100 max-w-5xl mx-auto mb-8">
               Descubre consejos expertos, tendencias del sector y guías prácticas para mantener tu hogar en perfecto estado
             </p>
             
-            {/* Barra de búsqueda */}
-            <div className="max-w-2xl mx-auto">
+            {/* Barra de búsqueda - Base más ancha */}
+            <div className="max-w-3xl mx-auto">
               <div className="relative">
                 <FontAwesomeIcon 
                   icon={faSearch} 

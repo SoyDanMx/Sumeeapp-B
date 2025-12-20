@@ -230,18 +230,18 @@ export default function PreciosPage() {
   return (
     <PageLayout>
       <div className="bg-gray-50 min-h-screen">
-        {/* Hero Section */}
-        <div className="bg-gradient-to-br from-indigo-600 via-purple-600 to-indigo-700 text-white py-12 md:py-16 lg:py-20">
+        {/* Hero Section - Extendido hacia arriba para cubrir el header */}
+        <div className="relative bg-gradient-to-br from-indigo-600 via-purple-600 to-indigo-700 text-white -mt-24 md:-mt-28 pt-24 md:pt-28 pb-12 md:pb-16 lg:pb-20 overflow-hidden">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="max-w-4xl mx-auto text-center">
+            <div className="max-w-6xl mx-auto text-center">
               <PageHeader 
                 icon={faDollarSign}
                 title="Guía de Precios"
                 subtitle="Precios transparentes y fijos. Sabes exactamente cuánto pagarás antes de contratar."
               />
               
-              {/* Estadísticas destacadas */}
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-8 max-w-2xl mx-auto">
+              {/* Estadísticas destacadas - Base más ancha */}
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-8 max-w-4xl mx-auto">
                 <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 border border-white/20">
                   <div className="text-2xl md:text-3xl font-bold">{totalServicesCount}+</div>
                   <div className="text-sm md:text-base text-white/90 mt-1">Servicios Disponibles</div>
