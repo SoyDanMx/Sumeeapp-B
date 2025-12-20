@@ -85,14 +85,14 @@ export default function TrabajaConNosotrosPage() {
     };
 
     return (
-        <div className="min-h-screen bg-gray-50 pt-[calc(var(--header-offset,72px))]">
-            {/* Hero Section */}
-            <div className="bg-gradient-to-r from-blue-900 to-indigo-900 text-white py-20 px-4 sm:px-6 lg:px-8">
-                <div className="max-w-7xl mx-auto text-center">
+        <div className="min-h-screen bg-gray-50">
+            {/* Hero Section - Extendido hacia arriba para cubrir el header */}
+            <div className="bg-gradient-to-r from-blue-900 to-indigo-900 text-white -mt-24 md:-mt-28 pt-24 md:pt-28 pb-12 md:pb-16 lg:pb-20 px-4 sm:px-6 lg:px-8 overflow-hidden">
+                <div className="max-w-7xl mx-auto text-center pt-12 md:pt-16 lg:pt-20">
                     <h1 className="text-4xl md:text-5xl font-bold mb-6">
                         Únete al Equipo <span className="text-blue-400">Sumee</span>
                     </h1>
-                    <p className="text-xl md:text-2xl text-blue-100 max-w-3xl mx-auto mb-8">
+                    <p className="text-xl md:text-2xl text-blue-100 max-w-5xl mx-auto mb-8">
                         Estamos construyendo el futuro de los servicios en el hogar en México.
                         Buscamos personas apasionadas, talentosas y con ganas de crecer.
                     </p>

@@ -2,6 +2,7 @@
 "use client";
 
 import React from "react";
+import Image from "next/image";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faUser,
@@ -129,12 +130,20 @@ export function BlogPostContent({ post }: BlogPostContentProps) {
 
             {/* Imagen principal */}
             <div className="relative h-64 md:h-96 mb-8 rounded-2xl overflow-hidden shadow-lg">
-              <img
-                src={post.image}
-                alt={post.title}
-                className="w-full h-full object-cover"
-                loading="eager"
-              />
+              {post.image ? (
+                <Image
+                  src={post.image}
+                  alt={post.title}
+                  fill
+                  className="object-cover"
+                  priority
+                  unoptimized={post.image.startsWith('http')}
+                />
+              ) : (
+                <div className="w-full h-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
+                  <span className="text-white text-2xl font-bold">Sin imagen</span>
+                </div>
+              )}
               <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
 
               {/* Categoría */}

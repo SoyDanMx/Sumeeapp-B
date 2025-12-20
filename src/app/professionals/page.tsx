@@ -155,14 +155,14 @@ export default function ProfessionalsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Hero Section - Mobile First */}
-      <div className="bg-gradient-to-r from-blue-600 to-purple-700 text-white py-12 md:py-16">
-        <div className="container mx-auto px-4">
-          <div className="text-center">
+      {/* Hero Section - Extendido hacia arriba para cubrir el header */}
+      <div className="bg-gradient-to-r from-blue-600 to-purple-700 text-white -mt-24 md:-mt-28 pt-24 md:pt-28 pb-12 md:pb-16 overflow-hidden">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center max-w-6xl mx-auto">
             <h1 className="text-3xl md:text-4xl lg:text-6xl font-bold mb-3 md:mb-4">
               Encuentra el Profesional Perfecto
             </h1>
-            <p className="text-lg md:text-xl lg:text-2xl text-white/90 max-w-3xl mx-auto mb-6 md:mb-8">
+            <p className="text-lg md:text-xl lg:text-2xl text-white/90 max-w-5xl mx-auto mb-6 md:mb-8">
               Conecta con técnicos verificados y especializados en tu zona.
               Respuesta rápida, garantía total y precios transparentes.
             </p>

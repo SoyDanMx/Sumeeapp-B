@@ -95,8 +95,8 @@ export default function AllCitiesPage() {
   return (
     <PageLayout>
       <div className="bg-gray-50 min-h-screen">
-        {/* Hero Section */}
-        <div className="relative bg-gradient-to-br from-indigo-600 via-purple-600 to-indigo-700 text-white py-12 md:py-16 lg:py-20 overflow-hidden">
+        {/* Hero Section - Extendido hacia arriba para cubrir el header */}
+        <div className="relative bg-gradient-to-br from-indigo-600 via-purple-600 to-indigo-700 text-white -mt-24 md:-mt-28 pt-24 md:pt-28 pb-12 md:pb-16 lg:pb-20 overflow-hidden">
           {/* Background Pattern - Grid tecnológico */}
           <div className="absolute inset-0 opacity-10">
             <div className="absolute inset-0" style={{
@@ -222,20 +222,20 @@ export default function AllCitiesPage() {
             </div>
           </div>
 
-          {/* Content */}
-          <div className="relative z-10 container mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="max-w-4xl mx-auto text-center">
+          {/* Content - Base más ancha para el texto */}
+          <div className="relative z-10 container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+            <div className="max-w-7xl mx-auto text-center">
               <PageHeader 
                 icon={faMapMarkerAlt}
                 title="Ciudades Donde Operamos"
                 subtitle="Encuentra técnicos verificados en las principales ciudades de México"
               />
               
-              {/* Mensaje sobre expansión */}
-              <div className="mt-8 bg-white/10 backdrop-blur-sm rounded-lg p-4 md:p-6 border border-white/20 max-w-3xl mx-auto">
-                <p className="text-white text-sm md:text-base leading-relaxed">
+              {/* Mensaje sobre expansión - Base más ancha */}
+              <div className="mt-8 md:mt-10 bg-white/10 backdrop-blur-sm rounded-lg p-5 md:p-7 lg:p-8 border border-white/20 max-w-6xl mx-auto">
+                <p className="text-white text-base md:text-lg lg:text-xl leading-relaxed">
                   Por el momento operamos en las siguientes ciudades, pero <strong className="font-semibold">pronto estaremos apoyándote en tu ciudad</strong>. 
-                  <span className="block mt-2">Haz saber tu interés <Link href="/registro" className="underline font-semibold hover:text-blue-200 transition-colors">registrándote</Link>.</span>
+                  <span className="block mt-3">Haz saber tu interés <Link href="/registro" className="underline font-semibold hover:text-blue-200 transition-colors">registrándote</Link>.</span>
                 </p>
               </div>
             </div>

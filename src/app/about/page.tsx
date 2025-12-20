@@ -13,9 +13,9 @@ export default function AboutPage() {
   return (
     <PageLayout>
       <div className="bg-white">
-        {/* Hero Section */}
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16 lg:py-20">
-          <div className="max-w-4xl mx-auto text-center">
+        {/* Hero Section - Extendido hacia arriba para cubrir el header */}
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 -mt-24 md:-mt-28 pt-24 md:pt-28 pb-12 md:pb-16 lg:pb-20">
+          <div className="max-w-6xl mx-auto text-center">
           <PageHeader 
             icon={faHeart}
               title="Sobre Nosotros"
@@ -23,8 +23,8 @@ export default function AboutPage() {
             />
           </div>
 
-          {/* Estadísticas destacadas */}
-          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Estadísticas destacadas - Base más ancha */}
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8">
             <HeroStatistics />
           </div>
         </div>
