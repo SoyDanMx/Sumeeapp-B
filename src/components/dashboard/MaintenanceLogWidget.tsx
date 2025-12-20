@@ -65,7 +65,7 @@ export default function MaintenanceLogWidget({
           servicio: servicioNombre,
           servicio_solicitado: lead.servicio_solicitado || undefined,
           disciplina: disciplina,
-          fecha_completado: lead.work_completed_at || lead.fecha_completado || lead.fecha_creacion || new Date().toISOString(),
+          fecha_completado: lead.work_completed_at || lead.fecha_creacion || new Date().toISOString(),
           descripcion: lead.descripcion_proyecto || undefined,
         };
       });
@@ -81,8 +81,8 @@ export default function MaintenanceLogWidget({
     return completedLeads
       .filter((lead) => lead.estado === "completado")
       .sort((a, b) => {
-        const dateA = new Date(a.fecha_completado || a.fecha_creacion).getTime();
-        const dateB = new Date(b.fecha_completado || b.fecha_creacion).getTime();
+        const dateA = new Date(a.work_completed_at || a.fecha_creacion).getTime();
+        const dateB = new Date(b.work_completed_at || b.fecha_creacion).getTime();
         return dateB - dateA;
       })
       .slice(0, 5);
@@ -261,8 +261,8 @@ export default function MaintenanceLogWidget({
             </div>
             <div className="space-y-2">
               {recentHistory.map((lead) => {
-                const fechaCompletado = lead.fecha_completado
-                  ? new Date(lead.fecha_completado)
+                const fechaCompletado = lead.work_completed_at
+                  ? new Date(lead.work_completed_at)
                   : lead.fecha_creacion
                   ? new Date(lead.fecha_creacion)
                   : new Date();
