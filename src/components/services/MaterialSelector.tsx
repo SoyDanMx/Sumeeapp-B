@@ -82,8 +82,8 @@ export default function MaterialSelector({
           .from("marketplace_products")
           .select("id, title, description, price, images, status, seller_id, external_code, sku")
           .or(orConditions)
-          .eq("status", "active");
-          // .gt("price", 0); // ⚠️ TEMPORALMENTE DESHABILITADO
+          .eq("status", "active")
+          .gt("price", 0); // ✅ Excluir productos con precio 0
         
         // Si se requiere solo productos de Truper, filtrar por seller_id IS NULL
         // Los productos de Truper son productos oficiales de Sumee (seller_id = NULL)

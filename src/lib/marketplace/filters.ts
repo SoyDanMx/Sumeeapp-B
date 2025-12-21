@@ -344,8 +344,8 @@ export function applyFilters<T extends {
     filtered = filtered.filter((p) => filters.conditions.includes(p.condition));
   }
 
-  // ⚠️ FILTRO TEMPORALMENTE DESHABILITADO: Permitir productos con precio 0
-  // filtered = filtered.filter((p) => p.price > 0);
+  // ✅ FILTRO CRÍTICO: Excluir productos con precio 0
+  filtered = filtered.filter((p) => p.price > 0);
 
   // Rango de precio
   if (filters.priceRange.min !== null) {

@@ -58,7 +58,7 @@ export function SmartSearch({
           .from('marketplace_products')
           .select('id, title, price, images, category_id, external_code, sku')
           .eq('status', 'active')
-          // .gt('price', 0) // ⚠️ TEMPORALMENTE DESHABILITADO
+          .gt('price', 0) // ✅ Excluir productos con precio 0
           .or(`title.ilike.%${query}%,description.ilike.%${query}%`)
           .order('views_count', { ascending: false })
           .order('likes_count', { ascending: false })

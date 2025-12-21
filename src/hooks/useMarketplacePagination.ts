@@ -116,8 +116,8 @@ export function useMarketplacePagination(options: UseMarketplacePaginationOption
           `,
             { count: "exact" }
           )
-          .eq("status", "active");
-          // .gt("price", 0); // ⚠️ TEMPORALMENTE DESHABILITADO - Permitir productos sin precio
+          .eq("status", "active")
+          .gt("price", 0); // ✅ Excluir productos con precio 0
 
         // Aplicar filtros
         if (categoryUUID) {

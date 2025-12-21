@@ -39,6 +39,18 @@ const nextConfig = {
         port: "",
         pathname: "/**",
       },
+      {
+        protocol: "https",
+        hostname: "www.syscom.mx",
+        port: "",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "syscom.mx",
+        port: "",
+        pathname: "/**",
+      },
     ],
     formats: ["image/webp", "image/avif"],
     minimumCacheTTL: 60,

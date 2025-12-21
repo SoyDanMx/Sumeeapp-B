@@ -108,7 +108,7 @@ export default function MarketplacePage() {
             .from("marketplace_products")
             .select("*, external_code, sku")
             .eq("status", "active")
-            // .gt("price", 0) // ⚠️ TEMPORALMENTE DESHABILITADO
+            .gt("price", 0) // ✅ Excluir productos con precio 0
             .order("views_count", { ascending: false }) // Ordenar por vistas primero para obtener productos con más tracción
             .limit(200); // Cargar más para tener mejor muestra para scoring
 
@@ -148,7 +148,7 @@ export default function MarketplacePage() {
               .from("marketplace_products")
               .select("*, external_code, sku")
               .eq("status", "active")
-              // .gt("price", 0) // ⚠️ TEMPORALMENTE DESHABILITADO
+              .gt("price", 0) // ✅ Excluir productos con precio 0
               .order("created_at", { ascending: false })
               .limit(24);
             
