@@ -148,13 +148,35 @@ export function useMarketplacePagination(options: UseMarketplacePaginationOption
 
 
         // Ordenar y paginar
+        // Agregar límite de seguridad: no permitir rangos mayores a 10000 registros
+        const safeFrom = Math.min(from, 9999);
+        const safeTo = Math.min(to, 10023); // from + pageSize máximo
+        
         const queryResult = await query
           .order("created_at", { ascending: false })
-          .range(from, to);
+          .range(safeFrom, safeTo);
         
         const { data, error: queryError, count } = queryResult;
 
         if (queryError) {
+          // Error específico de rango no satisfactorio - página fuera de límites
+          if (queryError.message?.includes('range not satisfiable') || queryError.code === 'PGRST103') {
+            console.warn("⚠️ [PAGINACIÓN] Rango solicitado fuera de límites, reseteando a página 1");
+            
+            // Si estamos intentando cargar una página que no existe, resetear a página 1
+            if (page > 1) {
+              // Resetear a página 1 en lugar de fallar
+              setPagination(prev => ({
+                ...prev,
+                page: 1,
+                hasMore: false,
+              }));
+              setProducts([]);
+              setLoading(false);
+              return;
+            }
+          }
+          
           console.error("❌ [PAGINACIÓN] Error en query de productos:", {
             error: queryError,
             message: queryError.message,
