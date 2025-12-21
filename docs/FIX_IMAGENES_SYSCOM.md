@@ -1,7 +1,8 @@
-# 🖼️ FIX: Renderizado de Imágenes de Productos Syscom
+# 🖼️ FIX: Renderizado de Imágenes de Productos (Truper y Syscom)
 
 **Fecha:** 20 de Diciembre, 2025  
-**Problema:** Productos con precio válido (especialmente de Syscom) mostraban placeholder en lugar de imágenes
+**Última actualización:** 20 de Diciembre, 2025 - 22:00  
+**Problema:** Productos con precio válido mostraban placeholder en lugar de imágenes
 
 ---
 
@@ -11,6 +12,7 @@
 - Productos mostraban icono de herramientas (placeholder) en lugar de imágenes reales
 - 19,669 productos de Syscom con `external_code` y precio > 0 no tenían imágenes configuradas
 - El sistema solo manejaba imágenes de Truper, no de Syscom
+- **REGRESIÓN:** Al agregar soporte Syscom, se rompieron imágenes de Truper
 
 ### Análisis
 ```
@@ -66,16 +68,22 @@ Se agregaron dominios de Syscom a los `remotePatterns`:
    }
    ```
 
-2. **Actualización de `getSmartImageForProduct()`:**
-   - **Prioridad 0 (NUEVA):** Si el producto tiene `external_code`, generar URL de Syscom
-   - Prioridad 1: URL externa existente que funcione
-   - Prioridad 2: Variaciones de URL de Truper
-   - Prioridad 3: Imagen local
+2. **Actualización de `getSmartImageForProduct()` - PRIORIDAD CORRECTA:**
+   ```
+   ✅ Prioridad 1: URL externa existente (imágenes configuradas en BD)
+   ✅ Prioridad 2: Ruta local válida
+   ✅ Prioridad 3: Syscom (solo si NO hay imágenes configuradas)
+   ✅ Prioridad 4: Variaciones de URL de Truper generadas
+   ✅ Prioridad 5: Imagen local basada en identificadores
+   ✅ Prioridad 6: Syscom como último recurso
+   ```
 
 3. **Actualización de `getAllImageVariations()`:**
-   - Agregada imagen de Syscom como primera opción en las variaciones
+   ```
+   ✅ Orden: URLs existentes → Locales → Truper generadas → Syscom (último)
+   ```
 
-**Estado:** ✅ Completado
+**Estado:** ✅ Completado y corregido
 
 ### 3. **Actualización de Precios**
 
@@ -91,18 +99,38 @@ Se ejecutó el script `quick_update_prices.py` para actualizar 1,000 productos:
 
 ---
 
-## 🎯 RESULTADO
+## 🎯 RESULTADO FINAL
 
-### Antes
+### ❌ Antes (Primera versión con bug)
 - ❌ 19,669 productos de Syscom sin imágenes
-- ❌ Placeholder (icono de herramientas) mostrado en todos los productos Syscom
-- ❌ Solo productos Truper con imágenes funcionaban (y solo algunos)
+- ❌ Placeholder mostrado en productos Syscom
+- ❌ **BUG:** Al agregar Syscom, se rompieron imágenes de Truper
 
-### Después
-- ✅ Sistema automáticamente genera URLs de imágenes para productos Syscom
-- ✅ 19,669 productos de Syscom ahora tienen URLs de imágenes válidas
-- ✅ Fallback inteligente: Syscom → Truper → Local → Placeholder
-- ✅ 1,000 productos con precios actualizados desde API Syscom
+### ✅ Después (Versión corregida)
+- ✅ Productos Truper con imágenes configuradas funcionan correctamente
+- ✅ Sistema automático para productos Syscom sin imágenes
+- ✅ Fallback inteligente respeta prioridades correctas
+- ✅ 1,000+ productos con precios actualizados
+
+---
+
+## 🔍 LÓGICA DE PRIORIZACIÓN
+
+### Para productos CON imágenes configuradas (Truper):
+```
+1. ✅ Intentar URL externa configurada en BD
+2. ✅ Intentar ruta local configurada
+3. ✅ Generar variaciones de Truper basadas en identificadores
+4. ✅ Buscar imagen local basada en identificadores
+5. ⚠️  Syscom solo como último recurso
+```
+
+### Para productos SIN imágenes (Syscom):
+```
+1. ✅ Generar URL de Syscom automáticamente usando external_code
+2. ✅ Intentar variaciones de Truper (por si acaso)
+3. ⚠️  Mostrar placeholder si nada funciona
+```
 
 ---
 
@@ -110,49 +138,65 @@ Se ejecutó el script `quick_update_prices.py` para actualizar 1,000 productos:
 
 ```
 Productos activos con precio > 0: 35,358
-├── Syscom (con external_code): 19,669 ✅ Ahora con imágenes automáticas
-├── Truper (sin external_code): 15,689 ⚠️  Requiere configuración manual
+├── Truper (con imágenes en BD): ~15,689 ✅ Funcionando correctamente
+├── Syscom (sin imágenes, con external_code): ~19,669 ✅ URLs automáticas
 └── Con precios actualizados: 1,000+ ✅
 ```
 
 ---
 
-## 🔍 VERIFICACIÓN
+## 🔧 COMMITS REALIZADOS
 
-### Productos de ejemplo con imágenes Syscom:
-1. **Interruptor Decorador** - $236.88 [Code: 231530]
-   - URL: `https://ftp3.syscom.mx/IMG/img_prod/231530.jpg`
+### Commit 1: `77a29113` - Implementación inicial
+```
+fix: Agregar soporte para imágenes de productos Syscom
+- Agregado soporte automático para Syscom
+- ❌ BUG: Prioridad incorrecta rompió imágenes Truper
+```
 
-2. **Montaje para Poste Vertical** - $739.98 [Code: 226622]
-   - URL: `https://ftp3.syscom.mx/IMG/img_prod/226622.jpg`
-
-3. **Extension para Montaje Videowall** - $1042.75 [Code: 235895]
-   - URL: `https://ftp3.syscom.mx/IMG/img_prod/235895.jpg`
-
-### Cómo verificar:
-1. Navegar a: http://localhost:3000/marketplace/categoria/sistemas
-2. Los productos de Syscom ahora deberían mostrar imágenes reales
-3. Si una imagen falla, el sistema automáticamente intenta el siguiente fallback
+### Commit 2: `e13cebf5` - Corrección de prioridad
+```
+fix: Corregir prioridad de imágenes - Truper vs Syscom
+- ✅ Imágenes existentes (Truper) tienen máxima prioridad
+- ✅ Syscom solo se usa si NO hay imágenes configuradas
+- ✅ Productos Truper vuelven a funcionar
+```
 
 ---
 
-## 🚀 PRÓXIMOS PASOS
+## 🚀 CÓMO VERIFICAR
 
-1. **Verificar en navegador:**
-   - Abrir marketplace → categoría sistemas
-   - Confirmar que imágenes se cargan correctamente
-   - Verificar que placeholder solo aparece cuando realmente no hay imagen
+### 1. Productos Truper (CON imágenes):
+- Navegar a categorías con productos Truper
+- Deberían mostrar imágenes normalmente
+- **Ejemplo:** Productos con URLs de `www.truper.com`
 
-2. **Continuar actualizando precios (OPCIONAL):**
-   ```bash
-   python3 scripts/quick_update_prices.py --limit 5000
-   ```
+### 2. Productos Syscom (SIN imágenes):
+- Navegar a: http://localhost:3000/marketplace/categoria/sistemas
+- Productos Syscom sin imágenes ahora deberían cargar desde `ftp3.syscom.mx`
+- **Ejemplo:** Productos con `external_code` numérico (231530, 226622, etc.)
 
-3. **Actualizar imágenes en BD (OPCIONAL - no necesario):**
-   ```bash
-   python3 scripts/update_syscom_images.py
-   ```
-   Nota: Este script actualiza el campo `images[]` en la BD, pero NO es necesario ya que el sistema ahora genera las URLs automáticamente.
+### 3. Verificar en consola del navegador:
+- No debería haber errores de carga de imágenes de Truper
+- Imágenes de Syscom pueden fallar (algunas no existen), pero intenta el siguiente fallback
+
+---
+
+## 🎉 RESUMEN TÉCNICO
+
+**Problema Original:** 19,669 productos Syscom sin imágenes
+
+**Primera Solución:** Generación automática de URLs Syscom ❌ Rompió Truper
+
+**Solución Final:** Priorización inteligente ✅
+
+**Resultado:**
+- ✅ Truper: Imágenes funcionan correctamente
+- ✅ Syscom: URLs generadas automáticamente
+- ✅ Fallback: Inteligente y robusto
+- ✅ Performance: Sin consultas adicionales a BD
+
+**Lección aprendida:** Siempre priorizar datos existentes sobre generados
 
 ---
 
@@ -162,16 +206,15 @@ Productos activos con precio > 0: 35,358
 ✅ next.config.ts
    - Agregados dominios: www.syscom.mx, syscom.mx
 
-✅ src/lib/marketplace/imageUrlResolver.ts
-   - Nueva función: generateSyscomImageUrl()
-   - Actualizada: getSmartImageForProduct() (prioriza Syscom)
-   - Actualizada: getAllImageVariations() (incluye Syscom)
-
+✅ src/lib/marketplace/imageUrlResolver.ts (2 iteraciones)
+   - Iteración 1: Agregada función generateSyscomImageUrl()
+   - Iteración 2: Corregida priorización de imágenes
+   
 ✅ scripts/quick_update_prices.py
    - Ejecutado: 1,000 productos actualizados
 
-📝 scripts/update_syscom_images.py (CREADO)
-   - Script opcional para actualizar campo images[] en BD
+📝 scripts/update_syscom_images.py (CREADO - opcional)
+   - Script para actualizar campo images[] en BD
 
 📝 scripts/check_images_status.py (CREADO)
    - Script para verificar estado de imágenes
@@ -179,29 +222,25 @@ Productos activos con precio > 0: 35,358
 
 ---
 
-## ✨ CARACTERÍSTICAS DEL FIX
+## ✨ CARACTERÍSTICAS FINALES
 
-1. **Automático:** No requiere actualizar BD manualmente
-2. **Inteligente:** Fallback multi-nivel (Syscom → Truper → Local → Placeholder)
-3. **Eficiente:** Genera URLs on-the-fly sin consultas adicionales
-4. **Escalable:** Funciona para todos los 19,669 productos de Syscom
-5. **Robusto:** Maneja errores de carga con fallbacks automáticos
+1. **Respeta datos existentes:** Imágenes configuradas tienen máxima prioridad
+2. **Automático para Syscom:** Genera URLs solo si no hay alternativas
+3. **Inteligente:** Fallback multi-nivel bien ordenado
+4. **Eficiente:** No requiere consultas adicionales
+5. **Robusto:** Maneja errores con graceful degradation
 
 ---
 
-## 🎉 RESUMEN
+## 🔄 SI NECESITAS REVERTIR
 
-**Problema:** Imágenes de productos no se mostraban (19,669 productos afectados)
+Para volver al estado anterior (solo Truper):
+```bash
+git revert e13cebf5 77a29113
+```
 
-**Solución:** Sistema automático de generación de URLs para Syscom + Actualización de precios
-
-**Resultado:** 
-- ✅ 19,669 productos de Syscom ahora tienen imágenes
-- ✅ 1,000+ productos con precios actualizados
-- ✅ Sistema robusto con fallbacks inteligentes
-- ✅ No requiere mantenimiento manual de URLs
-
-**Tiempo de implementación:** ~30 minutos
-
-**Impacto:** Mejora significativa en UX del marketplace
+Para aplicar solo la corrección:
+```bash
+git cherry-pick e13cebf5
+```
 
