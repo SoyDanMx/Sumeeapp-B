@@ -17,12 +17,12 @@ import { MarketplaceProduct } from "@/types/supabase";
 import { ProductStructuredData } from "./StructuredData";
 import { HybridImageGallery } from "./HybridImageGallery";
 import { ProductPrice } from "./ProductPrice";
+import { useExchangeRate } from "@/hooks/useExchangeRate";
 
 interface ProductModalProps {
     product: MarketplaceProduct;
     isOpen: boolean;
     onClose: () => void;
-    exchangeRate?: { rate: number } | null; // Para conversión USD → MXN
 }
 
 export default function ProductModal({
@@ -31,6 +31,7 @@ export default function ProductModal({
     onClose,
 }: ProductModalProps) {
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
+    const { exchangeRate } = useExchangeRate();
 
     if (!isOpen) return null;
 
@@ -52,18 +53,25 @@ export default function ProductModal({
         const sellerPhone = product.contact_phone || "525636741156";
         const priceToShow = product.price > 0 ? product.price : 0;
         
+        // Convertir precio si es producto de Syscom (tiene external_code)
+        const productAny = product as any;
+        const isSyscomProduct = !!productAny.external_code;
+        let finalPrice = priceToShow;
+        
+        if (isSyscomProduct && exchangeRate && exchangeRate.rate > 0 && priceToShow > 0) {
+            finalPrice = priceToShow * exchangeRate.rate;
+        }
+        
         // Formatear precio en MXN
-        // IMPORTANTE: TODOS los precios (Syscom, Truper, etc.) ya están en MXN
-        // NO se necesita conversión de moneda
         let priceText = "precio a consultar";
-        if (priceToShow > 0) {
-            priceText = `$${priceToShow.toLocaleString("es-MX", {
+        if (finalPrice > 0) {
+            priceText = `$${finalPrice.toLocaleString("es-MX", {
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2,
             })} MXN`;
         }
         
-        const message = `Hola, estoy interesado en "${product.title}" que vi en el Marketplace de Sumee${priceToShow > 0 ? ` por ${priceText}` : ''}. ¿Sigue disponible?`;
+        const message = `Hola, estoy interesado en "${product.title}" que vi en el Marketplace de Sumee${finalPrice > 0 ? ` por ${priceText}` : ''}. ¿Sigue disponible?`;
         return `https://wa.me/${sellerPhone.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`;
     };
 
