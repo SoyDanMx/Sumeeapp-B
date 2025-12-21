@@ -167,25 +167,18 @@ export function extractEnhancedIdentifiers(
  * Obtiene la mejor imagen disponible para un producto con estrategia inteligente.
  * 
  * Prioridad:
- * 1. Imagen de Syscom (si tiene external_code)
- * 2. URL externa existente que funcione
- * 3. Variaciones de URL de Truper generadas
- * 4. Imagen local basada en identificadores
+ * 1. URL externa existente que funcione (imágenes ya configuradas en BD)
+ * 2. Ruta local válida
+ * 3. Imagen de Syscom (si tiene external_code Y no tiene imágenes configuradas)
+ * 4. Variaciones de URL de Truper generadas
+ * 5. Imagen local basada en identificadores
  */
 export function getSmartImageForProduct(
   product: MarketplaceProduct
 ): string | null {
   const images = product.images || [];
 
-  // Paso 0: Si el producto tiene external_code, intentar imagen de Syscom primero
-  if (product.external_code) {
-    const syscomUrl = generateSyscomImageUrl(product.external_code);
-    if (syscomUrl) {
-      return syscomUrl;
-    }
-  }
-
-  // Paso 1: Verificar imágenes existentes
+  // Paso 1: Verificar imágenes existentes PRIMERO (prioridad máxima)
   for (const img of images) {
     if (!img || typeof img !== "string") continue;
 
@@ -209,7 +202,15 @@ export function getSmartImageForProduct(
     }
   }
 
-  // Paso 2: Generar variaciones de URLs de Truper basadas en identificadores
+  // Paso 2: Si NO tiene imágenes configuradas Y tiene external_code, usar Syscom
+  if (product.external_code && (!images || images.length === 0)) {
+    const syscomUrl = generateSyscomImageUrl(product.external_code);
+    if (syscomUrl) {
+      return syscomUrl;
+    }
+  }
+
+  // Paso 3: Generar variaciones de URLs de Truper basadas en identificadores
   const identifiers = extractEnhancedIdentifiers(product);
   if (identifiers.length > 0) {
     // Priorizar el primer identificador (más probable)
@@ -222,12 +223,20 @@ export function getSmartImageForProduct(
     }
   }
 
-  // Paso 3: Buscar imagen local
+  // Paso 4: Buscar imagen local
   if (identifiers.length > 0) {
     for (const id of identifiers) {
       const localPath = `/images/marketplace/truper/${id}.jpg`;
       // Retornar la primera ruta local potencial
       return localPath;
+    }
+  }
+
+  // Paso 5: Como último recurso, si tiene external_code, intentar Syscom
+  if (product.external_code) {
+    const syscomUrl = generateSyscomImageUrl(product.external_code);
+    if (syscomUrl) {
+      return syscomUrl;
     }
   }
 
@@ -239,45 +248,18 @@ export function getSmartImageForProduct(
  * Útil para intentar múltiples URLs en caso de fallo.
  * 
  * Orden de prioridad:
- * 1. Imagen de Syscom (si aplica)
+ * 1. URLs externas existentes (ya configuradas en BD)
  * 2. Rutas locales existentes
- * 3. Rutas locales generadas
- * 4. URLs externas existentes
- * 5. URLs de Truper generadas
+ * 3. Rutas locales generadas (Truper)
+ * 4. URLs de Truper generadas
+ * 5. Imagen de Syscom (solo si no hay otras opciones)
  */
 export function getAllImageVariations(product: MarketplaceProduct): string[] {
   const variations: string[] = [];
   const images = product.images || [];
   const identifiers = extractEnhancedIdentifiers(product);
 
-  // Paso 0: Priorizar imagen de Syscom si existe external_code
-  if (product.external_code) {
-    const syscomUrl = generateSyscomImageUrl(product.external_code);
-    if (syscomUrl) {
-      variations.push(syscomUrl);
-    }
-  }
-
-  // Paso 1: Priorizar rutas locales existentes
-  const localImages = images.filter(
-    (img) => typeof img === "string" && img.trim().startsWith("/images/")
-  );
-  localImages.forEach((img) => {
-    if (typeof img === "string" && img.trim().length > 0) {
-      variations.push(img.trim());
-    }
-  });
-
-  // Paso 2: Rutas locales generadas (más confiables que URLs externas)
-  identifiers.forEach((id) => {
-    variations.push(`/images/marketplace/truper/${id}.jpg`);
-    const sinGuion = id.replace(/-/g, "");
-    if (sinGuion !== id) {
-      variations.push(`/images/marketplace/truper/${sinGuion}.jpg`);
-    }
-  });
-
-  // Paso 3: URLs externas existentes (filtrar URLs rotas conocidas)
+  // Paso 1: Priorizar URLs externas existentes (filtrar URLs rotas conocidas)
   const externalImages = images.filter(
     (img) =>
       typeof img === "string" &&
@@ -287,6 +269,31 @@ export function getAllImageVariations(product: MarketplaceProduct): string[] {
   externalImages.forEach((img) => {
     if (typeof img === "string" && img.trim().length > 0) {
       variations.push(img.trim());
+    }
+  });
+
+  // Paso 2: Rutas locales existentes
+  const localImages = images.filter(
+    (img) => typeof img === "string" && img.trim().startsWith("/images/")
+  );
+  localImages.forEach((img) => {
+    if (typeof img === "string" && img.trim().length > 0) {
+      variations.push(img.trim());
+    }
+  });
+
+  // Paso 3: Rutas locales generadas (más confiables que URLs externas generadas)
+  identifiers.forEach((id) => {
+    const localPath = `/images/marketplace/truper/${id}.jpg`;
+    if (!variations.includes(localPath)) {
+      variations.push(localPath);
+    }
+    const sinGuion = id.replace(/-/g, "");
+    if (sinGuion !== id) {
+      const localPathSinGuion = `/images/marketplace/truper/${sinGuion}.jpg`;
+      if (!variations.includes(localPathSinGuion)) {
+        variations.push(localPathSinGuion);
+      }
     }
   });
 
@@ -300,6 +307,14 @@ export function getAllImageVariations(product: MarketplaceProduct): string[] {
       }
     });
   });
+
+  // Paso 5: Imagen de Syscom como último recurso (solo si tiene external_code y no hay otras variaciones)
+  if (product.external_code && variations.length === 0) {
+    const syscomUrl = generateSyscomImageUrl(product.external_code);
+    if (syscomUrl) {
+      variations.push(syscomUrl);
+    }
+  }
 
   return variations;
 }
