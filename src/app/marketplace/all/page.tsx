@@ -45,7 +45,6 @@ export default function MarketplaceAllPage() {
             filters.conditions.length > 0 ||
             filters.priceRange.min !== null ||
             filters.priceRange.max !== null ||
-            filters.powerType !== null ||
             filters.brands.length > 0
         );
     }, [filters]);
@@ -63,7 +62,6 @@ export default function MarketplaceAllPage() {
         categoryId: filters.categoryId || undefined,
         searchQuery: filters.searchQuery || undefined,
         filters: {
-            powerType: filters.powerType || undefined,
             minPrice: filters.priceRange.min || undefined,
             maxPrice: filters.priceRange.max || undefined,
             condition: filters.conditions.length > 0 ? filters.conditions : undefined,
@@ -151,7 +149,6 @@ export default function MarketplaceAllPage() {
                 onClose={() => setShowMobileFilters(false)}
                 filters={filters}
                 onFiltersChange={setFilters}
-                showPowerType={filters.categoryId ? MARKETPLACE_CATEGORIES.find(c => c.id === filters.categoryId)?.filters?.powerType : true}
                 availableConditions={availableConditions}
                 priceStats={priceStats}
                 products={paginatedProducts}
@@ -205,7 +202,6 @@ export default function MarketplaceAllPage() {
                                         filters.conditions.length,
                                         filters.priceRange.min ? 1 : 0,
                                         filters.priceRange.max ? 1 : 0,
-                                        filters.powerType ? 1 : 0,
                                         filters.brands.length,
                                     ].reduce((a, b) => a + b, 0)}
                                 </span>
@@ -251,7 +247,6 @@ export default function MarketplaceAllPage() {
                             <CategoryFilters
                                 filters={filters}
                                 onFiltersChange={setFilters}
-                                showPowerType={filters.categoryId ? MARKETPLACE_CATEGORIES.find(c => c.id === filters.categoryId)?.filters?.powerType : true}
                                 availableConditions={availableConditions}
                                 priceStats={priceStats}
                                 products={paginatedProducts}

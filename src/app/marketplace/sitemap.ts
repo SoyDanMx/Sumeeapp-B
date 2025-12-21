@@ -50,6 +50,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       .from("marketplace_products")
       .select("id, updated_at")
       .eq("status", "active")
+      .gt("price", 0) // Excluir productos con precio 0
       .is("seller_id", null) // Solo productos oficiales de Sumee
       .order("updated_at", { ascending: false })
       .limit(1000);

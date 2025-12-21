@@ -9,6 +9,43 @@ const authRoutes = ['/login', '/register', '/signup'];
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   
+  // Validar variables de entorno antes de crear el cliente
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  if (!supabaseUrl || !supabaseAnonKey) {
+    console.error('❌ Middleware - Variables de entorno faltantes:');
+    console.error('   NEXT_PUBLIC_SUPABASE_URL:', supabaseUrl ? '✅' : '❌');
+    console.error('   NEXT_PUBLIC_SUPABASE_ANON_KEY:', supabaseAnonKey ? '✅' : '❌');
+    
+    // Retornar respuesta sin crear cliente Supabase
+    return NextResponse.next({
+      request: {
+        headers: request.headers,
+      },
+    });
+  }
+
+  // Validar que la URL sea válida
+  try {
+    const url = new URL(supabaseUrl);
+    if (!['http:', 'https:'].includes(url.protocol)) {
+      console.error('❌ Middleware - NEXT_PUBLIC_SUPABASE_URL debe ser HTTP o HTTPS');
+      return NextResponse.next({
+        request: {
+          headers: request.headers,
+        },
+      });
+    }
+  } catch (error) {
+    console.error('❌ Middleware - NEXT_PUBLIC_SUPABASE_URL no es una URL válida:', supabaseUrl);
+    return NextResponse.next({
+      request: {
+        headers: request.headers,
+      },
+    });
+  }
+  
   let response = NextResponse.next({
     request: {
       headers: request.headers,
@@ -16,8 +53,8 @@ export async function middleware(request: NextRequest) {
   });
 
   const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    supabaseUrl,
+    supabaseAnonKey,
     {
       cookies: {
         get(name: string) {

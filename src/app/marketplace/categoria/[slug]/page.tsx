@@ -5,15 +5,13 @@ import { useParams, useSearchParams } from "next/navigation";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faSearch,
-  faFilter,
-  faBars,
   faTimes,
 } from "@fortawesome/free-solid-svg-icons";
 import Link from "next/link";
 import { MarketplaceProduct } from "@/types/supabase";
 import ProductModal from "@/components/marketplace/ProductModal";
 import { CategoryBreadcrumbs } from "@/components/marketplace/CategoryBreadcrumbs";
-import { CategoryFilters } from "@/components/marketplace/CategoryFilters";
+import WorkingFilters from "@/components/marketplace/WorkingFilters";
 import { SortAndViewControls } from "@/components/marketplace/SortAndViewControls";
 import { ProductGrid } from "@/components/marketplace/ProductGrid";
 import {
@@ -32,9 +30,8 @@ import {
   ViewMode,
 } from "@/lib/marketplace/filters";
 import { useMarketplacePagination } from "@/hooks/useMarketplacePagination";
-import { InfiniteScrollTrigger } from "@/components/marketplace/InfiniteScrollTrigger";
-import { ExchangeRateModal } from "@/components/marketplace/ExchangeRateModal";
 import { useExchangeRate } from "@/hooks/useExchangeRate";
+import { InfiniteScrollTrigger } from "@/components/marketplace/InfiniteScrollTrigger";
 import { filterProductsWithImages } from "@/lib/marketplace/imageFilter";
 
 export default function CategoryPage() {
@@ -43,7 +40,10 @@ export default function CategoryPage() {
   const slug = params.slug as string;
 
   const category = getCategoryBySlug(slug);
+  const isSistemasCategory = slug === 'sistemas'; // Determinar si es la categoría sistemas
+  const { exchangeRate } = useExchangeRate(); // Hook para obtener tasa de cambio
   const [error, setError] = useState<string | null>(null);
+  const [showExchangeRateModal, setShowExchangeRateModal] = useState(false); // Estado para modal de tasa de cambio
   const [filters, setFilters] = useState<MarketplaceFilters>({
     ...DEFAULT_FILTERS,
     categoryId: category?.id || null,
@@ -51,12 +51,6 @@ export default function CategoryPage() {
   });
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<MarketplaceProduct | null>(null);
-  const [showMobileFilters, setShowMobileFilters] = useState(false);
-  const [showExchangeRateModal, setShowExchangeRateModal] = useState(false);
-  
-  // Hook para tasa de cambio (solo para categoría sistemas)
-  const isSistemasCategory = slug === "sistemas";
-  const { exchangeRate, convertToMXN, formatMXN } = useExchangeRate();
 
   // Determinar si hay filtros activos (para forzar carga)
   const hasActiveFilters = useMemo(() => {
@@ -64,14 +58,17 @@ export default function CategoryPage() {
       filters.searchQuery !== "" ||
       filters.categoryId !== null ||
       filters.subcategoryId !== null ||
+      filters.rama !== null ||
+      filters.subrama !== null ||
       filters.conditions.length > 0 ||
+      (filters.brands && filters.brands.length > 0) ||
       filters.priceRange.min !== null ||
-      filters.priceRange.max !== null ||
-      filters.powerType !== null
+      filters.priceRange.max !== null
     );
   }, [filters]);
 
   // Usar hook de paginación con infinite scroll
+  // ✅ Los productos con precio 0 se filtran automáticamente en useMarketplacePagination con .gt("price", 0)
   const {
     products,
     loading,
@@ -86,9 +83,8 @@ export default function CategoryPage() {
       minPrice: filters.priceRange?.min || undefined,
       maxPrice: filters.priceRange?.max || undefined,
       condition: filters.conditions.length > 0 ? filters.conditions : undefined,
-      powerType: filters.powerType || undefined,
     },
-    forceInitialLoad: hasActiveFilters || !!category?.id, // Forzar carga cuando hay categoría o filtros activos
+    forceInitialLoad: hasActiveFilters || !!category?.id,
   });
 
   // Sincronizar estados
@@ -113,15 +109,27 @@ export default function CategoryPage() {
     if (process.env.NODE_ENV === 'development') {
       console.log('🔄 [CATEGORÍA] Filtros actualizados:', {
         subcategoryId: filters.subcategoryId,
+        rama: filters.rama,
+        subrama: filters.subrama,
         categoryId: filters.categoryId,
         conditions: filters.conditions,
+        brands: filters.brands,
         priceRange: filters.priceRange,
-        powerType: filters.powerType,
       });
     }
-  }, [filters.subcategoryId, filters.categoryId, filters.conditions.length, filters.priceRange.min, filters.priceRange.max, filters.powerType]);
+  }, [
+    filters.subcategoryId ?? '',
+    filters.rama ?? '',
+    filters.subrama ?? '',
+    filters.categoryId ?? '',
+    filters.conditions?.length ?? 0,
+    filters.brands?.length ?? 0,
+    filters.priceRange?.min ?? null,
+    filters.priceRange?.max ?? null,
+  ]);
 
   // Aplicar filtros adicionales incluyendo subcategoría (keywords)
+  // ✅ Los productos con precio 0 se filtran automáticamente en applyFilters y filterProductsWithImages
   const filteredProducts = useMemo(() => {
     // Debug en desarrollo
     if (process.env.NODE_ENV === 'development') {
@@ -131,12 +139,34 @@ export default function CategoryPage() {
         categoriaId: category?.id,
         filters: {
           subcategoryId: filters.subcategoryId,
+          rama: filters.rama,
+          subrama: filters.subrama,
           categoryId: filters.categoryId,
           conditions: filters.conditions,
+          brands: filters.brands || [],
           priceRange: filters.priceRange,
-          powerType: filters.powerType,
         },
       });
+      
+      // Si hay rama/subrama seleccionada, mostrar información
+      if (filters.rama || filters.subrama) {
+        const { getRamaById, getSubramaById } = require('@/lib/marketplace/hierarchy');
+        if (filters.subrama && filters.rama) {
+          const subrama = getSubramaById(filters.categoryId || '', filters.rama, filters.subrama);
+          if (subrama) {
+            console.log(`📌 Subrama seleccionada: "${subrama.name}"`, {
+              keywords: subrama.keywords,
+            });
+          }
+        } else if (filters.rama) {
+          const rama = getRamaById(filters.categoryId || '', filters.rama);
+          if (rama) {
+            console.log(`📌 Rama seleccionada: "${rama.name}"`, {
+              keywords: rama.keywords,
+            });
+          }
+        }
+      }
       
       // Si hay subcategoría seleccionada, mostrar información
       if (filters.subcategoryId && filters.categoryId) {
@@ -152,17 +182,38 @@ export default function CategoryPage() {
     
     // Filtrar productos sin imágenes válidas primero
     const productsWithImages = filterProductsWithImages(products);
-    const result = applyFilters(productsWithImages, filters);
+    
+    // Asegurar que categoryId esté en los filtros para que funcione el filtro jerárquico
+    // Si categoryId es un UUID, usar el slug de la categoría para la jerarquía
+    const categoryIdForFilters = filters.categoryId || category?.id || null;
+    const categorySlugForHierarchy = category?.slug || (categoryIdForFilters === category?.id ? slug : null);
+    
+    const filtersWithCategory = {
+      ...filters,
+      categoryId: categoryIdForFilters,
+      // Agregar slug para que el filtro jerárquico funcione
+      categorySlug: categorySlugForHierarchy,
+    };
+    
+    const result = applyFilters(productsWithImages, filtersWithCategory);
     
     // Debug en desarrollo
     if (process.env.NODE_ENV === 'development') {
-      console.log('✅ [CATEGORÍA] Productos después de aplicar filtros:', result.length);
-      if (filters.subcategoryId && result.length === 0 && products.length > 0) {
-        console.warn('⚠️ El filtro de subcategoría filtró todos los productos.');
-        console.warn('⚠️ Esto puede significar que:');
-        console.warn('   1. Las keywords no coinciden con los títulos/descripciones');
-        console.warn('   2. Los productos no tienen las palabras clave esperadas');
-        console.warn('   3. Hay un problema con la búsqueda de keywords');
+      console.log('✅ [CATEGORÍA] Productos después de aplicar filtros:', {
+        antes: productsWithImages.length,
+        despues: result.length,
+        filtrosAplicados: {
+          rama: filters.rama,
+          subrama: filters.subrama,
+          brands: filters.brands?.length || 0,
+          conditions: filters.conditions?.length || 0,
+          priceRange: filters.priceRange,
+        },
+      });
+      
+      if (result.length === 0 && productsWithImages.length > 0) {
+        console.warn('⚠️ Los filtros filtraron todos los productos.');
+        console.warn('⚠️ Verifica que los filtros sean correctos.');
       } else if (products.length === 0) {
         console.warn('⚠️ No hay productos cargados. Verifica que la categoría tenga productos en la BD.');
       }
@@ -171,26 +222,6 @@ export default function CategoryPage() {
     return result;
   }, [products, filters, category]);
 
-  // Calculate stats basado en todos los productos de la categoría (no solo los cargados)
-  // Nota: Para estadísticas precisas, idealmente deberíamos hacer una consulta separada
-  // Por ahora usamos los productos cargados como aproximación
-  const priceStats = useMemo(() => {
-    if (filteredProducts.length === 0) {
-      return { min: 0, max: 0 };
-    }
-    const prices = filteredProducts.map((p) => p.price);
-    return {
-      min: Math.min(...prices),
-      max: Math.max(...prices),
-    };
-  }, [filteredProducts]);
-
-  const availableConditions = useMemo(() => {
-    const conditions = new Set(
-      filteredProducts.map((p) => p.condition)
-    );
-    return Array.from(conditions);
-  }, [filteredProducts]);
 
   const handleProductClick = (product: MarketplaceProduct) => {
     setSelectedProduct(product);
@@ -245,14 +276,8 @@ export default function CategoryPage() {
       <div className="bg-white border-b border-gray-200 sticky top-24 md:top-28 z-20">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center gap-4">
-            {/* Botón filtros móvil */}
-            <button
-              onClick={() => setShowMobileFilters(!showMobileFilters)}
-              className="lg:hidden flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50"
-            >
-              <FontAwesomeIcon icon={faFilter} />
-              <span>Filtros</span>
-            </button>
+            {/* Botón categorías móvil */}
+
 
             {/* Búsqueda */}
             <div className="flex-1 relative">
@@ -276,20 +301,38 @@ export default function CategoryPage() {
 
       {/* Contenido principal */}
       <div className="container mx-auto px-4 py-6">
-        <div className="flex gap-6">
-          {/* Sidebar de filtros - Desktop */}
-          <aside className="hidden lg:block w-64 flex-shrink-0">
-            <div className="sticky top-32 md:top-36">
-              <CategoryFilters
-                filters={filters}
-                onFiltersChange={setFilters}
-                showPowerType={category.filters?.powerType}
-                availableConditions={availableConditions}
-                priceStats={priceStats}
-                products={products}
-              />
-            </div>
-          </aside>
+        <div className="flex gap-4">
+          {/* Sidebar de filtros funcionales - Desktop (solo para categoría sistemas) */}
+          {slug === "sistemas" && (
+            <WorkingFilters
+              products={products}
+              categoryId={category?.id || "sistemas"}
+              filters={{
+                rama: filters.rama || null,
+                subrama: filters.subrama || null,
+                condition: filters.conditions || [],
+                brands: filters.brands || [],
+                priceRange: filters.priceRange || { min: null, max: null },
+              }}
+              onFiltersChange={(newFilters) => {
+                setFilters({
+                  ...filters,
+                  rama: newFilters.rama,
+                  subrama: newFilters.subrama,
+                  conditions: newFilters.condition,
+                  brands: newFilters.brands,
+                  priceRange: newFilters.priceRange,
+                });
+              }}
+              onClearFilters={() => {
+                setFilters({
+                  ...DEFAULT_FILTERS,
+                  categoryId: category?.id || null,
+                  searchQuery: filters.searchQuery,
+                });
+              }}
+            />
+          )}
 
           {/* Contenido principal */}
           <main className="flex-1 min-w-0">
@@ -411,39 +454,8 @@ export default function CategoryPage() {
         </div>
       </div>
 
-      {/* Modal de filtros móvil */}
-      {showMobileFilters && (
-        <>
-          <div
-            className="fixed inset-0 bg-black/50 z-40 lg:hidden"
-            onClick={() => setShowMobileFilters(false)}
-          />
-          <div className="fixed inset-y-0 left-0 w-80 bg-white z-50 lg:hidden overflow-y-auto">
-            <div className="p-4 border-b border-gray-200 flex items-center justify-between">
-              <h2 className="font-bold text-gray-900">Filtros</h2>
-              <button
-                onClick={() => setShowMobileFilters(false)}
-                className="p-2 hover:bg-gray-100 rounded-lg"
-              >
-                <FontAwesomeIcon icon={faTimes} />
-              </button>
-            </div>
-            <div className="p-4">
-              <CategoryFilters
-                filters={filters}
-                onFiltersChange={(newFilters) => {
-                  setFilters(newFilters);
-                  setShowMobileFilters(false);
-                }}
-                showPowerType={category.filters?.powerType}
-                availableConditions={availableConditions}
-                priceStats={priceStats}
-                products={products}
-              />
-            </div>
-          </div>
-        </>
-      )}
+      {/* Sidebar de categorías móvil */}
+
 
       {/* Modal de producto */}
       {selectedProduct && (
@@ -455,13 +467,6 @@ export default function CategoryPage() {
         />
       )}
 
-      {/* Modal de tasa de cambio */}
-      {isSistemasCategory && (
-        <ExchangeRateModal
-          isOpen={showExchangeRateModal}
-          onClose={() => setShowExchangeRateModal(false)}
-        />
-      )}
     </div>
   );
 }

@@ -16,6 +16,7 @@ import { faWhatsapp } from "@fortawesome/free-brands-svg-icons";
 import { MarketplaceProduct } from "@/types/supabase";
 import { ProductStructuredData } from "./StructuredData";
 import { HybridImageGallery } from "./HybridImageGallery";
+import { ProductPrice } from "./ProductPrice";
 
 interface ProductModalProps {
     product: MarketplaceProduct;
@@ -28,19 +29,7 @@ export default function ProductModal({
     product,
     isOpen,
     onClose,
-    exchangeRate,
 }: ProductModalProps) {
-    // Función helper para formatear precio con conversión
-    const formatPrice = (price: number) => {
-        if (exchangeRate) {
-            const mxnPrice = price * exchangeRate.rate;
-            return `$${mxnPrice.toLocaleString("es-MX", {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2,
-            })}`;
-        }
-        return `$${price.toLocaleString("es-MX")}`;
-    };
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
     if (!isOpen) return null;
@@ -61,10 +50,20 @@ export default function ProductModal({
     const getWhatsappLink = () => {
         // Use product-specific contact phone if available, otherwise fallback to support/default number
         const sellerPhone = product.contact_phone || "525636741156";
-        const priceText = exchangeRate 
-            ? formatPrice(product.price)
-            : `$${product.price.toLocaleString("es-MX")}`;
-        const message = `Hola, estoy interesado en "${product.title}" que vi en el Marketplace de Sumee por ${priceText}. ¿Sigue disponible?`;
+        const priceToShow = product.price > 0 ? product.price : 0;
+        
+        // Formatear precio en MXN
+        // IMPORTANTE: TODOS los precios (Syscom, Truper, etc.) ya están en MXN
+        // NO se necesita conversión de moneda
+        let priceText = "precio a consultar";
+        if (priceToShow > 0) {
+            priceText = `$${priceToShow.toLocaleString("es-MX", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+            })} MXN`;
+        }
+        
+        const message = `Hola, estoy interesado en "${product.title}" que vi en el Marketplace de Sumee${priceToShow > 0 ? ` por ${priceText}` : ''}. ¿Sigue disponible?`;
         return `https://wa.me/${sellerPhone.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`;
     };
 
@@ -177,20 +176,25 @@ export default function ProductModal({
                                 {product.title}
                             </h2>
 
+                            {/* SKU */}
+                            {(product as any).sku && (
+                                <div className="mb-3">
+                                    <span className="text-xs text-gray-500 font-mono bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-200">
+                                        SKU: {(product as any).sku}
+                                    </span>
+                                </div>
+                            )}
+
                             {/* Price */}
                             <div className="flex items-baseline gap-3 mb-6">
-                                <span className="text-3xl font-black text-gray-900">
-                                    {formatPrice(product.price)}
-                                </span>
-                                {product.original_price && (
-                                    <span className="text-lg text-gray-400 line-through decoration-red-400">
-                                        {formatPrice(product.original_price)}
-                                    </span>
-                                )}
-                                {product.original_price && (
-                                    <span className="text-sm font-semibold text-green-600 bg-green-50 px-2 py-0.5 rounded">
-                                        -{Math.round((1 - product.price / product.original_price) * 100)}%
-                                    </span>
+                                <ProductPrice product={product} size="lg" />
+                                {product.contact_phone && product.price === 0 && (
+                                    <a 
+                                        href={`tel:${product.contact_phone}`}
+                                        className="text-sm text-indigo-600 hover:underline ml-2"
+                                    >
+                                        📞 {product.contact_phone}
+                                    </a>
                                 )}
                             </div>
 

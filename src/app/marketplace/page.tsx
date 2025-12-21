@@ -71,8 +71,7 @@ export default function MarketplacePage() {
       filters.subcategoryId !== null ||
       filters.conditions.length > 0 ||
       filters.priceRange.min !== null ||
-      filters.priceRange.max !== null ||
-      filters.powerType !== null
+      filters.priceRange.max !== null
     );
   }, [filters]);
   
@@ -90,7 +89,6 @@ export default function MarketplacePage() {
     categoryId: filters.categoryId || undefined,
     searchQuery: filters.searchQuery || undefined,
     filters: {
-      powerType: filters.powerType || undefined,
       minPrice: filters.priceRange.min || undefined,
       maxPrice: filters.priceRange.max || undefined,
       condition: filters.conditions.length > 0 ? filters.conditions : undefined,
@@ -108,8 +106,9 @@ export default function MarketplacePage() {
           // Luego seleccionaremos los mejores basados en tracción
           const { data, error } = await supabase
             .from("marketplace_products")
-            .select("*")
+            .select("*, external_code, sku")
             .eq("status", "active")
+            // .gt("price", 0) // ⚠️ TEMPORALMENTE DESHABILITADO
             .order("views_count", { ascending: false }) // Ordenar por vistas primero para obtener productos con más tracción
             .limit(200); // Cargar más para tener mejor muestra para scoring
 
@@ -147,8 +146,9 @@ export default function MarketplacePage() {
           try {
             const { data: fallbackData, error: fallbackError } = await supabase
               .from("marketplace_products")
-              .select("*")
+              .select("*, external_code, sku")
               .eq("status", "active")
+              // .gt("price", 0) // ⚠️ TEMPORALMENTE DESHABILITADO
               .order("created_at", { ascending: false })
               .limit(24);
             
@@ -241,7 +241,8 @@ export default function MarketplacePage() {
         const { count: productsCount, error: productsError } = await supabase
           .from("marketplace_products")
           .select("*", { count: "exact", head: true })
-          .eq("status", "active");
+          .eq("status", "active")
+          .gt("price", 0); // Excluir productos con precio 0
 
         if (productsError) {
           console.warn("Error counting total products:", productsError);
@@ -254,6 +255,7 @@ export default function MarketplacePage() {
           .from("marketplace_products")
           .select("seller_id", { count: "exact", head: true })
           .eq("status", "active")
+          .gt("price", 0) // Excluir productos con precio 0
           .not("seller_id", "is", null);
 
         if (sellersError) {
@@ -264,6 +266,7 @@ export default function MarketplacePage() {
             .from("marketplace_products")
             .select("seller_id")
             .eq("status", "active")
+            .gt("price", 0) // Excluir productos con precio 0
             .not("seller_id", "is", null);
 
           if (!uniqueError && uniqueSellers) {
@@ -298,7 +301,8 @@ export default function MarketplacePage() {
             .from("marketplace_products")
             .select("*", { count: "exact", head: true })
             .eq("category_id", category.id)
-            .eq("status", "active");
+            .eq("status", "active")
+            .gt("price", 0); // Excluir productos con precio 0
 
           if (countError) {
             console.warn(`Error counting products for category ${category.slug}:`, countError);
@@ -392,7 +396,6 @@ export default function MarketplacePage() {
         onClose={() => setShowMobileFilters(false)}
         filters={filters}
         onFiltersChange={setFilters}
-        showPowerType={filters.categoryId ? MARKETPLACE_CATEGORIES.find(c => c.id === filters.categoryId)?.filters?.powerType : false}
         availableConditions={availableConditions}
         priceStats={priceStats}
       />
@@ -499,7 +502,6 @@ export default function MarketplacePage() {
                 <CategoryFilters
                   filters={filters}
                   onFiltersChange={setFilters}
-                  showPowerType={filters.categoryId ? MARKETPLACE_CATEGORIES.find(c => c.id === filters.categoryId)?.filters?.powerType : false}
                   availableConditions={availableConditions}
                   priceStats={priceStats}
                 />
@@ -535,9 +537,9 @@ export default function MarketplacePage() {
                   >
                     <FontAwesomeIcon icon={faFilter} />
                     <span>Filtros</span>
-                    {(filters.conditions.length > 0 || filters.priceRange.min !== null || filters.priceRange.max !== null || filters.powerType) && (
+                    {(filters.conditions.length > 0 || filters.priceRange.min !== null || filters.priceRange.max !== null) && (
                       <span className="bg-indigo-600 text-white text-xs px-2 py-0.5 rounded-full font-bold">
-                        {[filters.conditions.length, filters.priceRange.min ? 1 : 0, filters.priceRange.max ? 1 : 0, filters.powerType ? 1 : 0].reduce((a, b) => a + b, 0)}
+                        {[filters.conditions.length, filters.priceRange.min ? 1 : 0, filters.priceRange.max ? 1 : 0].reduce((a, b) => a + b, 0)}
                           </span>
                         )}
                   </button>

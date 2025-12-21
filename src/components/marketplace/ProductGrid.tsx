@@ -14,12 +14,12 @@ import { MarketplaceProduct } from "@/types/supabase";
 import { ViewMode } from "@/lib/marketplace/filters";
 import { filterProductsWithImages } from "@/lib/marketplace/imageFilter";
 import { HybridImage } from "./HybridImage";
+import { ProductPrice } from "./ProductPrice";
 
 interface ProductGridProps {
   products: MarketplaceProduct[];
   viewMode: ViewMode;
   onProductClick: (product: MarketplaceProduct) => void;
-  exchangeRate?: { rate: number } | null; // Para conversión USD → MXN
 }
 
 const getConditionLabel = (condition: string) => {
@@ -46,19 +46,7 @@ export function ProductGrid({
   products,
   viewMode,
   onProductClick,
-  exchangeRate,
 }: ProductGridProps) {
-  // Función helper para formatear precio con conversión
-  const formatPrice = (price: number) => {
-    if (exchangeRate) {
-      const mxnPrice = price * exchangeRate.rate;
-      return `$${mxnPrice.toLocaleString("es-MX", {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-      })}`;
-    }
-    return `$${Number(price).toLocaleString("es-MX")}`;
-  };
   // Filtrar productos sin imágenes válidas y duplicados por ID antes de renderizar
   const uniqueProducts = useMemo(() => {
     // Primero filtrar productos sin imágenes válidas
@@ -130,6 +118,15 @@ export function ProductGrid({
                         {product.title}
                       </h3>
 
+                      {/* SKU */}
+                      {(product as any).sku && (
+                        <div className="mb-2">
+                          <span className="text-xs text-gray-500 font-mono bg-gray-50 px-2 py-0.5 rounded border border-gray-200">
+                            SKU: {(product as any).sku}
+                          </span>
+                        </div>
+                      )}
+
                       <p className="text-sm text-gray-600 line-clamp-2 mb-3">
                         {product.description}
                       </p>
@@ -153,14 +150,7 @@ export function ProductGrid({
 
                     {/* Precio */}
                     <div className="flex-shrink-0 text-right">
-                      <div className="text-2xl font-black text-indigo-600 mb-1">
-                        {formatPrice(product.price)}
-                      </div>
-                      {product.original_price && (
-                        <div className="text-sm text-gray-400 line-through">
-                          {formatPrice(product.original_price)}
-                        </div>
-                      )}
+                      <ProductPrice product={product} size="lg" />
                     </div>
                   </div>
                 </div>
@@ -241,16 +231,18 @@ export function ProductGrid({
                 {product.title}
               </h3>
 
+              {/* SKU */}
+              {(product as any).sku && (
+                <div className="mb-2">
+                  <span className="text-xs text-gray-500 font-mono bg-gray-50 px-2 py-0.5 rounded border border-gray-200">
+                    SKU: {(product as any).sku}
+                  </span>
+                </div>
+              )}
+
               {/* Precio */}
               <div className="flex items-baseline gap-2 mb-2 sm:mb-3">
-                <span className="text-lg sm:text-xl md:text-2xl font-black text-indigo-600">
-                  {formatPrice(product.price)}
-                </span>
-                {product.original_price && (
-                  <span className="text-xs sm:text-sm text-gray-400 line-through decoration-red-300">
-                    {formatPrice(product.original_price)}
-                  </span>
-                )}
+                <ProductPrice product={product} size="md" />
               </div>
 
               {/* Vendedor */}

@@ -44,6 +44,8 @@ const nextConfig = {
     minimumCacheTTL: 60,
     dangerouslyAllowSVG: true,
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
+    // Configurar qualities para evitar advertencias en Next.js 16
+    qualities: [75, 85, 90, 100],
   },
 
   eslint: {

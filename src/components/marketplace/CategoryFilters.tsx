@@ -16,7 +16,6 @@ import { extractBrandsFromProducts, getAvailableBrands } from "@/lib/marketplace
 interface CategoryFiltersProps {
   filters: MarketplaceFilters;
   onFiltersChange: (filters: MarketplaceFilters) => void;
-  showPowerType?: boolean;
   availableConditions?: string[];
   priceStats?: { min: number; max: number };
   products?: Array<{ title: string; description?: string }>; // Para extraer marcas disponibles
@@ -41,7 +40,6 @@ const CONDITION_COLORS: Record<string, string> = {
 export function CategoryFilters({
   filters,
   onFiltersChange,
-  showPowerType = false,
   availableConditions = [],
   priceStats,
   products = [],
@@ -51,7 +49,6 @@ export function CategoryFilters({
     condition: true,
     brands: true,
     price: true,
-    powerType: showPowerType,
   });
   
   // Extraer marcas disponibles de los productos
@@ -95,13 +92,6 @@ export function CategoryFilters({
     });
   };
 
-  const handlePowerTypeChange = (powerType: string | null) => {
-    onFiltersChange({
-      ...filters,
-      powerType: powerType === filters.powerType ? null : powerType,
-    });
-  };
-
   const handleSubcategoryChange = (subcategoryId: string | null) => {
     // Si se selecciona una subcategoría, asegurar que la categoría también esté seleccionada
     // Esto es necesario para que se carguen productos de esa categoría
@@ -135,7 +125,6 @@ export function CategoryFilters({
       ...filters,
       conditions: [],
       priceRange: { min: null, max: null },
-      powerType: null,
       subcategoryId: null,
       brands: [],
     });
@@ -145,7 +134,6 @@ export function CategoryFilters({
     filters.conditions.length > 0 ||
     filters.priceRange.min !== null ||
     filters.priceRange.max !== null ||
-    filters.powerType !== null ||
     filters.subcategoryId !== null ||
     filters.brands.length > 0;
 
@@ -364,44 +352,6 @@ export function CategoryFilters({
           </div>
         )}
 
-        {/* Tipo de Energía */}
-        {showPowerType && (
-          <div>
-            <button
-              onClick={() => toggleSection("powerType")}
-              className="w-full px-4 py-3 flex items-center justify-between hover:bg-gray-50 transition-colors"
-            >
-              <span className="font-medium text-gray-900">Tipo de Energía</span>
-              <FontAwesomeIcon
-                icon={expandedSections.powerType ? faChevronUp : faChevronDown}
-                className="text-gray-400 text-xs"
-              />
-            </button>
-            {expandedSections.powerType && (
-              <div className="px-4 pb-4 space-y-2">
-                {[
-                  { value: "electric", label: "Eléctrica" },
-                  { value: "cordless", label: "Inalámbrica" },
-                  { value: "electric_all", label: "Todas las eléctricas" },
-                ].map((option) => (
-                  <label
-                    key={option.value}
-                    className="flex items-center gap-2 cursor-pointer"
-                  >
-                    <input
-                      type="radio"
-                      name="powerType"
-                      checked={filters.powerType === option.value}
-                      onChange={() => handlePowerTypeChange(option.value)}
-                      className="w-4 h-4 text-indigo-600 border-gray-300 focus:ring-indigo-500"
-                    />
-                    <span className="text-sm text-gray-700">{option.label}</span>
-                  </label>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
       </div>
     </div>
   );

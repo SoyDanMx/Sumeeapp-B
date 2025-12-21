@@ -21,6 +21,8 @@ import { MarketplaceProduct } from '@/types/supabase';
 import { ProductStructuredData } from '@/components/marketplace/StructuredData';
 import { getCategoryById } from '@/lib/marketplace/categories';
 import { HybridImageGallery } from '@/components/marketplace/HybridImageGallery';
+import { ProductPrice } from '@/components/marketplace/ProductPrice';
+import { useExchangeRate } from '@/hooks/useExchangeRate';
 
 export default function ProductDetailPage() {
   const params = useParams();
@@ -50,6 +52,7 @@ export default function ProductDetailPage() {
           `)
           .eq('id', productId)
           .eq('status', 'active')
+          .gt('price', 0) // Excluir productos con precio 0
           .single();
 
         if (fetchError) {
@@ -234,17 +237,31 @@ export default function ProductDetailPage() {
                 )}
               </div>
               <h1 className="text-3xl font-bold text-gray-900 mb-2">{product.title}</h1>
+              
+              {/* SKU */}
+              {(product as any).sku && (
+                <div className="mb-3">
+                  <span className="text-sm text-gray-500 font-mono bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-200">
+                    SKU: {(product as any).sku}
+                  </span>
+                </div>
+              )}
             </div>
 
             {/* Precio */}
             <div className="flex items-baseline gap-3">
-              <span className="text-4xl font-black text-indigo-600">
-                ${Number(product.price).toLocaleString('es-MX')}
-              </span>
-              {product.original_price && product.original_price > product.price && (
-                <span className="text-xl text-gray-400 line-through decoration-red-300">
-                  ${Number(product.original_price).toLocaleString('es-MX')}
-                </span>
+              <ProductPrice 
+                product={product} 
+                size="lg" 
+                autoSync={true}
+              />
+              {product.contact_phone && product.price === 0 && (
+                <a 
+                  href={`tel:${product.contact_phone}`}
+                  className="text-base text-indigo-600 hover:underline"
+                >
+                  📞 {product.contact_phone}
+                </a>
               )}
             </div>
 

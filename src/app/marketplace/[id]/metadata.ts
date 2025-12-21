@@ -31,6 +31,7 @@ export async function generateMetadata({
       `)
       .eq("id", id)
       .eq("status", "active")
+      .gt("price", 0) // Excluir productos con precio 0
       .single();
 
     if (error || !product) {
@@ -47,7 +48,7 @@ export async function generateMetadata({
     const productUrl = `${baseUrl}/marketplace/${product.id}`;
     const description = product.description
       ? product.description.substring(0, 160)
-      : `Compra ${product.title} en Sumee App. Precio: $${product.price.toLocaleString("es-MX")} MXN. Marketplace profesional de herramientas y equipos.`;
+      : `Compra ${product.title} en Sumee App${product.price > 0 ? `. Precio: $${product.price.toLocaleString("es-MX")} MXN` : ""}. Marketplace profesional de herramientas y equipos.`;
 
     // Manejar category que puede ser array o objeto
     const categoryName = Array.isArray(product.category) && product.category.length > 0
@@ -55,7 +56,7 @@ export async function generateMetadata({
       : (product.category as any)?.name;
 
     return {
-      title: `${product.title} - $${product.price.toLocaleString("es-MX")} MXN | Marketplace Sumee App`,
+      title: `${product.title}${product.price > 0 ? ` - $${product.price.toLocaleString("es-MX")} MXN` : ""} | Marketplace Sumee App`,
       description,
       keywords: [
         product.title.toLowerCase(),
@@ -83,7 +84,7 @@ export async function generateMetadata({
       },
       twitter: {
         card: "summary_large_image",
-        title: `${product.title} - $${product.price.toLocaleString("es-MX")} MXN`,
+        title: `${product.title}${product.price > 0 ? ` - $${product.price.toLocaleString("es-MX")} MXN` : ""}`,
         description,
         images: [imageUrl],
       },

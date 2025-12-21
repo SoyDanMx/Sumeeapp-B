@@ -9,6 +9,17 @@
 
 import { MarketplaceProduct } from "@/types/supabase";
 
+// URLs rotas conocidas - evitar generar o usar estas URLs
+const BROKEN_TRUPER_URLS = new Set([
+  "https://www.truper.com/media/import/imagenes/SK4.jpg",
+  "https://www.truper.com/media/import/imagenes/SK2.jpg",
+  "https://www.truper.com/media/import/imagenes/SK-4.jpg",
+  "https://www.truper.com/media/import/imagenes/SK-2.jpg",
+  "https://www.truper.com/media/import/imagenes/4.jpg",
+  "https://www.truper.com/media/import/imagenes/2.jpg",
+  "https://www.truper.com/media/import/imagenes/MOT5020.jpg",
+]);
+
 /**
  * Genera todas las variaciones posibles de URL de Truper para un identificador.
  * Ejemplo: "PET-15X" genera:
@@ -16,36 +27,59 @@ import { MarketplaceProduct } from "@/types/supabase";
  * - https://www.truper.com/media/import/imagenes/PET15X.jpg
  * - https://www.truper.com/media/import/imagenes/PET-15.jpg
  * - https://www.truper.com/media/import/imagenes/PET15.jpg
+ * 
+ * Filtra automáticamente URLs rotas conocidas.
  */
 export function generateTruperUrlVariations(identifier: string): string[] {
   const baseUrl = "https://www.truper.com/media/import/imagenes";
   const variations: string[] = [];
 
   // Variación original
-  variations.push(`${baseUrl}/${identifier}.jpg`);
+  const original = `${baseUrl}/${identifier}.jpg`;
+  if (!BROKEN_TRUPER_URLS.has(original)) {
+    variations.push(original);
+  }
 
   // Sin guiones
   const sinGuion = identifier.replace(/-/g, "");
   if (sinGuion !== identifier) {
-    variations.push(`${baseUrl}/${sinGuion}.jpg`);
+    const urlSinGuion = `${baseUrl}/${sinGuion}.jpg`;
+    if (!BROKEN_TRUPER_URLS.has(urlSinGuion)) {
+      variations.push(urlSinGuion);
+    }
   }
 
   // Sin última letra (si tiene)
   if (/[A-Z]$/.test(identifier)) {
     const sinUltimaLetra = identifier.slice(0, -1);
-    variations.push(`${baseUrl}/${sinUltimaLetra}.jpg`);
+    const urlSinUltimaLetra = `${baseUrl}/${sinUltimaLetra}.jpg`;
+    if (!BROKEN_TRUPER_URLS.has(urlSinUltimaLetra)) {
+      variations.push(urlSinUltimaLetra);
+    }
     const sinUltimaLetraSinGuion = sinUltimaLetra.replace(/-/g, "");
     if (sinUltimaLetraSinGuion !== sinUltimaLetra) {
-      variations.push(`${baseUrl}/${sinUltimaLetraSinGuion}.jpg`);
+      const urlSinUltimaLetraSinGuion = `${baseUrl}/${sinUltimaLetraSinGuion}.jpg`;
+      if (!BROKEN_TRUPER_URLS.has(urlSinUltimaLetraSinGuion)) {
+        variations.push(urlSinUltimaLetraSinGuion);
+      }
     }
   }
 
-  // Solo parte numérica (si tiene guión)
+  // Solo parte numérica (si tiene guión) - solo si el número es > 2 dígitos para evitar URLs genéricas rotas
   const match = identifier.match(/^([A-Z]+)-?(\d+)/);
   if (match) {
     const [, letras, numeros] = match;
-    variations.push(`${baseUrl}/${letras}${numeros}.jpg`);
-    variations.push(`${baseUrl}/${numeros}.jpg`);
+    const urlLetrasNumeros = `${baseUrl}/${letras}${numeros}.jpg`;
+    if (!BROKEN_TRUPER_URLS.has(urlLetrasNumeros)) {
+      variations.push(urlLetrasNumeros);
+    }
+    // Solo agregar variación numérica si tiene más de 2 dígitos (evitar "4.jpg", "2.jpg" que están rotas)
+    if (numeros.length > 2) {
+      const urlSoloNumeros = `${baseUrl}/${numeros}.jpg`;
+      if (!BROKEN_TRUPER_URLS.has(urlSoloNumeros)) {
+        variations.push(urlSoloNumeros);
+      }
+    }
   }
 
   return [...new Set(variations)]; // Eliminar duplicados
@@ -135,11 +169,8 @@ export function getSmartImageForProduct(
       (trimmedImg.startsWith("http://") || trimmedImg.startsWith("https://")) &&
       trimmedImg.length > 7
     ) {
-      // URLs rotas conocidas
-      const BROKEN_URLS = new Set([
-        "https://www.truper.com/media/import/imagenes/SK4.jpg",
-      ]);
-      if (!BROKEN_URLS.has(trimmedImg)) {
+      // URLs rotas conocidas - usar la constante compartida
+      if (!BROKEN_TRUPER_URLS.has(trimmedImg)) {
         return trimmedImg; // Intentar esta primero
       }
     }
@@ -209,11 +240,12 @@ export function getAllImageVariations(product: MarketplaceProduct): string[] {
     }
   });
 
-  // Paso 3: URLs externas existentes
+  // Paso 3: URLs externas existentes (filtrar URLs rotas conocidas)
   const externalImages = images.filter(
     (img) =>
       typeof img === "string" &&
-      (img.trim().startsWith("http://") || img.trim().startsWith("https://"))
+      (img.trim().startsWith("http://") || img.trim().startsWith("https://")) &&
+      !BROKEN_TRUPER_URLS.has(img.trim())
   );
   externalImages.forEach((img) => {
     if (typeof img === "string" && img.trim().length > 0) {
@@ -221,11 +253,12 @@ export function getAllImageVariations(product: MarketplaceProduct): string[] {
     }
   });
 
-  // Paso 4: Variaciones de URL de Truper generadas
+  // Paso 4: Variaciones de URL de Truper generadas (ya filtradas por generateTruperUrlVariations)
   identifiers.forEach((id) => {
     const truperUrls = generateTruperUrlVariations(id);
     truperUrls.forEach((url) => {
-      if (!variations.includes(url)) {
+      // Verificar doblemente que no esté en la lista de rotas y no esté duplicada
+      if (!BROKEN_TRUPER_URLS.has(url) && !variations.includes(url)) {
         variations.push(url);
       }
     });

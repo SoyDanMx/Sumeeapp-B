@@ -31,6 +31,10 @@ export interface MarketplaceFilters {
   // Subcategoría (tipo de equipo específico)
   subcategoryId: string | null;
   
+  // Filtro jerárquico (rama y subrama)
+  rama: string | null; // ID de la rama (ej: "videovigilancia")
+  subrama: string | null; // ID de la subrama (ej: "camaras")
+  
   // Condición
   conditions: string[]; // ["nuevo", "usado_excelente", etc.]
   
@@ -40,9 +44,6 @@ export interface MarketplaceFilters {
   // Ubicación
   locationCity: string | null;
   locationZone: string | null;
-  
-  // Tipo de energía (para herramientas eléctricas)
-  powerType: string | null; // "electric", "cordless", "electric_all"
   
   // Marcas
   brands: string[]; // ["HIKVISION", "KLEIN", etc.]
@@ -62,11 +63,12 @@ export const DEFAULT_FILTERS: MarketplaceFilters = {
   searchQuery: "",
   categoryId: null,
   subcategoryId: null,
+  rama: null,
+  subrama: null,
   conditions: [],
   priceRange: { min: null, max: null },
   locationCity: null,
   locationZone: null,
-  powerType: null,
   brands: [],
   sortBy: "relevance",
   viewMode: "grid",
@@ -119,6 +121,85 @@ export function applyFilters<T extends {
       filtered = filtered.filter((p) => p.category_id === filters.categoryId);
     }
     // Si es slug, asumimos que los productos ya vienen filtrados desde la BD
+  }
+
+  // Filtro jerárquico: rama y subrama (filtrado por palabras clave en título/descripción)
+  if (filters.rama || filters.subrama) {
+    try {
+      const { getRamaById, getSubramaById } = require('@/lib/marketplace/hierarchy');
+      
+      // Obtener categoryId para jerarquía - usar categorySlug si está disponible
+      let categoryIdForHierarchy: string | null = null;
+      
+      const filtersAny = filters as any;
+      if (filtersAny.categorySlug) {
+        categoryIdForHierarchy = filtersAny.categorySlug;
+      } else if (filters.categoryId) {
+        // Si categoryId es un UUID, usar "sistemas" como fallback
+        const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(filters.categoryId);
+        categoryIdForHierarchy = isUUID ? "sistemas" : filters.categoryId;
+      } else {
+        categoryIdForHierarchy = "sistemas"; // Fallback
+      }
+      
+      console.log('🔍 [FILTRO JERÁRQUICO] Iniciando filtrado:', {
+        rama: filters.rama,
+        subrama: filters.subrama,
+        categoryIdForHierarchy,
+        categoryId: filters.categoryId,
+        productosAntes: filtered.length,
+      });
+      
+      let keywordsToMatch: string[] = [];
+      
+      if (filters.subrama && filters.rama && categoryIdForHierarchy) {
+        const subrama = getSubramaById(categoryIdForHierarchy, filters.rama, filters.subrama);
+        console.log('🔍 [FILTRO JERÁRQUICO] Subrama obtenida:', subrama);
+        if (subrama?.keywords?.length > 0) {
+          keywordsToMatch = subrama.keywords.map(k => k.toLowerCase());
+        }
+      } else if (filters.rama && categoryIdForHierarchy) {
+        const rama = getRamaById(categoryIdForHierarchy, filters.rama);
+        console.log('🔍 [FILTRO JERÁRQUICO] Rama obtenida:', rama);
+        if (rama?.keywords?.length > 0) {
+          keywordsToMatch = rama.keywords.map(k => k.toLowerCase());
+        }
+      }
+      
+      console.log('🔍 [FILTRO JERÁRQUICO] Keywords a buscar:', keywordsToMatch);
+      
+      if (keywordsToMatch.length > 0) {
+        const beforeCount = filtered.length;
+        filtered = filtered.filter((p) => {
+          const titleLower = (p.title || "").toLowerCase();
+          const descLower = (p.description || "").toLowerCase();
+          const combinedText = `${titleLower} ${descLower}`;
+          
+          // Verificar si alguna keyword está presente
+          const matches = keywordsToMatch.some((keyword) => combinedText.includes(keyword));
+          
+          return matches;
+        });
+        
+        console.log(`✅ [FILTRO JERÁRQUICO] Aplicado:`, {
+          rama: filters.rama,
+          subrama: filters.subrama,
+          categoryIdForHierarchy,
+          keywords: keywordsToMatch.slice(0, 10),
+          totalKeywords: keywordsToMatch.length,
+          antes: beforeCount,
+          despues: filtered.length,
+        });
+      } else {
+        console.warn('⚠️ [FILTRO JERÁRQUICO] No se encontraron keywords:', {
+          rama: filters.rama,
+          subrama: filters.subrama,
+          categoryIdForHierarchy,
+        });
+      }
+    } catch (error) {
+      console.error('❌ [FILTRO JERÁRQUICO] Error:', error);
+    }
   }
 
   // Subcategoría (filtrado por palabras clave en título/descripción)
@@ -263,6 +344,9 @@ export function applyFilters<T extends {
     filtered = filtered.filter((p) => filters.conditions.includes(p.condition));
   }
 
+  // ⚠️ FILTRO TEMPORALMENTE DESHABILITADO: Permitir productos con precio 0
+  // filtered = filtered.filter((p) => p.price > 0);
+
   // Rango de precio
   if (filters.priceRange.min !== null) {
     filtered = filtered.filter((p) => p.price >= filters.priceRange.min!);
@@ -279,18 +363,7 @@ export function applyFilters<T extends {
     filtered = filtered.filter((p) => p.location_zone === filters.locationZone);
   }
 
-  // Tipo de energía
-  if (filters.powerType) {
-    if (filters.powerType === "electric_all") {
-      filtered = filtered.filter(
-        (p) => p.power_type === "electric" || p.power_type === "cordless"
-      );
-    } else {
-      filtered = filtered.filter((p) => p.power_type === filters.powerType);
-    }
-  }
-
-  // Marcas
+  // Marcas - Filtrado más preciso
   if (filters.brands.length > 0) {
     filtered = filtered.filter((p) => {
       const titleUpper = (p.title || "").toUpperCase();
@@ -300,7 +373,18 @@ export function applyFilters<T extends {
       // Verificar si alguna marca está presente en título o descripción
       return filters.brands.some((brand) => {
         const brandUpper = brand.toUpperCase();
-        return combinedText.includes(brandUpper);
+        
+        // Buscar marca como palabra completa (no como substring dentro de otra palabra)
+        const brandRegex = new RegExp(`\\b${brandUpper.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
+        
+        // También buscar marca al inicio o final del título/descripción
+        return (
+          brandRegex.test(combinedText) ||
+          titleUpper.startsWith(brandUpper) ||
+          titleUpper.includes(` ${brandUpper} `) ||
+          titleUpper.endsWith(` ${brandUpper}`) ||
+          descUpper.includes(brandUpper)
+        );
       });
     });
   }

@@ -77,8 +77,15 @@ export function hasValidImages(product: MarketplaceProduct): boolean {
 
 /**
  * Filtra un array de productos para mostrar solo aquellos con imágenes válidas.
+ * ⚠️ También excluye productos con precio 0 como medida de seguridad adicional.
  */
 export function filterProductsWithImages(products: MarketplaceProduct[]): MarketplaceProduct[] {
-  return products.filter(hasValidImages);
+  return products.filter((product) => {
+    // ⚠️ FILTRO CRÍTICO: Excluir productos con precio 0 (medida de seguridad adicional)
+    if (product.price <= 0) {
+      return false;
+    }
+    return hasValidImages(product);
+  });
 }
 

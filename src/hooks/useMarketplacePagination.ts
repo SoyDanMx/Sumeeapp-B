@@ -22,7 +22,6 @@ export interface UseMarketplacePaginationOptions {
     minPrice?: number | null;
     maxPrice?: number | null;
     condition?: string[];
-    powerType?: string | null;
   };
   forceInitialLoad?: boolean; // Forzar carga inicial incluso sin filtros
 }
@@ -111,11 +110,14 @@ export function useMarketplacePagination(options: UseMarketplacePaginationOption
           .from("marketplace_products")
           .select(
             `
-            *
+            *,
+            external_code,
+            sku
           `,
             { count: "exact" }
           )
           .eq("status", "active");
+          // .gt("price", 0); // ⚠️ TEMPORALMENTE DESHABILITADO - Permitir productos sin precio
 
         // Aplicar filtros
         if (categoryUUID) {
@@ -127,6 +129,8 @@ export function useMarketplacePagination(options: UseMarketplacePaginationOption
           // Sintaxis correcta para Supabase: campo.operador.valor
           const trimmedQuery = searchQuery.trim();
           // Usar la sintaxis correcta de Supabase para .or() con ilike
+          // Nota: external_code y sku se agregarán después de ejecutar la migración
+          // Por ahora solo buscamos en title y description para evitar errores
           query = query.or(`title.ilike.%${trimmedQuery}%,description.ilike.%${trimmedQuery}%`);
         }
 
@@ -142,13 +146,6 @@ export function useMarketplacePagination(options: UseMarketplacePaginationOption
           query = query.in("condition", currentFilters.condition);
         }
 
-        if (currentFilters?.powerType) {
-          if (currentFilters.powerType === "electric_all") {
-            query = query.or("power_type.eq.electric,power_type.eq.cordless");
-          } else {
-            query = query.eq("power_type", currentFilters.powerType);
-          }
-        }
 
         // Ordenar y paginar
         const queryResult = await query
@@ -299,10 +296,9 @@ export function useMarketplacePagination(options: UseMarketplacePaginationOption
       minPrice: filters?.minPrice,
       maxPrice: filters?.maxPrice,
       condition: filters?.condition ? [...filters.condition].sort().join(',') : null,
-      powerType: filters?.powerType,
       forceInitialLoad,
     });
-  }, [categoryId, searchQuery, filters?.minPrice, filters?.maxPrice, filters?.condition, filters?.powerType, forceInitialLoad]);
+  }, [categoryId, searchQuery, filters?.minPrice, filters?.maxPrice, filters?.condition, forceInitialLoad]);
   
   useEffect(() => {
     // Evitar ejecución en el mount inicial si no hay filtros Y no se fuerza la carga

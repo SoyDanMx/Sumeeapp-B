@@ -25,7 +25,8 @@ export async function generateMetadata({
         .from("marketplace_products")
         .select("*", { count: "exact", head: true })
         .eq("category_id", category.id)
-        .eq("status", "active");
+        .eq("status", "active")
+        .gt("price", 0); // Excluir productos con precio 0
 
       productCount = count || undefined;
     }

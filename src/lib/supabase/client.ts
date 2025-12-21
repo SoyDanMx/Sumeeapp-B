@@ -4,13 +4,73 @@
 import { createClient } from "@supabase/supabase-js";
 
 // Asegúrate de que tienes estas variables en tu archivo .env.local
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+// Leer variables de entorno con múltiples intentos para evitar problemas de caché de Turbopack
+let supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+let supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-// Verifica que las variables de entorno existan
+// Valores placeholder que no son válidos
+const INVALID_PLACEHOLDERS = ['tu_url', 'tu_url_de_supabase', 'https://tu-proyecto.supabase.co', 'TU_PROJECT_REF'];
+
+// Si estamos en el cliente y las variables son placeholders, intentar leer del window (fallback)
+if (typeof window !== 'undefined') {
+  // En el cliente, las variables NEXT_PUBLIC_* deberían estar disponibles
+  // Si no, intentar leer de window.__ENV__ si existe
+  if ((window as any).__ENV__) {
+    supabaseUrl = (window as any).__ENV__.NEXT_PUBLIC_SUPABASE_URL || supabaseUrl;
+    supabaseAnonKey = (window as any).__ENV__.NEXT_PUBLIC_SUPABASE_ANON_KEY || supabaseAnonKey;
+  }
+}
+
+// Verifica que las variables de entorno existan y no sean placeholders
 if (!supabaseUrl || !supabaseAnonKey) {
+  const errorMsg = `
+❌ ERROR: Variables de entorno de Supabase no configuradas.
+
+Variables encontradas:
+- NEXT_PUBLIC_SUPABASE_URL: ${supabaseUrl ? '✅' : '❌'}
+- NEXT_PUBLIC_SUPABASE_ANON_KEY: ${supabaseAnonKey ? '✅' : '❌'}
+
+SOLUCIÓN:
+1. Verifica que .env.local contenga:
+   NEXT_PUBLIC_SUPABASE_URL=https://jkdvrwmanmwoyyoixmnt.supabase.co
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=tu_anon_key
+
+2. Limpia la caché y reinicia:
+   rm -rf .next .turbo
+   npm run dev
+  `;
+  throw new Error(errorMsg);
+}
+
+// Verificar que no sean valores placeholder
+if (INVALID_PLACEHOLDERS.some(placeholder => supabaseUrl.includes(placeholder))) {
+  const errorMsg = `
+❌ ERROR: NEXT_PUBLIC_SUPABASE_URL contiene un valor placeholder inválido.
+
+Valor detectado: "${supabaseUrl}"
+
+Esto indica que Turbopack está usando caché antigua.
+
+SOLUCIÓN INMEDIATA:
+1. Detén el servidor (Ctrl+C)
+2. Limpia la caché:
+   rm -rf .next .turbo node_modules/.cache
+3. Verifica variables del sistema:
+   echo $NEXT_PUBLIC_SUPABASE_URL
+   Si muestra algo, ejecuta: unset NEXT_PUBLIC_SUPABASE_URL
+4. Reinicia:
+   npm run dev
+
+O fuerza las variables:
+NEXT_PUBLIC_SUPABASE_URL=https://jkdvrwmanmwoyyoixmnt.supabase.co npm run dev
+  `;
+  throw new Error(errorMsg);
+}
+
+// Validar formato de URL
+if (!supabaseUrl.startsWith('http://') && !supabaseUrl.startsWith('https://')) {
   throw new Error(
-    "Las variables de entorno NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY deben estar definidas."
+    `❌ NEXT_PUBLIC_SUPABASE_URL debe ser una URL válida (HTTP o HTTPS): "${supabaseUrl}"`
   );
 }
 
@@ -178,15 +238,38 @@ if (typeof window !== "undefined") {
   const originalConsoleError = console.error;
   console.error = (...args: any[]) => {
     const errorString = args.join(' ');
+    
+    // Silenciar errores de refresh token
     if (
       errorString.includes("Invalid Refresh Token") ||
       errorString.includes("Refresh Token Not Found") ||
       errorString.includes("refresh_token_not_found") ||
-      errorString.includes("AuthApiError") && errorString.includes("refresh")
+      (errorString.includes("AuthApiError") && errorString.includes("refresh"))
     ) {
       // Silenciar este error específico - ya está siendo manejado
       return;
     }
+    
+    // Silenciar errores de imágenes 404 conocidas de Truper
+    if (
+      errorString.includes("upstream image response failed") ||
+      errorString.includes("isn't a valid image")
+    ) {
+      const urlMatch = errorString.match(/truper\.com.*?imagenes\/([^/\s"']+)/i);
+      if (urlMatch) {
+        const imageName = urlMatch[1];
+        // Lista de imágenes conocidas que fallan frecuentemente
+        const knownBrokenImages = ["SK4", "SK2", "SK-4", "SK-2", "MOT5020"];
+        // También silenciar URLs con solo números de 1-2 dígitos (4.jpg, 2.jpg)
+        if (
+          knownBrokenImages.some(broken => imageName.includes(broken)) ||
+          /^\d{1,2}\.jpg$/i.test(imageName)
+        ) {
+          return; // No loguear errores de estas imágenes conocidas
+        }
+      }
+    }
+    
     // Para otros errores, usar el console.error original
     originalConsoleError.apply(console, args);
   };

@@ -11,7 +11,6 @@ interface MobileFiltersDrawerProps {
   onClose: () => void;
   filters: MarketplaceFilters;
   onFiltersChange: (filters: MarketplaceFilters) => void;
-  showPowerType?: boolean;
   availableConditions?: string[];
   priceStats?: { min: number; max: number };
   products?: Array<{ title: string; description?: string }>; // Para extraer marcas disponibles
@@ -22,7 +21,6 @@ export function MobileFiltersDrawer({
   onClose,
   filters,
   onFiltersChange,
-  showPowerType,
   availableConditions,
   priceStats,
   products = [],
@@ -60,7 +58,6 @@ export function MobileFiltersDrawer({
           <CategoryFilters
             filters={filters}
             onFiltersChange={onFiltersChange}
-            showPowerType={showPowerType}
             availableConditions={availableConditions}
             priceStats={priceStats}
             products={products}

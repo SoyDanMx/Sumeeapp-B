@@ -15,6 +15,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import { MarketplaceProduct } from '@/types/supabase';
 import { HybridImage } from './HybridImage';
+import { ProductPrice } from './ProductPrice';
 
 interface ProductCardProps {
   product: MarketplaceProduct;
@@ -28,7 +29,7 @@ export function ProductCard({ product, onClick }: ProductCardProps) {
     }
   };
 
-  // Calcular porcentaje de descuento
+  // Calcular porcentaje de descuento (usando precio de BD o dinámico)
   const discountPercentage = product.original_price && product.original_price > product.price
     ? Math.round((1 - product.price / product.original_price) * 100)
     : null;
@@ -162,16 +163,18 @@ export function ProductCard({ product, onClick }: ProductCardProps) {
           {product.title}
         </h3>
 
+        {/* SKU */}
+        {(product as any).sku && (
+          <div className="mb-2">
+            <span className="text-xs text-gray-500 font-mono bg-gray-50 px-2 py-1 rounded border border-gray-200">
+              SKU: {(product as any).sku}
+            </span>
+          </div>
+        )}
+
         {/* Precios */}
         <div className="flex items-baseline gap-2 mb-3">
-          <span className="text-2xl font-black text-indigo-600">
-            ${Number(product.price).toLocaleString('es-MX')}
-          </span>
-          {product.original_price && product.original_price > product.price && (
-            <span className="text-sm text-gray-400 line-through decoration-red-300">
-              ${Number(product.original_price).toLocaleString('es-MX')}
-            </span>
-          )}
+          <ProductPrice product={product} size="lg" />
         </div>
 
         {/* Vendedor */}

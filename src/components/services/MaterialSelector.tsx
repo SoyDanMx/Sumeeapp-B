@@ -70,6 +70,7 @@ export default function MaterialSelector({
         }
         
         // Construir la consulta OR con múltiples términos
+        // Nota: external_code y sku se agregarán después de ejecutar la migración
         const orConditions = searchVariations
           .map(term => `title.ilike.%${term}%,description.ilike.%${term}%`)
           .join(",");
@@ -79,9 +80,10 @@ export default function MaterialSelector({
         
         let query = supabase
           .from("marketplace_products")
-          .select("id, title, description, price, images, status, seller_id")
+          .select("id, title, description, price, images, status, seller_id, external_code, sku")
           .or(orConditions)
           .eq("status", "active");
+          // .gt("price", 0); // ⚠️ TEMPORALMENTE DESHABILITADO
         
         // Si se requiere solo productos de Truper, filtrar por seller_id IS NULL
         // Los productos de Truper son productos oficiales de Sumee (seller_id = NULL)

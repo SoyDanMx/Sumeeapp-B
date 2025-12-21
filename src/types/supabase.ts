@@ -87,6 +87,8 @@ export interface MarketplaceProduct {
   likes_count: number;
   contact_phone?: string | null;
   power_type?: string | null; // "electric", "cordless", "manual", etc.
+  sku?: string | null; // Stock Keeping Unit o código interno del producto
+  external_code?: string | null; // Código del proveedor externo (ej: Syscom)
   // Campos join (no en tabla)
   seller?: {
     full_name: string;

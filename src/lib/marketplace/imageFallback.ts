@@ -110,6 +110,12 @@ export function getBestImageForProduct(
       // Verificar que no esté en la lista de URLs rotas conocidas
       const BROKEN_URLS = new Set([
         "https://www.truper.com/media/import/imagenes/SK4.jpg",
+        "https://www.truper.com/media/import/imagenes/SK2.jpg",
+        "https://www.truper.com/media/import/imagenes/SK-4.jpg",
+        "https://www.truper.com/media/import/imagenes/SK-2.jpg",
+        "https://www.truper.com/media/import/imagenes/4.jpg",
+        "https://www.truper.com/media/import/imagenes/2.jpg",
+        "https://www.truper.com/media/import/imagenes/MOT5020.jpg",
       ]);
       if (!BROKEN_URLS.has(trimmedImg)) {
         return trimmedImg;

@@ -35,7 +35,6 @@ export interface MarketplaceCategory {
     condition?: boolean;
     priceRange?: boolean;
     location?: boolean;
-    powerType?: boolean;
   };
 }
 
@@ -61,7 +60,6 @@ export const MARKETPLACE_CATEGORIES: MarketplaceCategory[] = [
       condition: true,
       priceRange: true,
       location: true,
-      powerType: true,
     },
   },
   {

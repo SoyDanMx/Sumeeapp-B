@@ -1575,8 +1575,8 @@ export default function RequestServiceModal({
         })
         .catch((error: any) => {
           // El error ya está manejado dentro de la función, esto es solo por seguridad
-          console.warn("⚠️ Error al enviar alerta WhatsApp (no crítico):", error);
-        });
+        console.warn("⚠️ Error al enviar alerta WhatsApp (no crítico):", error);
+      });
 
       // 9. Navegación y Cierre
       resetModal();

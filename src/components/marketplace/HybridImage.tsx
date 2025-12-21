@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import Image from "next/image";
 import { MarketplaceProduct } from "@/types/supabase";
 import {
@@ -45,19 +45,24 @@ export function HybridImage({
   loading = "lazy",
   placeholder,
 }: HybridImageProps) {
+  // Obtener todas las variaciones posibles primero
+  const allVariations = React.useMemo(() => {
+    return getAllImageVariations(product);
+  }, [product]);
+
   // Usar el resolvedor inteligente para obtener la mejor imagen inicial
   const initialImage = React.useMemo(() => {
-    return getSmartImageForProduct(product) || getBestImageForProduct(product);
-  }, [product]);
+    const smartImage = getSmartImageForProduct(product) || getBestImageForProduct(product);
+    // Si no hay imagen inicial pero hay variaciones, usar la primera variación
+    if (!smartImage && allVariations.length > 0) {
+      return allVariations[0];
+    }
+    return smartImage;
+  }, [product, allVariations]);
 
   const [currentImage, setCurrentImage] = useState<string | null>(initialImage);
   const [hasError, setHasError] = useState(false);
   const [attemptedVariations, setAttemptedVariations] = useState<Set<string>>(new Set());
-
-  // Obtener todas las variaciones posibles
-  const allVariations = React.useMemo(() => {
-    return getAllImageVariations(product);
-  }, [product]);
 
   const handleImageError = useCallback(() => {
     setAttemptedVariations((prev) => {
@@ -87,8 +92,21 @@ export function HybridImage({
     });
   }, [currentImage, allVariations]);
 
+  // Si no hay imagen inicial pero hay variaciones, intentar la primera
+  useEffect(() => {
+    if (!currentImage && allVariations.length > 0 && !hasError) {
+      setCurrentImage(allVariations[0]);
+    }
+  }, [currentImage, allVariations, hasError]);
+
   // Si no hay imagen o hubo error sin fallback, mostrar placeholder
-  if (!currentImage || hasError) {
+  // Pero solo si ya intentamos todas las variaciones o no hay variaciones disponibles
+  const shouldShowPlaceholder = !currentImage && (
+    allVariations.length === 0 || 
+    (hasError && attemptedVariations.size >= allVariations.length)
+  );
+
+  if (shouldShowPlaceholder) {
     if (placeholder) {
       return <>{placeholder}</>;
     }
@@ -104,6 +122,22 @@ export function HybridImage({
     return (
       <div className="flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200" style={{ width, height }}>
         <span className="text-gray-400 text-sm">Sin imagen</span>
+      </div>
+    );
+  }
+
+  // Si no hay imagen actual pero hay variaciones disponibles, mostrar un estado de carga
+  if (!currentImage && allVariations.length > 0) {
+    if (fill) {
+      return (
+        <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200 animate-pulse">
+          <span className="text-gray-400 text-sm">Cargando...</span>
+        </div>
+      );
+    }
+    return (
+      <div className="flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200 animate-pulse" style={{ width, height }}>
+        <span className="text-gray-400 text-sm">Cargando...</span>
       </div>
     );
   }

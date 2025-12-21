@@ -892,10 +892,10 @@ function ClientDashboardContent() {
           <div className="absolute inset-0 bg-gradient-to-br from-blue-600/90 via-indigo-700/85 to-purple-700/90"></div>
           
           {/* Patrón decorativo tecnológico */}
-          <div className="absolute inset-0 opacity-10">
-            <div className="absolute inset-0" style={{
-              backgroundImage: `radial-gradient(circle at 2px 2px, white 1px, transparent 0)`,
-              backgroundSize: '40px 40px'
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute inset-0" style={{
+            backgroundImage: `radial-gradient(circle at 2px 2px, white 1px, transparent 0)`,
+            backgroundSize: '40px 40px'
             }}></div>
           </div>
           
@@ -917,11 +917,11 @@ function ClientDashboardContent() {
                 </div>
                 
                 <h1 className="text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-extrabold mb-3 drop-shadow-lg leading-tight text-white">
-                  Dashboard de tu Hogar
-                </h1>
+                Dashboard de tu Hogar
+              </h1>
                 <p className="text-blue-100 text-lg md:text-xl drop-shadow-md mb-6 text-white/90">
-                  Gestiona todos tus servicios en un solo lugar
-                </p>
+                Gestiona todos tus servicios en un solo lugar
+              </p>
                 
                 {/* Estadísticas del usuario con contadores animados - Estilo HeroSectionV2 */}
                 <div className="flex flex-wrap gap-4 sm:gap-6 mb-6">
@@ -980,10 +980,10 @@ function ClientDashboardContent() {
 
                 {/* Badges adicionales */}
                 <div className="flex flex-wrap items-center gap-3 text-sm">
-                  <div className="flex items-center bg-white/20 backdrop-blur-sm px-3 py-1.5 rounded-full border border-white/30 shadow-md">
+                <div className="flex items-center bg-white/20 backdrop-blur-sm px-3 py-1.5 rounded-full border border-white/30 shadow-md">
                     <FontAwesomeIcon icon={faShieldAlt} className="mr-2 text-green-300" />
                     <span className="text-white">100% Verificados</span>
-                  </div>
+                </div>
                   <div className="flex items-center bg-white/20 backdrop-blur-sm px-3 py-1.5 rounded-full border border-white/30 shadow-md">
                     <FontAwesomeIcon icon={faClock} className="mr-2 text-blue-200" />
                     <span className="text-white">Respuesta rápida</span>
@@ -992,26 +992,26 @@ function ClientDashboardContent() {
                     <FontAwesomeIcon icon={faStar} className="mr-2 text-yellow-300" />
                     <span className="text-white">4.8+ Calificación</span>
                   </div>
-                </div>
-              </div>
-
-              {/* CTA Principal */}
-              <div className="flex flex-col sm:flex-row gap-3 md:min-w-[280px]">
-                <button
-                  onClick={() => setIsModalOpen(true)}
-                  className="bg-white text-blue-600 px-6 py-3 rounded-lg hover:bg-blue-50 transition-all duration-200 font-semibold flex items-center justify-center shadow-lg hover:shadow-xl hover:scale-105 group"
-                >
-                  <FontAwesomeIcon icon={faPlus} className="mr-2 group-hover:rotate-90 transition-transform duration-300" />
-                  Solicitar un Servicio
-                </button>
-                <Link
-                  href="/tecnicos"
-                  className="bg-white/20 backdrop-blur-sm text-white px-6 py-3 rounded-lg hover:bg-white/30 transition-all duration-200 font-semibold flex items-center justify-center border border-white/30 shadow-md hover:shadow-lg hover:scale-105"
-                >
-                  Buscar Profesionales
-                </Link>
               </div>
             </div>
+
+            {/* CTA Principal */}
+              <div className="flex flex-col sm:flex-row gap-3 md:min-w-[280px]">
+              <button
+                onClick={() => setIsModalOpen(true)}
+                  className="bg-white text-blue-600 px-6 py-3 rounded-lg hover:bg-blue-50 transition-all duration-200 font-semibold flex items-center justify-center shadow-lg hover:shadow-xl hover:scale-105 group"
+              >
+                  <FontAwesomeIcon icon={faPlus} className="mr-2 group-hover:rotate-90 transition-transform duration-300" />
+                Solicitar un Servicio
+              </button>
+              <Link
+                href="/tecnicos"
+                  className="bg-white/20 backdrop-blur-sm text-white px-6 py-3 rounded-lg hover:bg-white/30 transition-all duration-200 font-semibold flex items-center justify-center border border-white/30 shadow-md hover:shadow-lg hover:scale-105"
+              >
+                Buscar Profesionales
+              </Link>
+            </div>
+          </div>
           </div>
         </div>
 
@@ -1231,13 +1231,13 @@ function ClientDashboardContent() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4 mb-4 sm:mb-6">
           {/* Widget de Próximo Servicio - Solo se muestra si hay un servicio próximo real */}
           {upcomingService && (
-            <div className="lg:col-span-2">
-              <UpcomingServiceWidget
-                upcomingLead={upcomingService}
-                onViewDetails={handleViewLead}
-                onRequestService={() => setIsModalOpen(true)}
-              />
-            </div>
+          <div className="lg:col-span-2">
+            <UpcomingServiceWidget
+              upcomingLead={upcomingService}
+              onViewDetails={handleViewLead}
+              onRequestService={() => setIsModalOpen(true)}
+            />
+          </div>
           )}
           
           {/* Cuando no hay servicio próximo, el espacio se ajusta automáticamente */}

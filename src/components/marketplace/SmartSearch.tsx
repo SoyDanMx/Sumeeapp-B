@@ -7,6 +7,7 @@ import { faSearch, faTimes, faSpinner } from '@fortawesome/free-solid-svg-icons'
 import { supabase } from '@/lib/supabase/client';
 import { MarketplaceProduct } from '@/types/supabase';
 import Link from 'next/link';
+import { ProductPrice } from './ProductPrice';
 
 interface SmartSearchProps {
   onSearch?: (query: string) => void;
@@ -52,10 +53,12 @@ export function SmartSearch({
     debounceTimerRef.current = setTimeout(async () => {
       try {
         // Usar función de búsqueda optimizada si existe, sino usar ILIKE
+        // Nota: external_code y sku se agregarán después de ejecutar la migración
         const { data, error } = await supabase
           .from('marketplace_products')
-          .select('id, title, price, images, category_id')
+          .select('id, title, price, images, category_id, external_code, sku')
           .eq('status', 'active')
+          // .gt('price', 0) // ⚠️ TEMPORALMENTE DESHABILITADO
           .or(`title.ilike.%${query}%,description.ilike.%${query}%`)
           .order('views_count', { ascending: false })
           .order('likes_count', { ascending: false })
@@ -217,9 +220,14 @@ export function SmartSearch({
                       <h4 className="font-semibold text-gray-900 group-hover:text-indigo-600 transition-colors truncate">
                         {product.title}
                       </h4>
-                      <p className="text-sm font-bold text-indigo-600">
-                        ${Number(product.price).toLocaleString('es-MX')}
-                      </p>
+                      <div className="text-sm">
+                        <ProductPrice 
+                          product={product} 
+                          exchangeRate={exchangeRate} 
+                          size="sm" 
+                          className="font-bold text-indigo-600"
+                        />
+                      </div>
                     </div>
 
                     {/* Icono de búsqueda */}
