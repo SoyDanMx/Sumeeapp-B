@@ -69,16 +69,29 @@ export function ProductPrice({
   // Determinar si el producto es de Syscom (tiene external_code)
   const isSyscomProduct = !!externalCode;
 
+  // 🚨 TEMPORALMENTE DESHABILITADO: Conversión USD → MXN
+  // Los precios en BD están mixtos (algunos USD, otros MXN)
+  // Necesitamos actualizar todos los precios desde Syscom primero
+  // TODO: Reactivar después de actualizar todos los precios
+  
   // Convertir precios de USD a MXN para productos de Syscom
   const convertToMXN = (price: number) => {
+    // ⚠️ CONVERSIÓN DESACTIVADA TEMPORALMENTE
     // Solo convertir si:
     // 1. Es producto de Syscom (tiene external_code)
     // 2. Hay tasa de cambio disponible
     // 3. El precio es mayor a 0
+    // 4. El precio está definitivamente en USD (<= $500)
+    
+    // DESACTIVADO: La BD tiene precios mixtos
+    return price;
+    
+    /* CÓDIGO ORIGINAL - REACTIVAR DESPUÉS DE ACTUALIZACIÓN MASIVA
     if (isSyscomProduct && exchangeRate && exchangeRate.rate > 0 && price > 0) {
       return price * exchangeRate.rate;
     }
     return price;
+    */
   };
 
   // Aplicar conversión a los precios

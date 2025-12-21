@@ -53,14 +53,21 @@ export default function ProductModal({
         const sellerPhone = product.contact_phone || "525636741156";
         const priceToShow = product.price > 0 ? product.price : 0;
         
+        // 🚨 TEMPORALMENTE DESHABILITADO: Conversión USD → MXN
+        // Los precios en BD están mixtos (algunos USD, otros MXN)
+        // TODO: Reactivar después de actualizar todos los precios desde Syscom
+        
         // Convertir precio si es producto de Syscom (tiene external_code)
         const productAny = product as any;
         const isSyscomProduct = !!productAny.external_code;
         let finalPrice = priceToShow;
         
+        // CONVERSIÓN DESACTIVADA TEMPORALMENTE
+        /*
         if (isSyscomProduct && exchangeRate && exchangeRate.rate > 0 && priceToShow > 0) {
             finalPrice = priceToShow * exchangeRate.rate;
         }
+        */
         
         // Formatear precio en MXN
         let priceText = "precio a consultar";
