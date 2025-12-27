@@ -19,18 +19,20 @@ interface FooterLinkColumnProps {
 export const FooterLinkColumn: React.FC<FooterLinkColumnProps> = ({ title, links }) => {
   return (
     <div>
-      {/* CAMBIO: Añadimos 'uppercase' para darle más jerarquía y estilo al título */}
-      <h3 className="text-lg font-semibold text-white mb-4 tracking-wider uppercase">{title}</h3>
+      {/* Título en verde como en la imagen de referencia - Solo mostrar si hay título */}
+      {title && (
+        <h3 className="text-base font-semibold text-green-600 mb-4">{title}</h3>
+      )}
       
-      <ul className="space-y-3">
+      <ul className="space-y-2">
         {links.map((link, index) => (
           <li key={`${link.text}-${link.href}-${index}`}>
-            <Link href={link.href} className="flex items-center text-gray-300 hover:text-blue-400 transition-colors duration-200 group">
+            <Link href={link.href} className="flex items-center text-gray-700 hover:text-green-600 transition-colors duration-200 group">
               <FontAwesomeIcon 
                 icon={link.icon} 
-                className="w-4 h-4 mr-3 text-gray-400 group-hover:text-blue-400 transition-colors duration-200" 
+                className="w-3 h-3 mr-2 text-gray-500 group-hover:text-green-600 transition-colors duration-200 opacity-0 group-hover:opacity-100" 
               />
-              <span>{link.text}</span>
+              <span className="text-sm">{link.text}</span>
             </Link>
           </li>
         ))}
