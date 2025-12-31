@@ -264,8 +264,8 @@ export default function WorkingFilters({
   }
 
   return (
-    <div className="w-72 flex-shrink-0">
-      <div className="bg-white border border-gray-200 rounded-lg shadow-sm sticky top-24">
+    <div className="w-full lg:w-72 flex-shrink-0">
+      <div className="bg-white border border-gray-200 rounded-lg shadow-sm lg:sticky lg:top-24">
         {/* Header */}
         <div className="px-4 py-3 border-b border-gray-200 bg-gray-50">
           <div className="flex items-center justify-between">

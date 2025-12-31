@@ -6,6 +6,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faSearch,
   faTimes,
+  faFilter,
 } from "@fortawesome/free-solid-svg-icons";
 import Link from "next/link";
 import { MarketplaceProduct } from "@/types/supabase";
@@ -51,6 +52,7 @@ export default function CategoryPage() {
   });
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<MarketplaceProduct | null>(null);
+  const [showMobileFilters, setShowMobileFilters] = useState(false);
 
   // Determinar si hay filtros activos (para forzar carga)
   const hasActiveFilters = useMemo(() => {
@@ -273,17 +275,14 @@ export default function CategoryPage() {
       />
 
       {/* Header con búsqueda */}
-      <div className="bg-white border-b border-gray-200 sticky top-24 md:top-28 z-20">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center gap-4">
-            {/* Botón categorías móvil */}
-
-
+      <div className="bg-white border-b border-gray-200 sticky top-20 sm:top-24 md:top-28 z-20">
+        <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4">
+          <div className="flex items-center gap-2 sm:gap-4">
             {/* Búsqueda */}
             <div className="flex-1 relative">
               <FontAwesomeIcon
                 icon={faSearch}
-                className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400"
+                className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm"
               />
               <input
                 type="text"
@@ -292,7 +291,7 @@ export default function CategoryPage() {
                 onChange={(e) =>
                   setFilters({ ...filters, searchQuery: e.target.value })
                 }
-                className="w-full pl-12 pr-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+                className="w-full pl-10 sm:pl-12 pr-3 sm:pr-4 py-2 text-sm sm:text-base rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
               />
             </div>
           </div>
@@ -300,68 +299,155 @@ export default function CategoryPage() {
       </div>
 
       {/* Contenido principal */}
-      <div className="container mx-auto px-4 py-6">
-        <div className="flex gap-4">
+      <div className="container mx-auto px-4 py-4 md:py-6">
+        {/* Botón de filtros móvil - Solo mostrar si es categoría sistemas */}
+        {slug === "sistemas" && (
+          <div className="lg:hidden mb-4">
+            <button
+              onClick={() => setShowMobileFilters(true)}
+              className="w-full flex items-center justify-between px-4 py-3 bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow"
+            >
+              <div className="flex items-center gap-2">
+                <FontAwesomeIcon icon={faFilter} className="text-indigo-600" />
+                <span className="font-semibold text-gray-900">Filtros</span>
+                {(filters.rama || filters.subrama || filters.conditions.length > 0 || (filters.brands && filters.brands.length > 0) || filters.priceRange.min !== null || filters.priceRange.max !== null) && (
+                  <span className="bg-indigo-600 text-white text-xs px-2 py-0.5 rounded-full font-medium">
+                    {[
+                      filters.rama ? 1 : 0,
+                      filters.subrama ? 1 : 0,
+                      filters.conditions.length,
+                      filters.brands?.length || 0,
+                      filters.priceRange.min !== null || filters.priceRange.max !== null ? 1 : 0
+                    ].reduce((a, b) => a + b, 0)}
+                  </span>
+                )}
+              </div>
+              <FontAwesomeIcon icon={faSearch} className="text-gray-400" />
+            </button>
+          </div>
+        )}
+
+        <div className="flex flex-col lg:flex-row gap-4">
           {/* Sidebar de filtros funcionales - Desktop (solo para categoría sistemas) */}
           {slug === "sistemas" && (
-            <WorkingFilters
-              products={products}
-              categoryId={category?.id || "sistemas"}
-              filters={{
-                rama: filters.rama || null,
-                subrama: filters.subrama || null,
-                condition: filters.conditions || [],
-                brands: filters.brands || [],
-                priceRange: filters.priceRange || { min: null, max: null },
-              }}
-              onFiltersChange={(newFilters) => {
-                setFilters({
-                  ...filters,
-                  rama: newFilters.rama,
-                  subrama: newFilters.subrama,
-                  conditions: newFilters.condition,
-                  brands: newFilters.brands,
-                  priceRange: newFilters.priceRange,
-                });
-              }}
-              onClearFilters={() => {
-                setFilters({
-                  ...DEFAULT_FILTERS,
-                  categoryId: category?.id || null,
-                  searchQuery: filters.searchQuery,
-                });
-              }}
-            />
+            <>
+              {/* Desktop: Sidebar visible */}
+              <div className="hidden lg:block lg:w-72 lg:flex-shrink-0">
+                <WorkingFilters
+                  products={products}
+                  categoryId={category?.id || "sistemas"}
+                  filters={{
+                    rama: filters.rama || null,
+                    subrama: filters.subrama || null,
+                    condition: filters.conditions || [],
+                    brands: filters.brands || [],
+                    priceRange: filters.priceRange || { min: null, max: null },
+                  }}
+                  onFiltersChange={(newFilters) => {
+                    setFilters({
+                      ...filters,
+                      rama: newFilters.rama,
+                      subrama: newFilters.subrama,
+                      conditions: newFilters.condition,
+                      brands: newFilters.brands,
+                      priceRange: newFilters.priceRange,
+                    });
+                  }}
+                  onClearFilters={() => {
+                    setFilters({
+                      ...DEFAULT_FILTERS,
+                      categoryId: category?.id || null,
+                      searchQuery: filters.searchQuery,
+                    });
+                  }}
+                />
+              </div>
+
+              {/* Mobile: Drawer de filtros */}
+              {showMobileFilters && (
+                <div className="lg:hidden fixed inset-0 z-50">
+                  {/* Overlay */}
+                  <div 
+                    className="absolute inset-0 bg-black/50"
+                    onClick={() => setShowMobileFilters(false)}
+                  />
+                  {/* Drawer */}
+                  <div className="absolute inset-y-0 left-0 w-80 bg-white shadow-xl overflow-y-auto">
+                    <div className="sticky top-0 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between z-10">
+                      <span className="font-semibold text-gray-900">Filtros</span>
+                      <button
+                        onClick={() => setShowMobileFilters(false)}
+                        className="text-gray-400 hover:text-gray-600"
+                      >
+                        <FontAwesomeIcon icon={faTimes} />
+                      </button>
+                    </div>
+                    <div className="p-4">
+                      <WorkingFilters
+                        products={products}
+                        categoryId={category?.id || "sistemas"}
+                        filters={{
+                          rama: filters.rama || null,
+                          subrama: filters.subrama || null,
+                          condition: filters.conditions || [],
+                          brands: filters.brands || [],
+                          priceRange: filters.priceRange || { min: null, max: null },
+                        }}
+                        onFiltersChange={(newFilters) => {
+                          setFilters({
+                            ...filters,
+                            rama: newFilters.rama,
+                            subrama: newFilters.subrama,
+                            conditions: newFilters.condition,
+                            brands: newFilters.brands,
+                            priceRange: newFilters.priceRange,
+                          });
+                          // Cerrar drawer después de aplicar filtro en móvil
+                          setShowMobileFilters(false);
+                        }}
+                        onClearFilters={() => {
+                          setFilters({
+                            ...DEFAULT_FILTERS,
+                            categoryId: category?.id || null,
+                            searchQuery: filters.searchQuery,
+                          });
+                        }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+            </>
           )}
 
           {/* Contenido principal */}
           <main className="flex-1 min-w-0">
             {/* Header de categoría */}
-            <div className="mb-6">
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-3">
+            <div className="mb-4 md:mb-6">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-2">
+                <div className="flex items-center gap-2 sm:gap-3">
                   <div
-                    className={`w-12 h-12 rounded-xl bg-gradient-to-br ${category.gradient} flex items-center justify-center`}
+                    className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br ${category.gradient} flex items-center justify-center flex-shrink-0`}
                   >
                     <FontAwesomeIcon
                       icon={category.icon}
-                      className="text-white text-xl"
+                      className="text-white text-lg sm:text-xl"
                     />
                   </div>
-                  <div>
-                    <h1 className="text-3xl font-bold text-gray-900">
+                  <div className="min-w-0 flex-1">
+                    <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 truncate">
                       {category.namePlural}
                     </h1>
-                    <p className="text-gray-600">{category.description}</p>
+                    <p className="text-sm sm:text-base text-gray-600 line-clamp-2">{category.description}</p>
                   </div>
                 </div>
                 {/* Botón de tasa de cambio para categoría sistemas */}
                 {isSistemasCategory && exchangeRate && (
                   <button
                     onClick={() => setShowExchangeRateModal(true)}
-                    className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg hover:from-indigo-700 hover:to-purple-700 transition-all shadow-md hover:shadow-lg"
+                    className="flex items-center gap-2 px-3 py-2 sm:px-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg hover:from-indigo-700 hover:to-purple-700 transition-all shadow-md hover:shadow-lg text-xs sm:text-sm font-semibold whitespace-nowrap self-start sm:self-auto"
                   >
-                    <span className="text-sm font-semibold">
+                    <span>
                       1 USD = ${exchangeRate.rate.toLocaleString("es-MX", {
                         minimumFractionDigits: 2,
                         maximumFractionDigits: 2,
