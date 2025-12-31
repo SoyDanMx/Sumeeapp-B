@@ -156,13 +156,13 @@ export function applyFilters<T extends {
         const subrama = getSubramaById(categoryIdForHierarchy, filters.rama, filters.subrama);
         console.log('🔍 [FILTRO JERÁRQUICO] Subrama obtenida:', subrama);
         if (subrama?.keywords?.length > 0) {
-          keywordsToMatch = subrama.keywords.map(k => k.toLowerCase());
+          keywordsToMatch = subrama.keywords.map((k: string) => k.toLowerCase());
         }
       } else if (filters.rama && categoryIdForHierarchy) {
         const rama = getRamaById(categoryIdForHierarchy, filters.rama);
         console.log('🔍 [FILTRO JERÁRQUICO] Rama obtenida:', rama);
         if (rama?.keywords?.length > 0) {
-          keywordsToMatch = rama.keywords.map(k => k.toLowerCase());
+          keywordsToMatch = rama.keywords.map((k: string) => k.toLowerCase());
         }
       }
       
