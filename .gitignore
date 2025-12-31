@@ -42,3 +42,6 @@ next-env.d.ts
 
 # data files
 data/syscom_reports/
+
+# imágenes de Truper (demasiado grandes para Git LFS)
+public/images/marketplace/truper/

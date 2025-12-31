@@ -1,3 +1,5 @@
-public/images/marketplace/truper/*.jpg filter=lfs diff=lfs merge=lfs -text
-public/images/marketplace/truper/*.webp filter=lfs diff=lfs merge=lfs -text
-public/images/marketplace/truper/*.png filter=lfs diff=lfs merge=lfs -text
+# Imágenes de Truper removidas de Git LFS - excedieron el límite
+# Estas imágenes están en .gitignore y .vercelignore
+# public/images/marketplace/truper/*.jpg filter=lfs diff=lfs merge=lfs -text
+# public/images/marketplace/truper/*.webp filter=lfs diff=lfs merge=lfs -text
+# public/images/marketplace/truper/*.png filter=lfs diff=lfs merge=lfs -text
