@@ -422,7 +422,6 @@ export default function CategoryPage() {
                     products={filteredProducts}
                     viewMode={filters.viewMode}
                     onProductClick={handleProductClick}
-                    exchangeRate={isSistemasCategory ? exchangeRate : null}
                   />
                 </div>
 
