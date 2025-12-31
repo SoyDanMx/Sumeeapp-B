@@ -223,7 +223,6 @@ export function SmartSearch({
                       <div className="text-sm">
                         <ProductPrice 
                           product={product} 
-                          exchangeRate={exchangeRate} 
                           size="sm" 
                           className="font-bold text-indigo-600"
                         />
