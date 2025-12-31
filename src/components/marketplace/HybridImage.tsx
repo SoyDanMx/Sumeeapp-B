@@ -142,6 +142,15 @@ export function HybridImage({
     );
   }
 
+  // Si no hay imagen válida, mostrar placeholder
+  if (!currentImage) {
+    return (
+      <div className={`flex items-center justify-center bg-gray-100 ${className}`} style={fill ? { width: '100%', height: '100%' } : { width: width || 400, height: height || 400 }}>
+        {placeholder || <span className="text-gray-400 text-sm">Sin imagen</span>}
+      </div>
+    );
+  }
+
   // Renderizar imagen con Next.js Image
   const imageProps = {
     src: currentImage,
