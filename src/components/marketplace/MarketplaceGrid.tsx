@@ -24,7 +24,7 @@ interface Filters {
   condition: string | null;
 }
 
-export function MarketplaceGrid({ products, onProductClick, exchangeRate }: MarketplaceGridProps) {
+export function MarketplaceGrid({ products, onProductClick }: MarketplaceGridProps) {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [filters, setFilters] = useState<Filters>({
     category: null,
