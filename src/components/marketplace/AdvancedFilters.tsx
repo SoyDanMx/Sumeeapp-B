@@ -306,7 +306,7 @@ export default function AdvancedFilters({
         <FilterSection title="Categorías" sectionKey="hierarchy" count={filters.rama ? 1 : 0}>
           {!filters.rama ? (
             <div className="space-y-1">
-              {hierarchy.ramas.map((rama) => (
+              {hierarchy?.ramas?.map((rama) => (
                 <button
                   key={rama.id}
                   onClick={() => handleRamaClick(rama.id)}
@@ -314,7 +314,9 @@ export default function AdvancedFilters({
                 >
                   {rama.name}
                 </button>
-              ))}
+              )) || (
+                <p className="text-sm text-gray-500 p-3">No hay categorías disponibles</p>
+              )}
             </div>
           ) : filters.subrama ? (
             <div className="space-y-1">
