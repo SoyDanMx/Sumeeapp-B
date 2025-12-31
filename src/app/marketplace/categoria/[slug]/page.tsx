@@ -462,7 +462,6 @@ export default function CategoryPage() {
           product={selectedProduct}
           isOpen={isModalOpen}
           onClose={handleCloseModal}
-          exchangeRate={isSistemasCategory ? exchangeRate : null}
         />
       )}
 
