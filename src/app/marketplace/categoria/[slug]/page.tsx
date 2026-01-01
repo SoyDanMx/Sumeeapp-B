@@ -259,6 +259,7 @@ export default function CategoryPage() {
       <ProductCollectionStructuredData
         category={category}
         productCount={filteredProducts.length}
+        products={filteredProducts.slice(0, 10)} // Primeros 10 productos para structured data
       />
       <BreadcrumbStructuredData
         items={[

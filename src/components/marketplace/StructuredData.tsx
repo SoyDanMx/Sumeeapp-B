@@ -186,12 +186,40 @@ export function ProductStructuredData({
 export function ProductCollectionStructuredData({
   category,
   productCount,
+  products,
 }: {
   category: MarketplaceCategory;
   productCount: number;
+  products?: any[]; // Productos destacados para incluir en structured data
 }) {
   const baseUrl = "https://www.sumeeapp.com";
   const categoryUrl = `${baseUrl}/marketplace/categoria/${category.slug}`;
+
+  // Preparar itemListElement con productos destacados (máximo 10)
+  const itemListElement = products && products.length > 0
+    ? products.slice(0, 10).map((product, index) => ({
+        "@type": "ListItem",
+        position: index + 1,
+        item: {
+          "@type": "Product",
+          "@id": `${baseUrl}/marketplace/${product.id}`,
+          name: product.title,
+          image: product.images && product.images.length > 0
+            ? product.images[0].startsWith("http")
+              ? product.images[0]
+              : `${baseUrl}${product.images[0]}`
+            : undefined,
+          offers: {
+            "@type": "Offer",
+            price: product.price?.toString() || "0",
+            priceCurrency: "MXN",
+            availability: product.status === "active"
+              ? "https://schema.org/InStock"
+              : "https://schema.org/OutOfStock",
+          },
+        },
+      }))
+    : [];
 
   const structuredData = {
     "@context": "https://schema.org",
@@ -199,14 +227,13 @@ export function ProductCollectionStructuredData({
     name: category.namePlural,
     description: category.description,
     url: categoryUrl,
+    inLanguage: "es-MX",
     mainEntity: {
       "@type": "ItemList",
       numberOfItems: productCount,
-      itemListElement: {
-        "@type": "ListItem",
-        position: 1,
-        name: category.namePlural,
-      },
+      ...(itemListElement.length > 0 && {
+        itemListElement,
+      }),
     },
     breadcrumb: {
       "@type": "BreadcrumbList",
