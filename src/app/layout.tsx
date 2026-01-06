@@ -53,9 +53,10 @@ export const metadata: Metadata = {
     "energía renovable CDMX",
   ],
   icons: {
-    // Next.js 13+ App Router maneja automáticamente /favicon.ico desde src/app/icon.tsx
-    // Solo especificamos los iconos adicionales para compatibilidad
+    // Favicons estáticos generados desde logo.png - tienen prioridad sobre icon.tsx dinámico
     icon: [
+      { url: "/favicon.ico", sizes: "any" }, // Favicon principal desde logo.png
+      { url: "/logo.png", sizes: "any" }, // Logo completo como fallback
       { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
       { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
     ],
