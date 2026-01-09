@@ -97,6 +97,17 @@ export default function ProfessionalBidPreview({
         .select('*')
         .eq('id', professionalId)
         .single();
+      
+      // Type assertion para profile
+      type Profile = {
+        full_name?: string;
+        avatar_url?: string | null;
+        areas_servicio?: string[];
+        profession?: string;
+        verified?: boolean;
+        expediente_status?: string;
+      } | null;
+      const profileData = profile as Profile;
 
       // Calcular badges basados en estadísticas
       const badges: string[] = [];
@@ -111,13 +122,13 @@ export default function ProfessionalBidPreview({
       const responseTime = statsData?.response_time_avg || null;
 
       setProfessional({
-        full_name: statsData?.full_name || profile?.full_name || 'Profesional Sumee',
-        avatar_url: statsData?.avatar_url || profile?.avatar_url || null,
+        full_name: statsData?.full_name || profileData?.full_name || 'Profesional Sumee',
+        avatar_url: statsData?.avatar_url || profileData?.avatar_url || null,
         average_rating: statsData?.average_rating || 5.0,
         total_jobs_completed: statsData?.total_jobs_completed || 0,
         expediente_status: statsData?.expediente_status || 'pending',
-        areas_servicio: statsData?.areas_servicio || profile?.areas_servicio || [],
-        profession: statsData?.profession || profile?.profession || 'Técnico Especializado',
+        areas_servicio: statsData?.areas_servicio || profileData?.areas_servicio || [],
+        profession: statsData?.profession || profileData?.profession || 'Técnico Especializado',
         verified: statsData?.expediente_status === 'approved',
         response_time_avg: responseTime,
         badges,
