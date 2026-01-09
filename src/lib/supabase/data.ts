@@ -605,10 +605,15 @@ export async function getClientLeads(clientId: string) {
       }, timeoutMs);
       
       // Query simple (sin JOINs) - más rápida
+      // EXCLUIR leads cancelados (tanto en estado legacy como moderno)
+      // Nota: .neq() no excluye NULLs, así que usamos filtro adicional en JavaScript
       const queryBuilder = supabase
         .from("leads")
         .select("*")
         .eq("cliente_id", clientId)
+        // Intentar excluir cancelados en SQL (aunque .neq() no maneja NULLs perfectamente)
+        .neq("estado", "cancelado")
+        .neq("status", "cancelled")
         .order("fecha_creacion", { ascending: false })
         .limit(50); // Limitar resultados
       
@@ -632,14 +637,35 @@ export async function getClientLeads(clientId: string) {
       return [];
     }
     
-    console.log("✅ getClientLeads - Leads encontrados:", data.length);
+    console.log("✅ getClientLeads - Leads encontrados (raw):", data.length);
     
     // Normalizar datos básicos (sin JOINs por ahora)
-    const normalized = data.map((lead: any) => ({
+    let normalized = data.map((lead: any) => ({
       ...(lead as any),
       lead_review: null, // Se puede cargar después si es necesario
       profesional_asignado: null, // Se puede cargar después si es necesario
     }));
+    
+    // 🔒 DOBLE VERIFICACIÓN: Filtrar cancelados en JavaScript también
+    // Esto asegura que incluso si la query SQL no los excluye correctamente,
+    // los filtramos aquí como medida de seguridad
+    normalized = normalized.filter((lead: any) => {
+      const estado = (lead.estado || '').toLowerCase();
+      const status = (lead.status || '').toLowerCase();
+      const isCancelled = estado === 'cancelado' || status === 'cancelled';
+      
+      if (isCancelled) {
+        console.log('🚫 [getClientLeads] Excluyendo lead cancelado:', {
+          id: lead.id,
+          estado: lead.estado,
+          status: lead.status,
+        });
+      }
+      
+      return !isCancelled;
+    });
+    
+    console.log("✅ getClientLeads - Leads finales (sin cancelados):", normalized.length);
     
     return normalized;
     

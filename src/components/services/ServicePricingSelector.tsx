@@ -28,107 +28,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { supabase } from "@/lib/supabase/client";
 
-// 🆕 Servicios populares hardcodeados (no vienen de BD)
-const popularServicesList: (ServiceCatalogItem & { icon?: any; color?: string; bgColor?: string })[] = [
-  {
-    id: "popular-montar-tv",
-    service_name: "Montar TV en Pared",
-    discipline: "montaje-armado",
-    price_type: "fixed",
-    min_price: 800,
-    max_price: null,
-    unit: "servicio",
-    includes_materials: false,
-    description: "Hasta 65 pulgadas",
-    icon: faTv,
-    color: "text-blue-600",
-    bgColor: "bg-blue-50",
-  },
-  {
-    id: "popular-armar-muebles",
-    service_name: "Armado de muebles",
-    discipline: "montaje-armado",
-    price_type: "fixed",
-    min_price: 600,
-    max_price: null,
-    unit: "servicio",
-    includes_materials: false,
-    description: "Muebles estándar",
-    icon: faCouch,
-    color: "text-purple-600",
-    bgColor: "bg-purple-50",
-  },
-  {
-    id: "popular-instalar-apagador",
-    service_name: "Instalación de Apagador",
-    discipline: "electricidad",
-    price_type: "fixed",
-    min_price: 350,
-    max_price: null,
-    unit: "servicio",
-    includes_materials: false,
-    description: "Precio fijo garantizado",
-    icon: faLightbulb,
-    color: "text-yellow-600",
-    bgColor: "bg-yellow-50",
-  },
-  {
-    id: "popular-reparar-fuga",
-    service_name: "Reparación de Fuga de Agua",
-    discipline: "plomeria",
-    price_type: "fixed",
-    min_price: 400,
-    max_price: null,
-    unit: "servicio",
-    includes_materials: false,
-    description: "Fuga simple",
-    icon: faWrench,
-    color: "text-blue-600",
-    bgColor: "bg-blue-50",
-  },
-  {
-    id: "popular-limpieza",
-    service_name: "Limpieza Residencial Básica",
-    discipline: "limpieza",
-    price_type: "fixed",
-    min_price: 800,
-    max_price: null,
-    unit: "servicio",
-    includes_materials: true,
-    description: "Hasta 80m²",
-    icon: faBroom,
-    color: "text-green-600",
-    bgColor: "bg-green-50",
-  },
-  {
-    id: "popular-instalar-lampara",
-    service_name: "Instalación de Lámpara",
-    discipline: "electricidad",
-    price_type: "fixed",
-    min_price: 500,
-    max_price: null,
-    unit: "servicio",
-    includes_materials: false,
-    description: "Colgante o empotrada",
-    icon: faLightbulb,
-    color: "text-yellow-600",
-    bgColor: "bg-yellow-50",
-  },
-  {
-    id: "popular-cctv-wifi",
-    service_name: "Instalación de Cámara CCTV",
-    discipline: "montaje-armado",
-    price_type: "fixed",
-    min_price: 800,
-    max_price: null,
-    unit: "servicio",
-    includes_materials: false,
-    description: "Cámara wifi",
-    icon: faVideo,
-    color: "text-indigo-600",
-    bgColor: "bg-indigo-50",
-  },
-];
+// ✅ Servicios populares ahora se obtienen desde BD usando is_popular = true
 
 // Constante de categorías de servicio (debe coincidir con RequestServiceModal)
 const serviceCategories = [
@@ -286,14 +186,25 @@ export default function ServicePricingSelector({
       setError(null);
 
       try {
-        // 🆕 Si es categoría "Populares", usar lista hardcodeada
+        // ✅ Si es categoría "Populares", consultar desde BD usando is_popular
         if (selectedCategory === "populares") {
-          setServices(popularServicesList as ServiceCatalogItem[]);
+          const { data, error: fetchError } = await supabase
+            .from("service_catalog")
+            .select("*")
+            .eq("is_popular", true)  // ✅ Usar campo de BD
+            .eq("is_active", true)
+            .order("min_price", { ascending: true });
+
+          if (fetchError) {
+            throw fetchError;
+          }
+
+          setServices(data || []);
           setLoading(false);
           return;
         }
 
-        // Si no, fetch normal desde BD
+        // Si no, fetch normal desde BD por disciplina
         const { data, error: fetchError } = await supabase
           .from("service_catalog")
           .select("*")

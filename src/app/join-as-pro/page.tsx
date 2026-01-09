@@ -426,7 +426,13 @@ export default function JoinAsPro() {
 
       // Construir dinámicamente la URL redirectTo usando window.location.origin
       const emailRedirectTo = getEmailConfirmationUrl();
-
+      
+      // Validación adicional de la URL
+      if (!emailRedirectTo || !emailRedirectTo.startsWith('http')) {
+        throw new Error('URL de confirmación inválida. Por favor, recarga la página.');
+      }
+      
+      console.log('🔗 URL de confirmación generada:', emailRedirectTo);
 
       // Preparar datos para enviar a Supabase (con nuevos campos city y work_zones)
       // Determinar el valor real de city
@@ -509,11 +515,26 @@ export default function JoinAsPro() {
 
       // Manejar los casos de éxito y error de la llamada signUp
       if (authError) {
-
+        console.error('❌ Error en auth.signUp:', authError);
+        console.error('📧 URL de confirmación usada:', emailRedirectTo);
 
         // Proporcionar mensajes de error más específicos
         let errorMessage = "Error al crear usuario: ";
-        if (authError.message.includes("Database error")) {
+        
+        if (authError.message.includes("Error sending confirmation email")) {
+          // Error específico de email - probablemente URL no whitelisted
+          errorMessage = "No se pudo enviar el email de confirmación. ";
+          errorMessage += "Por favor, verifica que tu correo electrónico sea válido. ";
+          errorMessage += "Si el problema persiste, contacta a soporte.";
+          
+          // Log adicional para debugging
+          console.error('📧 Detalles del error de email:', {
+            url: emailRedirectTo,
+            error: authError.message,
+            status: authError.status,
+            hint: 'Verifica que la URL esté whitelisted en Supabase Dashboard → Authentication → URL Configuration'
+          });
+        } else if (authError.message.includes("Database error")) {
           errorMessage +=
             "Error en la base de datos. Verifica que el trigger esté configurado correctamente.";
         } else if (authError.message.includes("User already registered")) {

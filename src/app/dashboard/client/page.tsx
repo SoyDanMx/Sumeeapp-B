@@ -191,9 +191,27 @@ function ClientDashboardContent() {
   }, [refetchLeads]);
 
   // Actualizar estado local cuando cambian los datos de React Query
+  // 🔒 DOBLE VERIFICACIÓN: Filtrar cancelados también en el componente
   useEffect(() => {
     if (userLeads) {
-      setLeads(userLeads);
+      // Filtrar cancelados como medida de seguridad adicional
+      const filteredLeads = userLeads.filter((lead: Lead) => {
+        const estado = (lead.estado || '').toLowerCase();
+        const status = (lead.status || '').toLowerCase();
+        const isCancelled = estado === 'cancelado' || status === 'cancelled';
+        
+        if (isCancelled) {
+          console.log('🚫 [ClientDashboard] Excluyendo lead cancelado del estado:', {
+            id: lead.id,
+            estado: lead.estado,
+            status: lead.status,
+          });
+        }
+        
+        return !isCancelled;
+      });
+      
+      setLeads(filteredLeads);
     }
   }, [userLeads]);
 

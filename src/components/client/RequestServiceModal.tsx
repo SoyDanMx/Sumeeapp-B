@@ -308,6 +308,8 @@ export default function RequestServiceModal({
     urgencia: "normal",
     whatsapp: "",
   });
+  // ✅ Estado para guardar el nombre del servicio seleccionado desde el catálogo
+  const [selectedServiceName, setSelectedServiceName] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isGettingLocation, setIsGettingLocation] = useState(false);
@@ -664,7 +666,14 @@ export default function RequestServiceModal({
     fullDescription: string,
     categoryId: string
   ) => {
+    console.log('[RequestServiceModal] handleServiceCatalogSelect - Servicio seleccionado:', { 
+      serviceName, 
+      categoryId, 
+      priceText 
+    });
+    
     setUserOverrodeService(true);
+    setSelectedServiceName(serviceName); // ✅ Guardar el nombre del servicio
     setFormData((prev) => ({
       ...prev,
       servicio: categoryId,
@@ -1194,6 +1203,54 @@ export default function RequestServiceModal({
     return () => clearTimeout(autoAdvanceTimeout);
   }, [isOpen, initialService, initialServiceName, user, profile, formData, currentStep]);
 
+  // ✅ Función para obtener precio del servicio desde service_catalog
+  const getServicePrice = async (serviceName: string, discipline: string) => {
+    try {
+      console.log('[RequestServiceModal] getServicePrice - Buscando:', { serviceName, discipline });
+      
+      // Intentar buscar por service_name exacto
+      let { data: serviceData, error } = await supabase
+        .from("service_catalog")
+        .select("min_price, max_price, price_type, service_name, discipline")
+        .eq("service_name", serviceName)
+        .eq("discipline", discipline)
+        .eq("is_active", true)
+        .maybeSingle();
+
+      // Si no se encuentra, intentar buscar solo por discipline (para servicios genéricos)
+      if (error || !serviceData) {
+        console.warn('[RequestServiceModal] getServicePrice - No encontrado por nombre exacto, intentando por disciplina');
+        const { data: fallbackData, error: fallbackError } = await supabase
+          .from("service_catalog")
+          .select("min_price, max_price, price_type, service_name, discipline")
+          .eq("discipline", discipline)
+          .eq("is_active", true)
+          .limit(1)
+          .maybeSingle();
+        
+        if (!fallbackError && fallbackData) {
+          serviceData = fallbackData;
+          console.log('[RequestServiceModal] getServicePrice - ✅ Encontrado por disciplina:', fallbackData);
+        }
+      }
+
+      if (serviceData) {
+        const result = {
+          minPrice: serviceData.min_price || null,
+          maxPrice: serviceData.max_price || null,
+        };
+        console.log('[RequestServiceModal] getServicePrice - ✅ Precio obtenido:', result);
+        return result;
+      } else {
+        console.warn('[RequestServiceModal] getServicePrice - ⚠️ No se encontró precio en catálogo');
+        return { minPrice: null, maxPrice: null };
+      }
+    } catch (error) {
+      console.error('[RequestServiceModal] getServicePrice - ❌ Error:', error);
+      return { minPrice: null, maxPrice: null };
+    }
+  };
+
   const handleSubmit = async () => {
     if (!user) {
       setError("Debes estar logueado para solicitar un servicio");
@@ -1217,8 +1274,10 @@ export default function RequestServiceModal({
 
       await persistWhatsapp(normalizedWhatsapp);
 
-      // Subir imagen si existe
+      // ✅ Subir imagen(s) si existe(n) y preparar photos_urls
       let imagenUrl = null;
+      let photosUrls: string[] = [];
+      
       if (formData.imagen) {
         const fileExt = formData.imagen.name.split(".").pop();
         const fileName = `${user.id}-${Date.now()}.${fileExt}`;
@@ -1234,6 +1293,35 @@ export default function RequestServiceModal({
         } = supabase.storage.from("lead-images").getPublicUrl(fileName);
 
         imagenUrl = publicUrl;
+        photosUrls = [publicUrl]; // ✅ Incluir en array para photos_urls
+      }
+
+      // ✅ Obtener precios estimados del servicio
+      // Prioridad: initialServiceName > selectedServiceName > formData.servicio (pero este es disciplina, no nombre)
+      const serviceName = initialServiceName || selectedServiceName || null;
+      console.log('[RequestServiceModal] handleSubmit - Obteniendo precio:', { 
+        serviceName, 
+        discipline: formData.servicio, 
+        initialServiceName,
+        selectedServiceName,
+        formDataServicio: formData.servicio 
+      });
+      
+      const servicePrice = serviceName ? await getServicePrice(serviceName, formData.servicio) : { minPrice: null, maxPrice: null };
+      
+      console.log('[RequestServiceModal] handleSubmit - Precio obtenido:', servicePrice);
+      
+      // Si no se encontró precio, intentar extraerlo de la descripción como fallback
+      if ((servicePrice.minPrice == null || servicePrice.minPrice === 0) && formData.descripcion) {
+        const priceMatch = formData.descripcion.match(/Precio[:\s]+\$?\s*([\d,]+(?:\.\d{2})?)/i);
+        if (priceMatch && priceMatch[1]) {
+          const extractedPrice = parseFloat(priceMatch[1].replace(/,/g, ''));
+          if (!isNaN(extractedPrice) && extractedPrice > 0) {
+            console.log('[RequestServiceModal] handleSubmit - ✅ Precio extraído de descripción:', extractedPrice);
+            servicePrice.minPrice = extractedPrice;
+            servicePrice.maxPrice = null;
+          }
+        }
       }
 
       // 🆕 Geocodificar ubicación si está disponible
@@ -1277,14 +1365,21 @@ export default function RequestServiceModal({
           descripcion_proyecto: formData.descripcion || "Sin descripción",
           ubicacion_lat: ubicacionLat,
           ubicacion_lng: ubicacionLng,
-          estado: "nuevo", // Usar 'nuevo' según el schema
+          status: "pending", // ✅ Estandarizado para App Móvil
+          estado: "Nuevo", // Mantener para compatibilidad legacy
           servicio: formData.servicio, // Campo correcto según schema
-          servicio_solicitado: initialServiceName || formData.servicio, // Nombre específico del servicio
+          servicio_solicitado: initialServiceName || selectedServiceName || formData.servicio, // Nombre específico del servicio
           ubicacion_direccion: formData.ubicacion || null,
           cliente_id: user.id,
           disciplina_ia: disciplinaIa,
           urgencia_ia: urgenciaIa,
           diagnostico_ia: diagnosticoIa,
+          // ✅ Campos de precio estimado
+          ai_suggested_price_min: servicePrice.minPrice,
+          ai_suggested_price_max: servicePrice.maxPrice,
+          // ✅ Campos de imágenes
+          imagen_url: imagenUrl,
+          photos_urls: photosUrls.length > 0 ? photosUrls : null,
         })
         .select()
         .maybeSingle();
@@ -1495,6 +1590,89 @@ export default function RequestServiceModal({
         lng = selectedAddressCoords.lng;
       }
 
+      // ✅ 3.1 Obtener precios estimados del servicio
+      // Prioridad: initialServiceName > selectedServiceName > formData.servicio (pero este es disciplina, no nombre)
+      const serviceName = initialServiceName || selectedServiceName || null;
+      console.log('[RequestServiceModal] handleFreeRequestSubmitWithoutPayment - Obteniendo precio:', { 
+        serviceName, 
+        discipline: formData.servicio, 
+        initialServiceName,
+        selectedServiceName 
+      });
+      
+      let servicePrice = { minPrice: null, maxPrice: null };
+      
+      if (serviceName) {
+        try {
+          console.log('[RequestServiceModal] Buscando precio para:', { serviceName, discipline: formData.servicio });
+          
+          // Intentar buscar por service_name exacto
+          let { data: serviceData, error } = await supabase
+            .from("service_catalog")
+            .select("min_price, max_price, price_type, service_name, discipline")
+            .eq("service_name", serviceName)
+            .eq("discipline", formData.servicio)
+            .eq("is_active", true)
+            .maybeSingle();
+
+          // Si no se encuentra, intentar buscar solo por discipline (para servicios genéricos)
+          if (error || !serviceData) {
+            console.warn('[RequestServiceModal] No se encontró por nombre exacto, intentando por disciplina:', { serviceName, discipline: formData.servicio });
+            const { data: fallbackData, error: fallbackError } = await supabase
+              .from("service_catalog")
+              .select("min_price, max_price, price_type, service_name, discipline")
+              .eq("discipline", formData.servicio)
+              .eq("is_active", true)
+              .limit(1)
+              .maybeSingle();
+            
+            if (!fallbackError && fallbackData) {
+              serviceData = fallbackData;
+              console.log('[RequestServiceModal] ✅ Encontrado por disciplina:', fallbackData);
+            }
+          }
+
+          if (serviceData) {
+            servicePrice = {
+              minPrice: serviceData.min_price || null,
+              maxPrice: serviceData.max_price || null,
+            };
+            console.log('[RequestServiceModal] ✅ Precio obtenido:', servicePrice);
+          } else {
+            console.warn('[RequestServiceModal] ⚠️ No se encontró precio en catálogo para:', { serviceName, discipline: formData.servicio });
+          }
+        } catch (error) {
+          console.error('[RequestServiceModal] ❌ Error obteniendo precio:', error);
+        }
+      }
+
+      // ✅ 3.2 Subir imagen si existe (antes de crear el lead)
+      let imagenUrl = null;
+      let photosUrls: string[] = [];
+      
+      if (formData.imagen) {
+        try {
+          const fileExt = formData.imagen.name.split(".").pop();
+          const fileName = `${user.id}-${Date.now()}.${fileExt}`;
+
+          const { data: uploadData, error: uploadError } = await supabase.storage
+            .from("lead-images")
+            .upload(fileName, formData.imagen);
+
+          if (!uploadError) {
+            const {
+              data: { publicUrl },
+            } = supabase.storage.from("lead-images").getPublicUrl(fileName);
+            imagenUrl = publicUrl;
+            photosUrls = [publicUrl];
+          } else {
+            console.warn('[RequestServiceModal] Error subiendo imagen (no crítico):', uploadError);
+          }
+        } catch (error) {
+          console.warn('[RequestServiceModal] Error subiendo imagen (no crítico):', error);
+        }
+      }
+
       // 4. Preparar el objeto para insertar
       // IMPORTANTE: Insertamos directamente usando el cliente estándar
       const leadPayload: any = {
@@ -1502,13 +1680,20 @@ export default function RequestServiceModal({
         whatsapp: normalizedWhatsapp,
         descripcion_proyecto: sanitizedDescription,
         servicio: formData.servicio,
+        servicio_solicitado: initialServiceName || selectedServiceName || formData.servicio, // ✅ Agregar servicio_solicitado
         ubicacion_lat: lat,
         ubicacion_lng: lng,
         ubicacion_direccion: formData.ubicacion || null,
         cliente_id: user.id,
-        estado: "Nuevo",
+        status: "pending", // ✅ Estandarizado para App Móvil
+        estado: "Nuevo", // Mantener para compatibilidad legacy
+        // ✅ Campos de precio estimado
+        ai_suggested_price_min: servicePrice.minPrice,
+        ai_suggested_price_max: servicePrice.maxPrice,
+        // ✅ Campos de imágenes
+        imagen_url: imagenUrl,
+        photos_urls: photosUrls.length > 0 ? photosUrls : null,
         // Campos opcionales
-        imagen_url: null, // La imagen se puede manejar aparte si es necesario
         disciplina_ia: disciplinaIa || null,
         urgencia_ia: urgenciaIa ? Number(urgenciaIa) : null,
         diagnostico_ia: diagnosticoIa || null
@@ -1538,31 +1723,8 @@ export default function RequestServiceModal({
       // @ts-ignore - Supabase types inference issue
       console.log("✅ ¡ÉXITO! Lead creado con ID:", data.id);
 
-      // 7. Éxito: Persistir datos secundarios en background (Fire and forget)
-      // No esperamos a esto para liberar al usuario
-      if (formData.imagen) {
-        // Lógica de subida de imagen en background si quieres
-        const fileExt = formData.imagen.name.split(".").pop();
-        const fileName = `${user.id}-${Date.now()}.${fileExt}`;
-        supabase.storage
-          .from("lead-images")
-          .upload(fileName, formData.imagen)
-          .then(({ error: uploadError }) => {
-            if (!uploadError) {
-              const { data: { publicUrl } } = supabase.storage
-                .from("lead-images")
-                .getPublicUrl(fileName);
-              // Actualizar el lead con la URL de la imagen
-              (supabase
-                .from("leads") as any)
-                .update({ imagen_url: publicUrl, photos_urls: [publicUrl] })
-                // @ts-ignore - Supabase types inference issue
-                .eq("id", data.id)
-                .then(() => console.log("✅ Imagen subida y actualizada en lead"));
-            }
-          })
-          .catch((error: any) => console.warn("⚠️ Error al subir imagen (no crítico):", error));
-      }
+      // 7. Éxito: La imagen ya se subió antes de crear el lead, no necesitamos actualizar
+      // (La imagen ya está incluida en photos_urls del payload inicial)
       persistWhatsapp(normalizedWhatsapp).catch(console.warn);
 
       // 8. Enviar alerta de WhatsApp a la empresa (en background, no bloquea)
@@ -1748,6 +1910,7 @@ export default function RequestServiceModal({
       urgencia: "normal",
       whatsapp: "",
     });
+    setSelectedServiceName(null); // ✅ Limpiar servicio seleccionado
     setError(null);
     setWhatsappError(null);
     hasPrefilledWhatsapp.current = false;

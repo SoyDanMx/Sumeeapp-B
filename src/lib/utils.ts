@@ -38,9 +38,37 @@ export function getRedirectUrl(path: string = '/auth/callback'): string {
 /**
  * Construye la URL de confirmación de email de forma dinámica
  * Específicamente para el flujo de registro
+ * IMPORTANTE: Esta URL debe estar whitelisted en Supabase Dashboard → Authentication → URL Configuration
  */
 export function getEmailConfirmationUrl(): string {
-  return getRedirectUrl('/auth/callback');
+  // En producción, usar siempre el dominio correcto para evitar problemas
+  const isProduction = process.env.NODE_ENV === 'production';
+  
+  let baseUrl: string;
+  
+  if (isProduction) {
+    // URL fija en producción - debe coincidir con la URL whitelisted en Supabase
+    baseUrl = 'https://sumeeapp.com';
+  } else {
+    // En desarrollo, usar la función getBaseUrl() que maneja window.location.origin
+    baseUrl = getBaseUrl();
+  }
+  
+  const callbackUrl = `${baseUrl}/auth/callback`;
+  
+  // Validar que la URL sea válida
+  try {
+    const url = new URL(callbackUrl);
+    // Log solo en desarrollo para debugging
+    if (process.env.NODE_ENV === 'development') {
+      console.log('✅ URL de confirmación generada:', callbackUrl);
+    }
+    return callbackUrl;
+  } catch (error) {
+    console.error('❌ URL de confirmación inválida:', callbackUrl, error);
+    // Fallback seguro a producción
+    return 'https://sumeeapp.com/auth/callback';
+  }
 }
 
 /**

@@ -1,375 +1,259 @@
-# 🐛 SOLUCIÓN: Error al Registrar Profesionales
+# 🔧 Solución: Error en Registro de Profesionales
 
-## 🚨 **PROBLEMA IDENTIFICADO**
+## 🐛 Error Identificado
 
-```
-Error al crear usuario: Error en la base de datos. 
-Verifica que el trigger esté configurado correctamente.
-```
+**Error:** `Error al crear usuario: Error sending confirmation email`
 
-**Contexto**:
-- Usuario intenta registrarse como profesional en `/join-as-pro`
-- Formulario completado correctamente
-- Error ocurre al hacer click en "Registrarse como Profesional"
-
-**Captura de pantalla**:
-- Formulario con todos los campos llenos
-- Mensaje de error en rojo
-- Profesión: Plomero
-- Bio completa sobre servicios
+**Ubicación:** https://sumeeapp.com/join-as-pro
 
 ---
 
-## 🔍 **CAUSA RAÍZ**
+## 🔍 Causa Principal
 
-El trigger `handle_new_user` que creamos anteriormente **NO ESTÁ APLICADO** en Supabase.
+El error **"Error sending confirmation email"** ocurre cuando Supabase intenta enviar el email de confirmación pero **rechaza la URL de redirección** porque no está en la lista de URLs permitidas (whitelist).
 
-### **Scripts que creamos pero NO ejecutamos**:
-1. ✅ `update-trigger-handle-new-user-location.sql` (creado pero no ejecutado)
-2. ✅ `migrate-professionals-location.sql` (creado pero no ejecutado)
+### **Por qué ocurre:**
 
-**Resultado**: El trigger anterior (sin soporte de ubicación) sigue activo, o peor, NO hay trigger.
+Supabase tiene una lista de seguridad de URLs permitidas para redirecciones. Si la URL generada por `getEmailConfirmationUrl()` no está en esa lista, Supabase **rechaza automáticamente** el envío del email por seguridad.
 
 ---
 
-## ✅ **SOLUCIÓN INMEDIATA**
+## ✅ Solución Inmediata
 
-### **PASO 1: Ejecutar Script de Fix** (5 min)
+### **Paso 1: Whitelistear URL en Supabase Dashboard**
 
-Ve a Supabase Dashboard y ejecuta este script:
+1. Ir a: **Supabase Dashboard** → https://supabase.com/dashboard
+2. Seleccionar tu proyecto
+3. Ir a: **Authentication** → **URL Configuration**
+4. En la sección **"Redirect URLs"**, agregar:
+   ```
+   https://sumeeapp.com/auth/callback
+   https://www.sumeeapp.com/auth/callback
+   http://localhost:3010/auth/callback
+   ```
+5. **Guardar cambios**
 
-**Archivo**: `fix-trigger-profesionales-completo.sql`
+### **Paso 2: Verificar Configuración de Email**
 
-#### **¿Qué hace este script?**:
-```sql
-1. DROP TRIGGER IF EXISTS on_auth_user_created
-   → Elimina trigger anterior
-   
-2. DROP FUNCTION IF EXISTS handle_new_user()
-   → Elimina función anterior
-   
-3. CREATE FUNCTION handle_new_user()
-   → Crea función COMPLETA con:
-     • Soporte para profesionales
-     • Soporte para clientes
-     • Ubicacion_lat y ubicacion_lng
-     • Work_zones
-     • Bio
-     • Manejo robusto de errores
-     • Logs detallados (RAISE NOTICE)
-     
-4. CREATE TRIGGER on_auth_user_created
-   → Crea trigger en auth.users
-   
-5. GRANT EXECUTE
-   → Da permisos necesarios
-   
-6. Verificación automática
-   → Confirma que se creó correctamente
-```
-
-#### **Instrucciones**:
-```
-1. Ir a: https://supabase.com/dashboard
-2. Seleccionar proyecto: sumeeapp
-3. Click en "SQL Editor" (menú izquierdo)
-4. Click "New Query"
-5. Copiar contenido completo de: fix-trigger-profesionales-completo.sql
-6. Pegar en el editor
-7. Click "Run" (o Ctrl+Enter)
-8. Verificar output:
-   ✅ "Trigger y función creados exitosamente"
-   ✅ Debe mostrar tabla con Trigger y Función
-```
+1. Ir a: **Settings** → **Auth**
+2. Verificar que **"Enable Email Confirmations"** esté habilitado
+3. Verificar **"Email Templates"** → "Confirm signup" template existe
+4. Verificar **"SMTP Settings"** (si usas SMTP personalizado)
 
 ---
 
-## 🧪 **VERIFICACIÓN**
+## 🔧 Correcciones de Código
 
-### **Test 1: Verificar que el trigger existe**
-
-```sql
--- En Supabase SQL Editor:
-SELECT 
-  trigger_name,
-  event_object_table,
-  action_timing,
-  event_manipulation
-FROM information_schema.triggers
-WHERE trigger_name = 'on_auth_user_created';
-
--- Resultado esperado:
--- trigger_name          | event_object_table | action_timing | event_manipulation
--- on_auth_user_created | users              | AFTER         | INSERT
-```
-
-### **Test 2: Verificar que la función existe**
-
-```sql
-SELECT 
-  routine_name,
-  routine_type,
-  security_type
-FROM information_schema.routines
-WHERE routine_schema = 'public'
-  AND routine_name = 'handle_new_user';
-
--- Resultado esperado:
--- routine_name    | routine_type | security_type
--- handle_new_user | FUNCTION     | DEFINER
-```
-
-### **Test 3: Intentar registro de nuevo**
-
-```
-1. Ir a: https://sumeeapp.com/join-as-pro
-2. Completar formulario:
-   - Nombre: Juan Pérez
-   - Email: test@example.com
-   - Password: test1234
-   - WhatsApp: 5512345678
-   - Profesión: Plomero
-   - Ciudad: Ciudad de México
-   - Bio: "Plomero con 10 años de experiencia..."
-3. Click "Registrarse como Profesional"
-4. Resultado esperado:
-   ✅ Registro exitoso
-   ✅ Email de confirmación enviado
-   ✅ Redirect a página de confirmación
-```
-
-### **Test 4: Verificar en Supabase**
-
-```sql
--- Ver último usuario creado
-SELECT 
-  email,
-  created_at,
-  raw_user_meta_data->>'full_name' as full_name,
-  raw_user_meta_data->>'profession' as profession
-FROM auth.users
-ORDER BY created_at DESC
-LIMIT 1;
-
--- Ver perfil correspondiente
-SELECT 
-  email,
-  full_name,
-  profession,
-  role,
-  whatsapp,
-  city,
-  ubicacion_lat,
-  ubicacion_lng
-FROM profiles
-WHERE email = 'test@example.com';
-
--- Resultado esperado:
--- ✅ Usuario existe en auth.users
--- ✅ Perfil existe en profiles
--- ✅ role = 'profesional'
--- ✅ profession = 'Plomero'
--- ✅ whatsapp = '5512345678'
-```
-
----
-
-## 📊 **DIAGNÓSTICO ADICIONAL**
-
-Si el problema persiste después de ejecutar el fix, usa estos queries:
-
-### **Query 1: Ver todos los triggers en auth.users**
-```sql
-SELECT * FROM information_schema.triggers
-WHERE event_object_schema = 'auth'
-  AND event_object_table = 'users';
-```
-
-### **Query 2: Ver logs de errores**
-```sql
--- Si tienes acceso a logs de Postgres
-SELECT * FROM pg_stat_statements
-WHERE query LIKE '%handle_new_user%'
-ORDER BY last_exec_time DESC
-LIMIT 10;
-```
-
-### **Query 3: Verificar permisos**
-```sql
-SELECT 
-  routine_schema,
-  routine_name,
-  privilege_type
-FROM information_schema.routine_privileges
-WHERE routine_name = 'handle_new_user';
-```
-
----
-
-## 🔧 **PLAN B: Si el Fix No Funciona**
-
-### **Opción 1: Usar RPC en lugar de trigger**
-
-Modificar `src/app/join-as-pro/page.tsx` para crear perfil manualmente:
+### **1. Mejorar `getEmailConfirmationUrl()` con Validación**
 
 ```typescript
-// Después de signUp exitoso:
-const { data: authData, error: authError } = await supabase.auth.signUp({
-  email: formData.email,
-  password: formData.password,
-  options: {
-    emailRedirectTo,
-    data: userMetadata,
-  },
-});
-
-// NUEVO: Crear perfil manualmente si no existe
-if (authData.user && !authError) {
-  await supabase.from('profiles').insert({
-    user_id: authData.user.id,
-    email: authData.user.email,
-    full_name: formData.fullName,
-    whatsapp: normalizedPhone,
-    profession: formData.profession,
-    bio: formData.bio,
-    city: realCity,
-    ubicacion_lat,
-    ubicacion_lng,
-    work_zones: formData.workZones,
-    role: 'profesional',
-    membership_status: 'free',
-    status: 'active',
-  });
+// src/lib/utils.ts
+export function getEmailConfirmationUrl(): string {
+  // En producción, usar siempre el dominio correcto
+  const isProduction = process.env.NODE_ENV === 'production';
+  
+  let baseUrl: string;
+  
+  if (isProduction) {
+    // URL fija en producción para evitar problemas
+    baseUrl = 'https://sumeeapp.com';
+  } else {
+    // En desarrollo, usar window.location.origin o variable de entorno
+    baseUrl = typeof window !== 'undefined' 
+      ? window.location.origin 
+      : (process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3010');
+  }
+  
+  const callbackUrl = `${baseUrl}/auth/callback`;
+  
+  // Validar que la URL sea válida
+  try {
+    const url = new URL(callbackUrl);
+    console.log('✅ URL de confirmación generada:', callbackUrl);
+    return callbackUrl;
+  } catch (error) {
+    console.error('❌ URL de confirmación inválida:', callbackUrl);
+    // Fallback seguro
+    return 'https://sumeeapp.com/auth/callback';
+  }
 }
 ```
 
-### **Opción 2: Usar Supabase Edge Function**
-
-Crear función serverless que maneje el registro:
+### **2. Mejorar Manejo de Errores en `page.tsx`**
 
 ```typescript
-// supabase/functions/register-professional/index.ts
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-
-serve(async (req) => {
-  const { email, password, ...profileData } = await req.json()
+// src/app/join-as-pro/page.tsx (línea 511-528)
+if (authError) {
+  console.error('❌ Error en auth.signUp:', authError);
+  console.error('📧 URL de confirmación usada:', emailRedirectTo);
   
-  // 1. Crear usuario en auth
-  const { user, error } = await supabaseAdmin.auth.admin.createUser({
-    email,
-    password,
-    email_confirm: true
-  })
+  // Mensajes de error más específicos
+  let errorMessage = "Error al crear usuario: ";
   
-  // 2. Crear perfil
-  await supabase.from('profiles').insert({
-    user_id: user.id,
-    ...profileData
-  })
+  if (authError.message.includes("Error sending confirmation email")) {
+    // Error específico de email
+    errorMessage = "No se pudo enviar el email de confirmación. ";
+    errorMessage += "Por favor, verifica que tu correo electrónico sea válido. ";
+    errorMessage += "Si el problema persiste, contacta a soporte.";
+    
+    // Log adicional para debugging
+    console.error('📧 Detalles del error de email:', {
+      url: emailRedirectTo,
+      error: authError.message,
+      code: authError.status,
+    });
+    
+    // Sugerencia para el usuario
+    console.warn('💡 Verifica que la URL esté whitelisted en Supabase Dashboard');
+  } else if (authError.message.includes("Database error")) {
+    errorMessage += "Error en la base de datos. Verifica que el trigger esté configurado correctamente.";
+  } else if (authError.message.includes("User already registered")) {
+    errorMessage += "Este correo electrónico ya está registrado.";
+  } else if (authError.message.includes("Invalid email")) {
+    errorMessage += "El correo electrónico no es válido.";
+  } else {
+    errorMessage += authError.message;
+  }
   
-  return new Response(JSON.stringify({ success: true }))
-})
+  throw new Error(errorMessage);
+}
+```
+
+### **3. Agregar Validación Pre-Registro**
+
+```typescript
+// src/app/join-as-pro/page.tsx (antes de signUp)
+// Validar que la URL de confirmación sea válida
+const emailRedirectTo = getEmailConfirmationUrl();
+
+// Validación adicional
+if (!emailRedirectTo || !emailRedirectTo.startsWith('http')) {
+  throw new Error('URL de confirmación inválida. Por favor, recarga la página.');
+}
+
+console.log('🔗 URL de confirmación:', emailRedirectTo);
 ```
 
 ---
 
-## 📝 **RESUMEN**
+## 📋 Checklist de Verificación
 
-### **Problema**:
-```
-❌ Trigger handle_new_user no existe o está desactualizado
-❌ Registro de profesionales falla con error de DB
-❌ No se crea perfil automáticamente
-```
+### **En Supabase Dashboard:**
 
-### **Solución**:
-```
-✅ Ejecutar fix-trigger-profesionales-completo.sql en Supabase
-✅ Verificar que trigger y función existen
-✅ Probar registro de nuevo
-✅ Confirmar en Supabase que perfil se creó
-```
+- [ ] **Authentication → URL Configuration**
+  - [ ] `https://sumeeapp.com/auth/callback` está en "Redirect URLs"
+  - [ ] `https://www.sumeeapp.com/auth/callback` está en "Redirect URLs" (si usas www)
+  - [ ] `http://localhost:3010/auth/callback` está en "Redirect URLs" (desarrollo)
 
-### **Tiempo estimado**: 5-10 minutos
+- [ ] **Settings → Auth**
+  - [ ] "Enable Email Confirmations" está habilitado
+  - [ ] "Email Templates" → "Confirm signup" template existe
+  - [ ] "SMTP Settings" están configurados (si aplica)
 
----
+- [ ] **Logs → Auth**
+  - [ ] Revisar logs para ver errores específicos de email
 
-## 🚀 **ACCIÓN INMEDIATA**
+### **En Código:**
 
-### **AHORA MISMO**:
-```
-1. Abrir Supabase Dashboard
-2. SQL Editor → New Query
-3. Copiar y pegar: fix-trigger-profesionales-completo.sql
-4. Ejecutar (Ctrl+Enter)
-5. Verificar output: "✅ Trigger y función creados"
-6. Probar registro en /join-as-pro
-```
-
-### **SI FUNCIONA**:
-```
-✅ Registrar profesional de prueba
-✅ Verificar email de confirmación
-✅ Confirmar perfil en Supabase
-✅ Marcar como resuelto
-```
-
-### **SI NO FUNCIONA**:
-```
-⚠️ Ejecutar queries de diagnóstico
-⚠️ Revisar logs de Postgres
-⚠️ Implementar Plan B (RPC manual)
-⚠️ Contactar soporte de Supabase
-```
+- [ ] `getEmailConfirmationUrl()` genera URL correcta
+- [ ] Manejo de errores mejorado en `page.tsx`
+- [ ] Logs de debugging agregados
 
 ---
 
-## 📌 **ARCHIVOS CREADOS**
+## 🧪 Pruebas
 
-1. ✅ `diagnostico-trigger-profesionales.sql`
-   - Queries para verificar estado actual
-   - Ver triggers existentes
-   - Ver últimos usuarios
+### **Test 1: Verificar URL Generada**
 
-2. ✅ `fix-trigger-profesionales-completo.sql`
-   - Script completo de fix
-   - Drop + Create trigger
-   - Drop + Create función
-   - Verificación automática
+```typescript
+// En consola del navegador (F12)
+console.log('URL de confirmación:', getEmailConfirmationUrl());
+// Debe mostrar: https://sumeeapp.com/auth/callback
+```
 
-3. ✅ `SOLUCION_ERROR_REGISTRO_PROFESIONALES.md` (este archivo)
-   - Documentación completa
-   - Paso a paso
-   - Diagnóstico
-   - Plan B
+### **Test 2: Intentar Registro**
+
+1. Ir a: https://sumeeapp.com/join-as-pro
+2. Llenar formulario completo
+3. Hacer clic en "Registrarse como Profesional"
+4. Verificar:
+   - ✅ No aparece error de email
+   - ✅ Aparece mensaje de éxito
+   - ✅ Email de confirmación llega al correo
+
+### **Test 3: Verificar Logs**
+
+1. Abrir consola del navegador (F12)
+2. Intentar registro
+3. Verificar logs:
+   - ✅ `✅ URL de confirmación generada: https://sumeeapp.com/auth/callback`
+   - ❌ No debe aparecer `❌ URL de confirmación inválida`
 
 ---
 
-## 🎯 **RESULTADO ESPERADO**
+## 🚨 Si el Problema Persiste
 
-### **Después del Fix**:
-```
-Usuario completa formulario en /join-as-pro
-       ↓
-Click "Registrarse como Profesional"
-       ↓
-supabase.auth.signUp()
-       ↓
-Trigger on_auth_user_created se ejecuta
-       ↓
-Función handle_new_user() crea perfil
-       ↓
-✅ Usuario creado en auth.users
-✅ Perfil creado en profiles
-✅ Email de confirmación enviado
-✅ Redirect a página de éxito
-```
+### **Opción 1: Verificar Email Service**
+
+1. Ir a Supabase Dashboard → **Settings** → **Auth**
+2. Verificar que el servicio de email esté funcionando
+3. Probar enviar un email de prueba
+
+### **Opción 2: Usar SMTP Personalizado**
+
+Si el email service de Supabase no funciona, configurar SMTP personalizado:
+
+1. Ir a: **Settings** → **Auth** → **SMTP Settings**
+2. Configurar con un proveedor (SendGrid, Resend, etc.)
+3. Guardar configuración
+
+### **Opción 3: Deshabilitar Confirmación de Email (Solo Desarrollo)**
+
+**⚠️ SOLO PARA DESARROLLO/TESTING:**
+
+1. Ir a: **Settings** → **Auth**
+2. Deshabilitar "Enable Email Confirmations"
+3. **Nota:** Esto permite registro sin confirmación de email
 
 ---
 
-**¿Listo para ejecutar el fix?** 🚀
+## 📊 Diagnóstico Adicional
 
-El script está en: `src/lib/supabase/fix-trigger-profesionales-completo.sql`
+### **Verificar en Supabase Logs:**
 
-Solo cópialo y pégalo en Supabase SQL Editor. ¡El problema se resolverá en segundos!
+1. Ir a: **Logs** → **Auth**
+2. Buscar errores relacionados con:
+   - `signUp`
+   - `email`
+   - `confirmation`
+3. Revisar detalles del error
 
+### **Verificar Usuario Creado:**
+
+1. Ir a: **Authentication** → **Users**
+2. Buscar el email del usuario que intentó registrarse
+3. Verificar:
+   - ✅ Usuario existe
+   - ✅ Email no confirmado (`email_confirmed_at` es null)
+   - ✅ Metadatos están correctos
+
+---
+
+## 🎯 Resumen
+
+**Causa más probable:** URL de confirmación no está whitelisted en Supabase Dashboard.
+
+**Solución inmediata:**
+1. Agregar `https://sumeeapp.com/auth/callback` a "Redirect URLs" en Supabase
+2. Verificar configuración de email en Supabase
+3. Probar registro nuevamente
+
+**Mejoras de código:**
+1. Validar URL antes de usar
+2. Mejorar mensajes de error
+3. Agregar logs de debugging
+
+---
+
+*Solución creada: 2025-01-XX*
+*Error: URL de confirmación no whitelisted en Supabase*
