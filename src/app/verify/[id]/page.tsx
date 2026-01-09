@@ -87,8 +87,21 @@ async function getVerificationData(professionalId: string): Promise<Verification
       .eq('user_id', professionalId)
       .single();
 
-    if (profileError || !profile) {
-      console.error('[Verification] Profile error:', profileError);
+    if (profileError) {
+      // Log error details for debugging (solo si hay un error real)
+      if (profileError.message || profileError.code) {
+        console.error('[Verification] Profile error:', {
+          message: profileError.message,
+          details: profileError.details,
+          hint: profileError.hint,
+          code: profileError.code,
+        });
+      }
+      return null;
+    }
+
+    if (!profile) {
+      console.warn('[Verification] Profile not found for user_id:', professionalId);
       return null;
     }
 
