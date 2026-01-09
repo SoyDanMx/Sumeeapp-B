@@ -98,7 +98,7 @@ export function ProductPrice({
   const finalPrice = convertToMXN(displayPrice);
   const finalOriginalPrice = displayOriginalPrice ? convertToMXN(displayOriginalPrice) : null;
 
-  // Formatear precio en MXN
+  // Formatear precio (sin indicar moneda específica, se agrega después)
   const formatPrice = (price: number) => {
     return `$${price.toLocaleString("es-MX", {
       minimumFractionDigits: 2,
@@ -135,15 +135,32 @@ export function ProductPrice({
 
   // NUNCA mostrar $0 - siempre mostrar "Consultar precio" si el precio es 0 o null
   if (finalPrice > 0) {
+    // Determinar si el precio está en USD (productos de Syscom con external_code)
+    const isUSD = isSyscomProduct && externalCode;
+    
     return (
       <div className={`flex flex-col gap-1 ${className}`}>
-        <span className={`font-black text-indigo-600 ${sizeClasses[size]}`}>
-          {formatPrice(finalPrice)}
-        </span>
-        {showOriginal && finalOriginalPrice && finalOriginalPrice > finalPrice && (
-          <span className={`text-gray-400 line-through decoration-red-300 ${originalSizeClasses[size]}`}>
-            {formatPrice(finalOriginalPrice)}
+        <div className="flex items-baseline gap-1">
+          <span className={`font-black text-indigo-600 ${sizeClasses[size]}`}>
+            {formatPrice(finalPrice)}
           </span>
+          {isUSD && (
+            <span className="text-xs text-gray-500 font-medium">
+              USD
+            </span>
+          )}
+        </div>
+        {showOriginal && finalOriginalPrice && finalOriginalPrice > finalPrice && (
+          <div className="flex items-baseline gap-1">
+            <span className={`text-gray-400 line-through decoration-red-300 ${originalSizeClasses[size]}`}>
+              {formatPrice(finalOriginalPrice)}
+            </span>
+            {isUSD && (
+              <span className="text-xs text-gray-400 line-through">
+                USD
+              </span>
+            )}
+          </div>
         )}
       </div>
     );
