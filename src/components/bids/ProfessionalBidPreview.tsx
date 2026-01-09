@@ -100,25 +100,25 @@ export default function ProfessionalBidPreview({
 
       // Calcular badges basados en estadísticas
       const badges: string[] = [];
-      if (stats.average_rating >= 4.5) badges.push('Top Rated');
-      if (stats.total_jobs_completed >= 50) badges.push('Experienced');
-      if (stats.total_jobs_completed >= 100) badges.push('Expert');
-      if (stats.expediente_status === 'approved') badges.push('Verified');
-      if (stats.response_time_avg && stats.response_time_avg <= 5) badges.push('Fast Response');
+      if (statsData?.average_rating && statsData.average_rating >= 4.5) badges.push('Top Rated');
+      if (statsData?.total_jobs_completed && statsData.total_jobs_completed >= 50) badges.push('Experienced');
+      if (statsData?.total_jobs_completed && statsData.total_jobs_completed >= 100) badges.push('Expert');
+      if (statsData?.expediente_status === 'approved') badges.push('Verified');
+      if (statsData?.response_time_avg && statsData.response_time_avg <= 5) badges.push('Fast Response');
 
       // Calcular tiempo promedio de respuesta (si está disponible)
       // Esto se puede calcular desde la tabla de mensajes o quotes
-      const responseTime = stats.response_time_avg || null;
+      const responseTime = statsData?.response_time_avg || null;
 
       setProfessional({
-        full_name: stats.full_name || profile?.full_name || 'Profesional Sumee',
-        avatar_url: stats.avatar_url || profile?.avatar_url || null,
-        average_rating: stats.average_rating || 5.0,
-        total_jobs_completed: stats.total_jobs_completed || 0,
-        expediente_status: stats.expediente_status || 'pending',
-        areas_servicio: stats.areas_servicio || profile?.areas_servicio || [],
-        profession: stats.profession || profile?.profession || 'Técnico Especializado',
-        verified: stats.expediente_status === 'approved',
+        full_name: statsData?.full_name || profile?.full_name || 'Profesional Sumee',
+        avatar_url: statsData?.avatar_url || profile?.avatar_url || null,
+        average_rating: statsData?.average_rating || 5.0,
+        total_jobs_completed: statsData?.total_jobs_completed || 0,
+        expediente_status: statsData?.expediente_status || 'pending',
+        areas_servicio: statsData?.areas_servicio || profile?.areas_servicio || [],
+        profession: statsData?.profession || profile?.profession || 'Técnico Especializado',
+        verified: statsData?.expediente_status === 'approved',
         response_time_avg: responseTime,
         badges,
       });
