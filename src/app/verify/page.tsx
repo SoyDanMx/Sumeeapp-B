@@ -13,13 +13,6 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import Image from 'next/image';
 
-export const metadata = {
-  title: 'Verificar Profesional | Sumee App',
-  description:
-    'Verifica la identidad y credenciales de profesionales en Sumee. Ingresa el ID del técnico o escanea su código QR para ver su perfil verificado.',
-  keywords: 'verificar técnico, verificación profesional, QR code verificación, técnico verificado',
-};
-
 export default function VerifyPage() {
   const router = useRouter();
   const [professionalId, setProfessionalId] = useState('');
