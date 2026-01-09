@@ -103,7 +103,7 @@ export const PriceService = {
         finalPrice: parseFloat(String(result.final_price || 0)),
         minPrice: parseFloat(String(result.min_price || 0)),
         maxPrice: result.max_price ? parseFloat(String(result.max_price)) : null,
-        priceType: result.price_type || null,
+        priceType: (result.price_type as 'fixed' | 'range' | 'starting_at') || 'fixed',
         appliedRules: result.applied_rules || [],
         calculationDetails: result.calculation_details || {},
       };
