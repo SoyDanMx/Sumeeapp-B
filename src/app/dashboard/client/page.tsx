@@ -197,14 +197,13 @@ function ClientDashboardContent() {
       // Filtrar cancelados como medida de seguridad adicional
       const filteredLeads = userLeads.filter((lead: Lead) => {
         const estado = (lead.estado || '').toLowerCase();
-        const status = (lead.status || '').toLowerCase();
-        const isCancelled = estado === 'cancelado' || status === 'cancelled';
+        // Lead solo tiene 'estado', no 'status'
+        const isCancelled = estado === 'cancelado';
         
         if (isCancelled) {
           console.log('🚫 [ClientDashboard] Excluyendo lead cancelado del estado:', {
             id: lead.id,
             estado: lead.estado,
-            status: lead.status,
           });
         }
         
