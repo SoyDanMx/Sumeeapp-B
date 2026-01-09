@@ -1610,7 +1610,7 @@ export default function RequestServiceModal({
         selectedServiceName 
       });
       
-      let servicePrice = { minPrice: null, maxPrice: null };
+          let servicePrice: { minPrice: number | null; maxPrice: number | null } = { minPrice: null, maxPrice: null };
       
       if (serviceName) {
         try {
