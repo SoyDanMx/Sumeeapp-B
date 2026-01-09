@@ -85,12 +85,30 @@ async function getVerificationData(professionalId: string): Promise<Verification
         created_at
       `)
       .eq('user_id', professionalId)
-      .single();
+      .single() as { data: any; error: any };
 
     if (profileError || !profile) {
       console.error('[Verification] Profile error:', profileError);
       return null;
     }
+
+    // Type assertion para profile
+    const profileData = profile as {
+      id: number;
+      user_id: string;
+      full_name: string;
+      profession: string | null;
+      avatar_url: string | null;
+      bio: string | null;
+      descripcion_perfil: string | null;
+      areas_servicio: string[] | null;
+      work_zones: string[] | null;
+      city: string | null;
+      whatsapp: string | null;
+      verified: boolean | null;
+      expediente_status: string | null;
+      created_at: string;
+    };
 
     // Get stats from professional_stats
     const { data: stats, error: statsError } = await supabase
@@ -121,16 +139,16 @@ async function getVerificationData(professionalId: string): Promise<Verification
 
     // Calculate verification status
     const verification_status: VerificationStatus = {
-      identity_verified: profile.verified === true,
+      identity_verified: profileData.verified === true,
       profile_complete: Boolean(
-        profile.full_name &&
-        profile.profession &&
-        profile.avatar_url &&
-        (profile.bio || profile.descripcion_perfil) &&
-        profile.areas_servicio?.length > 0 &&
-        profile.work_zones?.length > 0
+        profileData.full_name &&
+        profileData.profession &&
+        profileData.avatar_url &&
+        (profileData.bio || profileData.descripcion_perfil) &&
+        (profileData.areas_servicio?.length ?? 0) > 0 &&
+        (profileData.work_zones?.length ?? 0) > 0
       ),
-      expediente_approved: profile.expediente_status === 'approved' || profile.expediente_status === 'aprobado',
+      expediente_approved: profileData.expediente_status === 'approved' || profileData.expediente_status === 'aprobado',
       reputation_validated: (reviewStats.average_rating >= 4.0 && reviewStats.total_reviews >= 5)
     };
 
@@ -148,18 +166,18 @@ async function getVerificationData(professionalId: string): Promise<Verification
 
     return {
       profile: {
-        id: profile.user_id,
-        full_name: profile.full_name,
-        profession: profile.profession || 'Profesional',
-        avatar_url: profile.avatar_url,
-        bio: profile.bio || profile.descripcion_perfil || null,
-        areas_servicio: profile.areas_servicio || [],
-        work_zones: profile.work_zones || [],
-        city: profile.city,
-        whatsapp: profile.whatsapp || null,
-        verified: profile.verified || false,
-        expediente_status: profile.expediente_status,
-        created_at: profile.created_at
+        id: profileData.user_id,
+        full_name: profileData.full_name,
+        profession: profileData.profession || 'Profesional',
+        avatar_url: profileData.avatar_url,
+        bio: profileData.bio || profileData.descripcion_perfil || null,
+        areas_servicio: profileData.areas_servicio || [],
+        work_zones: profileData.work_zones || [],
+        city: profileData.city,
+        whatsapp: profileData.whatsapp || null,
+        verified: profileData.verified || false,
+        expediente_status: profileData.expediente_status,
+        created_at: profileData.created_at
       },
       stats: verificationStats,
       badges: unlockedBadges,
