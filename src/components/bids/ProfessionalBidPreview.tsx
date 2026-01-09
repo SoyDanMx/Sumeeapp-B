@@ -63,8 +63,7 @@ export default function ProfessionalBidPreview({
       setError(null);
 
       // Importar supabase client
-      const { createClient } = await import('@/lib/supabase');
-      const supabase = createClient();
+      const { supabase } = await import('@/lib/supabase');
 
       // Obtener datos del profesional desde professional_stats
       const { data: stats, error: statsError } = await supabase
@@ -72,6 +71,20 @@ export default function ProfessionalBidPreview({
         .select('*')
         .eq('user_id', professionalId)
         .single();
+      
+      // Type assertion para stats (alineado con estructura de app de profesionales)
+      type ProfessionalStats = {
+        average_rating?: number;
+        total_jobs_completed?: number;
+        expediente_status?: string;
+        response_time_avg?: number;
+        full_name?: string;
+        avatar_url?: string | null;
+        areas_servicio?: string[];
+        profession?: string;
+        verified?: boolean;
+      } | null;
+      const statsData = stats as ProfessionalStats;
 
       if (statsError) {
         console.error('[ProfessionalBidPreview] Error loading stats:', statsError);

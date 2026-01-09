@@ -5,7 +5,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { createClient } from '@/lib/supabase';
+import { supabase } from '@/lib/supabase';
 import ProfessionalBidPreview from './ProfessionalBidPreview';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSpinner, faExclamationCircle } from '@fortawesome/free-solid-svg-icons';
@@ -42,7 +42,6 @@ export default function BidsList({ jobId, onBidSelected, className = '' }: BidsL
       loadBids();
       
       // Suscribirse a cambios en tiempo real
-      const supabase = createClient();
       const channel = supabase
         .channel(`job_bids_${jobId}`)
         .on(
@@ -70,8 +69,6 @@ export default function BidsList({ jobId, onBidSelected, className = '' }: BidsL
       setLoading(true);
       setError(null);
 
-      const supabase = createClient();
-
       // Obtener ofertas desde la vista con ranking
       const { data, error: fetchError } = await supabase
         .from('job_bids_with_score')
@@ -97,7 +94,6 @@ export default function BidsList({ jobId, onBidSelected, className = '' }: BidsL
 
   const handleSelectBid = async (bidId: string, professionalId: string) => {
     try {
-      const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
 
       if (!user) {
@@ -109,7 +105,7 @@ export default function BidsList({ jobId, onBidSelected, className = '' }: BidsL
       const { data: rpcResult, error: rpcError } = await supabase.rpc('select_job_bid', {
         p_bid_id: bidId,
         p_client_id: user.id,
-      });
+      } as any);
 
       if (rpcError) {
         console.error('[BidsList] Error selecting bid:', rpcError);
@@ -117,8 +113,8 @@ export default function BidsList({ jobId, onBidSelected, className = '' }: BidsL
         return;
       }
 
-      if (!rpcResult || !rpcResult.success) {
-        alert(rpcResult?.error?.message || 'No se pudo seleccionar la oferta.');
+      if (!rpcResult || (rpcResult as any)?.success === false) {
+        alert((rpcResult as any)?.error?.message || 'No se pudo seleccionar la oferta.');
         return;
       }
 
