@@ -11,7 +11,6 @@ import {
   faInfoCircle,
   faCheckCircle,
 } from '@fortawesome/free-solid-svg-icons';
-import Image from 'next/image';
 
 export default function VerifyPage() {
   const router = useRouter();
