@@ -85,7 +85,7 @@ async function getVerificationData(professionalId: string): Promise<Verification
         created_at
       `)
       .eq('user_id', professionalId)
-      .single();
+      .maybeSingle();
 
     if (profileError) {
       // Log error details for debugging (solo si hay un error real)
