@@ -3,7 +3,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { supabase } from '@/lib/supabase/server';
+import { createSupabaseServerClient } from '@/lib/supabase/server';
 
 // Inicializar cliente de Gemini
 const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
@@ -65,6 +65,7 @@ export async function POST(request: NextRequest) {
         }
 
         // 1. Obtener todos los servicios activos de la BD
+        const supabase = await createSupabaseServerClient();
         const { data: services, error: servicesError } = await supabase
             .from('service_catalog')
             .select('id, service_name, discipline, min_price, max_price, description')
@@ -279,6 +280,7 @@ async function fallbackAnalysis(problemDescription: string): Promise<AISearchRes
     }
 
     // Buscar servicios en la disciplina detectada
+    const supabase = await createSupabaseServerClient();
     const { data: services } = await supabase
         .from('service_catalog')
         .select('id, service_name, discipline, min_price, max_price')
