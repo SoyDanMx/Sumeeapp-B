@@ -1234,10 +1234,20 @@ export default function RequestServiceModal({
         }
       }
 
-      if (serviceData) {
+      // Type assertion para serviceData (alineado con estructura de service_catalog)
+      type ServiceCatalogData = {
+        min_price?: number | null;
+        max_price?: number | null;
+        price_type?: string;
+        service_name?: string;
+        discipline?: string;
+      } | null;
+      const serviceDataTyped = serviceData as ServiceCatalogData;
+
+      if (serviceDataTyped) {
         const result = {
-          minPrice: serviceData.min_price || null,
-          maxPrice: serviceData.max_price || null,
+          minPrice: serviceDataTyped.min_price || null,
+          maxPrice: serviceDataTyped.max_price || null,
         };
         console.log('[RequestServiceModal] getServicePrice - ✅ Precio obtenido:', result);
         return result;
@@ -1632,10 +1642,20 @@ export default function RequestServiceModal({
             }
           }
 
-          if (serviceData) {
+          // Type assertion para serviceData (alineado con estructura de service_catalog)
+          type ServiceCatalogData = {
+            min_price?: number | null;
+            max_price?: number | null;
+            price_type?: string;
+            service_name?: string;
+            discipline?: string;
+          } | null;
+          const serviceDataTyped = serviceData as ServiceCatalogData;
+
+          if (serviceDataTyped) {
             servicePrice = {
-              minPrice: serviceData.min_price || null,
-              maxPrice: serviceData.max_price || null,
+              minPrice: serviceDataTyped.min_price || null,
+              maxPrice: serviceDataTyped.max_price || null,
             };
             console.log('[RequestServiceModal] ✅ Precio obtenido:', servicePrice);
           } else {
