@@ -1246,8 +1246,8 @@ export default function RequestServiceModal({
 
       if (serviceDataTyped) {
         const result = {
-          minPrice: serviceDataTyped.min_price || null,
-          maxPrice: serviceDataTyped.max_price || null,
+          minPrice: serviceDataTyped.min_price ?? null,
+          maxPrice: serviceDataTyped.max_price ?? null,
         };
         console.log('[RequestServiceModal] getServicePrice - ✅ Precio obtenido:', result);
         return result;
@@ -1654,8 +1654,8 @@ export default function RequestServiceModal({
 
           if (serviceDataTyped) {
             servicePrice = {
-              minPrice: serviceDataTyped.min_price || null,
-              maxPrice: serviceDataTyped.max_price || null,
+              minPrice: serviceDataTyped.min_price ?? null,
+              maxPrice: serviceDataTyped.max_price ?? null,
             };
             console.log('[RequestServiceModal] ✅ Precio obtenido:', servicePrice);
           } else {
