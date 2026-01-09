@@ -114,8 +114,8 @@ async function getVerificationData(professionalId: string): Promise<Verification
 
     const reviewStats = {
       total_reviews: reviews?.length || 0,
-      average_rating: reviews?.length
-        ? reviews.reduce((sum, r) => sum + (r.rating || 0), 0) / reviews.length
+      average_rating: reviews && reviews.length > 0
+        ? reviews.reduce((sum, r: { rating?: number | null }) => sum + (r.rating || 0), 0) / reviews.length
         : 0,
     };
 
