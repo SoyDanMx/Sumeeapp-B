@@ -74,25 +74,36 @@ export const PriceService = {
         p_urgency: params.urgency || 'normal',
         p_request_time: params.requestTime?.toISOString() || new Date().toISOString(),
         p_zone_name: params.zoneName || null,
-      });
+      } as any);
 
       if (error) {
         console.error('[PriceService] Error getting dynamic price:', error);
         throw error;
       }
 
-      if (!data || data.length === 0) {
+      // Type assertion para data del RPC
+      type PricingRpcResult = {
+        final_price?: string | number;
+        min_price?: string | number;
+        max_price?: string | number | null;
+        price_type?: string;
+        applied_rules?: any;
+        calculation_details?: any;
+      }[];
+      const pricingData = (data || []) as PricingRpcResult;
+
+      if (pricingData.length === 0) {
         console.warn('[PriceService] No price data returned for service:', params.serviceId);
         return null;
       }
 
-      const result = data[0];
+      const result = pricingData[0];
 
       const priceResult: PriceResult = {
-        finalPrice: parseFloat(result.final_price),
-        minPrice: parseFloat(result.min_price),
-        maxPrice: result.max_price ? parseFloat(result.max_price) : null,
-        priceType: result.price_type,
+        finalPrice: parseFloat(String(result.final_price || 0)),
+        minPrice: parseFloat(String(result.min_price || 0)),
+        maxPrice: result.max_price ? parseFloat(String(result.max_price)) : null,
+        priceType: result.price_type || null,
         appliedRules: result.applied_rules || [],
         calculationDetails: result.calculation_details || {},
       };
