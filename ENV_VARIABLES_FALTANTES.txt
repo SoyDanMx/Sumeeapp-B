@@ -1,0 +1,5 @@
+
+# Variables de Supabase - AGREGAR ESTAS AL .env.local
+NEXT_PUBLIC_SUPABASE_URL=https://jkdvrwmanmwoyyoixmnt.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=tu_anon_key_aqui
+

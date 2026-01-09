@@ -6,7 +6,7 @@ import { supabase } from '@/lib/supabaseClient';
 import Image from 'next/image';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
-  faShieldCheck,
+  faShieldAlt,
   faCheckCircle,
   faStar,
   faBriefcase,
@@ -268,16 +268,94 @@ export default function VerifyPage() {
 
   return (
     <>
-      {/* Schema.org JSON-LD */}
+      {/* Schema.org JSON-LD - Enhanced */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
           __html: JSON.stringify({
             '@context': 'https://schema.org',
             '@type': 'Person',
+            '@id': `https://www.sumeeapp.com/verify/${id}`,
             name: profile.full_name,
             jobTitle: profile.profession,
-            image: profile.avatar_url,
+            image: profile.avatar_url || 'https://www.sumeeapp.com/default-avatar.png',
+            url: typeof window !== 'undefined' ? window.location.href : `https://www.sumeeapp.com/verify/${id}`,
+            sameAs: [
+              // Agregar redes sociales si están disponibles
+            ],
+            address: profile.city ? {
+              '@type': 'PostalAddress',
+              addressLocality: profile.city,
+              addressCountry: 'MX',
+            } : undefined,
+            aggregateRating: {
+              '@type': 'AggregateRating',
+              ratingValue: stats.rating,
+              reviewCount: stats.review_count,
+              bestRating: 5,
+              worstRating: 1,
+            },
+            knowsAbout: profile.areas_servicio || [],
+            memberOf: {
+              '@type': 'Organization',
+              name: 'Sumee App',
+              url: 'https://www.sumeeapp.com',
+            },
+            worksFor: {
+              '@type': 'Organization',
+              name: 'Sumee App',
+              url: 'https://www.sumeeapp.com',
+            },
+          }),
+        }}
+      />
+      
+      {/* LocalBusiness Schema (si aplica) */}
+      {profile.city && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              '@context': 'https://schema.org',
+              '@type': 'LocalBusiness',
+              '@id': `https://www.sumeeapp.com/verify/${id}#business`,
+              name: `${profile.full_name} - ${profile.profession}`,
+              image: profile.avatar_url || 'https://www.sumeeapp.com/default-avatar.png',
+              address: {
+                '@type': 'PostalAddress',
+                addressLocality: profile.city,
+                addressCountry: 'MX',
+              },
+              aggregateRating: {
+                '@type': 'AggregateRating',
+                ratingValue: stats.rating,
+                reviewCount: stats.review_count,
+                bestRating: 5,
+                worstRating: 1,
+              },
+              priceRange: '$$',
+              areaServed: profile.work_zones || [],
+            }),
+          }}
+        />
+      )}
+      
+      {/* Service Schema */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': 'Service',
+            '@id': `https://www.sumeeapp.com/verify/${id}#service`,
+            name: `Servicios de ${profile.profession} - ${profile.full_name}`,
+            provider: {
+              '@type': 'Person',
+              name: profile.full_name,
+              jobTitle: profile.profession,
+            },
+            areaServed: profile.work_zones || [],
+            serviceType: profile.areas_servicio || [profile.profession],
             aggregateRating: {
               '@type': 'AggregateRating',
               ratingValue: stats.rating,
@@ -292,7 +370,7 @@ export default function VerifyPage() {
         <div className="bg-gradient-to-r from-purple-600 to-purple-700 text-white py-8">
           <div className="max-w-4xl mx-auto px-4 text-center">
             <div className="flex items-center justify-center gap-2 mb-2">
-              <FontAwesomeIcon icon={faShieldCheck} className="text-2xl" />
+              <FontAwesomeIcon icon={faShieldAlt} className="text-2xl" />
               <h1 className="text-2xl font-bold">Verificado por Sumee</h1>
             </div>
             <p className="text-purple-100">Verificado el {verifiedDate}</p>
@@ -321,7 +399,7 @@ export default function VerifyPage() {
                 </div>
                 {verification_status.identity_verified && (
                   <div className="flex items-center gap-2 text-green-600">
-                    <FontAwesomeIcon icon={faShieldCheck} />
+                    <FontAwesomeIcon icon={faShieldAlt} />
                     <span className="font-semibold">Super PRO</span>
                   </div>
                 )}
@@ -382,7 +460,7 @@ export default function VerifyPage() {
                 <p className="text-sm text-gray-600">Calificación</p>
               </div>
               <div>
-                <FontAwesomeIcon icon={faShieldCheck} className="text-green-600 text-2xl mb-2" />
+                <FontAwesomeIcon icon={faShieldAlt} className="text-green-600 text-2xl mb-2" />
                 <p className="text-2xl font-bold">{stats.level_name}</p>
                 <p className="text-sm text-gray-600">Nivel</p>
               </div>

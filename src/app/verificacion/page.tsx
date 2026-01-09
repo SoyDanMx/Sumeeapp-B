@@ -13,7 +13,6 @@ import {
   faUserTie,
   faClock,
   faShield,
-  faShieldCheck,
   faQrcode,
   faSearch,
   faSpinner,
@@ -45,8 +44,75 @@ export default function VerificacionPage() {
     );
   };
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Hero Section */}
+    <>
+      {/* Schema.org JSON-LD - Organization & WebPage */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': 'WebPage',
+            '@id': 'https://www.sumeeapp.com/verificacion',
+            name: 'Proceso de Verificación - Sumee App',
+            description:
+              'Conoce nuestro riguroso proceso de 4 capas para garantizar que solo los mejores profesionales entren a tu hogar.',
+            url: 'https://www.sumeeapp.com/verificacion',
+            inLanguage: 'es-MX',
+            isPartOf: {
+              '@type': 'WebSite',
+              name: 'Sumee App',
+              url: 'https://www.sumeeapp.com',
+            },
+            about: {
+              '@type': 'Thing',
+              name: 'Verificación de Profesionales',
+              description: 'Sistema de verificación de 4 capas para técnicos y profesionales de servicios',
+            },
+            mainEntity: {
+              '@type': 'Organization',
+              name: 'Sumee App',
+              url: 'https://www.sumeeapp.com',
+              logo: 'https://www.sumeeapp.com/logo.png',
+              description: 'Plataforma de servicios profesionales verificados',
+              sameAs: [
+                // Agregar redes sociales si están disponibles
+              ],
+            },
+          }),
+        }}
+      />
+      
+      {/* FAQPage Schema (si aplica) */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': 'FAQPage',
+            mainEntity: [
+              {
+                '@type': 'Question',
+                name: '¿Cómo funciona el proceso de verificación de Sumee?',
+                acceptedAnswer: {
+                  '@type': 'Answer',
+                  text: 'Nuestro proceso de verificación consta de 4 pilares: Identidad Verificada (reconocimiento facial y validación de documentos), Certificaciones Validadas (DC-3 y Red Conocer), Background Check Completo (verificación de antecedentes), y Evaluación Continua (monitoreo de calificaciones y reseñas).',
+                },
+              },
+              {
+                '@type': 'Question',
+                name: '¿Cómo puedo verificar a un técnico?',
+                acceptedAnswer: {
+                  '@type': 'Answer',
+                  text: 'Puedes verificar a un técnico ingresando su ID en nuestra página de verificación o escaneando su código QR. Esto te mostrará su perfil completo con todas sus verificaciones, calificaciones y certificaciones.',
+                },
+              },
+            ],
+          }),
+        }}
+      />
+      
+      <div className="min-h-screen bg-gray-50">
+        {/* Hero Section */}
       <section className="bg-gradient-to-r from-blue-600 via-blue-700 to-purple-700 text-white py-16 md:py-24">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-4xl mx-auto">
@@ -260,7 +326,7 @@ export default function VerificacionPage() {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-purple-600 to-purple-700 rounded-full mb-6">
-              <FontAwesomeIcon icon={faShieldCheck} className="text-white text-4xl" />
+              <FontAwesomeIcon icon={faShieldAlt} className="text-white text-4xl" />
             </div>
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
               Verifica un Profesional Ahora
@@ -310,7 +376,7 @@ export default function VerificacionPage() {
                       </>
                     ) : (
                       <>
-                        <FontAwesomeIcon icon={faShieldCheck} />
+                        <FontAwesomeIcon icon={faShieldAlt} />
                         <span>Verificar</span>
                       </>
                     )}
@@ -348,7 +414,7 @@ export default function VerificacionPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="bg-white rounded-xl p-6 shadow-md text-center">
               <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                <FontAwesomeIcon icon={faShieldCheck} className="text-green-600 text-xl" />
+                <FontAwesomeIcon icon={faShieldAlt} className="text-green-600 text-xl" />
               </div>
               <h3 className="font-semibold text-gray-900 mb-2">Verificación Segura</h3>
               <p className="text-sm text-gray-600">
@@ -618,7 +684,8 @@ export default function VerificacionPage() {
           </div>
         </div>
       </section>
-    </div>
+      </div>
+    </>
   );
 }
 

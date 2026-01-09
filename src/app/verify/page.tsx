@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
-  faShieldCheck,
+  faShieldAlt,
   faQrcode,
   faSearch,
   faSpinner,
@@ -46,7 +46,7 @@ export default function VerifyPage() {
         {/* Header */}
         <div className="text-center mb-12">
           <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-purple-600 to-purple-700 rounded-full mb-6">
-            <FontAwesomeIcon icon={faShieldCheck} className="text-white text-4xl" />
+            <FontAwesomeIcon icon={faShieldAlt} className="text-white text-4xl" />
           </div>
           <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
             Verificar Profesional
@@ -98,7 +98,7 @@ export default function VerifyPage() {
                     </>
                   ) : (
                     <>
-                      <FontAwesomeIcon icon={faShieldCheck} />
+                        <FontAwesomeIcon icon={faShieldAlt} />
                       <span>Verificar</span>
                     </>
                   )}
@@ -137,7 +137,7 @@ export default function VerifyPage() {
           <div className="bg-white rounded-xl p-6 shadow-md">
             <div className="flex items-center gap-3 mb-3">
               <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-                <FontAwesomeIcon icon={faShieldCheck} className="text-green-600 text-xl" />
+                <FontAwesomeIcon icon={faShieldAlt} className="text-green-600 text-xl" />
               </div>
               <h3 className="font-semibold text-gray-900">Verificación Segura</h3>
             </div>
