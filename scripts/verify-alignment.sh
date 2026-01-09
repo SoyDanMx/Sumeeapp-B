@@ -1,171 +1,123 @@
 #!/bin/bash
-# Script para verificar alineación entre Sumeeapp-B, SumeePros y SumeeClient
+# Script para verificar alineación de tipos y estructuras con apps de profesionales y cliente
 
-echo "🔍 Verificando alineación entre repositorios..."
+echo "🔍 Verificando alineación con apps de profesionales y cliente..."
 echo ""
 
-# Colores para output
+# Colores
 GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
 RED='\033[0;31m'
+YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
-# Rutas de los repositorios
-SUMEAPP_B="/Users/danielnuno/Documents/Sumee-Universe/Sumeeapp-B"
-SUMEEPROS="/Users/danielnuno/Sumee Pros/SumeePros"
-SUMEECLIENT="/Users/danielnuno/Documents/Sumee-Universe/SumeeClient"
+# Directorios
+PROFESSIONAL_APP="/Users/danielnuno/Sumee Pros/SumeePros"
+CLIENT_APP="/Users/danielnuno/Documents/Sumee-Universe/SumeeClient"
+WEB_APP="/Users/danielnuno/Documents/Sumee-Universe/Sumeeapp-B"
 
-# Verificar que los repositorios existan
-check_repo() {
-    if [ ! -d "$1" ]; then
-        echo -e "${RED}❌ Repositorio no encontrado: $1${NC}"
-        return 1
-    else
-        echo -e "${GREEN}✅ Repositorio encontrado: $1${NC}"
-        return 0
+ERRORS=0
+
+# Función para verificar tipos
+check_types() {
+    local type_name=$1
+    local file_pattern=$2
+    
+    echo "📋 Verificando tipo: $type_name"
+    
+    # Buscar en app de profesionales
+    PROF_RESULT=$(find "$PROFESSIONAL_APP" -name "$file_pattern" -type f 2>/dev/null | head -1)
+    if [ -n "$PROF_RESULT" ]; then
+        PROF_HAS_TYPE=$(grep -E "interface.*$type_name|type.*$type_name" "$PROF_RESULT" 2>/dev/null | wc -l)
+        if [ "$PROF_HAS_TYPE" -gt 0 ]; then
+            echo -e "  ${GREEN}✅${NC} Encontrado en app de profesionales"
+        else
+            echo -e "  ${YELLOW}⚠️${NC}  No encontrado en app de profesionales"
+        fi
     fi
+    
+    # Buscar en app web
+    WEB_RESULT=$(find "$WEB_APP" -name "$file_pattern" -type f 2>/dev/null | head -1)
+    if [ -n "$WEB_RESULT" ]; then
+        WEB_HAS_TYPE=$(grep -E "interface.*$type_name|type.*$type_name" "$WEB_RESULT" 2>/dev/null | wc -l)
+        if [ "$WEB_HAS_TYPE" -gt 0 ]; then
+            echo -e "  ${GREEN}✅${NC} Encontrado en app web"
+        else
+            echo -e "  ${RED}❌${NC} No encontrado en app web"
+            ERRORS=$((ERRORS + 1))
+        fi
+    fi
+    echo ""
 }
 
-echo "📁 Verificando existencia de repositorios..."
-check_repo "$SUMEAPP_B"
-check_repo "$SUMEEPROS"
-check_repo "$SUMEECLIENT"
-echo ""
+# Verificar tipos comunes
+check_types "Lead" "*.ts"
+check_types "Profile" "*.ts"
+check_types "Review" "*.ts"
 
-# Verificar tipos/interfaces compartidas
-echo "🔍 Verificando tipos e interfaces compartidas..."
-
-# Tipos críticos a verificar
-TYPES_TO_CHECK=(
-    "Lead"
-    "Profile"
-    "VerificationProfile"
-    "VerificationStats"
-    "VerificationStatus"
-)
-
-for type in "${TYPES_TO_CHECK[@]}"; do
-    echo -n "  Verificando tipo: $type... "
-    
-    # Buscar en Sumeeapp-B
-    found_b=$(grep -r "interface $type\|type $type" "$SUMEAPP_B/src/types" 2>/dev/null | wc -l | tr -d ' ')
-    found_pros=$(grep -r "interface $type\|type $type" "$SUMEEPROS" 2>/dev/null | wc -l | tr -d ' ')
-    found_client=$(grep -r "interface $type\|type $type" "$SUMEECLIENT" 2>/dev/null | wc -l | tr -d ' ')
-    
-    if [ "$found_b" -gt 0 ] && [ "$found_pros" -gt 0 ]; then
-        echo -e "${GREEN}✅${NC}"
-    elif [ "$found_b" -gt 0 ]; then
-        echo -e "${YELLOW}⚠️  Solo en Sumeeapp-B${NC}"
-    else
-        echo -e "${RED}❌ No encontrado${NC}"
-    fi
-done
-echo ""
-
-# Verificar servicios compartidos
-echo "🔍 Verificando servicios compartidos..."
-
-SERVICES_TO_CHECK=(
-    "verification"
-    "badges"
-    "reviews"
-    "jobs"
-)
-
-for service in "${SERVICES_TO_CHECK[@]}"; do
-    echo -n "  Verificando servicio: $service... "
-    
-    # Buscar archivos de servicio
-    file_b=$(find "$SUMEAPP_B/src" -name "*$service*.ts" -o -name "*$service*.tsx" 2>/dev/null | head -1)
-    file_pros=$(find "$SUMEEPROS/services" -name "*$service*.ts" 2>/dev/null | head -1)
-    
-    if [ -n "$file_b" ] && [ -n "$file_pros" ]; then
-        echo -e "${GREEN}✅${NC}"
-    elif [ -n "$file_b" ]; then
-        echo -e "${YELLOW}⚠️  Solo en Sumeeapp-B${NC}"
-    elif [ -n "$file_pros" ]; then
-        echo -e "${YELLOW}⚠️  Solo en SumeePros${NC}"
-    else
-        echo -e "${RED}❌ No encontrado${NC}"
-    fi
-done
-echo ""
-
-# Verificar variables de entorno
-echo "🔍 Verificando variables de entorno..."
-
-ENV_VARS=(
-    "NEXT_PUBLIC_SUPABASE_URL"
-    "NEXT_PUBLIC_SUPABASE_ANON_KEY"
-    "SUPABASE_SERVICE_ROLE_KEY"
-    "GOOGLE_GENERATIVE_AI_API_KEY"
-)
-
-for var in "${ENV_VARS[@]}"; do
-    echo -n "  Verificando: $var... "
-    
-    # Verificar en .env.local de Sumeeapp-B
-    if grep -q "^$var=" "$SUMEAPP_B/.env.local" 2>/dev/null; then
-        echo -e "${GREEN}✅ En .env.local${NC}"
-    else
-        echo -e "${YELLOW}⚠️  No encontrado en .env.local${NC}"
-    fi
-done
-echo ""
-
-# Verificar estructura de rutas de verificación
-echo "🔍 Verificando rutas de verificación..."
-
-# Verificar que /verify/[id] existe en ambos
-if [ -f "$SUMEAPP_B/src/app/verify/[id]/page.tsx" ]; then
-    echo -e "${GREEN}✅ /verify/[id] existe en Sumeeapp-B${NC}"
-else
-    echo -e "${RED}❌ /verify/[id] NO existe en Sumeeapp-B${NC}"
-fi
-
-if [ -f "$SUMEEPROS/app/verify/[id].tsx" ]; then
-    echo -e "${GREEN}✅ /verify/[id] existe en SumeePros${NC}"
-else
-    echo -e "${YELLOW}⚠️  /verify/[id] NO existe en SumeePros${NC}"
-fi
+# Verificar estructuras de Supabase
+echo "📊 Verificando estructuras de Supabase..."
 echo ""
 
 # Verificar imports de Supabase
-echo "🔍 Verificando imports de Supabase..."
+echo "🔗 Verificando imports de Supabase..."
 
-# Verificar que no haya imports incorrectos
-incorrect_imports=$(grep -r "import.*supabase.*from.*@/lib/supabase/server" "$SUMEAPP_B/src" 2>/dev/null | grep -v "createSupabaseServerClient" | wc -l | tr -d ' ')
+PROF_SUPABASE_IMPORT=$(grep -r "from.*supabase" "$PROFESSIONAL_APP/services" 2>/dev/null | head -1 | cut -d: -f2)
+WEB_SUPABASE_IMPORT=$(grep -r "from.*supabase" "$WEB_APP/src/app/verify" 2>/dev/null | head -1 | cut -d: -f2)
 
-if [ "$incorrect_imports" -eq 0 ]; then
-    echo -e "${GREEN}✅ Todos los imports de Supabase son correctos${NC}"
+if [ -n "$PROF_SUPABASE_IMPORT" ] && [ -n "$WEB_SUPABASE_IMPORT" ]; then
+    echo -e "  ${GREEN}✅${NC} Imports de Supabase presentes"
 else
-    echo -e "${RED}❌ Se encontraron $incorrect_imports imports incorrectos de Supabase${NC}"
-    grep -r "import.*supabase.*from.*@/lib/supabase/server" "$SUMEAPP_B/src" 2>/dev/null | grep -v "createSupabaseServerClient"
+    echo -e "  ${YELLOW}⚠️${NC}  Verificar imports de Supabase"
 fi
 echo ""
 
-# Verificar metadata en layouts
-echo "🔍 Verificando metadata en layouts..."
+# Verificar queries de profiles
+echo "👤 Verificando queries de profiles..."
+PROF_PROFILE_QUERY=$(grep -r "from('profiles')" "$PROFESSIONAL_APP/services" 2>/dev/null | head -1)
+WEB_PROFILE_QUERY=$(grep -r "from('profiles')" "$WEB_APP/src/app/verify" 2>/dev/null | head -1)
 
-# Verificar que no haya 'export metadata' en client components
-client_with_metadata=$(grep -r "'use client'" "$SUMEAPP_B/src/app" -l 2>/dev/null | xargs grep -l "export.*metadata" 2>/dev/null | wc -l | tr -d ' ')
-
-if [ "$client_with_metadata" -eq 0 ]; then
-    echo -e "${GREEN}✅ No hay 'export metadata' en client components${NC}"
+if [ -n "$PROF_PROFILE_QUERY" ] && [ -n "$WEB_PROFILE_QUERY" ]; then
+    echo -e "  ${GREEN}✅${NC} Queries de profiles presentes"
+    
+    # Verificar campos seleccionados
+    PROF_FIELDS=$(echo "$PROF_PROFILE_QUERY" | grep -o "select([^)]*)" | head -1)
+    WEB_FIELDS=$(echo "$WEB_PROFILE_QUERY" | grep -o "select([^)]*)" | head -1)
+    
+    if [ -n "$PROF_FIELDS" ] && [ -n "$WEB_FIELDS" ]; then
+        echo "  📝 Campos en app profesional: ${PROF_FIELDS:0:50}..."
+        echo "  📝 Campos en app web: ${WEB_FIELDS:0:50}..."
+    fi
 else
-    echo -e "${RED}❌ Se encontraron $client_with_metadata client components con 'export metadata'${NC}"
-    grep -r "'use client'" "$SUMEAPP_B/src/app" -l 2>/dev/null | xargs grep -l "export.*metadata" 2>/dev/null
+    echo -e "  ${YELLOW}⚠️${NC}  Verificar queries de profiles"
 fi
 echo ""
 
-# Resumen final
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "✅ Verificación de alineación completada"
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+# Verificar queries de reviews
+echo "⭐ Verificando queries de reviews..."
+PROF_REVIEW_QUERY=$(grep -r "from('reviews')" "$PROFESSIONAL_APP/services" 2>/dev/null | head -1)
+WEB_REVIEW_QUERY=$(grep -r "from('reviews')" "$WEB_APP/src/app/verify" 2>/dev/null | head -1)
+
+if [ -n "$PROF_REVIEW_QUERY" ] && [ -n "$WEB_REVIEW_QUERY" ]; then
+    echo -e "  ${GREEN}✅${NC} Queries de reviews presentes"
+    
+    # Verificar que ambos seleccionen 'rating'
+    if echo "$PROF_REVIEW_QUERY" | grep -q "rating" && echo "$WEB_REVIEW_QUERY" | grep -q "rating"; then
+        echo -e "  ${GREEN}✅${NC} Ambos seleccionan campo 'rating'"
+    else
+        echo -e "  ${RED}❌${NC} Inconsistencia en campos de reviews"
+        ERRORS=$((ERRORS + 1))
+    fi
+else
+    echo -e "  ${YELLOW}⚠️${NC}  Verificar queries de reviews"
+fi
 echo ""
-echo "📋 Próximos pasos recomendados:"
-echo "  1. Revisar diferencias en tipos/interfaces"
-echo "  2. Sincronizar servicios compartidos si es necesario"
-echo "  3. Verificar que variables de entorno estén configuradas"
-echo "  4. Asegurar que rutas de verificación sean consistentes"
-echo ""
+
+# Resumen
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+if [ $ERRORS -eq 0 ]; then
+    echo -e "${GREEN}✅ Verificación completada sin errores${NC}"
+    exit 0
+else
+    echo -e "${RED}❌ Se encontraron $ERRORS inconsistencia(s)${NC}"
+    exit 1
+fi

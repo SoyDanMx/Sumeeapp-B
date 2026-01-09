@@ -110,8 +110,8 @@ async function getVerificationData(professionalId: string): Promise<Verification
       created_at: string;
     };
 
-    // Get stats from professional_stats
-    const { data: stats, error: statsError } = await supabase
+    // Get stats from professional_stats (alineado con app de profesionales)
+    const { data: stats } = await supabase
       .from('professional_stats')
       .select(`
         jobs_completed_count,
@@ -122,18 +122,32 @@ async function getVerificationData(professionalId: string): Promise<Verification
       `)
       .eq('user_id', professionalId)
       .single();
+    
+    // Type assertion para stats (alineado con estructura de app de profesionales)
+    type ProfessionalStats = {
+      jobs_completed_count?: number;
+      average_rating?: number;
+      total_reviews_count?: number;
+      current_level_id?: number;
+      total_points?: number;
+    } | null;
+    const statsData = stats as ProfessionalStats;
 
-    // Get review stats
+    // Get review stats (alineado con app de profesionales - Review interface)
     const { data: reviews } = await supabase
       .from('reviews')
       .select('rating')
       .eq('reviewee_id', professionalId)
       .eq('status', 'published');
 
+    // Type assertion basado en Review interface de app de profesionales
+    type ReviewRating = { rating: number };
+    const reviewsArray = (reviews || []) as ReviewRating[];
+
     const reviewStats = {
-      total_reviews: reviews?.length || 0,
-      average_rating: reviews && reviews.length > 0
-        ? reviews.reduce((sum, r: { rating?: number | null }) => sum + (r.rating || 0), 0) / reviews.length
+      total_reviews: reviewsArray.length,
+      average_rating: reviewsArray.length > 0
+        ? reviewsArray.reduce((sum: number, r: ReviewRating) => sum + (r.rating || 0), 0) / reviewsArray.length
         : 0,
     };
 
@@ -152,13 +166,13 @@ async function getVerificationData(professionalId: string): Promise<Verification
       reputation_validated: (reviewStats.average_rating >= 4.0 && reviewStats.total_reviews >= 5)
     };
 
-    // Build stats object
+    // Build stats object (alineado con app de profesionales)
     const verificationStats: VerificationStats = {
-      jobs_completed: stats?.jobs_completed_count || 0,
-      rating: stats?.average_rating || reviewStats.average_rating || 0,
-      review_count: stats?.total_reviews_count || reviewStats.total_reviews || 0,
-      current_level: stats?.current_level_id || 1,
-      level_name: getLevelName(stats?.current_level_id || 1)
+      jobs_completed: statsData?.jobs_completed_count || 0,
+      rating: statsData?.average_rating || reviewStats.average_rating || 0,
+      review_count: statsData?.total_reviews_count || reviewStats.total_reviews || 0,
+      current_level: statsData?.current_level_id || 1,
+      level_name: getLevelName(statsData?.current_level_id || 1)
     };
 
     // Get unlocked badges (simplified - you may want to fetch from user_badges table)
