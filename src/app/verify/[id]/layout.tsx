@@ -1,19 +1,20 @@
 import { Metadata } from 'next';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
-export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   try {
+    const { id } = await params;
     const supabase = await createSupabaseServerClient();
     const { data: profile } = await supabase
       .from('profiles')
       .select('full_name, profession, avatar_url')
-      .eq('user_id', params.id)
+      .eq('user_id', id)
       .single();
 
     const { data: stats } = await supabase
       .from('professional_stats')
       .select('average_rating, total_reviews_count, jobs_completed_count')
-      .eq('user_id', params.id)
+      .eq('user_id', id)
       .single();
 
     if (!profile) {
@@ -26,7 +27,7 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
     const title = `${profile.full_name} - Profesional Verificado | Sumee`;
     const description = `${profile.full_name} es un ${profile.profession} verificado en Sumee. ${(stats?.average_rating || 0).toFixed(1)}⭐ de calificación con ${stats?.total_reviews_count || 0} reseñas. ${stats?.jobs_completed_count || 0} trabajos completados.`;
     const image = profile.avatar_url || 'https://www.sumeeapp.com/og-default.png';
-    const url = `https://www.sumeeapp.com/verify/${params.id}`;
+    const url = `https://www.sumeeapp.com/verify/${id}`;
 
     return {
       title,
@@ -59,4 +60,12 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
       description: 'Verifica la identidad y credenciales de profesionales en Sumee',
     };
   }
+}
+
+export default function VerifyIdLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return <>{children}</>;
 }
