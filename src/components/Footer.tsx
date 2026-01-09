@@ -51,7 +51,7 @@ export const Footer = () => {
   const personasLinks = useMemo(() => [
     { href: "/servicios", icon: faShieldAlt, text: "Servicios para el Hogar" },
     { href: "/professionals", icon: faStar, text: "Profesionales Verificados" },
-    { href: "/verify", icon: faShieldAlt, text: "Verificar Profesional" },
+    { href: "/verificacion", icon: faShieldAlt, text: "Verificar Profesional" },
     { href: "/marketplace", icon: faShoppingCart, text: "Marketplace" },
     { href: "/precios", icon: faDollarSign, text: "Guía de Precios" },
     { href: "/#como-funciona", icon: faInfoCircle, text: "Cómo Funciona" },

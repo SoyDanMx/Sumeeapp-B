@@ -1,3 +1,7 @@
+'use client';
+
+import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faIdCard,
@@ -9,19 +13,38 @@ import {
   faUserTie,
   faClock,
   faShield,
+  faShieldCheck,
+  faQrcode,
+  faSearch,
+  faSpinner,
+  faInfoCircle,
 } from "@fortawesome/free-solid-svg-icons";
 import Image from "next/image";
 import Link from "next/link";
 
-export const metadata = {
-  title: "Proceso de Verificación - Sumee App | Técnicos Verificados",
-  description:
-    "Conoce nuestro riguroso proceso de 4 capas para garantizar que solo los mejores profesionales entren a tu hogar. Verificación de identidad, certificaciones, background check y evaluación continua.",
-  keywords:
-    "verificación técnicos, proceso verificación, técnicos verificados, garantía sumee, background check",
-};
-
 export default function VerificacionPage() {
+  const router = useRouter();
+  const [professionalId, setProfessionalId] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleVerifySubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!professionalId.trim()) {
+      setError('Por favor ingresa un ID de profesional');
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    router.push(`/verify/${professionalId.trim()}`);
+  };
+
+  const handleQRScan = () => {
+    alert(
+      'Para escanear el código QR:\n\n1. Usa la cámara de tu dispositivo\n2. Apunta al código QR del técnico\n3. Sigue el enlace que aparece\n\nO ingresa el ID del técnico manualmente en el campo de arriba.'
+    );
+  };
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Hero Section */}
@@ -228,6 +251,130 @@ export default function VerificacionPage() {
               <div className="text-sm md:text-base text-gray-600 font-medium">
                 Satisfacción Cliente
               </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Sección de Verificación de Profesional - NUEVA */}
+      <section className="py-16 md:py-24 bg-gradient-to-br from-purple-50 via-white to-blue-50">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-purple-600 to-purple-700 rounded-full mb-6">
+              <FontAwesomeIcon icon={faShieldCheck} className="text-white text-4xl" />
+            </div>
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+              Verifica un Profesional Ahora
+            </h2>
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+              ¿Tienes el ID o código QR de un técnico? Verifica su identidad y credenciales aquí.
+            </p>
+          </div>
+
+          {/* Card de Búsqueda */}
+          <div className="bg-white rounded-2xl shadow-xl p-8 md:p-12 mb-8">
+            <form onSubmit={handleVerifySubmit} className="mb-6">
+              <div className="flex flex-col md:flex-row gap-4">
+                <div className="flex-1">
+                  <label htmlFor="professionalId" className="block text-sm font-medium text-gray-700 mb-2">
+                    ID del Profesional
+                  </label>
+                  <div className="relative">
+                    <FontAwesomeIcon
+                      icon={faSearch}
+                      className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400"
+                    />
+                    <input
+                      id="professionalId"
+                      type="text"
+                      value={professionalId}
+                      onChange={(e) => {
+                        setProfessionalId(e.target.value);
+                        setError(null);
+                      }}
+                      placeholder="Ingresa el ID del técnico (ej: abc123xyz)"
+                      className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+                    />
+                  </div>
+                  {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
+                </div>
+                <div className="flex items-end">
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full md:w-auto px-8 py-3 bg-gradient-to-r from-purple-600 to-purple-700 text-white font-semibold rounded-lg hover:from-purple-700 hover:to-purple-800 transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  >
+                    {loading ? (
+                      <>
+                        <FontAwesomeIcon icon={faSpinner} spin />
+                        <span>Verificando...</span>
+                      </>
+                    ) : (
+                      <>
+                        <FontAwesomeIcon icon={faShieldCheck} />
+                        <span>Verificar</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </form>
+
+            {/* Divider */}
+            <div className="relative my-6">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-300"></div>
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-4 bg-white text-gray-500">O</span>
+              </div>
+            </div>
+
+            {/* QR Scanner Option */}
+            <div className="text-center">
+              <button
+                onClick={handleQRScan}
+                className="inline-flex items-center gap-3 px-6 py-4 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+              >
+                <FontAwesomeIcon icon={faQrcode} className="text-2xl text-purple-600" />
+                <div className="text-left">
+                  <p className="font-semibold text-gray-900">Escanear Código QR</p>
+                  <p className="text-sm text-gray-600">Usa la cámara de tu dispositivo</p>
+                </div>
+              </button>
+            </div>
+          </div>
+
+          {/* Información Rápida */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="bg-white rounded-xl p-6 shadow-md text-center">
+              <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                <FontAwesomeIcon icon={faShieldCheck} className="text-green-600 text-xl" />
+              </div>
+              <h3 className="font-semibold text-gray-900 mb-2">Verificación Segura</h3>
+              <p className="text-sm text-gray-600">
+                Todos los profesionales pasan por nuestro proceso de 4 capas
+              </p>
+            </div>
+
+            <div className="bg-white rounded-xl p-6 shadow-md text-center">
+              <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                <FontAwesomeIcon icon={faQrcode} className="text-blue-600 text-xl" />
+              </div>
+              <h3 className="font-semibold text-gray-900 mb-2">Verificación Rápida</h3>
+              <p className="text-sm text-gray-600">
+                Escanea el QR o ingresa el ID para verificar en segundos
+              </p>
+            </div>
+
+            <div className="bg-white rounded-xl p-6 shadow-md text-center">
+              <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                <FontAwesomeIcon icon={faInfoCircle} className="text-purple-600 text-xl" />
+              </div>
+              <h3 className="font-semibold text-gray-900 mb-2">Información Completa</h3>
+              <p className="text-sm text-gray-600">
+                Ve calificaciones, reseñas y certificaciones del profesional
+              </p>
             </div>
           </div>
         </div>
