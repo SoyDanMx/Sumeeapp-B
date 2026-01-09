@@ -98,11 +98,6 @@ export async function generateMetadata({
             alt: 'Sumee - Profesionales Verificados',
           },
         ],
-        profile: {
-          firstName: profile.full_name.split(' ')[0],
-          lastName: profile.full_name.split(' ').slice(1).join(' '),
-          username: id,
-        },
       },
       twitter: {
         card: 'summary_large_image',
