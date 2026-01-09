@@ -119,7 +119,7 @@ export default function ProfessionalBidPreview({
 
       // Calcular tiempo promedio de respuesta (si está disponible)
       // Esto se puede calcular desde la tabla de mensajes o quotes
-      const responseTime = statsData?.response_time_avg || null;
+      const responseTime = statsData?.response_time_avg || undefined;
 
       setProfessional({
         full_name: statsData?.full_name || profileData?.full_name || 'Profesional Sumee',
