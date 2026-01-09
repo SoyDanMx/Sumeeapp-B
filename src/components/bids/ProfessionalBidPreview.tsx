@@ -36,7 +36,7 @@ interface ProfessionalData {
   areas_servicio: string[];
   profession: string;
   verified: boolean;
-  response_time_avg?: number; // minutos promedio de respuesta
+  response_time_avg?: number | null; // minutos promedio de respuesta
   badges: string[];
 }
 
@@ -119,7 +119,7 @@ export default function ProfessionalBidPreview({
 
       // Calcular tiempo promedio de respuesta (si está disponible)
       // Esto se puede calcular desde la tabla de mensajes o quotes
-      const responseTime = statsData?.response_time_avg || undefined;
+      const responseTime = statsData?.response_time_avg ?? null;
 
       setProfessional({
         full_name: statsData?.full_name || profileData?.full_name || 'Profesional Sumee',
