@@ -19,7 +19,6 @@ import {
   faSpinner,
   faInfoCircle,
 } from "@fortawesome/free-solid-svg-icons";
-import Image from "next/image";
 import Link from "next/link";
 
 export default function VerificacionPage() {
